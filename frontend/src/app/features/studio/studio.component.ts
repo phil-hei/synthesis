@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 import { ApiService } from '../../core/services/api.service';
 import { ArtifactInfo, Depot, GenerationJob, Scenario, UploadSummary } from '../../core/models/scenario.model';
+import { LlmModeChoiceResult, ModalSplit, SimKpis, SumoSummary } from '../../core/models/results.model';
 
 @Component({
   selector: 'app-studio',
@@ -27,9 +28,9 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   upload: UploadSummary | null = null;
   uploadBusy = false;
 
-  simKpis: any = null;
-  sumoSummary: any = null;
-  llmModeChoice: any = null;
+  simKpis: SimKpis | null = null;
+  sumoSummary: SumoSummary | null = null;
+  llmModeChoice: LlmModeChoiceResult | null = null;
   mobileCity: any = null;
   simDepots: any[] = [];
   showParcelLayer = false;
@@ -481,7 +482,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!id) {
       return;
     }
-    this.api.artifactJson(id, 'simulation/kpis.json')
+    this.api.artifactJson<SimKpis>(id, 'simulation/kpis.json')
       .subscribe({ next: kpis => this.simKpis = kpis, error: () => this.simKpis = null });
     this.api.artifactJson<any[]>(id, 'simulation/depot-stats.json')
       .subscribe({ next: depots => this.simDepots = depots, error: () => this.simDepots = [] });
@@ -489,9 +490,9 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({ next: geo => this.parcelDensity = geo, error: () => this.parcelDensity = null });
     this.api.artifactJson(id, 'simulation/tours.geojson')
       .subscribe({ next: geo => this.tourData = geo, error: () => this.tourData = null });
-    this.api.artifactJson(id, 'sumo/summary.json')
+    this.api.artifactJson<SumoSummary>(id, 'sumo/summary.json')
       .subscribe({ next: s => this.sumoSummary = s, error: () => this.sumoSummary = null });
-    this.api.artifactJson(id, 'simulation/llm-mode-choice.json')
+    this.api.artifactJson<LlmModeChoiceResult>(id, 'simulation/llm-mode-choice.json')
       .subscribe({ next: s => this.llmModeChoice = s, error: () => this.llmModeChoice = null });
   }
 
@@ -563,8 +564,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       pedestrian: 'Fuß', bike: 'Rad', car: 'MIV (Fahrer)',
       passenger: 'MIV (Mitfahrer)', publicTransport: 'ÖV', other: 'Sonstige'
     };
-    const sim = this.simKpis.demand?.modalSplit ?? {};
-    const mid = this.simKpis.mid2017?.modalSplit ?? {};
+    const sim: ModalSplit = this.simKpis.demand?.modalSplit ?? {};
+    const mid: ModalSplit = this.simKpis.mid2017?.modalSplit ?? {};
     return Object.keys(labels)
       .filter(key => sim[key] != null || mid[key] != null)
       .map(key => ({ label: labels[key], sim: sim[key] ?? 0, mid: mid[key] ?? null }));

@@ -44,13 +44,25 @@ public class GtaBehaviorRunner {
 
     private final SynthesisProperties.Llm config;
     private final long baseSeed;
+    private final Path cacheDir;
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5)).build();
 
     public GtaBehaviorRunner(SynthesisProperties.Llm config, long baseSeed) {
+        this(config, baseSeed, null);
+    }
+
+    /**
+     * @param cacheDir Verzeichnis für den Plan-Cache (null = kein Cache). Da Pläne bei
+     *                 gleichem Seed deterministisch sind, können Wiederholungsläufe die
+     *                 ~8 s/Persona-LLM-Aufrufe komplett einsparen; der Schlüssel enthält
+     *                 Modell, Seed, Prompt-Version und Persona-Signatur.
+     */
+    public GtaBehaviorRunner(SynthesisProperties.Llm config, long baseSeed, Path cacheDir) {
         this.config = config;
         this.baseSeed = baseSeed;
+        this.cacheDir = cacheDir;
     }
 
     /** Quick reachability probe of the OpenAI-compatible endpoint ({endpoint}/models). */
@@ -106,6 +118,7 @@ public class GtaBehaviorRunner {
 
         Map<Long, GtaWeek> plans = new HashMap<>();
         int llmCalls = 0;
+        int cacheHits = 0;
         int covered = 0;
         int budget = Math.min(personas.size(), config.getMaxPersonas());
         log.accept(personas.size() + " distinkte Personas, " + budget + " im Budget (Modell "
@@ -113,22 +126,78 @@ public class GtaBehaviorRunner {
         for (int i = 0; i < budget; i++) {
             Persona persona = personas.get(i).getKey();
             List<Long> ids = personas.get(i).getValue();
-            GtaWeek week;
-            try {
-                week = requestPlan(persona);
-            } catch (Exception e) {
-                log.accept("Persona " + persona + " übersprungen (" + e.getClass().getSimpleName() + ")");
-                continue;
+            GtaWeek week = fromCache(persona);
+            if (week != null) {
+                cacheHits++;
+            } else {
+                try {
+                    week = requestPlan(persona);
+                } catch (Exception e) {
+                    log.accept("Persona " + persona + " übersprungen (" + e.getClass().getSimpleName() + ")");
+                    continue;
+                }
+                llmCalls++;
+                toCache(persona, week);
             }
-            llmCalls++;
             for (long id : ids) {
                 plans.put(id, week);
             }
             covered += ids.size();
         }
-        log.accept(llmCalls + " LLM-Pläne erzeugt, " + covered + "/" + personsTotal
-                + " Personen abgedeckt");
+        log.accept(llmCalls + " LLM-Pläne erzeugt, " + cacheHits + " aus Cache, " + covered + "/"
+                + personsTotal + " Personen abgedeckt");
         return new Result(plans, budget, llmCalls, covered, personsTotal);
+    }
+
+    // --- Plan-Cache -------------------------------------------------------------
+
+    record CacheEntry(String key, GtaWeek week) {
+    }
+
+    /** Schlüssel: Modell × Seed × Prompt-Version × Persona – Prompt-Änderungen invalidieren automatisch. */
+    private String cacheKey(Persona persona) {
+        return config.getModel() + "|" + baseSeed + "|" + SYSTEM.hashCode() + "|"
+                + persona.employment() + "|" + persona.ageBand() + "|" + persona.gender();
+    }
+
+    private Path cacheFile(String key) throws Exception {
+        byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                .digest(key.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        StringBuilder hex = new StringBuilder("plan-");
+        for (int i = 0; i < 8; i++) {
+            hex.append(String.format("%02x", digest[i]));
+        }
+        return cacheDir.resolve(hex.append(".json").toString());
+    }
+
+    private GtaWeek fromCache(Persona persona) {
+        if (cacheDir == null) {
+            return null;
+        }
+        try {
+            String key = cacheKey(persona);
+            Path file = cacheFile(key);
+            if (!Files.exists(file)) {
+                return null;
+            }
+            CacheEntry entry = mapper.readValue(file.toFile(), CacheEntry.class);
+            return key.equals(entry.key()) ? entry.week() : null;
+        } catch (Exception e) {
+            return null; // Cache ist optional – im Zweifel frisch anfragen
+        }
+    }
+
+    private void toCache(Persona persona, GtaWeek week) {
+        if (cacheDir == null) {
+            return;
+        }
+        try {
+            Files.createDirectories(cacheDir);
+            String key = cacheKey(persona);
+            mapper.writeValue(cacheFile(key).toFile(), new CacheEntry(key, week));
+        } catch (Exception e) {
+            // Cache ist optional – Fehler beim Schreiben ignorieren
+        }
     }
 
     // --- LLM ------------------------------------------------------------------

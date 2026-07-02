@@ -105,6 +105,41 @@ class GtaBehaviorTest {
     }
 
     @Test
+    void cacheAvoidsRepeatLlmCalls() throws Exception {
+        SynthesisProperties.Llm config = new SynthesisProperties.Llm();
+        config.setMaxPersonas(2);
+        Path cache = Files.createTempDirectory("gta-cache");
+        GtaBehaviorRunner first = new GtaBehaviorRunner(config, 7L, cache);
+        assumeTrue(first.isAvailable(), "Lokales LLM nicht erreichbar – übersprungen");
+
+        Path personCsv = Files.createTempFile("gta-cache-person", ".csv");
+        try {
+            Files.writeString(personCsv, """
+                    personId;personNumber;householdId;age;employment;gender
+                    1;1;1;40;FULLTIME;MALE
+                    2;1;2;70;RETIRED;FEMALE
+                    """);
+            GtaBehaviorRunner.Result r1 = first.run(personCsv, m -> { });
+            assertTrue(r1.llmCalls() > 0, "erster Lauf muss das LLM aufrufen");
+
+            GtaBehaviorRunner.Result r2 = new GtaBehaviorRunner(config, 7L, cache).run(personCsv, m -> { });
+            assertEquals(0, r2.llmCalls(), "zweiter Lauf muss komplett aus dem Cache kommen");
+            assertEquals(r1.plans(), r2.plans(), "gecachte Pläne identisch zum ersten Lauf");
+        } finally {
+            Files.deleteIfExists(personCsv);
+            try (var files = Files.walk(cache)) {
+                files.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
+                    try {
+                        Files.deleteIfExists(p);
+                    } catch (Exception ignored) {
+                        // best effort
+                    }
+                });
+            }
+        }
+    }
+
+    @Test
     void sameSeedIsReproducible() throws Exception {
         SynthesisProperties.Llm config = new SynthesisProperties.Llm();
         config.setMaxPersonas(2);

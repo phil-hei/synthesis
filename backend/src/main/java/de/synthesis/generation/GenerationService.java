@@ -271,7 +271,8 @@ public class GenerationService {
                 String behavior = scenario.population.behaviorSourceEffective();
                 if ("gta".equals(behavior)) {
                     GtaBehaviorRunner gta = new GtaBehaviorRunner(
-                            properties.getLlm(), scenario.population.seed);
+                            properties.getLlm(), scenario.population.seed,
+                            Path.of(properties.getDataDir(), "llm-cache"));
                     if (properties.getLlm().isEnabled() && gta.isAvailable()) {
                         try {
                             job.log("Starte GTA-Verhaltensquelle (lokales LLM "
@@ -281,9 +282,9 @@ public class GenerationService {
                             count = generator.generateFromGta(activityCsv, popResult.persons(),
                                     p -> gtaResult.plans().get(p.id()));
                             source = "GTA (" + properties.getLlm().getModel() + ", "
-                                    + gtaResult.llmCalls() + " Personas, " + gtaResult.personsCovered()
+                                    + gtaResult.personas() + " Personas, " + gtaResult.personsCovered()
                                     + "/" + gtaResult.personsTotal() + " abgedeckt)";
-                            job.summary.put("gtaPersonas", gtaResult.llmCalls());
+                            job.summary.put("gtaPersonas", gtaResult.personas());
                             job.summary.put("gtaCovered", gtaResult.personsCovered());
                         } catch (Exception e) {
                             job.log("GTA fehlgeschlagen (" + e.getMessage() + ") – Fallback actiTopp");
