@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"/Users/PH/Desktop/05-Entwicklung/SyntheSis\" && echo \"---\" && ls -la \"/Users/PH/Desktop/05-Entwicklung/simudrive\" && echo \"---\" && ls -la \"/Users/PH/Desktop/02-Forschung/Forschungsprojekte/SyntheSis/Entwicklung/Simulation/\")"
+    ]
+  }
+}

@@ -1,0 +1,137 @@
+# 03 – Technische Zielarchitektur
+
+Grundidee: simudrive-Muster übernehmen (Angular/Leaflet-Frontend, Spring-Modulith-Backend,
+dateibasierter Artefakt-Store, externe Toolchain als Prozesse), aber die Generierung als
+**explizite Pipeline aus Stufen mit definierten Artefakten** modellieren – jede Stufe einzeln
+ausführbar, cachebar und durch andere Implementierungen ersetzbar.
+
+## Überblick
+
+```mermaid
+flowchart LR
+    subgraph FE [Frontend Angular + Leaflet]
+        A[Karte: Region wählen<br/>BBox/Polygon/Gemeinde] --> B[Parameter-Formulare<br/>Zonierung, Bevölkerung, Logistik]
+        B --> C[Pipeline-Monitor<br/>Stufen-Status, Logs]
+        C --> D[Ergebnis-Ansicht<br/>Nachfrage-Layer, KPIs, Downloads]
+    end
+
+    subgraph BE [Backend Spring Modulith]
+        S[scenario<br/>CRUD + Schema] --> G[geodata<br/>OSM/GTFS/Zensus-Beschaffung]
+        G --> Z[zoning]
+        Z --> SYN[datasynthesis<br/>Strukturdaten, Attraktivitäten,<br/>Survey-Template]
+        SYN --> M[matrices<br/>Routing → Visum-MTX]
+        M --> DEM[demand<br/>mobiTopp Long/Short-Term,<br/>logiTopp Runner]
+        DEM --> EXP[export<br/>Adapter: MobileCity, GeoJSON/CSV, MATSim]
+        ST[(storage<br/>data/scenarios/&lt;id&gt;/artifacts)]
+    end
+
+    subgraph TOOLS [Externe Tools, containerisiert]
+        T1[GraphHopper / R5]
+        T2[mobiTopp / logiTopp JVM]
+        T3[OSM2Attractiveness]
+        T4[MobileCity Pipelines<br/>Car/Bike/Transit + OLC + ConfigTool]
+    end
+
+    FE -- REST + SSE --> BE
+    M --- T1
+    DEM --- T2
+    SYN --- T3
+    EXP --- T4
+```
+
+## Backend-Module (Spring Modulith, analog simudrive)
+
+| Modul | Verantwortung |
+|---|---|
+| `scenario` | Szenario-Aggregat, REST-API, Validierung, Metadaten-Endpoint für UI-Formulare |
+| `geodata` | Rohdaten-Beschaffung mit Cache: OSM-Extrakt (Overpass / Geofabrik-PBF-Clip), GTFS-Feed-Clip, Zensus-Raster-Clip |
+| `zoning` | Zonen aus OSM-Admin-Grenzen oder H3/Grid; erzeugt `zones.csv`, GeoJSON, MobileCity-District-Artefakte |
+| `datasynthesis` | Provider-Slots je Datenebene (echt/öffentlich/synthetisch, siehe 02): Strukturdaten, Attraktivitäten, Survey-Template, Pendler, Depots |
+| `matrices` | Zentroid-Bestimmung, Matrix-Berechnung via GraphHopper/R5, Visum-MTX-Export + Matrix-YAMLs |
+| `demand` | Generierung der mobiTopp-Projektstruktur (Configs, Wahlmodell-Parameter), Ausführung Long-Term → Short-Term → logiTopp als externe JVM-Prozesse, Ergebnis-Ingestion |
+| `export` | Export-Adapter-SPI; erste Adapter: GeoJSON/CSV (Visualisierung), MobileCity (siehe unten) |
+| `jobs` | Asynchrone Pipeline-Ausführung: Stufengraph, Status, Logs, Abbruch; Fortschritt per SSE/WebSocket ans Frontend |
+| `storage` | Dateibasierter Artefakt-Store `data/scenarios/<id>/<stage>/…` mit Manifest (Hash der Eingaben → Cache/Re-Run-Entscheidung) |
+
+**Warum Modulith statt Microservices:** identische Begründung wie simudrive – ein Deployable,
+klare Modulgrenzen per Test erzwungen, externe Rechenlast liegt ohnehin in eigenständigen
+Prozessen/Containern (GraphHopper, mobiTopp-JVM, Python-Pipelines).
+
+**Polyglott-Strategie:** Alles Geo-/Daten-lastige, das in Python deutlich billiger ist
+(OSM-POI-Aggregation, Zensus-Verschnitt, GTFS-Handling), läuft als containerisierte
+**Worker-Skripte mit CLI-Kontrakt** (Eingabe-/Ausgabedateien + JSON-Config), orchestriert vom
+`jobs`-Modul. Damit lassen sich auch OSM2Attractiveness und später die MobileCity-Python-Pipelines
+ohne Umschreiben einhängen.
+
+## Pipeline-Stufen und Artefakte
+
+Jede Stufe: deklarierte Inputs/Outputs, idempotent, Seed-gesteuert reproduzierbar.
+
+| Stufe | Input | Output (Artefakte) |
+|---|---|---|
+| 1 Region | BBox/Polygon | `region.geojson`, OSM-PBF-Clip, GTFS-Clip, Zensus-Clip |
+| 2 Zonierung | Region, Modus, Auflösung | `zones.geojson`, `zones.csv`, `zone-to-community.csv`, `districts.gpkg`+`districts.xlsx` (MC) |
+| 3 Strukturdaten | Zonen + Zensus/Synthese | `SynthesisZoneTargets.csv` |
+| 4 Attraktivitäten | Zonen + OSM-POIs | `attractivities.csv` |
+| 5 Pendler | Zonen + BA/Gravitationsmodell | `commuters.csv` |
+| 6 Matrizen | Zonen + OSM/GTFS-Routing | `*_TTC/COST/DIS.mtx.bz2`, Matrix-YAMLs |
+| 7 Long-Term | 3–6 + Survey-Template | `person/household/activity/car/fixedDestination.csv` |
+| 8 Short-Term + logiTopp | 7 + Matrizen + Logistik-Parameter | Wege-/Touren-CSVs, Paket-Events |
+| 9 Export | 8 + Adapterwahl | GeoJSON-Layer, KPI-JSON, MobileCity-Paket, … |
+
+## Szenario-Schema (Generik-Achse 2)
+
+Ein Szenario ist ein versioniertes JSON/YAML-Dokument; die UI-Formulare werden aus einem
+Metadaten-Endpoint generiert (simudrive-Muster), sodass neue Parameter ohne Frontend-Änderung
+auftauchen. Skizze:
+
+```yaml
+scenario:
+  name: "KA-Südstadt Lastenrad-Depot"
+  seed: 42
+  region: { type: polygon, geometry: …, source: map-selection }
+  zoning: { mode: osm-admin | h3, resolution: 9, maxZones: 500 }
+  population:
+    structuralData: { provider: zensus2022 | synthetic | upload }
+    surveyTemplate: { provider: synthetic-default | upload }
+    samplingFraction: 0.25        # mobiTopp fractionOfPopulation
+  logistics:
+    parcelDemand: { meanPerPersonWeek: 0.75, stdDev: 0.5, max: 10 }
+    destinationShares: { home: 0.8, work: 0.1, packstation: 0.1 }
+    depots:                        # auf Karte gesetzt oder provider: osm | random
+      - { location: [8.4, 49.0], employees: 25, share: 0.6, fleet: cargo-bike }
+    services: [{ name: DHL, share: 0.45 }, …]
+  simulation: { days: 7, engine: legacy-logitopp | mobitopp-ng }
+  exports: [geojson, mobilecity]
+```
+
+## Frontend (Angular, wie simudrive)
+
+1. **Region wählen:** Leaflet + Zeichenwerkzeuge (BBox/Polygon) + Nominatim-Gemeindesuche;
+   Anzeige der abgeleiteten Zonierung als Vorschau-Layer (sofortiges Feedback vor dem teuren Lauf).
+2. **Parametrieren:** Formulargruppen Bevölkerung / Verkehr / Logistik; Depots als Karten-Marker
+   mit Eigenschaften-Popup; Datenqualitäts-Ampel je Ebene (echt/öffentlich/synthetisch).
+3. **Ausführen & beobachten:** Pipeline-Graph mit Stufenstatus, Logs, Laufzeit; Wiederaufnahme
+   ab fehlgeschlagener Stufe (Artefakt-Cache).
+4. **Ergebnisse:** Choroplethen (Wege je Zone, Paketdichte), Depot-Einzugsgebiete, Touren auf der
+   Karte, KPI-Kacheln (Wege/Tag, Modal Split, Pakete, Tourlängen, Stopps/Tour), Downloads je Artefakt.
+
+## MobileCity-Integration (Export-Adapter)
+
+Zwei getrennte Übergabepunkte:
+
+1. **Netz-Seite (heute schon machbar):** Der Adapter erzeugt die Eingaben der bestehenden
+   Network-Pipelines – `districts.gpkg` + `districts.xlsx` (Car/Bike) und reicht den GTFS-Clip
+   (Transit) durch; danach laufen die vorhandenen Tools (Car/Bike/Transit → OLC Mapper →
+   Config Tool) unverändert als containerisierte Stufen und liefern die Messagepack-Konfiguration
+   für die App.
+2. **Nachfrage-Seite (zu klären):** In welchem Format MobileCity Nachfrage/Agenten/Pakettouren
+   konsumiert, geht aus der ZIP nicht hervor (sie behandelt nur Netze). Kandidat: Wege- und
+   Tourenlisten auf die OLC-Knoten-IDs der Netzkonfiguration mappen (Zonen-Zentroid → nächster
+   OLC-Knoten). **→ Schnittstellen-Definition mit Takomat/Projektpartnern, früh klären.**
+
+## Deployment
+
+Docker-Compose: `frontend` (nginx), `backend` (Spring Boot), `graphhopper`, optional `r5`,
+`worker-python` (Geo-Skripte, OSM2Attractiveness), `worker-mobitopp` (JDK + mobiTopp/logiTopp-Jars),
+später `worker-mobilecity` (Python-Pipelines + .NET Config Tool). Artefakte auf gemeinsamem Volume.

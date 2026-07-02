@@ -1,0 +1,106 @@
+.comparison {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  align-items: flex-start;
+}
+
+.picker {
+  flex: 0 0 280px;
+  background: #fff;
+  border: 1px solid #e3e8ee;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.picker h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #51606f;
+  margin: 0 0 12px;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+button.primary {
+  margin-top: 12px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: #15314f;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.primary:disabled {
+  background: #aab6c2;
+  cursor: not-allowed;
+}
+
+.message {
+  font-size: 12px;
+  color: #b9770e;
+  margin-top: 10px;
+}
+
+.result {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #e3e8ee;
+  border-radius: 10px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.placeholder {
+  color: #51606f;
+  font-size: 13px;
+}
+
+table.compare {
+  border-collapse: collapse;
+  font-size: 13px;
+  width: 100%;
+}
+
+table.compare th, table.compare td {
+  padding: 6px 14px;
+  text-align: left;
+  border-bottom: 1px solid #eef2f7;
+}
+
+table.compare thead th {
+  border-bottom: 2px solid #d4dbe3;
+  font-weight: 600;
+}
+
+table.compare td:first-child {
+  color: #51606f;
+}
+
+.group td {
+  background: #f5f8fb;
+  font-weight: 600;
+  color: #15314f !important;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.mid-col {
+  color: #8895a3;
+  background: #fafbfc;
+}

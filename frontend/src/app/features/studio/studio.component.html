@@ -1,0 +1,414 @@
+<div class="studio">
+
+  <!-- Linke Spalte: Szenarien + Parameter -->
+  <aside class="panel">
+    <section class="block">
+      <div class="block-head">
+        <h2>Szenario</h2>
+        <button (click)="newScenario()" title="Leeres Szenario anlegen – Region anschließend auf der Karte zeichnen">+ Neu</button>
+      </div>
+      <label>Vorhandenes Szenario laden
+        <span class="select-row">
+          <select [(ngModel)]="selectedScenarioId" (change)="onScenarioSelected()"
+                  title="Gespeichertes Szenario auswählen und laden">
+            <option value="">– Neues Szenario –</option>
+            <option *ngFor="let s of scenarios" [value]="s.id">{{ s.name }}</option>
+          </select>
+          <button class="link danger" *ngIf="selectedScenarioId" (click)="deleteSelected()"
+                  title="Ausgewähltes Szenario löschen">✕</button>
+        </span>
+      </label>
+    </section>
+
+    <ng-container *ngIf="scenario">
+      <section class="block">
+        <label>Name
+          <input [(ngModel)]="scenario.name" title="Anzeigename des Szenarios">
+        </label>
+        <label title="Untersuchungsgebiet: mit „Region zeichnen' direkt auf der Karte aufziehen oder den sichtbaren Kartenausschnitt übernehmen">
+          Region
+          <span class="region-info" *ngIf="scenario.region; else noRegion">
+            {{ scenario.region.minLat | number:'1.3-3' }}, {{ scenario.region.minLon | number:'1.3-3' }} –
+            {{ scenario.region.maxLat | number:'1.3-3' }}, {{ scenario.region.maxLon | number:'1.3-3' }}
+          </span>
+          <ng-template #noRegion>
+            <span class="region-info missing">Noch keine Region gesetzt – auf der Karte zeichnen</span>
+          </ng-template>
+        </label>
+        <label title="Kantenlänge einer quadratischen Rasterzelle. Jede Zelle wird eine Verkehrszelle (Zone) des Nachfragemodells: Alle Wege werden zwischen Zonen-Mittelpunkten modelliert. Kleinere Zellen = feinere Auflösung, aber quadratisch mehr Matrix-Einträge (Limit 600 Zonen).">
+          Zellgröße Zonenraster (m) ⓘ
+          <input type="number" [(ngModel)]="scenario.zoning.cellSizeMeters" min="200" step="100">
+        </label>
+      </section>
+
+      <section class="block">
+        <h2>Bevölkerung</h2>
+        <p class="hint" *ngIf="estimateInfo">{{ estimateInfo }}</p>
+        <label title="Gesamtzahl der Einwohner in der Region. Wird beim Setzen der Region automatisch aus OSM-Siedlungsdaten (place-Nodes mit population-Tag) vorbefüllt; leer = Schätzung über Einwohnerdichte.">
+          Einwohner gesamt ⓘ
+          <input type="number" [(ngModel)]="scenario.population.totalPersons">
+        </label>
+        <label title="Fallback-Dichte, falls keine Einwohnerzahl gesetzt ist und OSM keine Siedlungsdaten liefert">
+          Einwohner je km² (Fallback)
+          <input type="number" [(ngModel)]="scenario.population.personsPerKm2">
+        </label>
+        <label title="Anteil der Bevölkerung, der tatsächlich synthetisiert wird (mobiTopp fractionOfPopulation). Kleinere Werte = schnellere Läufe.">
+          Stichprobenanteil (0–1)
+          <input type="number" [(ngModel)]="scenario.population.samplingFraction" min="0.05" max="1" step="0.05">
+        </label>
+        <label title="Durchschnittliche Pkw-Ausstattung der Haushalte">
+          Pkw je Haushalt
+          <input type="number" [(ngModel)]="scenario.population.carsPerHousehold" min="0" max="3" step="0.1">
+        </label>
+        <label title="Startwert des Zufallsgenerators – gleicher Seed + gleiche Parameter = identisches Ergebnis (Reproduzierbarkeit)">
+          Zufalls-Seed
+          <input type="number" [(ngModel)]="scenario.population.seed">
+        </label>
+        <label class="checkbox" title="POIs, Siedlungs- und Logistikdaten live von der Overpass-API laden; bei Fehlschlag fällt die Pipeline automatisch auf synthetische Daten zurück">
+          <input type="checkbox" [(ngModel)]="scenario.population.useOsmData">
+          OSM-Daten nutzen (Overpass-API)
+        </label>
+        <label class="checkbox" title="Reisezeit- und Distanzmatrizen über echtes Routing auf dem OSM-Straßennetz berechnen (GraphHopper, Auto/Rad/Fuß). Bei Fehlschlag automatisch Luftlinien-Schätzung.">
+          <input type="checkbox" [(ngModel)]="scenario.population.useRealRouting">
+          Echtes Routing (GraphHopper statt Luftlinie)
+        </label>
+        <label class="checkbox" title="Externe Zielzonen rund um das Gebiet ergänzen, damit ein Teil der Wege das Untersuchungsgebiet verlässt (realistischere Weglängen). Ohne Einwohner, nur als Ziele.">
+          <input type="checkbox" [(ngModel)]="scenario.population.externalTrips">
+          Außenbeziehungen (externe Zielzonen)
+        </label>
+        <label class="checkbox" title="Wochen-Aktivitätenpläne mit dem kalibrierten KIT-Modell actiTopp erzeugen (statt einfacher Vorlagen). Bei Fehlschlag automatisch Vorlagen-Generator.">
+          <input type="checkbox" [(ngModel)]="scenario.population.useActitopp">
+          KIT actiTopp für Aktivitätenpläne
+        </label>
+        <label class="checkbox" title="Haushalte aus einem KIT-synthetisierten Demografie-Sample ziehen (realistische Alters-/Geschlechts-/Haushaltsgrößen-Verteilung) statt aus Ad-hoc-Annahmen.">
+          <input type="checkbox" [(ngModel)]="scenario.population.useKitPopulation">
+          KIT-Demografie-Sample (Haushalte)
+        </label>
+
+        <div class="upload"
+             title="Punktbasiertes Bevölkerungsraster als CSV: Zensus-2022-Gitter (Spalten x_mp_100m;y_mp_100m;Einwohner, EPSG:3035 wird automatisch umgerechnet) oder generisch (lat;lon;population). Hat Vorrang vor OSM- und Dichte-Schätzung.">
+          <ng-container *ngIf="!upload">
+            <label class="upload-button" [class.disabled]="!scenario.id || uploadBusy">
+              {{ uploadBusy ? 'Wird verarbeitet…' : 'Bevölkerungsraster hochladen (CSV) ⓘ' }}
+              <input type="file" accept=".csv,text/csv" (change)="onGridFileSelected($event)"
+                     [disabled]="!scenario.id || uploadBusy">
+            </label>
+            <p class="hint" *ngIf="!scenario.id">Zum Hochladen Szenario zuerst speichern.</p>
+          </ng-container>
+          <div class="upload-info" *ngIf="upload">
+            <span>
+              📄 Bevölkerungsraster aktiv
+              <ng-container *ngIf="upload.points > 0">
+                – {{ upload.points.toLocaleString() }} Punkte,
+                {{ upload.totalPopulation.toLocaleString() }} Einwohner ({{ upload.format }})
+              </ng-container>
+            </span>
+            <button class="link danger" (click)="removeUpload()" title="Hochgeladenes Raster entfernen">✕</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Modellierung</h2>
+        <label title="Achse A – wie das Verhalten (Aktivitäten, Modus) erzeugt wird">
+          Verhaltensmodell
+          <select [(ngModel)]="scenario.population.behaviorSource">
+            <option value="actitopp">actiTopp (KIT, kalibriert)</option>
+            <option value="gta">GTA – KI-Agenten (lokales LLM, experimentell)</option>
+          </select>
+        </label>
+        <p class="hint" *ngIf="scenario.population.behaviorSource === 'gta'">
+          GTA erzeugt Tagespläne über ein lokales LLM (Ollama). Personas werden gebündelt, daher
+          wenige LLM-Aufrufe – aber langsamer als actiTopp. Ist das LLM nicht erreichbar, wird
+          automatisch auf actiTopp zurückgefallen.
+        </p>
+
+        <div class="targets" title="Achse B – welche Zielmodelle die erzeugte Nachfrage verwerten (Mehrfachauswahl)">
+          <span class="targets-label">Zielmodell</span>
+          <label class="checkbox" title="Mikroskopische Personen- und Paketsimulation (KIT), liefert KPIs/Touren">
+            <input type="checkbox" [checked]="hasTarget('logitopp')" (change)="toggleTarget('logitopp')">
+            logiTopp (Personen + Pakete)
+          </label>
+          <label class="checkbox" title="District-aggregierte Config-Tabellen für die MobileCity/Takomat-App">
+            <input type="checkbox" [checked]="hasTarget('mobilecity')" (change)="toggleTarget('mobilecity')">
+            MobileCity-Export (Takomat)
+          </label>
+          <label class="checkbox" title="Eigene mikroskopische Verkehrssimulation der Auto-Trips (benötigt logiTopp)">
+            <input type="checkbox" [checked]="hasTarget('sumo')" (change)="toggleTarget('sumo')">
+            SUMO (mikroskopischer Verkehr)
+          </label>
+        </div>
+
+        <label class="checkbox" *ngIf="hasTarget('logitopp')"
+               title="Passt die Moduswahl-Konstanten iterativ an den Ziel-Modal-Split an (mehrere Simulationsläufe, daher deutlich langsamer).">
+          <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeChoice">
+          Modal-Split kalibrieren (langsam)
+        </label>
+        <div class="calib-target" *ngIf="hasTarget('logitopp') && scenario.population.calibrateModeChoice"
+             title="Ziel-Modus-Anteile (Default MiD 2017 bundesweit; für die Region anpassbar)">
+          <span class="targets-label">Ziel-Modal-Split (Anteile)</span>
+          <label class="calib-row" *ngFor="let m of calibrationModes">
+            {{ m.label }}
+            <input type="number" min="0" max="1" step="0.01"
+                   [(ngModel)]="scenario.population.calibrationTarget[m.key]">
+          </label>
+        </div>
+        <label class="checkbox" *ngIf="hasTarget('logitopp')"
+               title="Experimentell (GTA 3c): zusätzliche LLM-gestützte Moduswahl je Distanzband auf den simulierten Trips – liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt das lokale LLM.">
+          <input type="checkbox" [(ngModel)]="scenario.population.llmModeChoice">
+          LLM-Moduswahl (experimentell, GTA 3c)
+        </label>
+      </section>
+
+      <section class="block">
+        <h2>Logistik (logiTopp)</h2>
+        <label title="Mittelwert der Normalverteilung für Paketbestellungen je Person und Woche (logiTopp NumberOfParcelsSelector)">
+          Pakete je Person und Woche (Mittelwert)
+          <input type="number" [(ngModel)]="scenario.logistics.parcelsPerPersonWeek" min="0" step="0.05">
+        </label>
+        <label title="Streuung der Paketanzahl um den Mittelwert">
+          Standardabweichung
+          <input type="number" [(ngModel)]="scenario.logistics.parcelStdDev" min="0" step="0.05">
+        </label>
+        <div class="shares" title="Anteile der Zustellziele: nach Hause, an den Arbeitsplatz oder an eine Packstation">
+          <label>Anteil HOME
+            <input type="number" [(ngModel)]="scenario.logistics.shareHome" min="0" max="1" step="0.05">
+          </label>
+          <label>WORK
+            <input type="number" [(ngModel)]="scenario.logistics.shareWork" min="0" max="1" step="0.05">
+          </label>
+          <label>PACKSTATION
+            <input type="number" [(ngModel)]="scenario.logistics.sharePackstation" min="0" max="1" step="0.05">
+          </label>
+        </div>
+
+        <div class="block-head">
+          <h3>Depots ({{ scenario.logistics.depots.length }})</h3>
+          <button [class.toggled]="depotMode" (click)="toggleDepotMode()"
+                  title="Modus aktivieren und dann auf die Karte klicken, um ein Verteilzentrum zu platzieren">
+            {{ depotMode ? 'Depot-Modus aktiv – Karte anklicken' : 'Depot auf Karte setzen' }}
+          </button>
+        </div>
+        <p class="hint" *ngIf="scenario.logistics.depots.length === 0">
+          Ohne eigene Depots nutzt die Pipeline echte OSM-Logistikstandorte (Postdepots, Kurierdienste);
+          falls keine vorhanden sind, werden Depots an gewerblich geeigneten Zonen mit guter
+          Erreichbarkeit der Wohnbevölkerung platziert (Gewerbe-Eignung × Nachfragenähe).
+        </p>
+        <div class="depot-table" *ngIf="scenario.logistics.depots.length > 0">
+          <div class="depot depot-header">
+            <span class="depot-name">Name</span>
+            <span title="Fahrzeugtyp / Effizienzprofil der Zustellflotte">Fahrzeug</span>
+            <span title="Anzahl Zusteller">Zusteller</span>
+            <span title="Anteil am Paketaufkommen (wird automatisch normiert)">Anteil</span>
+            <span></span>
+          </div>
+          <div class="depot-rows">
+            <div class="depot" *ngFor="let depot of scenario.logistics.depots; let i = index">
+              <input class="depot-name" [(ngModel)]="depot.name" title="Name des Depots">
+              <select [(ngModel)]="depot.vehicleType" title="Fahrzeugtyp / Effizienzprofil der Zustellflotte">
+                <option value="TRUCK">Transporter</option>
+                <option value="CARGO_BIKE">Lastenrad</option>
+              </select>
+              <input type="number" [(ngModel)]="depot.employees" title="Anzahl Zusteller" min="1">
+              <input type="number" [(ngModel)]="depot.share" title="Anteil am Paketaufkommen (wird normiert)" min="0" max="1" step="0.05">
+              <button class="link danger" (click)="removeDepot(i)" title="Depot entfernen">✕</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block actions">
+        <button class="primary" (click)="save()" [disabled]="busy || !scenario.region"
+                [title]="scenario.region ? 'Szenario speichern' : 'Erst Region auf der Karte zeichnen'">
+          Speichern
+        </button>
+        <button class="primary" (click)="generate()" [disabled]="!scenario.id || running"
+                title="Startet die Generierungspipeline: Zonen, Attraktivitäten, Bevölkerung, Aktivitäten, Matrizen, Logistik">
+          {{ running ? 'Generierung läuft…' : 'Nachfragemodell generieren' }}
+        </button>
+        <p class="message">{{ message }}</p>
+      </section>
+    </ng-container>
+  </aside>
+
+  <!-- Mitte: Karte -->
+  <main class="map-wrap">
+    <div class="map-toolbar">
+      <button [class.toggled]="drawMode" (click)="toggleDrawMode()"
+              title="Modus aktivieren und dann mit gedrückter Maustaste ein Rechteck auf der Karte aufziehen">
+        {{ drawMode ? 'Zeichnen aktiv – Rechteck aufziehen' : 'Region zeichnen' }}
+      </button>
+      <button (click)="useMapBounds()"
+              title="Übernimmt den aktuell sichtbaren Kartenausschnitt (Viewport) als Untersuchungsregion">
+        Sichtbaren Ausschnitt übernehmen
+      </button>
+      <button (click)="previewZones()"
+              title="Zeigt das Zonenraster für die aktuelle Region und Zellgröße, ohne etwas zu speichern">
+        Zonen-Vorschau
+      </button>
+      <ng-container *ngIf="hasSimLayers">
+        <span class="toolbar-sep"></span>
+        <button [class.toggled]="showParcelLayer" (click)="toggleParcelLayer()"
+                title="Zugestellte Pakete je Zone aus der logiTopp-Simulation (dunkler = mehr Pakete)">
+          📦 Paketdichte
+        </button>
+        <button [class.toggled]="showTourLayer" (click)="toggleTourLayer()"
+                title="Geplante Zustelltouren (blau = Transporter, grün = Lastenrad)">
+          🚚 Touren
+        </button>
+      </ng-container>
+    </div>
+    <div id="map"></div>
+  </main>
+
+  <!-- Rechte Spalte: Pipeline + Artefakte -->
+  <aside class="panel" *ngIf="job || artifacts.length > 0">
+    <section class="block" *ngIf="job">
+      <h2>Pipeline</h2>
+      <ul class="stages">
+        <li *ngFor="let stage of job.stages" [attr.data-status]="stage.status" [title]="stage.message || ''">
+          <span class="status-dot"></span>
+          <span class="stage-name">{{ stage.name }}</span>
+          <span class="stage-time" *ngIf="stage.durationMs">{{ stage.durationMs }} ms</span>
+        </li>
+      </ul>
+      <p class="error" *ngIf="job.error">{{ job.error }}</p>
+      <div class="summary" *ngIf="job.summary && job.state === 'DONE'">
+        <h3>Ergebnis</h3>
+        <table>
+          <tr><td>Zonen</td><td>{{ job.summary['zones'] }}</td></tr>
+          <tr><td>Personen</td><td>{{ job.summary['persons'] }}</td></tr>
+          <tr><td>Haushalte</td><td>{{ job.summary['households'] }}</td></tr>
+          <tr><td>Pkw</td><td>{{ job.summary['cars'] }}</td></tr>
+          <tr><td>Depots</td><td>{{ job.summary['depots'] }}</td></tr>
+          <tr><td>Einwohner-Quelle</td><td>{{ job.summary['populationSource'] }}</td></tr>
+          <tr><td>OSM-Daten</td><td>{{ job.summary['osmDataUsed'] ? 'ja' : 'nein (synthetisch)' }}</td></tr>
+        </table>
+      </div>
+      <details class="log" *ngIf="job.log.length > 0">
+        <summary>Log ({{ job.log.length }})</summary>
+        <pre>{{ job.log.join('\n') }}</pre>
+      </details>
+    </section>
+
+    <section class="block" *ngIf="simKpis">
+      <h2>Simulation (logiTopp)</h2>
+      <table class="kpis">
+        <tr title="Alle simulierten Wege der Modellwoche">
+          <td>Wege (Woche)</td><td>{{ simKpis.demand?.trips | number:'1.0-0' }}</td></tr>
+        <tr title="Wege je Person und Tag; MiD 2017 (bundesweit): {{ simKpis.mid2017?.tripsPerPersonDay }}">
+          <td>Wege/Person/Tag</td>
+          <td>{{ simKpis.demand?.tripsPerPersonDay }}
+            <span class="mid">MiD {{ simKpis.mid2017?.tripsPerPersonDay }}</span></td></tr>
+        <tr title="Mittlere Weglänge (Luftlinien-Matrizen!); MiD 2017: {{ simKpis.mid2017?.avgTripKm }} km">
+          <td>Ø Weglänge</td>
+          <td>{{ simKpis.demand?.avgTripKm }} km
+            <span class="mid">MiD {{ simKpis.mid2017?.avgTripKm }} km</span></td></tr>
+        <tr><td>Pakete</td><td>{{ simKpis.parcels?.total | number:'1.0-0' }}</td></tr>
+        <tr title="In der Modellwoche zugestellte Pakete (spät bestellte Pakete bleiben offen)">
+          <td>davon zugestellt</td>
+          <td>{{ simKpis.parcels?.delivered | number:'1.0-0' }}
+            ({{ (simKpis.parcels?.deliveryRate ?? 0) * 100 | number:'1.0-0' }} %)</td></tr>
+        <tr><td>Laufzeit</td><td>{{ simKpis.simulationSeconds }} s</td></tr>
+      </table>
+
+      <h3>Modal Split vs. MiD 2017</h3>
+      <table class="kpis modal-split">
+        <tr><th></th><th>Simulation</th><th>MiD</th></tr>
+        <tr *ngFor="let row of modalSplitRows">
+          <td>{{ row.label }}</td>
+          <td>{{ row.sim * 100 | number:'1.0-0' }} %</td>
+          <td>{{ row.mid != null ? ((row.mid * 100 | number:'1.0-0') + ' %') : '–' }}</td>
+        </tr>
+      </table>
+      <p class="hint">Referenz: MiD 2017, bundesweite Mittelwerte. Abweichungen sind erwartbar:
+        Luftlinien-Matrizen, Rastatt-kalibrierte Wahlmodelle, kleines Untersuchungsgebiet.</p>
+
+      <ng-container *ngIf="llmModeChoice">
+        <h3>LLM-Moduswahl (experimentell) vs. MNL / MiD</h3>
+        <table class="kpis modal-split">
+          <tr><th></th><th>LLM</th><th>MNL</th><th>MiD</th></tr>
+          <tr *ngFor="let m of calibrationModes">
+            <td>{{ m.label }}</td>
+            <td>{{ llmModeChoice.modalSplit[m.key] * 100 | number:'1.0-0' }} %</td>
+            <td>{{ llmModeChoice.logitoppMnl[m.key] != null ? ((llmModeChoice.logitoppMnl[m.key] * 100 | number:'1.0-0') + ' %') : '–' }}</td>
+            <td>{{ llmModeChoice.mid2017[m.key] != null ? ((llmModeChoice.mid2017[m.key] * 100 | number:'1.0-0') + ' %') : '–' }}</td>
+          </tr>
+        </table>
+        <p class="hint">{{ llmModeChoice.trips | number:'1.0-0' }} Trips, je Distanzband ein LLM-Aufruf
+          (geerdet in Reisezeiten). RMSE zu MiD {{ llmModeChoice.rmseToMid }}, zu MNL {{ llmModeChoice.rmseToMnl }}.
+          Die rohe LLM-Moduswahl überschätzt typischerweise aktive Modi (ihr fehlen die kalibrierten
+          Modus-Konstanten des MNL).</p>
+      </ng-container>
+
+      <ng-container *ngIf="simDepots.length > 0">
+        <h3>Depots</h3>
+        <table class="kpis depots">
+          <tr><th>Depot</th><th>Dienst</th><th>Flotte</th><th>Pakete</th><th>Touren</th><th>km</th></tr>
+          <tr *ngFor="let depot of simDepots">
+            <td>{{ depot.name }}</td>
+            <td>{{ depot.cepsp }}</td>
+            <td>{{ depot.vehicles }} × {{ depot.vehicleType === 'BIKE' ? 'Rad' : 'Lkw' }}</td>
+            <td title="{{ depot.parcelsAssigned }} zugewiesen / {{ depot.delivered }} zugestellt">
+              {{ depot.parcelsAssigned | number:'1.0-0' }}</td>
+            <td>{{ depot.tours | number:'1.0-0' }}</td>
+            <td>{{ depot.distanceKm | number:'1.0-0' }}</td>
+          </tr>
+        </table>
+      </ng-container>
+    </section>
+
+    <section class="block" *ngIf="sumoSummary">
+      <h2>SUMO (mikroskopischer Verkehr)</h2>
+      <p class="hint">Mikroskopische Simulation der Auto-Trips aus der logiTopp-Nachfrage
+        (OSM-Netz → netconvert → duarouter → sumo).</p>
+      <table class="kpis">
+        <tr title="Eingespeiste und erfolgreich abgeschlossene Fahrzeug-Fahrten">
+          <td>Fahrzeuge</td><td>{{ sumoSummary.vehicles | number:'1.0-0' }}</td></tr>
+        <tr><td>Ø Reisedauer</td><td>{{ sumoSummary.meanDurationMin }} min</td></tr>
+        <tr><td>Ø Routenlänge</td><td>{{ sumoSummary.meanRouteLengthKm }} km</td></tr>
+        <tr title="Mittlere Reisegeschwindigkeit inkl. Halte/Wartezeiten">
+          <td>Ø Geschwindigkeit</td><td>{{ sumoSummary.meanSpeedKmh }} km/h</td></tr>
+        <tr><td>Laufzeit</td><td>{{ sumoSummary.runtimeSeconds }} s</td></tr>
+      </table>
+      <ul class="artifacts">
+        <li *ngFor="let t of ['sumo/net.net.xml','sumo/routes.rou.xml','sumo/scenario.sumocfg','sumo/statistics.xml']">
+          <a [href]="artifactUrl(t)" target="_blank">{{ t }}</a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="block" *ngIf="mobileCity">
+      <h2>MobileCity-Export</h2>
+      <p class="hint">District-aggregierte Config-Tabellen für die MobileCity/Takomat-App.</p>
+      <table class="kpis">
+        <tr title="Verkehrszellen als MobileCity-Districts (Untersuchungsgebiet + Umland)">
+          <td>Districts</td>
+          <td>{{ mobileCity.districts?.total }}
+            <span class="mid">{{ mobileCity.districts?.studyArea }} Gebiet / {{ mobileCity.districts?.surrounding }} Umland</span></td></tr>
+        <tr title="Einwohner je Altersgruppe (Children/Adults/Seniors)">
+          <td>Einwohner</td>
+          <td>{{ mobileCity.inhabitants?.total | number:'1.0-0' }}
+            <span class="mid">{{ mobileCity.inhabitants?.children }} K / {{ mobileCity.inhabitants?.adults }} E / {{ mobileCity.inhabitants?.seniors }} S</span></td></tr>
+        <tr title="Mittlere Wege/Person·Tag je Altersgruppe (POPtrips)">
+          <td>Wege/Tag</td>
+          <td>K {{ mobileCity.tripsPerDay?.children }} · E {{ mobileCity.tripsPerDay?.adults }} · S {{ mobileCity.tripsPerDay?.seniors }}</td></tr>
+      </table>
+      <ul class="artifacts">
+        <li *ngFor="let t of ['StudyAreaConfig.csv','REGdistricts.csv','REGattractivity.csv','POPinhabitants.csv','POPtrips.csv']">
+          <a [href]="mobileCityUrl(t)" target="_blank">{{ t }}</a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="block" *ngIf="artifacts.length > 0">
+      <h2>Artefakte ({{ artifacts.length }})</h2>
+      <ul class="artifacts">
+        <li *ngFor="let artifact of artifacts">
+          <a [href]="artifactUrl(artifact.path)" target="_blank">{{ artifact.path }}</a>
+          <span class="size">{{ formatSize(artifact.sizeBytes) }}</span>
+        </li>
+      </ul>
+    </section>
+  </aside>
+</div>

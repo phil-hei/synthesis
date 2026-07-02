@@ -1,0 +1,95 @@
+<div class="comparison">
+  <aside class="picker">
+    <h2>Szenarien wählen</h2>
+    <p class="hint">Mehrere Szenarien zum Vergleich auswählen. KPIs erscheinen für Szenarien
+      mit abgeschlossener Simulation (Pipeline-Stufe „Simulation").</p>
+    <label class="pick" *ngFor="let s of scenarios">
+      <input type="checkbox" [(ngModel)]="selected[s.id!]">
+      {{ s.name }}
+    </label>
+    <button class="primary" (click)="loadComparison()" [disabled]="selectedIds.length === 0">
+      Vergleichen ({{ selectedIds.length }})
+    </button>
+    <p class="message" *ngIf="message">{{ message }}</p>
+  </aside>
+
+  <main class="result">
+    <p class="placeholder" *ngIf="entries.length === 0">
+      Szenarien links auswählen und „Vergleichen" klicken.
+    </p>
+
+    <table class="compare" *ngIf="entries.length > 0">
+      <thead>
+        <tr>
+          <th>Kennwert</th>
+          <th *ngFor="let e of entries">{{ e.name }}</th>
+          <th class="mid-col" *ngIf="mid">MiD 2017</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="group"><td [attr.colspan]="entries.length + 2">Parameter</td></tr>
+        <tr>
+          <td>Zellgröße</td>
+          <td *ngFor="let e of entries">{{ e.params.cellSizeMeters }} m</td>
+          <td *ngIf="mid"></td>
+        </tr>
+        <tr>
+          <td>Stichprobenanteil</td>
+          <td *ngFor="let e of entries">{{ e.params.samplingFraction }}</td>
+          <td *ngIf="mid"></td>
+        </tr>
+        <tr>
+          <td>Echtes Routing</td>
+          <td *ngFor="let e of entries">{{ e.params.useRealRouting ? 'ja' : 'Luftlinie' }}</td>
+          <td *ngIf="mid"></td>
+        </tr>
+        <tr>
+          <td>Pakete/Person·Woche</td>
+          <td *ngFor="let e of entries">{{ e.params.parcelsPerPersonWeek }}</td>
+          <td *ngIf="mid"></td>
+        </tr>
+        <tr>
+          <td>Depots</td>
+          <td *ngFor="let e of entries">{{ e.params.depots }}</td>
+          <td *ngIf="mid"></td>
+        </tr>
+
+        <tr class="group"><td [attr.colspan]="entries.length + 2">Nachfrage</td></tr>
+        <tr>
+          <td>Wege gesamt</td>
+          <td *ngFor="let e of entries">{{ e.kpis?.demand?.trips != null ? (e.kpis.demand.trips | number:'1.0-0') : '–' }}</td>
+          <td class="mid-col" *ngIf="mid">–</td>
+        </tr>
+        <tr>
+          <td>Wege/Person·Tag</td>
+          <td *ngFor="let e of entries">{{ e.kpis?.demand?.tripsPerPersonDay ?? '–' }}</td>
+          <td class="mid-col" *ngIf="mid">{{ mid.tripsPerPersonDay }}</td>
+        </tr>
+        <tr>
+          <td>Ø Weglänge</td>
+          <td *ngFor="let e of entries">{{ e.kpis?.demand?.avgTripKm != null ? e.kpis.demand.avgTripKm + ' km' : '–' }}</td>
+          <td class="mid-col" *ngIf="mid">{{ mid.avgTripKm }} km</td>
+        </tr>
+
+        <tr class="group"><td [attr.colspan]="entries.length + 2">Modal Split</td></tr>
+        <tr *ngFor="let key of modeKeys">
+          <td>{{ modeLabel(key) }}</td>
+          <td *ngFor="let e of entries">{{ pct(e.kpis?.demand?.modalSplit?.[key]) }}</td>
+          <td class="mid-col" *ngIf="mid">{{ pct(mid.modalSplit?.[key]) }}</td>
+        </tr>
+
+        <tr class="group"><td [attr.colspan]="entries.length + 2">Logistik</td></tr>
+        <tr>
+          <td>Pakete</td>
+          <td *ngFor="let e of entries">{{ e.kpis?.parcels?.total != null ? (e.kpis.parcels.total | number:'1.0-0') : '–' }}</td>
+          <td *ngIf="mid"></td>
+        </tr>
+        <tr>
+          <td>Zustellquote</td>
+          <td *ngFor="let e of entries">{{ pct(e.kpis?.parcels?.deliveryRate) }}</td>
+          <td *ngIf="mid"></td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+</div>

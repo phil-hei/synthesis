@@ -1,0 +1,115 @@
+# 02 – Datenanforderungen: Was ist mindestens nötig, was können wir synthetisch erzeugen?
+
+Leitfrage: Ein Nutzer wählt auf der Karte eine Region und ein paar Parameter – welche Daten
+braucht das Nachfragemodell, und welche davon können wir **automatisch ableiten** (aus offenen
+Quellen) bzw. **synthetisch/zufällig generieren**?
+
+## Drei Qualitätsstufen je Datenebene
+
+Jede Datenebene bekommt einen austauschbaren Provider mit drei Stufen. Das ist der Kern der
+Generik – ein Szenario funktioniert immer, wird aber mit besseren Daten realistischer:
+
+1. **Echt** – vom Nutzer hochgeladene Projektdaten (z. B. kommunale Strukturdaten, echte Depotstandorte)
+2. **Öffentlich** – automatisch bezogene offene Daten (OSM, Zensus-Raster, GTFS, Pendlerstatistik)
+3. **Synthetisch** – regelbasiert/zufällig generiert mit dokumentierten Annahmen (Seed-reproduzierbar)
+
+Das Frontend zeigt je Ebene die aktive Stufe an („Datenqualitäts-Ampel"), damit klar ist,
+wie belastbar ein Szenario ist.
+
+## Datenebenen im Einzelnen
+
+### A. Zonierung (Verkehrszellen / Districts) — vollständig ableitbar
+
+- **Benötigt:** Polygone + IDs; daraus `zones.csv`, `zone-to-community.csv`, und für MobileCity
+  `districts.gpkg` + `districts.xlsx`.
+- **Stufe öffentlich:** OSM-Verwaltungsgrenzen (`admin_level` 8–10: Gemeinden/Stadtteile) innerhalb
+  der gewählten Region; Deutschland-weit auch VG250 (BKG, Open Data).
+- **Stufe synthetisch:** H3-Hexagon- oder Quadrat-Raster über der Auswahl (Auflösung = UI-Parameter).
+  Vorteil: funktioniert weltweit und kontrolliert die Zonenzahl (Matrixgröße!).
+- **UI:** Bounding-Box/Polygon zeichnen oder Gemeinde per Suche (Nominatim) wählen; Zonierungs-Modus
+  und Auflösung als Parameter.
+
+### B. Attraktivitäten je Zone — vollständig ableitbar
+
+- **Benötigt:** `attractivities.csv` (Attraktivität je Zone und Aktivitätstyp: Arbeit, Einkauf,
+  Freizeit, Bildung …).
+- **Stufe öffentlich:** **OSM2Attractiveness** (KIT-eigenes Tool!) – OSM-PBF + Zonenlayer (GeoJSON)
+  → zonale Indikatoren als CSV/GPKG. Direkt als Pipeline-Stufe einbindbar (Python/R, ggf. zunächst
+  eigene schlanke Reimplementierung der POI-Aggregation, da das Tool Windows-orientiert ist).
+- **Stufe synthetisch:** Proportional zu Gebäudegrundflächen/Landnutzung aus OSM, plus Rauschen.
+
+### C. Strukturdaten / Synthese-Randsummen — öffentlich verfügbar, synthetisch ersetzbar
+
+- **Benötigt:** `SynthesisZoneTargets.csv` – je Zone: Einwohner nach Alter/Geschlecht,
+  Haushalte nach Größe, Erwerbstätige.
+- **Stufe öffentlich (DE):** **Zensus 2022 100-m-Gitter** (Einwohner, Alter, Haushaltsgrößen;
+  CSV, Open Data) – auf Zonen aggregieren. Ergänzend regionalstatistik.de (Erwerbstätige).
+- **Stufe synthetisch:** Einwohnerzahl ∝ Wohngebäudevolumen aus OSM × Dichteannahme je Gebietstyp;
+  Alters-/Haushaltsverteilungen aus bundesweiten Durchschnittswerten (mitgeliefert) + Zufallsstreuung.
+
+### D. Verhaltens-Template (Mobilitätserhebung) — **die kritische, nicht ableitbare Eingabe**
+
+- **Benötigt:** `SurveyPopulation.csv` – Stichprobe von Haushalten/Personen mit Wochenmobilität
+  (Vorlage für IPU-Reweighting und Aktivitätenpläne). Klassisch: MiD 2017 / Deutsches Mobilitätspanel.
+- **Problem:** MiD/MOP sind nutzungs-, aber nicht weiterverbreitungs-lizenziert → können nicht im
+  Produkt mitgeliefert werden.
+- **Lösung (dreistufig):**
+  1. *Echt:* Nutzer/Institution legt eigene MiD-/MOP-Datei im definierten Schema ab (Provider-Slot).
+  2. *Synthetisches Default-Template:* Wir generieren einmalig eine kunstvolle Stichprobe
+     (z. B. via actiTopp-Verteilungen + publizierte MiD-Kennziffern: Wegehäufigkeiten, Modal Split,
+     Aktivitätendauern) und liefern sie als frei verteilbaren Default mit. Für Demonstrations- und
+     Logistik-Szenarien (wo die Paketnachfrage ohnehin parametrisch ist) ausreichend.
+  3. *Tutorial-Daten:* Das mobiTopp-Tutorial (Rastatt) enthält bereits eine `SurveyPopulation.csv`
+     – Lizenz prüfen; ggf. als Startpunkt für Phase 0/1 nutzbar.
+
+### E. Pendlermatrix — öffentlich verfügbar, synthetisch ersetzbar
+
+- **Stufe öffentlich (DE):** Pendlerstatistik der Bundesagentur für Arbeit (Gemeindeebene, Open Data).
+- **Stufe synthetisch:** Gravitationsmodell über Einwohner × Arbeitsplatz-Attraktivität × Distanzwiderstand.
+
+### F. Reisezeit-/Kosten-/Distanzmatrizen — vollständig berechenbar
+
+- **Benötigt:** je Modus `*_TTC`, `*_COST`, `*_DIS` als Visum `.mtx.bz2` + zwei Matrix-YAMLs.
+- **MIV/Rad/Fuß:** Routing-Engine auf OSM-Auszug der Region – Empfehlung **GraphHopper**
+  (JVM → passt in den Stack, Matrix-API offline) oder OSRM/Valhalla; Zonen-Zentroide
+  (einwohnergewichtet) als Quellen/Ziele.
+- **ÖV:** GTFS-Routing (R5/r5py oder GraphHopper-PT) auf offenen GTFS-Feeds – für DE der
+  bundesweite **DELFI/gtfs.de-Feed**; daraus `PUT_TTC/ACT/EGT` und Takt-basierte Wartezeiten.
+- **Kosten:** parametrisch (€/km Pkw, ÖV-Tarifmodell als einfache Zonen-/Distanzformel) – UI-Parameter.
+- **Format:** Visum-Matrix-Writer aus **mobiToppIO** nutzen (sonst: Format ist dokumentiert/simpel).
+- Achtung O(n²): Zonenzahl begrenzen (z. B. ≤ 500 Zonen im MVP) bzw. Auflösung an Regionsgröße koppeln.
+
+### G. Verhaltensmodell-Parameter (Ziel-/Moduswahl) — Defaults mitliefern
+
+- Tutorial-Modelle (Rastatt) als kalibrierte Defaults übernehmen; ausgewählte Stellschrauben
+  (z. B. ÖV-Affinität, Kostenempfindlichkeit) als UI-Parameter exponieren. Keine Pflicht-Eingabe.
+
+### H. Logistik-Ebene (logiTopp) — fast vollständig parametrisch/synthetisch
+
+| Eingabe | Quelle |
+|---|---|
+| Paketaufkommen je Person (Verteilung, Min/Max) | **UI-Parameter** (Defaults: ~0,75 Pakete/Woche, σ 0,5) |
+| Zieltyp-Anteile (HOME/WORK/PACKSTATION) | UI-Parameter |
+| Verteilzentren (Lage, Mitarbeiter, Marktanteil) | (1) Nutzer setzt Marker auf Karte, (2) OSM-POIs (Logistik/Industriegebiete), (3) zufällig an Gewerbeflächen |
+| Zustelldienste & Marktanteile | UI-Parameter (Defaults: DE-Marktanteile) |
+| Effizienzprofile (Lastenrad vs. Transporter) | mitgelieferte Profile, UI-wählbar |
+| Packstationen | OSM (`amenity=parcel_locker` ist gut gepflegt) oder zufällig |
+
+→ **Genau die Logistik-Ebene, um die es in SyntheSis geht, ist am besten synthetisierbar.**
+Die teuren „echten" Daten betreffen nur die Hintergrund-Bevölkerung.
+
+## Minimal-Set zusammengefasst
+
+Vom Nutzer zwingend nur: **Region + gewünschte Zonenauflösung + Logistik-Parameter (Defaults vorhanden)**.
+Alles andere beschafft oder generiert die Pipeline selbst:
+
+| # | Artefakt | automatisch aus | Fallback |
+|---|---|---|---|
+| 1 | Zonen | OSM-Grenzen | Hex-Raster |
+| 2 | Attraktivitäten | OSM POIs (OSM2Attractiveness) | Gebäudeflächen + Rauschen |
+| 3 | Strukturdaten | Zensus-2022-Raster | OSM-Gebäude × Dichte |
+| 4 | Verhaltens-Template | Nutzer-Upload (MiD/MOP) | **synthetisches Default-Template** |
+| 5 | Pendlermatrix | BA-Statistik | Gravitationsmodell |
+| 6 | Matrizen | GraphHopper (OSM) + R5 (GTFS) | – (immer berechenbar) |
+| 7 | Wahlmodell-Parameter | Tutorial-Defaults | – |
+| 8 | Logistik (Depots, Pakete, Flotten) | OSM-POIs + UI | Zufall mit Seed |

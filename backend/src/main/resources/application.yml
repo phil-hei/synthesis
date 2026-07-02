@@ -1,0 +1,23 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: synthesis-backend
+  jackson:
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 210MB
+
+synthesis:
+  data-dir: data
+  max-zones: 600
+  overpass:
+    endpoint: https://overpass-api.de/api/interpreter
+    timeout-seconds: 30
+  simulation:
+    enabled: true                              # Stufe 10: logiTopp-Wochensimulation
+    project-dir: ../validation/mobitopp-rastatt # Legacy-Projekt mit runDeliverySynthesis
+    timeout-minutes: 30

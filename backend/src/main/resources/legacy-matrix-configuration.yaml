@@ -1,0 +1,221 @@
+costMatrices:
+  bikesharing:
+    at:
+      weekdays:
+        between:
+          0 to 23: travelcosts/BS_COST.mtx
+      saturday:
+        between:
+          0 to 23: travelcosts/BS_COST.mtx
+      sunday:
+        between:
+          0 to 23: travelcosts/BS_COST.mtx
+  car:
+    at:
+      weekdays:
+        between:
+          0 to 23: travelcosts/CAR_COST.mtx
+      saturday:
+        between:
+          0 to 23: travelcosts/CAR_COST.mtx
+      sunday:
+        between:
+          0 to 23: travelcosts/CAR_COST.mtx
+  carsharing_free_floating:
+    at:
+      weekdays:
+        between:
+          0 to 23: travelcosts/CSFF_COST.mtx
+      saturday:
+        between:
+          0 to 23: travelcosts/CSFF_COST.mtx
+      sunday:
+        between:
+          0 to 23: travelcosts/CSFF_COST.mtx
+  carsharing_station:
+    at:
+      weekdays:
+        between:
+          0 to 23: travelcosts/CSSB_COST.mtx
+      saturday:
+        between:
+          0 to 23: travelcosts/CSSB_COST.mtx
+      sunday:
+        between:
+          0 to 23: travelcosts/CSSB_COST.mtx
+  constant:
+    at:
+      weekdays:
+        between:
+          0 to 23: dummy.mtx
+      saturday:
+        between:
+          0 to 23: dummy.mtx
+      sunday:
+        between:
+          0 to 23: dummy.mtx
+  parkingstress:
+    at:
+      weekdays:
+        between:
+          0 to 23: dummy.mtx
+      saturday:
+        between:
+          0 to 23: dummy.mtx
+      sunday:
+        between:
+          0 to 23: dummy.mtx
+  distance:
+    at:
+      weekdays:
+        between:
+          0 to 23: other/CAR_DIS.mtx
+      saturday:
+        between:
+          0 to 23: other/CAR_DIS.mtx
+      sunday:
+        between:
+          0 to 23: other/CAR_DIS.mtx
+  parking:
+    at:
+      weekdays:
+        between:
+          0 to 23: dummy.mtx
+      saturday:
+        between:
+          0 to 23: dummy.mtx
+      sunday:
+        between:
+          0 to 23: dummy.mtx
+  publictransport:
+    at:
+      weekdays:
+        between:
+          0 to 23: travelcosts/PUT_COST.mtx
+      saturday:
+        between:
+          0 to 23: travelcosts/PUT_COST.mtx
+      sunday:
+        between:
+          0 to 23: travelcosts/PUT_COST.mtx
+  taxi:
+    at:
+      weekdays:
+        between:
+          0 to 23: travelcosts/TAXI_COST.mtx
+      saturday:
+        between:
+          0 to 23: travelcosts/TAXI_COST.mtx
+      sunday:
+        between:
+          0 to 23: travelcosts/TAXI_COST.mtx
+  ride_pooling:
+    at:
+      weekdays:
+        between:
+          0 to 23: travelcosts/PUT_COST.mtx
+      saturday:
+        between:
+          0 to 23: travelcosts/PUT_COST.mtx
+      sunday:
+        between:
+          0 to 23: travelcosts/PUT_COST.mtx
+fixedDistributionMatrices:
+  EDUCATION_PRIMARY: dummy.mtx
+  EDUCATION_TERTIARY: dummy.mtx
+  EDUCATION_OCCUP: dummy.mtx
+  EDUCATION_SECONDARY: dummy.mtx
+  EDUCATION: dummy.mtx
+  WORK: dummy.mtx
+travelTimeMatrices:
+  pedestrian:
+    at:
+      weekdays:
+        between:
+          0 to 23: travel_times/PED_TTC.mtx
+      saturday:
+        between:
+          0 to 23: travel_times/PED_TTC.mtx
+      sunday:
+        between:
+          0 to 23: travel_times/PED_TTC.mtx
+  car:
+    at:
+      weekdays:
+        between:
+          0 to 23: travel_times/CAR_TTC.mtx
+          
+      saturday:
+        between:
+          0 to 23: travel_times/CAR_TTC.mtx
+
+      sunday:
+        between:
+          0 to 23: travel_times/CAR_TTC.mtx
+
+          
+  publictransport:
+    at:
+      weekdays:
+        between:
+          0 to 23: travel_times/PUT_TTC.mtx
+
+      saturday:
+        between:
+          0 to 23: travel_times/PUT_TTC.mtx
+
+      sunday:
+        between:
+          0 to 23: travel_times/PUT_TTC.mtx
+
+  bike:
+    at:
+      weekdays:
+        between:
+          0 to 23: travel_times/BIKE_TTC.mtx
+      saturday:
+        between:
+          0 to 23: travel_times/BIKE_TTC.mtx
+      sunday:
+        between:
+          0 to 23: travel_times/BIKE_TTC.mtx
+  bikesharing:
+    at:
+      weekdays:
+        between:
+          0 to 23: travel_times/BIKE_TTC.mtx
+      saturday:
+        between:
+          0 to 23: travel_times/BIKE_TTC.mtx
+      sunday:
+        between:
+          0 to 23: travel_times/BIKE_TTC.mtx
+  ride_pooling:
+    at:
+      weekdays:
+        between:
+          0 to 23: travel_times/VM_BLOCK.mtx
+          
+      saturday:
+        between:
+          0 to 23: travel_times/VM_BLOCK.mtx
+          
+      sunday:
+        between:
+          0 to 23: travel_times/VM_BLOCK.mtx
+          
+  taxi:
+    at:
+      weekdays:
+        between:
+          0 to 23: travel_times/CAR_TTC.mtx
+
+          
+      saturday:
+        between:
+          0 to 23: travel_times/CAR_TTC.mtx
+
+      sunday:
+        between:
+          0 to 23: travel_times/CAR_TTC.mtx
+
