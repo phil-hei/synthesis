@@ -57,7 +57,10 @@ public class GenerationService {
     private final SynthesisProperties properties;
     private final ObjectMapper mapper;
     private final Map<String, GenerationJob> jobs = new ConcurrentHashMap<>();
-    private final ExecutorService executor = Executors.newFixedThreadPool(2);
+    // Bewusst 1: die Simulationsstufe startet eine logiTopp-JVM mit bis zu 12 GB Heap und teilt
+    // sich das Gradle-Projekt mobitopp-rastatt; parallele Läufe würden RAM und Arbeitsverzeichnis
+    // kollidieren lassen. Weitere Jobs warten sichtbar als QUEUED.
+    private final ExecutorService executor = Executors.newFixedThreadPool(1);
 
     public GenerationService(ScenarioRepository scenarios, OverpassClient overpass,
                              SynthesisProperties properties, ObjectMapper mapper) {
@@ -125,6 +128,8 @@ public class GenerationService {
         job.state = GenerationJob.State.RUNNING;
         job.startedAt = Instant.now();
         Path artifacts = scenarios.artifactsDir(scenario.id);
+        // OSM-Straßennetz wird von Routing (Matrizen) UND SUMO gebraucht – einmal pro Lauf laden
+        java.util.concurrent.atomic.AtomicReference<String> roadNetwork = new java.util.concurrent.atomic.AtomicReference<>();
         try {
             Random random = new Random(scenario.population.seed);
 
@@ -320,7 +325,7 @@ public class GenerationService {
 
             // 6. Matrizen (echtes Routing via GraphHopper, Fallback Luftlinie)
             stage(job, "Matrizen", () -> {
-                MatrixGenerator.Impedance routing = buildRouting(scenario, job);
+                MatrixGenerator.Impedance routing = buildRouting(scenario, roadNetwork, job);
                 try {
                     List<String> files = new MatrixGenerator()
                             .generate(artifacts.resolve("matrix"), zones, routing);
@@ -461,8 +466,7 @@ public class GenerationService {
                     return null;
                 }
                 try {
-                    job.log("Lade OSM-Straßennetz für SUMO (Overpass)…");
-                    String osmXml = overpass.fetchRoadNetworkOsm(scenario.region);
+                    String osmXml = roadNetworkOsm(scenario, roadNetwork, job);
                     job.log("Baue SUMO-Netz und simuliere Verkehr…");
                     SumoRunner.Result sumo = runner.run(artifacts, osmXml, demandResult, job::log);
                     writeSumoSummary(artifacts.resolve("sumo").resolve("summary.json"), sumo);
@@ -471,7 +475,9 @@ public class GenerationService {
                             sumo.meanSpeedMs() * 3.6, sumo.durationSeconds()));
                     job.summary.put("sumoVehicles", sumo.vehicles());
                 } catch (Exception e) {
-                    job.stage("SUMO (Verkehr)").status = "SKIPPED";
+                    // FAILED statt SKIPPED: der Nutzer soll Fehler von bewusster Abwahl unterscheiden können
+                    job.stage("SUMO (Verkehr)").status = "FAILED";
+                    job.stage("SUMO (Verkehr)").message = String.valueOf(e);
                     job.log("SUMO fehlgeschlagen: " + e);
                 }
                 return null;
@@ -514,7 +520,8 @@ public class GenerationService {
                             ms.get("passenger") * 100, ms.get("publicTransport") * 100, r.trips(),
                             rmse(ms, mid), rmse(ms, mnl)));
                 } catch (Exception e) {
-                    job.stage("LLM-Moduswahl").status = "SKIPPED";
+                    job.stage("LLM-Moduswahl").status = "FAILED";
+                    job.stage("LLM-Moduswahl").message = String.valueOf(e);
                     job.log("LLM-Moduswahl fehlgeschlagen: " + e);
                 }
                 return null;
@@ -545,13 +552,14 @@ public class GenerationService {
      * {@code null} when routing is disabled or the network cannot be fetched/built
      * (the matrix generator then falls back to beeline estimates).
      */
-    private MatrixGenerator.Impedance buildRouting(Scenario scenario, GenerationJob job) {
+    private MatrixGenerator.Impedance buildRouting(Scenario scenario,
+                                                   java.util.concurrent.atomic.AtomicReference<String> roadNetwork,
+                                                   GenerationJob job) {
         if (!scenario.population.useRealRouting) {
             return null;
         }
         try {
-            job.log("Lade OSM-Straßennetz für Routing (Overpass)…");
-            String osmXml = overpass.fetchRoadNetworkOsm(scenario.region);
+            String osmXml = roadNetworkOsm(scenario, roadNetwork, job);
             RoutingEngine engine = RoutingEngine.fromOsmXml(osmXml);
             job.log("GraphHopper-Graph aufgebaut – Matrizen werden geroutet");
             return engine;
@@ -559,6 +567,21 @@ public class GenerationService {
             job.log("Routing nicht verfügbar (" + e.getMessage() + ") – Fallback auf Luftlinie");
             return null;
         }
+    }
+
+    /** OSM-Straßennetz einmal pro Lauf laden (Routing + SUMO teilen sich den Abruf). */
+    private String roadNetworkOsm(Scenario scenario,
+                                  java.util.concurrent.atomic.AtomicReference<String> cache,
+                                  GenerationJob job) throws Exception {
+        String cached = cache.get();
+        if (cached != null) {
+            job.log("OSM-Straßennetz aus diesem Lauf wiederverwendet");
+            return cached;
+        }
+        job.log("Lade OSM-Straßennetz (Overpass)…");
+        String osmXml = overpass.fetchRoadNetworkOsm(scenario.region);
+        cache.set(osmXml);
+        return osmXml;
     }
 
     private void writeSumoSummary(Path file, SumoRunner.Result sumo) throws IOException {
@@ -631,7 +654,7 @@ public class GenerationService {
         long start = System.currentTimeMillis();
         try {
             T result = work.run();
-            if (!info.status.equals("SKIPPED")) {
+            if (!info.status.equals("SKIPPED") && !info.status.equals("FAILED")) {
                 info.status = "DONE";
             }
             return result;

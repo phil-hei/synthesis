@@ -43,11 +43,37 @@ public class SynthesisProperties {
 
     /** SUMO microscopic traffic simulation (Zielmodell Achse B). */
     public static class Sumo {
+        private static final String MAC_FRAMEWORK =
+                "/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO";
+
         private boolean enabled = true;
-        /** Verzeichnis mit sumo/netconvert/duarouter. */
-        private String binDir = "/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO/bin";
-        /** SUMO_HOME (für sumolib/tools), i. d. R. .../share/sumo. */
-        private String sumoHome = "/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO/share/sumo";
+        /** Verzeichnis mit sumo/netconvert/duarouter; Default aus $SUMO_HOME abgeleitet. */
+        private String binDir = defaultBinDir();
+        /** SUMO_HOME (Daten/Tools), i. d. R. .../share/sumo; Default aus $SUMO_HOME. */
+        private String sumoHome = defaultSumoHome();
+
+        private static String defaultSumoHome() {
+            String env = System.getenv("SUMO_HOME");
+            return env != null && !env.isBlank() ? env : MAC_FRAMEWORK + "/share/sumo";
+        }
+
+        /** $SUMO_HOME/bin (Standard-Layout) oder $SUMO_HOME/../../bin (macOS-Framework). */
+        private static String defaultBinDir() {
+            String env = System.getenv("SUMO_HOME");
+            if (env != null && !env.isBlank()) {
+                java.nio.file.Path home = java.nio.file.Path.of(env);
+                java.nio.file.Path direct = home.resolve("bin");
+                if (java.nio.file.Files.exists(direct.resolve("sumo"))) {
+                    return direct.toString();
+                }
+                java.nio.file.Path parent = home.getParent() != null ? home.getParent().getParent() : null;
+                if (parent != null && java.nio.file.Files.exists(parent.resolve("bin").resolve("sumo"))) {
+                    return parent.resolve("bin").toString();
+                }
+                return direct.toString();
+            }
+            return MAC_FRAMEWORK + "/bin";
+        }
         /** Simulierter Tag (0 = Montag) und Obergrenze der Fahrzeug-Trips (Performance). */
         private int day = 0;
         private int maxTrips = 4000;

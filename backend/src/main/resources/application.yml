@@ -17,7 +17,25 @@ synthesis:
   overpass:
     endpoint: https://overpass-api.de/api/interpreter
     timeout-seconds: 30
+    # mirrors:                                 # Ausweich-Endpunkte bei 504/429 (Default: kumi.systems, private.coffee)
+    #   - https://overpass.kumi.systems/api/interpreter
   simulation:
-    enabled: true                              # Stufe 10: logiTopp-Wochensimulation
+    enabled: true                              # Stufe 11: logiTopp-Wochensimulation
     project-dir: ../validation/mobitopp-rastatt # Legacy-Projekt mit runDeliverySynthesis
     timeout-minutes: 30
+    # calibration-iterations: 8                # max. Iterationen der Modal-Split-Kalibrierung
+    # calibration-tolerance: 0.02              # Abbruch, wenn RMSE zum Ziel darunter liegt
+  # sumo:                                      # Zielmodell SUMO (Defaults aus $SUMO_HOME abgeleitet)
+  #   enabled: true
+  #   bin-dir: /pfad/zu/sumo/bin               # enthält sumo/netconvert/duarouter
+  #   sumo-home: /pfad/zu/share/sumo
+  #   day: 0                                   # simulierter Tag (0 = Montag)
+  #   max-trips: 4000                          # Obergrenze eingespeister PKW-Trips
+  #   timeout-minutes: 15
+  # llm:                                       # GTA-Verhaltensquelle + LLM-Moduswahl (OpenAI-kompatibel, z. B. Ollama)
+  #   enabled: true
+  #   endpoint: http://localhost:11434/v1
+  #   model: qwen2.5:7b-instruct
+  #   temperature: 0.7
+  #   timeout-seconds: 120
+  #   max-personas: 60                         # Obergrenze distinkter Personas (LLM-Calls) je Lauf
