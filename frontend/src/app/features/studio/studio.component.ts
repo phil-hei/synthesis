@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 import { ApiService } from '../../core/services/api.service';
 import { ArtifactInfo, Depot, GenerationJob, Scenario, UploadSummary } from '../../core/models/scenario.model';
-import { LlmModeChoiceResult, ModalSplit, SimKpis, SumoSummary } from '../../core/models/results.model';
+import { GtaPersonas, LlmModeChoiceResult, ModalSplit, SimKpis, SumoSummary } from '../../core/models/results.model';
 
 @Component({
   selector: 'app-studio',
@@ -31,6 +31,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   simKpis: SimKpis | null = null;
   sumoSummary: SumoSummary | null = null;
   llmModeChoice: LlmModeChoiceResult | null = null;
+  gtaPersonas: GtaPersonas | null = null;
   mobileCity: any = null;
   simDepots: any[] = [];
   showParcelLayer = false;
@@ -494,12 +495,15 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({ next: s => this.sumoSummary = s, error: () => this.sumoSummary = null });
     this.api.artifactJson<LlmModeChoiceResult>(id, 'simulation/llm-mode-choice.json')
       .subscribe({ next: s => this.llmModeChoice = s, error: () => this.llmModeChoice = null });
+    this.api.artifactJson<GtaPersonas>(id, 'population/gta-personas.json')
+      .subscribe({ next: s => this.gtaPersonas = s, error: () => this.gtaPersonas = null });
   }
 
   private clearSimulation(): void {
     this.simKpis = null;
     this.sumoSummary = null;
     this.llmModeChoice = null;
+    this.gtaPersonas = null;
     this.mobileCity = null;
     this.simDepots = [];
     this.parcelDensity = null;

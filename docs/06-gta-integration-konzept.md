@@ -315,6 +315,13 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   (1014 Fahrzeuge, Ø 3,2 km / 54,8 km/h / 3,9 min); Frontend-Checkbox „SUMO" aktiv + Ergebnis-Panel
   im Browser bestätigt. Macht uns für eigene Mikrosimulation **unabhängig von Takomat**.
 - Konfiguration: `SynthesisProperties.Sumo` (Binär-/SUMO_HOME-Pfade, `day`, `maxTrips`, `timeoutMinutes`).
+- **Lieferverkehr integriert (2026-07-02):** zusätzlich zu den PKW-Trips speist SUMO jetzt die
+  logiTopp-**Zustelltouren** ein (`planned-tours.csv`, jede Zeile ein Stopp-Leg mit Koordinaten,
+  Fahrzeugtyp und Sim-Zeit): Lkw als `vClass delivery`, Lastenräder als `vClass bicycle`
+  (`<vType>`-Definitionen in trips.xml; TRAM wird verworfen). Rastatt-Beispiel Tag 0:
+  455 Liefer-Legs (342 Lkw + 113 Lastenrad) neben ~1000 PKW. `summary.json` + Studio-Panel weisen
+  `carTrips`/`deliveryTrips` getrennt aus. Damit simuliert SUMO die **Last-Mile-Logistik im realen
+  Straßenverkehr** – Grundlage für Emissions-/Netzlast-Auswertungen je Fahrzeugtyp (offen).
 - *Offen/optional:* Rückspeisung der SUMO-Reisezeiten in die KPIs/Matrizen; Karten-Layer der Flüsse;
   Lauf-Projekte als feste Abhängigkeit/Container (siehe Phase 4).
 
@@ -360,7 +367,14 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   MiD-Erdung im Prompt half nicht (Modell folgt der quantitativen Vorgabe nicht). Damit ist die
   LLM-Moduswahl eine interessante, aber kalibrierbedürftige Alternativlinse – sie unterstreicht den
   Wert des kalibrierten MNL-Modells.
-- **3d (offen):** Was-wäre-wenn-Kontext (Policy/Tech) im Prompt + Begründungen je Agent im Frontend.
+- **3d — ✅ UMGESETZT (2026-07-02):** Was-wäre-wenn-Szenarien + Agenten-Transparenz.
+  `population.gtaWhatIf` (Freitext, z. B. „Die Innenstadt ist autofrei") fließt in den
+  Persona-Prompt ein („unbedingt berücksichtigen"); das LLM liefert je Persona zusätzlich eine
+  **`begruendung`** (ein Satz zur Tagesgestaltung bzw. zum Szenario-Einfluss). Artefakt
+  `population/gta-personas.json` (whatIf + Personas mit Personenzahl und Begründung); Studio zeigt
+  Textarea „Was-wäre-wenn-Kontext" (bei Verhaltensmodell GTA) und ein Ergebnis-Panel
+  „GTA-Agenten (KI-Verhalten)" mit den Begründungen. Der Plan-Cache-Schlüssel enthält den
+  Was-wäre-wenn-Text (Szenario-Wechsel invalidiert automatisch). Test `whatIfContextYieldsReasons`.
 - *Abhängigkeiten:* lokales LLM (vorhanden); asynchroner Batch, experimentell gekennzeichnet,
   Fallback auf actiTopp. *Offen:* Vergleich GTA vs. actiTopp im Szenario-Vergleichs-Panel über einen
   echten logiTopp-Lauf; weitere Prompt-/Frequenz-Kalibrierung.
@@ -377,8 +391,9 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
 - **GTA-Autoren (Leipzig/ScaDS.AI):** Kooperation, Persona-/MiD-Datengrundlage.
 
 ### Empfohlene Reihenfolge
-**0 ✅ → 1 ✅ → (2 ✅ ∥ 3 ✅) → 4**, Phase 5 durchgehend parallel. Phasen 0–3 (3a/3b/3c) umgesetzt:
-Zwei-Achsen-Gerüst, On-demand-Kalibrierung, SUMO-Zielmodell, GTA-Verhaltensquelle (lokales LLM),
-LLM-Moduswahl. Offen: **Phase 3d** (Was-wäre-wenn-Kontext/Policy im Prompt + Agenten-Begründungen)
-und **Phase 4** (Produktiv-Härtung: Lauf-Projekte als feste Abhängigkeit/Container, self-hosted
-Overpass).
+**0 ✅ → 1 ✅ → (2 ✅ ∥ 3 ✅) → 4**, Phase 5 durchgehend parallel. Phasen 0–3 vollständig umgesetzt
+(3a–3d): Zwei-Achsen-Gerüst, On-demand-Kalibrierung, SUMO-Zielmodell inkl. Lieferverkehr,
+GTA-Verhaltensquelle (lokales LLM, Cache, Reproduzierbarkeit), LLM-Moduswahl, Was-wäre-wenn-Szenarien
+mit Agenten-Begründungen. Offen: **Phase 4** (Produktiv-Härtung: Lauf-Projekte als feste
+Abhängigkeit/Container, self-hosted Overpass) sowie die SUMO-Ausbauideen (Emissions-/Netzlast-KPIs,
+Nachfrage↔Netz-Feedback).

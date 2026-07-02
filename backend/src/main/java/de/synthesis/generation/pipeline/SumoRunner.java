@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 public class SumoRunner {
 
     public record Result(int vehicles, double meanDurationSec, double meanRouteLengthM,
-                         double meanSpeedMs, long durationSeconds) {
+                         double meanSpeedMs, long durationSeconds, int carTrips, int deliveryTrips) {
     }
 
     /** Max. Snapping-Distanz (m) von Geo-Koordinate zu Netzkante in duarouter. */
@@ -55,12 +55,19 @@ public class SumoRunner {
                 && Files.exists(binDir.resolve("duarouter")) && Files.isDirectory(Path.of(sumoHome));
     }
 
+    /** Rückwärtskompatibler Einstieg ohne Lieferverkehr. */
+    public Result run(Path artifacts, String osmXml, Path demandResult, Consumer<String> log)
+            throws IOException, InterruptedException {
+        return run(artifacts, osmXml, demandResult, null, log);
+    }
+
     /**
      * @param osmXml       OSM-Straßennetz (Overpass) als XML
      * @param demandResult mobiTopp-Trip-Ergebnis (demandsimulationResult.csv)
+     * @param plannedTours logiTopp-Zustelltouren (planned-tours.csv); null = ohne Lieferverkehr
      */
-    public Result run(Path artifacts, String osmXml, Path demandResult, Consumer<String> log)
-            throws IOException, InterruptedException {
+    public Result run(Path artifacts, String osmXml, Path demandResult, Path plannedTours,
+                      Consumer<String> log) throws IOException, InterruptedException {
         Path dir = artifacts.resolve("sumo");
         Files.createDirectories(dir);
 
@@ -74,9 +81,18 @@ public class SumoRunner {
                 "--tls.guess-signals", "--tls.discard-simple",
                 "--keep-edges.by-vclass", "passenger", "--remove-edges.isolated", "--no-turnarounds");
 
-        // 2. Auto-Trips der Nachfrage als Geo-Trips schreiben (fromLonLat/toLonLat)
-        int trips = writeTripsXml(demandResult, dir.resolve("trips.xml"));
-        log.accept(trips + " Auto-Trips (Tag " + day + ", max " + maxTrips + ") aus der Nachfrage übernommen");
+        // 2. PKW-Trips der Nachfrage + Zustelltouren-Legs als Geo-Trips schreiben
+        List<Trip> trips = new ArrayList<>(readCarTrips(demandResult));
+        int carTrips = trips.size();
+        int deliveryTrips = 0;
+        if (plannedTours != null && Files.exists(plannedTours)) {
+            List<Trip> delivery = readDeliveryLegs(plannedTours);
+            deliveryTrips = delivery.size();
+            trips.addAll(delivery);
+        }
+        writeTripsXml(trips, dir.resolve("trips.xml"));
+        log.accept(carTrips + " PKW-Trips (Tag " + day + ", max " + maxTrips + ") + "
+                + deliveryTrips + " Lieferverkehr-Legs (Lkw/Lastenrad) übernommen");
 
         // 3. Geo-Trips auf Netzkanten abbilden + routen (duarouter snappt LonLat nativ)
         exec(dir, log, binDir.resolve("duarouter").toString(),
@@ -97,17 +113,15 @@ public class SumoRunner {
         exec(dir, log, binDir.resolve("sumo").toString(), "-c", "scenario.sumocfg");
 
         long duration = (System.currentTimeMillis() - start) / 1000;
-        return parseStatistics(dir.resolve("statistics.xml"), duration);
+        return parseStatistics(dir.resolve("statistics.xml"), duration, carTrips, deliveryTrips);
     }
 
-    private record Trip(int departSec, String fromLon, String fromLat, String toLon, String toLat) {
+    private record Trip(int departSec, String type, String fromLon, String fromLat,
+                        String toLon, String toLat) {
     }
 
-    /**
-     * demandsimulationResult.csv → trips.xml (Auto-Trips des Tages als Geo-Trips,
-     * nach Abfahrtszeit sortiert – duarouter erwartet aufsteigende depart-Zeiten).
-     */
-    private int writeTripsXml(Path demandResult, Path out) throws IOException {
+    /** demandsimulationResult.csv → PKW-Trips des Tages (Typ "pkw"). */
+    private List<Trip> readCarTrips(Path demandResult) throws IOException {
         int dayStart = day * 1440;
         int dayEnd = (day + 1) * 1440;
         List<Trip> trips = new ArrayList<>();
@@ -127,34 +141,98 @@ public class SumoRunner {
                 if (begin < dayStart || begin >= dayEnd) {
                     continue;
                 }
-                trips.add(new Trip((begin - dayStart) * 60, c[38], c[39], c[40], c[41]));
+                trips.add(new Trip((begin - dayStart) * 60, "pkw", c[38], c[39], c[40], c[41]));
             }
         }
+        return trips;
+    }
+
+    /**
+     * planned-tours.csv → Zustelltouren-Legs des Tages: jede Zeile ist ein Stopp
+     * (fromX/Y → toX/Y) mit Fahrzeugtyp (logiTopp-Codes: 1=BIKE→Lastenrad,
+     * sonst Lkw; TRAM wird verworfen). Abfahrt ≈ Ankunft (plannedTimeSimMin)
+     * minus Fahrzeit (tripDur), beides in Sim-Minuten der Modellwoche.
+     */
+    private List<Trip> readDeliveryLegs(Path plannedTours) throws IOException {
+        int dayStart = day * 1440;
+        int dayEnd = (day + 1) * 1440;
+        List<Trip> legs = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(plannedTours, StandardCharsets.UTF_8)) {
+            String headerLine = reader.readLine();
+            if (headerLine == null) {
+                return legs;
+            }
+            List<String> header = List.of(headerLine.split(";", -1));
+            int vehicleType = header.indexOf("vehicleType");
+            int fromX = header.indexOf("fromX");
+            int fromY = header.indexOf("fromY");
+            int toX = header.indexOf("toX");
+            int toY = header.indexOf("toY");
+            int planned = header.indexOf("plannedTimeSimMin");
+            int tripDur = header.indexOf("tripDur");
+            if (vehicleType < 0 || fromX < 0 || toX < 0 || planned < 0) {
+                return legs; // unbekanntes Format – Lieferverkehr überspringen
+            }
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank()) {
+                    continue;
+                }
+                String[] c = line.split(";", -1);
+                if (c.length <= Math.max(planned, Math.max(toY, tripDur))
+                        || c[fromX].isBlank() || c[toX].isBlank()) {
+                    continue;
+                }
+                String type = switch (c[vehicleType].trim()) {
+                    case "1" -> "lastenrad";
+                    case "3" -> null; // TRAM: nicht auf dem Straßennetz
+                    default -> "lkw";
+                };
+                if (type == null) {
+                    continue;
+                }
+                double arrival = Double.parseDouble(c[planned]);
+                double travel = tripDur >= 0 && !c[tripDur].isBlank() ? Double.parseDouble(c[tripDur]) : 0;
+                int begin = (int) Math.max(dayStart, arrival - travel);
+                if (begin < dayStart || begin >= dayEnd) {
+                    continue;
+                }
+                legs.add(new Trip((begin - dayStart) * 60, type, c[fromX], c[fromY], c[toX], c[toY]));
+            }
+        }
+        return legs;
+    }
+
+    /** Alle Trips (nach Abfahrt sortiert) mit Fahrzeugtypen als trips.xml schreiben. */
+    private void writeTripsXml(List<Trip> trips, Path out) throws IOException {
         trips.sort(Comparator.comparingInt(Trip::departSec));
         try (Writer writer = Files.newBufferedWriter(out)) {
             writer.write("<routes>\n");
+            writer.write("  <vType id=\"pkw\" vClass=\"passenger\"/>\n");
+            writer.write("  <vType id=\"lkw\" vClass=\"delivery\"/>\n");
+            writer.write("  <vType id=\"lastenrad\" vClass=\"bicycle\"/>\n");
             int id = 0;
             for (Trip t : trips) {
                 writer.write(String.format(
-                        "  <trip id=\"v%d\" depart=\"%d\" fromLonLat=\"%s,%s\" toLonLat=\"%s,%s\"/>%n",
-                        id++, t.departSec(), t.fromLon(), t.fromLat(), t.toLon(), t.toLat()));
+                        "  <trip id=\"v%d\" type=\"%s\" depart=\"%d\" fromLonLat=\"%s,%s\" toLonLat=\"%s,%s\"/>%n",
+                        id++, t.type(), t.departSec(), t.fromLon(), t.fromLat(), t.toLon(), t.toLat()));
             }
             writer.write("</routes>\n");
         }
-        return trips.size();
     }
 
     private static final Pattern STAT_TAG = Pattern.compile("<vehicleTripStatistics\\b[^>]*/>");
 
-    private Result parseStatistics(Path statistics, long durationSeconds) throws IOException {
+    private Result parseStatistics(Path statistics, long durationSeconds, int carTrips,
+                                   int deliveryTrips) throws IOException {
         String xml = Files.exists(statistics) ? Files.readString(statistics) : "";
         Matcher tag = STAT_TAG.matcher(xml);
         if (tag.find()) {
             String el = tag.group();
             return new Result((int) attr(el, "count"), attr(el, "duration"),
-                    attr(el, "routeLength"), attr(el, "speed"), durationSeconds);
+                    attr(el, "routeLength"), attr(el, "speed"), durationSeconds, carTrips, deliveryTrips);
         }
-        return new Result(0, 0, 0, 0, durationSeconds);
+        return new Result(0, 0, 0, 0, durationSeconds, carTrips, deliveryTrips);
     }
 
     /** Liest ein numerisches Attribut aus einem XML-Element (Reihenfolge-unabhängig). */

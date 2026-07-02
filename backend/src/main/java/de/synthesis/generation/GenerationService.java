@@ -272,7 +272,8 @@ public class GenerationService {
                 if ("gta".equals(behavior)) {
                     GtaBehaviorRunner gta = new GtaBehaviorRunner(
                             properties.getLlm(), scenario.population.seed,
-                            Path.of(properties.getDataDir(), "llm-cache"));
+                            Path.of(properties.getDataDir(), "llm-cache"),
+                            scenario.population.gtaWhatIf);
                     if (properties.getLlm().isEnabled() && gta.isAvailable()) {
                         try {
                             job.log("Starte GTA-Verhaltensquelle (lokales LLM "
@@ -286,6 +287,8 @@ public class GenerationService {
                                     + "/" + gtaResult.personsTotal() + " abgedeckt)";
                             job.summary.put("gtaPersonas", gtaResult.personas());
                             job.summary.put("gtaCovered", gtaResult.personsCovered());
+                            writeGtaPersonas(populationDir.resolve("gta-personas.json"),
+                                    scenario.population.gtaWhatIf, gtaResult.personaSummaries());
                         } catch (Exception e) {
                             job.log("GTA fehlgeschlagen (" + e.getMessage() + ") – Fallback actiTopp");
                             behavior = "actitopp";
@@ -469,11 +472,16 @@ public class GenerationService {
                 try {
                     String osmXml = roadNetworkOsm(scenario, roadNetwork, job);
                     job.log("Baue SUMO-Netz und simuliere Verkehr…");
-                    SumoRunner.Result sumo = runner.run(artifacts, osmXml, demandResult, job::log);
+                    Path plannedTours = artifacts.resolve("simulation").resolve("results")
+                            .resolve("planned-tours.csv");
+                    SumoRunner.Result sumo = runner.run(artifacts, osmXml, demandResult,
+                            plannedTours, job::log);
                     writeSumoSummary(artifacts.resolve("sumo").resolve("summary.json"), sumo);
-                    job.log(String.format("SUMO: %d Fahrzeuge, Ø %.1f min / %.1f km / %.0f km/h (%d s)",
-                            sumo.vehicles(), sumo.meanDurationSec() / 60, sumo.meanRouteLengthM() / 1000,
-                            sumo.meanSpeedMs() * 3.6, sumo.durationSeconds()));
+                    job.log(String.format("SUMO: %d Fahrzeuge (davon %d Lieferverkehr), "
+                                    + "Ø %.1f min / %.1f km / %.0f km/h (%d s)",
+                            sumo.vehicles(), sumo.deliveryTrips(), sumo.meanDurationSec() / 60,
+                            sumo.meanRouteLengthM() / 1000, sumo.meanSpeedMs() * 3.6,
+                            sumo.durationSeconds()));
                     job.summary.put("sumoVehicles", sumo.vehicles());
                 } catch (Exception e) {
                     // FAILED statt SKIPPED: der Nutzer soll Fehler von bewusster Abwahl unterscheiden können
@@ -592,6 +600,19 @@ public class GenerationService {
         node.put("meanRouteLengthKm", Math.round(sumo.meanRouteLengthM() / 1000 * 100) / 100.0);
         node.put("meanSpeedKmh", Math.round(sumo.meanSpeedMs() * 3.6 * 10) / 10.0);
         node.put("runtimeSeconds", sumo.durationSeconds());
+        node.put("carTrips", sumo.carTrips());
+        node.put("deliveryTrips", sumo.deliveryTrips());
+        mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), node);
+    }
+
+    /** GTA 3d: Personas + LLM-Begründungen (und ggf. Was-wäre-wenn-Kontext) für das Frontend. */
+    private void writeGtaPersonas(Path file, String whatIf,
+                                  List<GtaBehaviorRunner.PersonaSummary> summaries) throws IOException {
+        ObjectNode node = mapper.createObjectNode();
+        if (whatIf != null && !whatIf.isBlank()) {
+            node.put("whatIf", whatIf.trim());
+        }
+        node.set("personas", mapper.valueToTree(summaries));
         mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), node);
     }
 

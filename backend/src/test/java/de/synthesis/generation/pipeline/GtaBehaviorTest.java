@@ -140,6 +140,30 @@ class GtaBehaviorTest {
     }
 
     @Test
+    void whatIfContextYieldsReasons() throws Exception {
+        SynthesisProperties.Llm config = new SynthesisProperties.Llm();
+        config.setMaxPersonas(1);
+        GtaBehaviorRunner runner = new GtaBehaviorRunner(config, 11L, null,
+                "Die Innenstadt ist komplett autofrei; alle Wege muessen ohne Pkw stattfinden.");
+        assumeTrue(runner.isAvailable(), "Lokales LLM nicht erreichbar – übersprungen");
+
+        Path personCsv = Files.createTempFile("gta-whatif", ".csv");
+        try {
+            Files.writeString(personCsv, """
+                    personId;personNumber;householdId;age;employment;gender
+                    1;1;1;40;FULLTIME;MALE
+                    """);
+            GtaBehaviorRunner.Result result = runner.run(personCsv, m -> { });
+            assertTrue(result.personaSummaries().size() > 0, "Persona-Zusammenfassungen vorhanden");
+            assertTrue(result.personaSummaries().stream()
+                            .anyMatch(s -> s.reason() != null && !s.reason().isBlank()),
+                    "mindestens eine LLM-Begründung erwartet");
+        } finally {
+            Files.deleteIfExists(personCsv);
+        }
+    }
+
+    @Test
     void sameSeedIsReproducible() throws Exception {
         SynthesisProperties.Llm config = new SynthesisProperties.Llm();
         config.setMaxPersonas(2);

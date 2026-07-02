@@ -44,6 +44,8 @@ export interface Scenario {
     externalTrips: boolean;
     /** Achse A – Verhaltensquelle: actitopp | gta | template. */
     behaviorSource: string;
+    /** GTA 3d: Was-wäre-wenn-Kontext (Policy/Technologie, Freitext) für die LLM-Agenten. */
+    gtaWhatIf: string;
     useActitopp: boolean;
     useKitPopulation: boolean;
     calibrateModeChoice: boolean;

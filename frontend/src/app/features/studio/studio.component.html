@@ -122,6 +122,12 @@
           wenige LLM-Aufrufe – aber langsamer als actiTopp. Ist das LLM nicht erreichbar, wird
           automatisch auf actiTopp zurückgefallen.
         </p>
+        <label *ngIf="scenario.population.behaviorSource === 'gta'"
+               title="GTA 3d: Freitext-Szenario (Policy/Technologie), das die KI-Agenten bei der Tagesplanung berücksichtigen – z. B. eine autofreie Innenstadt oder kostenloser ÖPNV. Leer = normales Verhalten.">
+          Was-wäre-wenn-Kontext (optional)
+          <textarea rows="2" [(ngModel)]="scenario.population.gtaWhatIf"
+                    placeholder="z. B. Die Innenstadt ist komplett autofrei."></textarea>
+        </label>
 
         <div class="targets" title="Achse B – welche Zielmodelle die erzeugte Nachfrage verwerten (Mehrfachauswahl)">
           <span class="targets-label">Zielmodell</span>
@@ -365,6 +371,11 @@
       <table class="kpis">
         <tr title="Eingespeiste und erfolgreich abgeschlossene Fahrzeug-Fahrten">
           <td>Fahrzeuge</td><td>{{ sumoSummary.vehicles | number:'1.0-0' }}</td></tr>
+        <tr *ngIf="sumoSummary.deliveryTrips != null"
+            title="Zustelltouren-Legs aus logiTopp (Lkw als vClass delivery, Lastenräder als bicycle)">
+          <td>davon Lieferverkehr</td>
+          <td>{{ sumoSummary.deliveryTrips | number:'1.0-0' }}
+            <span class="mid">+ {{ sumoSummary.carTrips | number:'1.0-0' }} PKW</span></td></tr>
         <tr><td>Ø Reisedauer</td><td>{{ sumoSummary.meanDurationMin }} min</td></tr>
         <tr><td>Ø Routenlänge</td><td>{{ sumoSummary.meanRouteLengthKm }} km</td></tr>
         <tr title="Mittlere Reisegeschwindigkeit inkl. Halte/Wartezeiten">
@@ -376,6 +387,23 @@
           <a [href]="artifactUrl(t)" target="_blank">{{ t }}</a>
         </li>
       </ul>
+    </section>
+
+    <section class="block" *ngIf="gtaPersonas">
+      <h2>GTA-Agenten (KI-Verhalten)</h2>
+      <p class="hint" *ngIf="gtaPersonas.whatIf">
+        Was-wäre-wenn-Szenario: „{{ gtaPersonas.whatIf }}"
+      </p>
+      <table class="kpis">
+        <tr><th>Persona</th><th>Personen</th><th>Begründung (LLM)</th></tr>
+        <tr *ngFor="let p of gtaPersonas.personas">
+          <td>{{ p.label }}</td>
+          <td>{{ p.persons | number:'1.0-0' }}</td>
+          <td>{{ p.reason || '–' }}</td>
+        </tr>
+      </table>
+      <p class="hint">Je distinkter Persona ein LLM-Plan (gebündelt); die Begründung erklärt die
+        Tagesgestaltung – bei aktivem Was-wäre-wenn-Szenario dessen Einfluss.</p>
     </section>
 
     <section class="block" *ngIf="mobileCity">

@@ -24,6 +24,8 @@ class SumoRunnerTest {
     /** Rastatt-Ausschnitt, passend zum hinterlegten Demand-CSV. */
     private static final Path DEMAND_CSV = Path.of(
             "../validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv");
+    private static final Path PLANNED_TOURS = Path.of(
+            "../validation/mobitopp-rastatt/output/synthesis/results/planned-tours.csv");
     private static final Path CACHED_OSM = Path.of("/tmp/rastatt.osm");
 
     @Test
@@ -40,12 +42,18 @@ class SumoRunnerTest {
 
         Path artifacts = Files.createTempDirectory("sumo-test");
         try {
-            SumoRunner.Result result = runner.run(artifacts, osm, DEMAND_CSV, msg -> { });
+            Path tours = Files.exists(PLANNED_TOURS) ? PLANNED_TOURS : null;
+            SumoRunner.Result result = runner.run(artifacts, osm, DEMAND_CSV, tours, msg -> { });
 
             assertTrue(result.vehicles() > 0, "Es sollten Fahrzeuge simuliert werden");
             assertTrue(result.meanRouteLengthM() > 0, "Routenlänge > 0 erwartet");
             assertTrue(result.meanSpeedMs() > 0, "Geschwindigkeit > 0 erwartet");
             assertTrue(result.meanDurationSec() > 0, "Reisedauer > 0 erwartet");
+            assertTrue(result.carTrips() > 0, "PKW-Trips eingespeist");
+            if (tours != null) {
+                assertTrue(result.deliveryTrips() > 0,
+                        "Zustelltouren-Legs (Lkw/Lastenrad) sollten eingespeist werden");
+            }
         } finally {
             deleteRecursively(artifacts);
         }

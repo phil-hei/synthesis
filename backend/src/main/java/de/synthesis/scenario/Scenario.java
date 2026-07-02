@@ -65,6 +65,12 @@ public class Scenario {
          * experimentell – Fallback auf actiTopp), {@code template} (einfacher Generator).
          */
         public String behaviorSource = "actitopp";
+        /**
+         * GTA 3d: optionaler Was-wäre-wenn-Kontext (Policy/Technologie, Freitext), den die
+         * LLM-Agenten bei der Tagesplanung berücksichtigen – z. B. „Die Innenstadt ist autofrei"
+         * oder „ÖPNV ist kostenlos". Leer = normales Verhalten.
+         */
+        public String gtaWhatIf = "";
         /** @deprecated durch {@link #behaviorSource} ersetzt; nur für Rückwärtskompatibilität gelesen. */
         @Deprecated
         public boolean useActitopp = true;

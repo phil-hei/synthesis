@@ -39,30 +39,44 @@ import java.util.function.Consumer;
 public class GtaBehaviorRunner {
 
     public record Result(Map<Long, GtaWeek> plans, int personas, int llmCalls,
-                         int personsCovered, int personsTotal) {
+                         int personsCovered, int personsTotal,
+                         List<PersonaSummary> personaSummaries) {
+    }
+
+    /** Eine geplante Persona mit LLM-Begründung – für Transparenz im Frontend (GTA 3d). */
+    public record PersonaSummary(String label, int persons, String reason) {
     }
 
     private final SynthesisProperties.Llm config;
     private final long baseSeed;
     private final Path cacheDir;
+    private final String whatIf;
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5)).build();
 
     public GtaBehaviorRunner(SynthesisProperties.Llm config, long baseSeed) {
-        this(config, baseSeed, null);
+        this(config, baseSeed, null, null);
+    }
+
+    public GtaBehaviorRunner(SynthesisProperties.Llm config, long baseSeed, Path cacheDir) {
+        this(config, baseSeed, cacheDir, null);
     }
 
     /**
      * @param cacheDir Verzeichnis für den Plan-Cache (null = kein Cache). Da Pläne bei
      *                 gleichem Seed deterministisch sind, können Wiederholungsläufe die
      *                 ~8 s/Persona-LLM-Aufrufe komplett einsparen; der Schlüssel enthält
-     *                 Modell, Seed, Prompt-Version und Persona-Signatur.
+     *                 Modell, Seed, Prompt-Version, Was-wäre-wenn-Kontext und Persona.
+     * @param whatIf   optionaler Was-wäre-wenn-Kontext (Policy/Technologie, GTA 3d);
+     *                 null/leer = normales Verhalten
      */
-    public GtaBehaviorRunner(SynthesisProperties.Llm config, long baseSeed, Path cacheDir) {
+    public GtaBehaviorRunner(SynthesisProperties.Llm config, long baseSeed, Path cacheDir,
+                             String whatIf) {
         this.config = config;
         this.baseSeed = baseSeed;
         this.cacheDir = cacheDir;
+        this.whatIf = whatIf == null ? "" : whatIf.trim();
     }
 
     /** Quick reachability probe of the OpenAI-compatible endpoint ({endpoint}/models). */
@@ -117,46 +131,55 @@ public class GtaBehaviorRunner {
         personas.sort((a, b) -> Integer.compare(b.getValue().size(), a.getValue().size()));
 
         Map<Long, GtaWeek> plans = new HashMap<>();
+        List<PersonaSummary> summaries = new ArrayList<>();
         int llmCalls = 0;
         int cacheHits = 0;
         int covered = 0;
         int budget = Math.min(personas.size(), config.getMaxPersonas());
         log.accept(personas.size() + " distinkte Personas, " + budget + " im Budget (Modell "
                 + config.getModel() + ")");
+        if (!whatIf.isEmpty()) {
+            log.accept("Was-wäre-wenn-Szenario aktiv: \"" + whatIf + "\"");
+        }
         for (int i = 0; i < budget; i++) {
             Persona persona = personas.get(i).getKey();
             List<Long> ids = personas.get(i).getValue();
-            GtaWeek week = fromCache(persona);
-            if (week != null) {
+            PersonaPlan plan = fromCache(persona);
+            if (plan != null) {
                 cacheHits++;
             } else {
                 try {
-                    week = requestPlan(persona);
+                    plan = requestPlan(persona);
                 } catch (Exception e) {
                     log.accept("Persona " + persona + " übersprungen (" + e.getClass().getSimpleName() + ")");
                     continue;
                 }
                 llmCalls++;
-                toCache(persona, week);
+                toCache(persona, plan);
             }
             for (long id : ids) {
-                plans.put(id, week);
+                plans.put(id, plan.week());
             }
             covered += ids.size();
+            summaries.add(new PersonaSummary(label(persona), ids.size(), plan.reason()));
         }
         log.accept(llmCalls + " LLM-Pläne erzeugt, " + cacheHits + " aus Cache, " + covered + "/"
                 + personsTotal + " Personen abgedeckt");
-        return new Result(plans, budget, llmCalls, covered, personsTotal);
+        return new Result(plans, budget, llmCalls, covered, personsTotal, summaries);
     }
 
     // --- Plan-Cache -------------------------------------------------------------
 
-    record CacheEntry(String key, GtaWeek week) {
+    /** Plan + LLM-Begründung einer Persona. */
+    record PersonaPlan(GtaWeek week, String reason) {
     }
 
-    /** Schlüssel: Modell × Seed × Prompt-Version × Persona – Prompt-Änderungen invalidieren automatisch. */
+    record CacheEntry(String key, GtaWeek week, String reason) {
+    }
+
+    /** Schlüssel: Modell × Seed × Prompt-Version × Was-wäre-wenn × Persona – Änderungen invalidieren automatisch. */
     private String cacheKey(Persona persona) {
-        return config.getModel() + "|" + baseSeed + "|" + SYSTEM.hashCode() + "|"
+        return config.getModel() + "|" + baseSeed + "|" + SYSTEM.hashCode() + "|" + whatIf + "|"
                 + persona.employment() + "|" + persona.ageBand() + "|" + persona.gender();
     }
 
@@ -170,7 +193,7 @@ public class GtaBehaviorRunner {
         return cacheDir.resolve(hex.append(".json").toString());
     }
 
-    private GtaWeek fromCache(Persona persona) {
+    private PersonaPlan fromCache(Persona persona) {
         if (cacheDir == null) {
             return null;
         }
@@ -181,20 +204,22 @@ public class GtaBehaviorRunner {
                 return null;
             }
             CacheEntry entry = mapper.readValue(file.toFile(), CacheEntry.class);
-            return key.equals(entry.key()) ? entry.week() : null;
+            return key.equals(entry.key())
+                    ? new PersonaPlan(entry.week(), entry.reason() == null ? "" : entry.reason())
+                    : null;
         } catch (Exception e) {
             return null; // Cache ist optional – im Zweifel frisch anfragen
         }
     }
 
-    private void toCache(Persona persona, GtaWeek week) {
+    private void toCache(Persona persona, PersonaPlan plan) {
         if (cacheDir == null) {
             return;
         }
         try {
             Files.createDirectories(cacheDir);
             String key = cacheKey(persona);
-            mapper.writeValue(cacheFile(key).toFile(), new CacheEntry(key, week));
+            mapper.writeValue(cacheFile(key).toFile(), new CacheEntry(key, plan.week(), plan.reason()));
         } catch (Exception e) {
             // Cache ist optional – Fehler beim Schreiben ignorieren
         }
@@ -216,9 +241,11 @@ public class GtaBehaviorRunner {
             Einkauf oder Erledigung auf dem Heimweg in derselben Tour); nur gelegentlich eine kurze zweite
             Tour am Abend. Ein typischer Wochenendtag hat oft GAR KEINE Tour (leere Liste []) oder nur eine
             einzige. Fuelle NICHT jeden Tag mit mehreren Touren. Maximal 2 Touren pro Tag, maximal 3
-            Aktivitaeten pro Tour.""";
+            Aktivitaeten pro Tour.
+            Ergaenze im JSON zusaetzlich "begruendung": EIN kurzer Satz, warum diese Person ihren Alltag
+            so gestaltet (bei einem Was-waere-wenn-Szenario: wie es ihr Verhalten veraendert).""";
 
-    private GtaWeek requestPlan(Persona persona) throws Exception {
+    private PersonaPlan requestPlan(Persona persona) throws Exception {
         ObjectNode body = mapper.createObjectNode();
         body.put("model", config.getModel());
         body.put("temperature", config.getTemperature());
@@ -230,8 +257,12 @@ public class GtaBehaviorRunner {
         sys.put("content", SYSTEM);
         ObjectNode user = messages.addObject();
         user.put("role", "user");
-        user.put("content", "Person: " + persona.ageBand() + ", " + employmentLabel(persona.employment())
-                + ", " + persona.gender() + ". Erzeuge weekday- und weekend-Touren.");
+        String prompt = "Person: " + persona.ageBand() + ", " + employmentLabel(persona.employment())
+                + ", " + persona.gender() + ". Erzeuge weekday- und weekend-Touren.";
+        if (!whatIf.isEmpty()) {
+            prompt += " WAS-WAERE-WENN-SZENARIO (unbedingt beruecksichtigen): " + whatIf;
+        }
+        user.put("content", prompt);
         body.putObject("response_format").put("type", "json_object");
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -247,7 +278,14 @@ public class GtaBehaviorRunner {
         String content = mapper.readTree(response.body())
                 .path("choices").path(0).path("message").path("content").asText("");
         JsonNode plan = mapper.readTree(stripFences(content));
-        return new GtaWeek(parseTours(plan.path("weekday")), parseTours(plan.path("weekend")));
+        return new PersonaPlan(
+                new GtaWeek(parseTours(plan.path("weekday")), parseTours(plan.path("weekend"))),
+                plan.path("begruendung").asText("").trim());
+    }
+
+    /** Menschlich lesbare Persona-Beschreibung für Logs/Frontend. */
+    private static String label(Persona persona) {
+        return persona.ageBand() + ", " + employmentLabel(persona.employment()) + ", " + persona.gender();
     }
 
     /** {weekday|weekend} → list of tours; defensive against malformed model output. */

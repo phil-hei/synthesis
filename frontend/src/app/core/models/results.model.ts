@@ -33,6 +33,19 @@ export interface SumoSummary {
   meanRouteLengthKm: number;
   meanSpeedKmh: number;
   runtimeSeconds: number;
+  /** Eingespeiste PKW-Trips bzw. Zustelltouren-Legs (ältere Läufe: nicht vorhanden). */
+  carTrips?: number;
+  deliveryTrips?: number;
+}
+
+/** population/gta-personas.json – GTA-Personas mit LLM-Begründungen (GTA 3d). */
+export interface GtaPersonas {
+  whatIf?: string;
+  personas: {
+    label: string;
+    persons: number;
+    reason?: string;
+  }[];
 }
 
 /** simulation/llm-mode-choice.json – LLM-Moduswahl im Vergleich zu MNL und MiD. */
