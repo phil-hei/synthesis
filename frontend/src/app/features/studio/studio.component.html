@@ -423,7 +423,7 @@
           <td>K {{ mobileCity.tripsPerDay?.children }} · E {{ mobileCity.tripsPerDay?.adults }} · S {{ mobileCity.tripsPerDay?.seniors }}</td></tr>
       </table>
       <ul class="artifacts">
-        <li *ngFor="let t of ['StudyAreaConfig.csv','REGdistricts.csv','REGattractivity.csv','POPinhabitants.csv','POPtrips.csv']">
+        <li *ngFor="let t of ['StudyAreaConfig.csv','REGdistricts.csv','REGattractivity.csv','POPinhabitants.csv','POPtrips.csv','districts.shp','districts.dbf','districts.shx','districts.prj']">
           <a [href]="mobileCityUrl(t)" target="_blank">{{ t }}</a>
         </li>
       </ul>

@@ -50,8 +50,12 @@ public class MobileCityExporter {
         writeAttractivity(dir.resolve("REGattractivity.csv"));
         writeInhabitants(dir.resolve("POPinhabitants.csv"), ageByZone);
         writeTrips(dir.resolve("POPtrips.csv"), rates);
+        // District-Geometrien als Shapefile (WGS84, Attribut districtID) – laut Takomat
+        // (2026-07-03) das erwartete Importformat; IDs müssen zu REGdistricts passen.
+        ShapefileWriter.writeRectangles(dir.resolve("districts"), zones, "districtID",
+                MobileCityExporter::districtId);
         writeSummary(dir.resolve("summary.json"), ageByZone, rates);
-        return 5;
+        return 9; // 5 Tabellen + districts.shp/.shx/.dbf/.prj
     }
 
     /** Compact summary for the frontend MobileCity panel (counts + KPIs). */
