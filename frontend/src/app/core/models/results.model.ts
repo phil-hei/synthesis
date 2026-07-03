@@ -36,6 +36,9 @@ export interface SumoSummary {
   /** Eingespeiste PKW-Trips bzw. Zustelltouren-Legs (ältere Läufe: nicht vorhanden). */
   carTrips?: number;
   deliveryTrips?: number;
+  /** CO₂ in kg (HBEFA-Emissionsklassen), gesamt und je Fahrzeugtyp (pkw/lkw/lastenrad). */
+  co2Kg?: number;
+  co2KgByType?: { [vType: string]: number };
 }
 
 /** population/gta-personas.json – GTA-Personas mit LLM-Begründungen (GTA 3d). */

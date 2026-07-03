@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -30,7 +31,8 @@ import java.util.regex.Pattern;
 public class SumoRunner {
 
     public record Result(int vehicles, double meanDurationSec, double meanRouteLengthM,
-                         double meanSpeedMs, long durationSeconds, int carTrips, int deliveryTrips) {
+                         double meanSpeedMs, long durationSeconds, int carTrips, int deliveryTrips,
+                         double co2Kg, Map<String, Double> co2KgByType) {
     }
 
     /** Max. Snapping-Distanz (m) von Geo-Koordinate zu Netzkante in duarouter. */
@@ -106,14 +108,47 @@ public class SumoRunner {
                   <input><net-file value="net.net.xml"/><route-files value="routes.rou.xml"/></input>
                   <output><tripinfo-output value="tripinfo.xml"/><statistic-output value="statistics.xml"/></output>
                   <time><begin value="0"/><end value="86400"/></time>
-                  <processing><time-to-teleport value="300"/><ignore-route-errors value="true"/></processing>
+                  <processing><time-to-teleport value="300"/><ignore-route-errors value="true"/>
+                    <device.emissions.probability value="1"/></processing>
                   <report><no-step-log value="true"/><duration-log.statistics value="true"/></report>
                 </configuration>
                 """);
         exec(dir, log, binDir.resolve("sumo").toString(), "-c", "scenario.sumocfg");
 
         long duration = (System.currentTimeMillis() - start) / 1000;
-        return parseStatistics(dir.resolve("statistics.xml"), duration, carTrips, deliveryTrips);
+        Map<String, Double> co2 = parseEmissions(dir.resolve("tripinfo.xml"));
+        return parseStatistics(dir.resolve("statistics.xml"), duration, carTrips, deliveryTrips, co2);
+    }
+
+    /**
+     * tripinfo.xml → CO₂ (kg) je Fahrzeugtyp. Das Emissions-Device schreibt je Fahrzeug
+     * einen &lt;emissions CO2_abs="…"&gt;-Kindknoten (mg); zeilenweiser Scan merkt sich
+     * den vType der umschließenden tripinfo-Zeile.
+     */
+    private Map<String, Double> parseEmissions(Path tripinfo) throws IOException {
+        Map<String, Double> co2 = new java.util.LinkedHashMap<>();
+        if (!Files.exists(tripinfo)) {
+            return co2;
+        }
+        Pattern typePattern = Pattern.compile("vType=\"(\\w+)\"");
+        Pattern co2Pattern = Pattern.compile("CO2_abs=\"([\\d.eE+-]+)\"");
+        String currentType = null;
+        try (BufferedReader reader = Files.newBufferedReader(tripinfo, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains("<tripinfo ")) {
+                    Matcher m = typePattern.matcher(line);
+                    currentType = m.find() ? m.group(1) : null;
+                } else if (currentType != null && line.contains("<emissions ")) {
+                    Matcher m = co2Pattern.matcher(line);
+                    if (m.find()) {
+                        co2.merge(currentType, Double.parseDouble(m.group(1)) / 1_000_000, Double::sum);
+                    }
+                }
+            }
+        }
+        co2.replaceAll((k, v) -> Math.round(v * 100) / 100.0);
+        return co2;
     }
 
     private record Trip(int departSec, String type, String fromLon, String fromLat,
@@ -208,9 +243,10 @@ public class SumoRunner {
         trips.sort(Comparator.comparingInt(Trip::departSec));
         try (Writer writer = Files.newBufferedWriter(out)) {
             writer.write("<routes>\n");
-            writer.write("  <vType id=\"pkw\" vClass=\"passenger\"/>\n");
-            writer.write("  <vType id=\"lkw\" vClass=\"delivery\"/>\n");
-            writer.write("  <vType id=\"lastenrad\" vClass=\"bicycle\"/>\n");
+            // HBEFA3-Emissionsklassen: Benzin-Pkw EU4, Diesel-Lieferwagen EU4, Lastenrad emissionsfrei
+            writer.write("  <vType id=\"pkw\" vClass=\"passenger\" emissionClass=\"HBEFA3/PC_G_EU4\"/>\n");
+            writer.write("  <vType id=\"lkw\" vClass=\"delivery\" emissionClass=\"HBEFA3/LDV_D_EU4\"/>\n");
+            writer.write("  <vType id=\"lastenrad\" vClass=\"bicycle\" emissionClass=\"Zero\"/>\n");
             int id = 0;
             for (Trip t : trips) {
                 writer.write(String.format(
@@ -224,15 +260,18 @@ public class SumoRunner {
     private static final Pattern STAT_TAG = Pattern.compile("<vehicleTripStatistics\\b[^>]*/>");
 
     private Result parseStatistics(Path statistics, long durationSeconds, int carTrips,
-                                   int deliveryTrips) throws IOException {
+                                   int deliveryTrips, Map<String, Double> co2ByType) throws IOException {
+        double co2Total = Math.round(co2ByType.values().stream().mapToDouble(Double::doubleValue).sum()
+                * 100) / 100.0;
         String xml = Files.exists(statistics) ? Files.readString(statistics) : "";
         Matcher tag = STAT_TAG.matcher(xml);
         if (tag.find()) {
             String el = tag.group();
             return new Result((int) attr(el, "count"), attr(el, "duration"),
-                    attr(el, "routeLength"), attr(el, "speed"), durationSeconds, carTrips, deliveryTrips);
+                    attr(el, "routeLength"), attr(el, "speed"), durationSeconds, carTrips, deliveryTrips,
+                    co2Total, co2ByType);
         }
-        return new Result(0, 0, 0, 0, durationSeconds, carTrips, deliveryTrips);
+        return new Result(0, 0, 0, 0, durationSeconds, carTrips, deliveryTrips, co2Total, co2ByType);
     }
 
     /** Liest ein numerisches Attribut aus einem XML-Element (Reihenfolge-unabhängig). */

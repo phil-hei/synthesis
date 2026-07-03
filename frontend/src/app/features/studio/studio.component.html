@@ -376,6 +376,13 @@
           <td>davon Lieferverkehr</td>
           <td>{{ sumoSummary.deliveryTrips | number:'1.0-0' }}
             <span class="mid">+ {{ sumoSummary.carTrips | number:'1.0-0' }} PKW</span></td></tr>
+        <tr *ngIf="sumoSummary.co2Kg != null"
+            title="CO₂-Schätzung über HBEFA-Emissionsklassen (Pkw: Benzin EU4, Lkw: Diesel-Lieferwagen EU4, Lastenrad: emissionsfrei)">
+          <td>CO₂ (HBEFA)</td>
+          <td>{{ sumoSummary.co2Kg | number:'1.0-1' }} kg
+            <span class="mid" *ngIf="sumoSummary.co2KgByType">
+              Pkw {{ sumoSummary.co2KgByType['pkw'] || 0 | number:'1.0-1' }} /
+              Lkw {{ sumoSummary.co2KgByType['lkw'] || 0 | number:'1.0-1' }} kg</span></td></tr>
         <tr><td>Ø Reisedauer</td><td>{{ sumoSummary.meanDurationMin }} min</td></tr>
         <tr><td>Ø Routenlänge</td><td>{{ sumoSummary.meanRouteLengthKm }} km</td></tr>
         <tr title="Mittlere Reisegeschwindigkeit inkl. Halte/Wartezeiten">

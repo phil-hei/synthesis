@@ -26,7 +26,8 @@ class SumoRunnerTest {
             "../validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv");
     private static final Path PLANNED_TOURS = Path.of(
             "../validation/mobitopp-rastatt/output/synthesis/results/planned-tours.csv");
-    private static final Path CACHED_OSM = Path.of("/tmp/rastatt.osm");
+    /** Persistenter Test-Cache (validation/ ist gitignored; /tmp wird gereaped). */
+    private static final Path CACHED_OSM = Path.of("../validation/rastatt-test.osm");
 
     @Test
     void runsTrafficSimulationFromDemand() throws Exception {
@@ -50,9 +51,12 @@ class SumoRunnerTest {
             assertTrue(result.meanSpeedMs() > 0, "Geschwindigkeit > 0 erwartet");
             assertTrue(result.meanDurationSec() > 0, "Reisedauer > 0 erwartet");
             assertTrue(result.carTrips() > 0, "PKW-Trips eingespeist");
+            assertTrue(result.co2Kg() > 0, "CO₂-Emissionen (HBEFA) sollten ausgewertet werden");
+            assertTrue(result.co2KgByType().getOrDefault("pkw", 0.0) > 0, "PKW-CO₂ > 0");
             if (tours != null) {
                 assertTrue(result.deliveryTrips() > 0,
                         "Zustelltouren-Legs (Lkw/Lastenrad) sollten eingespeist werden");
+                assertTrue(result.co2KgByType().getOrDefault("lkw", 0.0) > 0, "Lkw-CO₂ > 0");
             }
         } finally {
             deleteRecursively(artifacts);
@@ -76,7 +80,13 @@ class SumoRunnerTest {
             region.minLon = 8.155;
             region.maxLat = 48.885;
             region.maxLon = 8.245;
-            return overpass.fetchRoadNetworkOsm(region);
+            String osm = overpass.fetchRoadNetworkOsm(region);
+            try {
+                Files.writeString(CACHED_OSM, osm); // Cache selbstheilend auffrischen
+            } catch (Exception ignored) {
+                // Cache ist optional
+            }
+            return osm;
         } catch (Exception e) {
             return null;
         }

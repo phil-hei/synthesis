@@ -601,10 +601,10 @@ public class GenerationService {
                     plannedTours, job::log);
             writeSumoSummary(artifacts.resolve("sumo").resolve("summary.json"), sumo);
             job.log(String.format("SUMO: %d Fahrzeuge (davon %d Lieferverkehr), "
-                            + "Ø %.1f min / %.1f km / %.0f km/h (%d s)",
+                            + "Ø %.1f min / %.1f km / %.0f km/h, CO₂ %.1f kg (%d s)",
                     sumo.vehicles(), sumo.deliveryTrips(), sumo.meanDurationSec() / 60,
                     sumo.meanRouteLengthM() / 1000, sumo.meanSpeedMs() * 3.6,
-                    sumo.durationSeconds()));
+                    sumo.co2Kg(), sumo.durationSeconds()));
             job.summary.put("sumoVehicles", sumo.vehicles());
         } catch (Exception e) {
             // FAILED statt SKIPPED: der Nutzer soll Fehler von bewusster Abwahl unterscheiden können
@@ -718,6 +718,8 @@ public class GenerationService {
         node.put("runtimeSeconds", sumo.durationSeconds());
         node.put("carTrips", sumo.carTrips());
         node.put("deliveryTrips", sumo.deliveryTrips());
+        node.put("co2Kg", sumo.co2Kg());
+        node.set("co2KgByType", mapper.valueToTree(sumo.co2KgByType()));
         mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), node);
     }
 

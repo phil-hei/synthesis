@@ -315,6 +315,11 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   (1014 Fahrzeuge, Ø 3,2 km / 54,8 km/h / 3,9 min); Frontend-Checkbox „SUMO" aktiv + Ergebnis-Panel
   im Browser bestätigt. Macht uns für eigene Mikrosimulation **unabhängig von Takomat**.
 - Konfiguration: `SynthesisProperties.Sumo` (Binär-/SUMO_HOME-Pfade, `day`, `maxTrips`, `timeoutMinutes`).
+- **Emissions-KPIs (2026-07-03):** die vTypes tragen HBEFA3-Emissionsklassen (Pkw: Benzin EU4,
+  Lieferwagen: Diesel EU4, Lastenrad: emissionsfrei); das SUMO-Emissions-Device schreibt CO₂ je
+  Fahrzeug in die tripinfo.xml, die zu **CO₂ gesamt + je Fahrzeugtyp** aggregiert wird
+  (`summary.json`: `co2Kg`, `co2KgByType`; Studio-Panel-Zeile „CO₂ (HBEFA)"). Damit sind
+  Logistik-Szenarien (z. B. mehr Lastenräder statt Lkw) direkt emissionsseitig vergleichbar.
 - **Lieferverkehr integriert (2026-07-02):** zusätzlich zu den PKW-Trips speist SUMO jetzt die
   logiTopp-**Zustelltouren** ein (`planned-tours.csv`, jede Zeile ein Stopp-Leg mit Koordinaten,
   Fahrzeugtyp und Sim-Zeit): Lkw als `vClass delivery`, Lastenräder als `vClass bicycle`
@@ -385,8 +390,21 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   vgl. docs/05); GPL-Konformität (Arm's-length-Trennung) dokumentieren.
 
 ### Phase 5 – Externe Klärungen (nicht-technisch, parallel)
-- **Takomat:** MobileCity-Import finalisieren (NUTS3-IDs, Netz-/TEC-/MOD-Tabellen, Messagepack,
-  vollständiger Study-Area-Import).
+- **Takomat:** MobileCity-Import finalisieren (Netz-/TEC-/MOD-Tabellen, Messagepack,
+  vollständiger Study-Area-Import). **Antworten vom 2026-07-03:**
+  - **District-IDs:** synthetische IDs (SYN-NNN) sind zulässig – NUTS3-Optik war nur Lesbarkeit,
+    einzige Anforderung ist Eindeutigkeit je Study Area. ✓ (unser Export ist konform)
+  - **Geometrie:** Import erwartet **Shapefiles** (WGS84) mit einzigem Attribut **`districtID`**
+    (muss zu REGdistricts passen). → umgesetzt: `mobilecity/districts.shp/.shx/.dbf/.prj`
+    (eigener minimaler ShapefileWriter, formatgeprüft per Test).
+  - **OLC:** dient als **ID-Schema für Netz-Links/-Nodes** (Codelänge **10**), nicht für
+    Districts; ihr OLC Mapper konvertiert gelieferte Koordinaten/IDs selbst. → für uns keine
+    OLC-Pflicht; die Zonen-Code-Idee (GeoHash/OLC/INSPIRE) bleibt rein intern optional.
+  - **Weitere Tabellen (INF*/TEC*/MOD*/ENV/LAQ):** „prinzipiell alle benötigt"; welche Defaults
+    möglich sind, prüft Takomat. **Netz-Erzeugung** (durch ihre Pipeline vs. Lieferung durch
+    uns): Rücksprache mit Lars aussteht. → beide Punkte offen, warten auf Rückmeldung.
+  - **Nachfrage-Schnittstelle bestätigt:** ausschließlich aggregierte District-Tabellen; kein
+    Import von Einzelwegen/Touren (am nächsten kommen Maßnahmen/Governances auf Teilabschnitten).
 - **KIT:** actitoppNG-Lizenz, logiTopp-Migrationsstand, ggf. MiD-/Zensus-Datenzugang.
 - **GTA-Autoren (Leipzig/ScaDS.AI):** Kooperation, Persona-/MiD-Datengrundlage.
 
