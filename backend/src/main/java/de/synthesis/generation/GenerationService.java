@@ -24,6 +24,7 @@ import de.synthesis.generation.pipeline.PopulationGridParser;
 import de.synthesis.generation.pipeline.RoutingEngine;
 import de.synthesis.generation.pipeline.SimulationResultIngestor;
 import de.synthesis.generation.pipeline.SimulationRunner;
+import de.synthesis.generation.pipeline.VisumMatrixWriter;
 import de.synthesis.generation.pipeline.LlmModeChoiceRunner;
 import de.synthesis.generation.pipeline.SumoRunner;
 import de.synthesis.generation.pipeline.Zone;
@@ -51,7 +52,7 @@ public class GenerationService {
     public static final List<String> STAGES = List.of(
             "Zonierung", "OSM-Daten (POIs)", "Attraktivitäten", "Bevölkerungssynthese",
             "Aktivitätenpläne", "Matrizen", "Logistik", "Legacy-Export", "MobileCity-Export",
-            "Manifest", "Simulation (logiTopp)", "SUMO (Verkehr)", "LLM-Moduswahl");
+            "Manifest", "Simulation (logiTopp)", "SUMO (Verkehr)", "Netz-Feedback", "LLM-Moduswahl");
 
     private final ScenarioRepository scenarios;
     private final OverpassClient overpass;
@@ -148,6 +149,8 @@ public class GenerationService {
         PopulationGenerator.Result population;
         LogisticsGenerator logisticsGenerator;
         LogisticsGenerator.Result logistics;
+        /** Pkw-Reisezeitmatrix (Minuten) aus der Matrizen-Stufe – Basis fürs Netz-Feedback. */
+        float[][] carTravelTimeMin;
 
         PipelineContext(Scenario scenario, GenerationJob job, Path artifacts) {
             this.scenario = scenario;
@@ -201,6 +204,10 @@ public class GenerationService {
             });
             stage(job, "SUMO (Verkehr)", () -> {
                 stageSumo(ctx);
+                return null;
+            });
+            stage(job, "Netz-Feedback", () -> {
+                stageNetworkFeedback(ctx);
                 return null;
             });
             stage(job, "LLM-Moduswahl", () -> {
@@ -440,8 +447,9 @@ public class GenerationService {
     private void stageMatrices(PipelineContext ctx) throws IOException {
         MatrixGenerator.Impedance routing = buildRouting(ctx);
         try {
-            List<String> files = new MatrixGenerator()
-                    .generate(ctx.artifacts.resolve("matrix"), ctx.zones, routing);
+            MatrixGenerator generator = new MatrixGenerator();
+            List<String> files = generator.generate(ctx.artifacts.resolve("matrix"), ctx.zones, routing);
+            ctx.carTravelTimeMin = generator.carTravelTimeMin();
             ctx.job.log(files.size() + " Visum-Matrizen (" + ctx.zones.size() + "x" + ctx.zones.size()
                     + ") + Matrix-Konfigurationen geschrieben ("
                     + (routing != null ? "GraphHopper-Routing" : "Luftlinie") + ")");
@@ -614,7 +622,98 @@ public class GenerationService {
         }
     }
 
-    // --- Stufe 13: LLM-Moduswahl (GTA 3c) ------------------------------------------------------
+    // --- Stufe 13: Netz-Feedback (Nachfrage ↔ Netz) --------------------------------------------
+
+    /**
+     * Speist die staubelasteten SUMO-Reisezeiten in die Pkw-Matrix zurück und lässt logiTopp
+     * einmal neu entscheiden (Ziel-/Verkehrsmittelwahl reagiert auf Stau). Mechanik: je Zonenpaar
+     * das Verhältnis staugewichteter zu freier Routenzeit auf dem SUMO-Netz (Faktor 1–3), angewandt
+     * auf die bestehende CAR_TTC-Matrix – die GraphHopper-Basis bleibt erhalten, nur der
+     * Stau-Effekt fließt ein. Eine Iteration (kein Gleichgewichts-Looping).
+     */
+    private void stageNetworkFeedback(PipelineContext ctx) {
+        Scenario scenario = ctx.scenario;
+        GenerationJob job = ctx.job;
+        Path artifacts = ctx.artifacts;
+        if (!scenario.population.sumoFeedback) {
+            job.stage("Netz-Feedback").status = "SKIPPED";
+            job.log("Netz-Feedback übersprungen (nicht aktiviert)");
+            return;
+        }
+        if (!"DONE".equals(job.stage("SUMO (Verkehr)").status)
+                || !Files.exists(artifacts.resolve("sumo").resolve("edgedata.xml"))) {
+            job.stage("Netz-Feedback").status = "SKIPPED";
+            job.log("Netz-Feedback übersprungen (benötigt erfolgreichen SUMO-Lauf)");
+            return;
+        }
+        if (!scenario.targets().contains("logitopp") || ctx.carTravelTimeMin == null) {
+            job.stage("Netz-Feedback").status = "SKIPPED";
+            job.log("Netz-Feedback übersprungen (benötigt logiTopp-Ziel und Pkw-Matrix aus diesem Lauf)");
+            return;
+        }
+        int maxZones = properties.getSumo().getFeedbackMaxZones();
+        if (ctx.zones.size() > maxZones) {
+            job.stage("Netz-Feedback").status = "SKIPPED";
+            job.log("Netz-Feedback übersprungen (" + ctx.zones.size() + " Zonen > Limit " + maxZones
+                    + " – OD-Routing wäre n²)");
+            return;
+        }
+        try {
+            SumoRunner runner = new SumoRunner(properties.getSumo());
+            job.log("Berechne Stau-Faktoren je Zonenrelation (frei vs. staugewichtet auf dem SUMO-Netz)…");
+            SumoRunner.OdFactors od = runner.computeOdFactors(
+                    artifacts.resolve("sumo"), ctx.zones, job::log);
+            if (od.routedPairs() == 0) {
+                job.stage("Netz-Feedback").status = "SKIPPED";
+                job.log("Netz-Feedback übersprungen (keine routbaren Zonenrelationen auf dem SUMO-Netz)");
+                return;
+            }
+            int n = ctx.zones.size();
+            float[][] scaled = new float[n][n];
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    scaled[i][j] = (float) (ctx.carTravelTimeMin[i][j] * od.factors()[i][j]);
+                }
+            }
+            VisumMatrixWriter.write(
+                    artifacts.resolve("matrix").resolve("travel_times").resolve("CAR_TTC.mtx.bz2"),
+                    ctx.zones, scaled);
+            VisumMatrixWriter.write(
+                    artifacts.resolve("legacy").resolve("matrices").resolve("travel_times")
+                            .resolve("CAR_TTC.mtx"),
+                    ctx.zones, scaled);
+            job.log(String.format(
+                    "Pkw-Matrix mit Stau-Faktoren aktualisiert: %d Relationen, Ø Faktor %.2f, max %.2f",
+                    od.routedPairs(), od.meanFactor(), od.maxFactor()));
+
+            Map<String, Double> before = readModalSplit(
+                    artifacts.resolve("simulation").resolve("kpis.json"));
+            job.log("logiTopp entscheidet neu auf staubelasteten Reisezeiten…");
+            SimulationRunner simRunner = new SimulationRunner(properties.getSimulation());
+            Path calibrated = artifacts.resolve("simulation").resolve("mode_choice_calibrated.txt");
+            SimulationRunner.Result run = Files.exists(calibrated)
+                    ? simRunner.run(scenario, artifacts, job::log, calibrated)
+                    : simRunner.run(scenario, artifacts, job::log);
+            new SimulationResultIngestor(mapper).ingest(run.resultsDir(), artifacts, run.durationSeconds());
+            Map<String, Double> after = readModalSplit(
+                    artifacts.resolve("simulation").resolve("kpis.json"));
+            job.log(String.format(
+                    "Netz-Feedback: Pkw %.0f%%→%.0f%%, Fuß %.0f%%→%.0f%%, Rad %.0f%%→%.0f%%, ÖV %.0f%%→%.0f%%",
+                    before.getOrDefault("car", 0.0) * 100, after.getOrDefault("car", 0.0) * 100,
+                    before.getOrDefault("pedestrian", 0.0) * 100, after.getOrDefault("pedestrian", 0.0) * 100,
+                    before.getOrDefault("bike", 0.0) * 100, after.getOrDefault("bike", 0.0) * 100,
+                    before.getOrDefault("publicTransport", 0.0) * 100,
+                    after.getOrDefault("publicTransport", 0.0) * 100));
+            job.summary.put("feedbackMeanFactor", Math.round(od.meanFactor() * 100) / 100.0);
+            job.summary.put("feedbackRelations", od.routedPairs());
+        } catch (Exception e) {
+            job.stage("Netz-Feedback").status = "FAILED";
+            job.stage("Netz-Feedback").message = String.valueOf(e);
+            job.log("Netz-Feedback fehlgeschlagen: " + e);
+        }
+    }
+
+    // --- Stufe 14: LLM-Moduswahl (GTA 3c) ------------------------------------------------------
 
     /** Alternativer Modal-Split aus dem LLM, geerdet in Reisezeiten; Vergleich zu MNL/MiD. */
     private void stageLlmModeChoice(PipelineContext ctx) {

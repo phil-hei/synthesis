@@ -84,6 +84,11 @@ public class Scenario {
          * liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt logiTopp + LLM.
          */
         public boolean llmModeChoice = false;
+        /**
+         * Netz-Feedback (experimentell): staubelastete SUMO-Reisezeiten fließen in die
+         * Pkw-Matrix zurück und logiTopp entscheidet einmal neu (benötigt logiTopp + SUMO).
+         */
+        public boolean sumoFeedback = false;
         /** Ziel-Modal-Split der Kalibrierung (Anteile je Modus); Default = MiD 2017 bundesweit, editierbar/regional. */
         public Map<String, Double> calibrationTarget = defaultModalSplit();
         public double carsPerHousehold = 1.0;

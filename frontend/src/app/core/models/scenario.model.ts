@@ -46,6 +46,8 @@ export interface Scenario {
     behaviorSource: string;
     /** GTA 3d: Was-wäre-wenn-Kontext (Policy/Technologie, Freitext) für die LLM-Agenten. */
     gtaWhatIf: string;
+    /** Netz-Feedback: SUMO-Stauzeiten → Pkw-Matrix → erneute logiTopp-Entscheidung. */
+    sumoFeedback: boolean;
     useActitopp: boolean;
     useKitPopulation: boolean;
     calibrateModeChoice: boolean;

@@ -133,6 +133,95 @@ public class SumoRunner {
         return parseStatistics(dir.resolve("statistics.xml"), duration, carTrips, deliveryTrips, co2);
     }
 
+    // --- Netz-Feedback: OD-Stau-Faktoren -------------------------------------------
+
+    /** Stau-Faktoren je Zonenrelation (staugewichtete / freie Routenzeit, geklemmt auf 1–3). */
+    public record OdFactors(double[][] factors, int routedPairs, double meanFactor, double maxFactor) {
+    }
+
+    /**
+     * Routet alle Zonen-Zentroid-Paare zweimal auf dem SUMO-Netz – einmal frei, einmal
+     * gewichtet mit den gemessenen Kantenzeiten (edgedata.xml) – und liefert je Relation
+     * das Zeitverhältnis. Externe Zonen liegen außerhalb des Netzes und fallen beim
+     * Mapmatch heraus (Faktor bleibt 1). Voraussetzung: {@link #run} lief zuvor im selben
+     * Verzeichnis (net.net.xml + edgedata.xml vorhanden).
+     */
+    public OdFactors computeOdFactors(Path dir, List<Zone> zones, Consumer<String> log)
+            throws IOException, InterruptedException {
+        int n = zones.size();
+        Path odTrips = dir.resolve("od-trips.xml");
+        try (Writer writer = Files.newBufferedWriter(odTrips)) {
+            writer.write("<routes>\n");
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (i == j) {
+                        continue;
+                    }
+                    writer.write(String.format(
+                            "  <trip id=\"od_%d_%d\" depart=\"0\" fromLonLat=\"%s,%s\" toLonLat=\"%s,%s\"/>%n",
+                            i, j, zones.get(i).centroidLon, zones.get(i).centroidLat,
+                            zones.get(j).centroidLon, zones.get(j).centroidLat));
+                }
+            }
+            writer.write("</routes>\n");
+        }
+        exec(dir, log, binDir.resolve("duarouter").toString(),
+                "-n", "net.net.xml", "--route-files", "od-trips.xml", "-o", "od-free.rou.xml",
+                "--write-costs", "true", "--mapmatch.distance", String.valueOf(MAPMATCH_DISTANCE_M),
+                "--ignore-errors", "--no-step-log");
+        exec(dir, log, binDir.resolve("duarouter").toString(),
+                "-n", "net.net.xml", "--route-files", "od-trips.xml", "-o", "od-congested.rou.xml",
+                "--weight-files", "edgedata.xml", "--weight-attribute", "traveltime",
+                "--write-costs", "true", "--mapmatch.distance", String.valueOf(MAPMATCH_DISTANCE_M),
+                "--ignore-errors", "--no-step-log");
+
+        double[][] free = parseOdCosts(dir.resolve("od-free.rou.xml"), n);
+        double[][] congested = parseOdCosts(dir.resolve("od-congested.rou.xml"), n);
+        double[][] factors = new double[n][n];
+        int routed = 0;
+        double sum = 0;
+        double max = 1;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                factors[i][j] = 1;
+                if (free[i][j] > 0.001 && congested[i][j] > 0) {
+                    double f = Math.max(1, Math.min(3, congested[i][j] / free[i][j]));
+                    factors[i][j] = f;
+                    routed++;
+                    sum += f;
+                    max = Math.max(max, f);
+                }
+            }
+        }
+        return new OdFactors(factors, routed, routed > 0 ? sum / routed : 1, max);
+    }
+
+    /** rou.xml (--write-costs) → Routenzeit (s) je od_i_j; 0 = nicht routbar. */
+    private double[][] parseOdCosts(Path rouFile, int n) throws IOException {
+        double[][] costs = new double[n][n];
+        int[] current = {-1, -1};
+        readLines(rouFile, line -> {
+            if (line.contains("<vehicle ")) {
+                current[0] = -1;
+                String id = attrStr(line, "id");
+                if (id != null && id.startsWith("od_")) {
+                    String[] parts = id.split("_");
+                    if (parts.length == 3) {
+                        current[0] = Integer.parseInt(parts[1]);
+                        current[1] = Integer.parseInt(parts[2]);
+                    }
+                }
+            } else if (current[0] >= 0 && line.contains("<route ")) {
+                double cost = attrD(line, "cost");
+                if (cost > 0) {
+                    costs[current[0]][current[1]] = cost;
+                }
+                current[0] = -1;
+            }
+        });
+        return costs;
+    }
+
     // --- Netzlast (edgeData → GeoJSON) -------------------------------------------
 
     private record EdgeMetric(double speedMs, double timeLossS, double sampledS) {

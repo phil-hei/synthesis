@@ -31,6 +31,13 @@ public class MatrixGenerator {
     /** Mode for which a routing provider can supply door-to-door distance and time. */
     public enum TravelMode {CAR, BIKE, FOOT}
 
+    /** Zuletzt erzeugte Pkw-Reisezeitmatrix (Minuten) – Basis fürs SUMO-Netz-Feedback. */
+    private float[][] carTravelTimeMin;
+
+    public float[][] carTravelTimeMin() {
+        return carTravelTimeMin;
+    }
+
     /** Supplies real routing impedance; returns {@code null} to fall back to beeline. */
     public interface Impedance {
         /**
@@ -93,6 +100,8 @@ public class MatrixGenerator {
                 ptCost[i][j] = (float) (PT_BASE_FARE + beelineKm * PT_COST_PER_KM);
             }
         }
+
+        this.carTravelTimeMin = carTime;
 
         Map<String, float[][]> files = new LinkedHashMap<>();
         files.put("travel_times/CAR_TTC.mtx.bz2", carTime);

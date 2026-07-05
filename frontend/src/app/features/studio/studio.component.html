@@ -164,6 +164,11 @@
           <input type="checkbox" [(ngModel)]="scenario.population.llmModeChoice">
           LLM-Moduswahl (experimentell, GTA 3c)
         </label>
+        <label class="checkbox" *ngIf="hasTarget('logitopp') && hasTarget('sumo')"
+               title="Experimentell: staubelastete SUMO-Reisezeiten fließen in die Pkw-Matrix zurück, logiTopp entscheidet einmal neu (Ziel-/Verkehrsmittelwahl reagiert auf Stau). Eine Iteration, zusätzlicher Simulationslauf.">
+          <input type="checkbox" [(ngModel)]="scenario.population.sumoFeedback">
+          Netz-Feedback: SUMO-Stau → Nachfrage (experimentell)
+        </label>
       </section>
 
       <section class="block">

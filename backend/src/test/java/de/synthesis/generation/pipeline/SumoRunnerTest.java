@@ -58,6 +58,25 @@ class SumoRunnerTest {
             String geo = Files.readString(congestion);
             assertTrue(geo.contains("LineString") && geo.contains("relSpeed"),
                     "Staukarte braucht Kanten mit relSpeed-Attribut");
+
+            // Netz-Feedback: OD-Stau-Faktoren auf dem gebauten Netz (3 Zentroiden in Rastatt)
+            java.util.List<Zone> odZones = new java.util.ArrayList<>();
+            double[][] centroids = {{48.850, 8.200}, {48.858, 8.210}, {48.865, 8.195}};
+            for (int i = 0; i < centroids.length; i++) {
+                Zone z = new Zone();
+                z.index = i;
+                z.centroidLat = centroids[i][0];
+                z.centroidLon = centroids[i][1];
+                odZones.add(z);
+            }
+            SumoRunner.OdFactors od = runner.computeOdFactors(
+                    artifacts.resolve("sumo"), odZones, msg -> { });
+            assertTrue(od.routedPairs() > 0, "OD-Relationen müssen routbar sein");
+            for (double[] row : od.factors()) {
+                for (double factor : row) {
+                    assertTrue(factor >= 1 && factor <= 3, "Faktor in [1,3]: " + factor);
+                }
+            }
             if (tours != null) {
                 assertTrue(result.deliveryTrips() > 0,
                         "Zustelltouren-Legs (Lkw/Lastenrad) sollten eingespeist werden");

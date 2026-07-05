@@ -78,6 +78,8 @@ public class SynthesisProperties {
         private int day = 0;
         private int maxTrips = 4000;
         private int timeoutMinutes = 15;
+        /** Zonen-Obergrenze fürs Netz-Feedback (OD-Routing ist n²). */
+        private int feedbackMaxZones = 150;
 
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -91,6 +93,8 @@ public class SynthesisProperties {
         public void setMaxTrips(int maxTrips) { this.maxTrips = maxTrips; }
         public int getTimeoutMinutes() { return timeoutMinutes; }
         public void setTimeoutMinutes(int timeoutMinutes) { this.timeoutMinutes = timeoutMinutes; }
+        public int getFeedbackMaxZones() { return feedbackMaxZones; }
+        public void setFeedbackMaxZones(int feedbackMaxZones) { this.feedbackMaxZones = feedbackMaxZones; }
     }
 
     /** KIT actiTopp (actitoppNG) activity scheduling, run as a Gradle task. */
