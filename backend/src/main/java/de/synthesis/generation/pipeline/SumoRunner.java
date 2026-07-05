@@ -103,9 +103,16 @@ public class SumoRunner {
                 "--ignore-errors", "--no-step-log");
 
         // 4. SUMO-Lauf
+        // Kantenscharfe Messung (Netzlast): über den ganzen Tag aggregierte edgeData
+        Files.writeString(dir.resolve("additional.xml"), """
+                <additional>
+                  <edgeData id="netzlast" file="edgedata.xml"/>
+                </additional>
+                """);
         Files.writeString(dir.resolve("scenario.sumocfg"), """
                 <configuration>
-                  <input><net-file value="net.net.xml"/><route-files value="routes.rou.xml"/></input>
+                  <input><net-file value="net.net.xml"/><route-files value="routes.rou.xml"/>
+                    <additional-files value="additional.xml"/></input>
                   <output><tripinfo-output value="tripinfo.xml"/><statistic-output value="statistics.xml"/></output>
                   <time><begin value="0"/><end value="86400"/></time>
                   <processing><time-to-teleport value="300"/><ignore-route-errors value="true"/>
@@ -115,9 +122,125 @@ public class SumoRunner {
                 """);
         exec(dir, log, binDir.resolve("sumo").toString(), "-c", "scenario.sumocfg");
 
+        // Kantengeometrien in WGS84 exportieren und mit den Messwerten zur Staukarte verbinden
+        exec(dir, log, binDir.resolve("netconvert").toString(),
+                "-s", "net.net.xml", "--plain-output-prefix", "plain", "--proj.plain-geo", "true");
+        int congestionEdges = writeCongestionGeoJson(dir);
+        log.accept(congestionEdges + " befahrene Kanten in sumo/congestion.geojson (Netzlast-Layer)");
+
         long duration = (System.currentTimeMillis() - start) / 1000;
         Map<String, Double> co2 = parseEmissions(dir.resolve("tripinfo.xml"));
         return parseStatistics(dir.resolve("statistics.xml"), duration, carTrips, deliveryTrips, co2);
+    }
+
+    // --- Netzlast (edgeData → GeoJSON) -------------------------------------------
+
+    private record EdgeMetric(double speedMs, double timeLossS, double sampledS) {
+    }
+
+    /**
+     * Verbindet die tages-aggregierten Kantenmesswerte (edgedata.xml) mit den
+     * WGS84-Kantengeometrien des plain-geo-Exports (plain.nod/.edg.xml) zu
+     * {@code congestion.geojson}: eine LineString-Feature je befahrener Kante mit
+     * gemessener Geschwindigkeit, Tempolimit und relSpeed (Stau-Indikator).
+     */
+    private int writeCongestionGeoJson(Path dir) throws IOException {
+        Map<String, EdgeMetric> metrics = new java.util.HashMap<>();
+        readLines(dir.resolve("edgedata.xml"), line -> {
+            if (line.contains("<edge ") && attrStr(line, "id") != null) {
+                double sampled = attrD(line, "sampledSeconds");
+                if (sampled >= 1) {
+                    metrics.put(attrStr(line, "id"),
+                            new EdgeMetric(attrD(line, "speed"), attrD(line, "timeLoss"), sampled));
+                }
+            }
+        });
+        Map<String, double[]> nodes = new java.util.HashMap<>();
+        readLines(dir.resolve("plain.nod.xml"), line -> {
+            if (line.contains("<node ") && attrStr(line, "id") != null) {
+                nodes.put(attrStr(line, "id"), new double[]{attrD(line, "x"), attrD(line, "y")});
+            }
+        });
+
+        com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        com.fasterxml.jackson.databind.node.ObjectNode collection = json.createObjectNode();
+        collection.put("type", "FeatureCollection");
+        com.fasterxml.jackson.databind.node.ArrayNode features = collection.putArray("features");
+        readLines(dir.resolve("plain.edg.xml"), line -> {
+            if (!line.contains("<edge ")) {
+                return;
+            }
+            String id = attrStr(line, "id");
+            EdgeMetric metric = id == null ? null : metrics.get(id);
+            if (metric == null) {
+                return; // nur befahrene Kanten in die Staukarte
+            }
+            com.fasterxml.jackson.databind.node.ArrayNode coords = json.createArrayNode();
+            double[] from = nodes.get(attrStr(line, "from"));
+            double[] to = nodes.get(attrStr(line, "to"));
+            if (from != null) {
+                coords.add(json.createArrayNode().add(from[0]).add(from[1]));
+            }
+            String shape = attrStr(line, "shape");
+            if (shape != null) {
+                for (String point : shape.split(" ")) {
+                    String[] xy = point.split(",");
+                    if (xy.length >= 2) {
+                        coords.add(json.createArrayNode()
+                                .add(Double.parseDouble(xy[0])).add(Double.parseDouble(xy[1])));
+                    }
+                }
+            }
+            if (to != null) {
+                coords.add(json.createArrayNode().add(to[0]).add(to[1]));
+            }
+            if (coords.size() < 2) {
+                return;
+            }
+            double limit = line.contains("speed=\"") ? attrD(line, "speed") : 13.89;
+            com.fasterxml.jackson.databind.node.ObjectNode feature = features.addObject();
+            feature.put("type", "Feature");
+            com.fasterxml.jackson.databind.node.ObjectNode geometry = feature.putObject("geometry");
+            geometry.put("type", "LineString");
+            geometry.set("coordinates", coords);
+            com.fasterxml.jackson.databind.node.ObjectNode props = feature.putObject("properties");
+            props.put("edge", id);
+            props.put("speedKmh", Math.round(metric.speedMs() * 3.6 * 10) / 10.0);
+            props.put("limitKmh", Math.round(limit * 3.6 * 10) / 10.0);
+            props.put("relSpeed", limit > 0
+                    ? Math.round(Math.min(1, metric.speedMs() / limit) * 100) / 100.0 : 1);
+            props.put("timeLossS", Math.round(metric.timeLossS()));
+            props.put("sampledS", Math.round(metric.sampledS()));
+        });
+        json.writeValue(dir.resolve("congestion.geojson").toFile(), collection);
+        return features.size();
+    }
+
+    private static void readLines(Path file, java.util.function.Consumer<String> consumer)
+            throws IOException {
+        if (!Files.exists(file)) {
+            return;
+        }
+        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                consumer.accept(line);
+            }
+        }
+    }
+
+    private static String attrStr(String line, String name) {
+        Matcher m = Pattern.compile(name + "=\"([^\"]*)\"").matcher(line);
+        return m.find() ? m.group(1) : null;
+    }
+
+    private static double attrD(String line, String name) {
+        String value = attrStr(line, name);
+        try {
+            return value == null ? 0 : Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     /**

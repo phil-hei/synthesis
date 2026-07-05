@@ -262,6 +262,10 @@
                 title="Geplante Zustelltouren (blau = Transporter, grün = Lastenrad)">
           🚚 Touren
         </button>
+        <button [class.toggled]="showCongestionLayer" (click)="toggleCongestionLayer()"
+                title="Netzlast aus SUMO: Kantenfarbe nach gemessener Geschwindigkeit relativ zum Tempolimit (grün ≥80 %, orange 50–80 %, rot <50 %)">
+          🚦 Netzlast
+        </button>
       </ng-container>
     </div>
     <div id="map"></div>

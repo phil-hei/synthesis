@@ -315,6 +315,11 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   (1014 Fahrzeuge, Ø 3,2 km / 54,8 km/h / 3,9 min); Frontend-Checkbox „SUMO" aktiv + Ergebnis-Panel
   im Browser bestätigt. Macht uns für eigene Mikrosimulation **unabhängig von Takomat**.
 - Konfiguration: `SynthesisProperties.Sumo` (Binär-/SUMO_HOME-Pfade, `day`, `maxTrips`, `timeoutMinutes`).
+- **Netzlast-Karte (2026-07-05):** tages-aggregierte edgeData-Messung + zweiter netconvert-Lauf
+  (`--plain-output-prefix --proj.plain-geo`) verbinden Kantenmesswerte mit WGS84-Geometrien zu
+  `sumo/congestion.geojson` (nur befahrene Kanten; Attribute speedKmh/limitKmh/relSpeed/timeLoss).
+  Studio: Karten-Layer „🚦 Netzlast" färbt Kanten nach relSpeed (grün ≥80 %, orange 50–80 %,
+  rot <50 % des Tempolimits) – kantenscharfe Stauvisualisierung der eigenen Nachfrage.
 - **Emissions-KPIs (2026-07-03):** die vTypes tragen HBEFA3-Emissionsklassen (Pkw: Benzin EU4,
   Lieferwagen: Diesel EU4, Lastenrad: emissionsfrei); das SUMO-Emissions-Device schreibt CO₂ je
   Fahrzeug in die tripinfo.xml, die zu **CO₂ gesamt + je Fahrzeugtyp** aggregiert wird

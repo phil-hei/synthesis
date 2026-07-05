@@ -36,6 +36,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   simDepots: any[] = [];
   showParcelLayer = false;
   showTourLayer = false;
+  showCongestionLayer = false;
 
   private map!: L.Map;
   private regionLayer: L.Rectangle | null = null;
@@ -46,8 +47,10 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private parcelLayer: L.GeoJSON | null = null;
   private tourLayer: L.GeoJSON | null = null;
+  private congestionLayer: L.GeoJSON | null = null;
   private parcelDensity: any = null;
   private tourData: any = null;
+  private congestionData: any = null;
 
   constructor(private api: ApiService) {
   }
@@ -497,6 +500,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({ next: s => this.llmModeChoice = s, error: () => this.llmModeChoice = null });
     this.api.artifactJson<GtaPersonas>(id, 'population/gta-personas.json')
       .subscribe({ next: s => this.gtaPersonas = s, error: () => this.gtaPersonas = null });
+    this.api.artifactJson(id, 'sumo/congestion.geojson')
+      .subscribe({ next: geo => this.congestionData = geo, error: () => this.congestionData = null });
   }
 
   private clearSimulation(): void {
@@ -508,16 +513,20 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     this.simDepots = [];
     this.parcelDensity = null;
     this.tourData = null;
+    this.congestionData = null;
     this.parcelLayer?.remove();
     this.parcelLayer = null;
     this.tourLayer?.remove();
     this.tourLayer = null;
+    this.congestionLayer?.remove();
+    this.congestionLayer = null;
     this.showParcelLayer = false;
     this.showTourLayer = false;
+    this.showCongestionLayer = false;
   }
 
   get hasSimLayers(): boolean {
-    return !!this.parcelDensity || !!this.tourData;
+    return !!this.parcelDensity || !!this.tourData || !!this.congestionData;
   }
 
   toggleParcelLayer(): void {
@@ -556,6 +565,29 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       onEachFeature: (feature, layer) =>
         layer.bindTooltip(`${feature.properties?.depot} (${feature.properties?.vehicleType}), `
           + `${feature.properties?.stops} Stopps, ${feature.properties?.distanceKm} km`)
+    }).addTo(this.map);
+  }
+
+  /** Netzlast aus SUMO: Kanten eingefärbt nach relSpeed (gemessen/Tempolimit). */
+  toggleCongestionLayer(): void {
+    this.showCongestionLayer = !this.showCongestionLayer;
+    this.congestionLayer?.remove();
+    this.congestionLayer = null;
+    if (!this.showCongestionLayer || !this.congestionData) {
+      return;
+    }
+    this.congestionLayer = L.geoJSON(this.congestionData, {
+      style: feature => {
+        const rel = feature?.properties?.relSpeed ?? 1;
+        return {
+          color: rel >= 0.8 ? '#2e7d32' : rel >= 0.5 ? '#f39c12' : '#c0392b',
+          weight: 3, opacity: 0.8
+        };
+      },
+      onEachFeature: (feature, layer) =>
+        layer.bindTooltip(`${feature.properties?.speedKmh} km/h `
+          + `(Limit ${feature.properties?.limitKmh} km/h, `
+          + `Zeitverlust ${feature.properties?.timeLossS}s)`)
     }).addTo(this.map);
   }
 

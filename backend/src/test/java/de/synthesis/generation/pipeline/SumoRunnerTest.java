@@ -53,6 +53,11 @@ class SumoRunnerTest {
             assertTrue(result.carTrips() > 0, "PKW-Trips eingespeist");
             assertTrue(result.co2Kg() > 0, "CO₂-Emissionen (HBEFA) sollten ausgewertet werden");
             assertTrue(result.co2KgByType().getOrDefault("pkw", 0.0) > 0, "PKW-CO₂ > 0");
+            Path congestion = artifacts.resolve("sumo").resolve("congestion.geojson");
+            assertTrue(Files.exists(congestion), "Netzlast-GeoJSON fehlt");
+            String geo = Files.readString(congestion);
+            assertTrue(geo.contains("LineString") && geo.contains("relSpeed"),
+                    "Staukarte braucht Kanten mit relSpeed-Attribut");
             if (tours != null) {
                 assertTrue(result.deliveryTrips() > 0,
                         "Zustelltouren-Legs (Lkw/Lastenrad) sollten eingespeist werden");
