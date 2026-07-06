@@ -22,7 +22,7 @@ Prozesse** (JVM/Gradle, SUMO-Binaries, LLM-Server) – nicht eingebettet (u. a. 
 von logiTopp).
 
 ## 3. Die Generierungs-Pipeline (Reihenfolge, Input → Output)
-Eine Generierung durchläuft 13 Stufen. „A/B-gated" = läuft nur, wenn die Achse gewählt ist.
+Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Achse gewählt ist.
 
 | # | Stufe | Was passiert | Wichtigste Artefakte |
 |---|---|---|---|
@@ -37,8 +37,9 @@ Eine Generierung durchläuft 13 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | 9 | **MobileCity-Export (B)** | District-aggregierte Config-Tabellen | `mobilecity/` (5 CSV + `summary.json`) |
 | 10 | Manifest | Lauf-Metadaten | `manifest.json` |
 | 11 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete (+ optional Kalibrierungsschleife) | `demandsimulationResult.csv`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
-| 12 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo` (Auto-Trips) | `sumo/` (net, routes, `statistics.xml`, `summary.json`) |
-| 13 | **LLM-Moduswahl (A, GTA 3c)** | LLM wählt Modus je Distanzband auf simulierten Trips | `simulation/llm-mode-choice.json` |
+| 12 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-Trips + Zustelltouren** (Lkw/Lastenrad); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp) | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte) |
+| 13 | **Netz-Feedback (optional)** | Stau-Faktoren je Zonenrelation (frei vs. staugewichtet auf dem SUMO-Netz, 1–3) skalieren die Pkw-Matrix → logiTopp entscheidet einmal neu | aktualisierte `CAR_TTC`-Matrizen + neue `kpis.json` |
+| 14 | **LLM-Moduswahl (A, GTA 3c)** | LLM wählt Modus je Distanzband auf simulierten Trips | `simulation/llm-mode-choice.json` |
 
 ## 4. Die KI-Pipeline (GTA) im Detail
 Das LLM läuft **lokal** über **Ollama** mit **Qwen2.5-7B-Instruct** (OpenAI-kompatible API). Zwei
@@ -79,9 +80,9 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
 - **logiTopp/Logistik:** `legacy/`, `distribution-centers`, `cepsp-shares`
 - **Ergebnisse:** `kpis.json` (Wege/Person·Tag, Ø Weglänge, Modal-Split vs. MiD), `tours.geojson`,
   `parcel-density.geojson`, `demandsimulationResult.csv`
-- **SUMO:** `sumo/statistics.xml`, `summary.json`
-- **KI:** `llm-mode-choice.json`
-- **Export:** `mobilecity/*.csv` · `manifest.json`
+- **SUMO:** `sumo/statistics.xml`, `summary.json` (inkl. CO₂ je Fahrzeugtyp), `congestion.geojson` (Netzlast)
+- **KI:** `llm-mode-choice.json`, `gta-personas.json` (Begründungen + Was-wäre-wenn)
+- **Export:** `mobilecity/*.csv` + `districts.shp/.shx/.dbf/.prj` (WGS84, districtID) · `manifest.json`
 
 ## 6. Datenfluss-Skelett (für eine Grafik)
 
@@ -96,10 +97,11 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
   Routing-Matrizen (GraphHopper) + Logistik
         ↓
   ── Achse B: Zielmodell ──  logiTopp | SUMO | MobileCity
+        ↓            ↑______________|
+        ↓        (Netz-Feedback: SUMO-Stauzeiten → Pkw-Matrix → neue Entscheidung)
+  KPIs / Touren / CO₂ / Netzlast-Karte / LLM-Moduswahl
         ↓
-  KPIs / Touren / Statistiken / LLM-Moduswahl
-        ↓
-[Studio-Panels + Szenario-Vergleich (UI)]
+[Studio-Panels + Szenario-Vergleich (UI, inkl. Emissionsvergleich)]
 ```
 
 ## 7. Kernbefunde (für „Ergebnis"-Folien)
@@ -111,6 +113,11 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
 - **Ehrlicher KI-Befund:** rohe LLM-Moduswahl hat einen **Bias zu aktiven Modi** (zu viel Rad),
   weil ihr die kalibrierten Modus-Konstanten fehlen – sie ist eine interessante, aber
   kalibrierbedürftige Alternativlinse.
+- **Netz-Feedback wirkt:** bei voller Population entstehen reale Stau-Faktoren (Ø 1,32, max 3,0);
+  auf den staubelasteten Reisezeiten entscheidet logiTopp neu → Pkw 27 %→25 %, Fuß 45 %→49 % –
+  die Nachfrage weicht dem Stau aus (SUMO verbessert das Nachfragemodell, statt es nur zu nutzen).
+- **Emissionsvergleich als Kern-Use-Case:** CO₂ je Fahrzeugtyp (HBEFA) macht Logistik-Szenarien
+  wie „Lastenrad- statt Lkw-Flotte" direkt im Szenario-Vergleich quantifizierbar.
 
 ## 8. Technologie-Stack (Kurzüberblick)
 - **Frontend:** Angular 18.2 (TypeScript 5.5, RxJS 7.8), Leaflet 1.9.4, OpenStreetMap-Tiles.

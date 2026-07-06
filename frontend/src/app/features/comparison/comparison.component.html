@@ -89,6 +89,37 @@
           <td *ngFor="let e of entries">{{ pct(e.kpis?.parcels?.deliveryRate) }}</td>
           <td *ngIf="mid"></td>
         </tr>
+
+        <ng-container *ngIf="hasSumo">
+          <tr class="group"><td [attr.colspan]="entries.length + 2">Verkehr &amp; Emissionen (SUMO)</td></tr>
+          <tr>
+            <td>Fahrzeuge (simuliert)</td>
+            <td *ngFor="let e of entries">{{ e.sumo?.vehicles != null ? (e.sumo.vehicles | number:'1.0-0') : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+          <tr title="Zustelltouren-Legs (Lkw/Lastenrad) aus logiTopp">
+            <td>davon Lieferverkehr</td>
+            <td *ngFor="let e of entries">{{ e.sumo?.deliveryTrips != null ? (e.sumo.deliveryTrips | number:'1.0-0') : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+          <tr>
+            <td>Ø Geschwindigkeit</td>
+            <td *ngFor="let e of entries">{{ e.sumo?.meanSpeedKmh != null ? e.sumo.meanSpeedKmh + ' km/h' : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+          <tr title="CO₂-Schätzung über HBEFA-Emissionsklassen (Lastenräder emissionsfrei)">
+            <td>CO₂ gesamt</td>
+            <td *ngFor="let e of entries">{{ e.sumo?.co2Kg != null ? (e.sumo.co2Kg | number:'1.0-1') + ' kg' : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+          <tr>
+            <td>CO₂ Pkw / Lieferverkehr</td>
+            <td *ngFor="let e of entries">
+              {{ e.sumo?.co2KgByType ? ((e.sumo.co2KgByType['pkw'] || 0 | number:'1.0-1') + ' / '
+                 + (e.sumo.co2KgByType['lkw'] || 0 | number:'1.0-1') + ' kg') : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+        </ng-container>
       </tbody>
     </table>
   </main>

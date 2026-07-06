@@ -28,13 +28,21 @@ Visum-Matrizen `.mtx.bz2` + Matrix-YAMLs, Verteilzentren, Paketnachfrage-Paramet
 Swagger-UI: http://localhost:8090/swagger-ui.html
 
 **Zwei-Achsen-Modell** (im Studio unter „Modellierung" wählbar): _Achse A – Verhaltensquelle_
-(actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, experimentell) × _Achse B –
-Zielmodell_ (logiTopp · MobileCity-Export · **SUMO**, Mehrfachauswahl). Mit Zielmodell **SUMO** wird die logiTopp-Auto-Nachfrage mikroskopisch simuliert
-(OSM → `netconvert` → `duarouter` → `sumo`, rein nativ ohne Python/pyproj); Ergebnis-KPIs (Fahrzeuge,
-Ø Reisedauer/Routenlänge/Geschwindigkeit) und ein lauffähiges SUMO-Szenario unter `artifacts/sumo/`.
-Benötigt eine lokale SUMO-Installation (`$SUMO_HOME`). Die Verhaltensquelle **GTA** erzeugt
-Persona-Tagespläne über ein lokales LLM (Ollama, OpenAI-kompatibel) und fällt auf actiTopp zurück,
-wenn es nicht erreichbar ist – Setup: `brew install ollama && ollama pull qwen2.5:7b-instruct`.
+(actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, inkl. Was-wäre-wenn-Szenarien) ×
+_Achse B – Zielmodell_ (logiTopp · MobileCity-Export · **SUMO**, Mehrfachauswahl).
+
+Mit Zielmodell **SUMO** wird die logiTopp-Nachfrage mikroskopisch simuliert (OSM → `netconvert` →
+`duarouter` → `sumo`, rein nativ ohne Python/pyproj) – **PKW-Trips plus Zustelltouren**
+(Lkw/Lastenrad aus logiTopp). Ergebnisse: Verkehrs-KPIs (Fahrzeuge, Ø Reisedauer/Geschwindigkeit),
+**CO₂ je Fahrzeugtyp** (HBEFA-Emissionsklassen), eine **Netzlast-Karte** (Kanten nach relSpeed
+eingefärbt) und optional das **Netz-Feedback**: staubelastete SUMO-Reisezeiten fließen in die
+Pkw-Matrix zurück, logiTopp entscheidet einmal neu. Der **Szenario-Vergleich** stellt Nachfrage-,
+Logistik- und Emissions-Kennzahlen mehrerer Szenarien nebeneinander (z. B. Lkw- vs.
+Lastenrad-Flotte). Benötigt eine lokale SUMO-Installation (`$SUMO_HOME`).
+
+Die Verhaltensquelle **GTA** erzeugt Persona-Tagespläne über ein lokales LLM (Ollama,
+OpenAI-kompatibel, Plan-Cache, seed-reproduzierbar) und fällt auf actiTopp zurück, wenn es nicht
+erreichbar ist – Setup: `brew install ollama && ollama pull qwen2.5:7b-instruct`.
 Details: [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md).
 
 ## Dokumentation
@@ -47,7 +55,7 @@ Details: [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md
 | [docs/04-roadmap.md](docs/04-roadmap.md) | MVP-Schnitt, Phasenplan, offene Punkte & Risiken |
 | [docs/05-validierung.md](docs/05-validierung.md) | Phase-0-Validierung: Artefakte erfolgreich durch echten mobiTopp-Lauf, 8 Format-Befunde, Legacy-Stack-Build |
 | [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md) | Zwei-Achsen-Modell, GTA-Integrationskonzept, On-demand-Kalibrierung, SUMO-Zielmodell, Roadmap (Phasen 0–3 ✅) |
-| [docs/07-ansatz-zusammenfassung.md](docs/07-ansatz-zusammenfassung.md) | Kompaktes Briefing: Ansatz, 13-stufige Pipeline, KI-Pipeline (GTA), Artefakte, Datenfluss, Tech-Stack |
+| [docs/07-ansatz-zusammenfassung.md](docs/07-ansatz-zusammenfassung.md) | Kompaktes Briefing: Ansatz, 14-stufige Pipeline, KI-Pipeline (GTA), Artefakte, Datenfluss, Tech-Stack |
 
 ## Kernaussagen (TL;DR)
 

@@ -54,6 +54,9 @@ public class ComparisonController {
         Path simulation = repository.artifactsDir(scenario.id).resolve("simulation");
         node.set("kpis", readJson(simulation.resolve("kpis.json")));
         node.set("depotStats", readJson(simulation.resolve("depot-stats.json")));
+        // SUMO-Kennzahlen (Fahrzeuge, Lieferverkehr, CO₂ je Typ) für den Emissionsvergleich
+        node.set("sumo", readJson(repository.artifactsDir(scenario.id)
+                .resolve("sumo").resolve("summary.json")));
         node.put("simulated", Files.exists(simulation.resolve("kpis.json")));
         return node;
     }

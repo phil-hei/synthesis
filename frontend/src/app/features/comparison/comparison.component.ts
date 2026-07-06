@@ -69,6 +69,11 @@ export class ComparisonComponent implements OnInit {
     return this.modeLabels[key] ?? key;
   }
 
+  /** SUMO-Zeilen nur zeigen, wenn mindestens ein Szenario einen SUMO-Lauf hat. */
+  get hasSumo(): boolean {
+    return this.entries.some(e => !!e.sumo);
+  }
+
   pct(value: number | null | undefined): string {
     return value == null ? '–' : Math.round(value * 100) + ' %';
   }
