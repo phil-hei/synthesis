@@ -176,6 +176,36 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     { key: 'publicTransport', label: 'ÖV' },
   ];
 
+  /**
+   * Regionstyp-Vorlagen für den Kalibrierungs-Zielwert (RegioStaR-Raumtypen).
+   * Richtwerte nach dem MiD-2017-Stadt-Land-Muster; an offizielle Regionaltabellen anpassbar.
+   * Jede Vorlage summiert sich zu 1,0.
+   */
+  readonly regionPresets: { id: string; label: string; split: { [key: string]: number } }[] = [
+    { id: 'mid', label: 'MiD 2017 (bundesweit)',
+      split: { pedestrian: 0.22, bike: 0.11, car: 0.43, passenger: 0.14, publicTransport: 0.10 } },
+    { id: 'metropole', label: 'Metropole (RegioStaR 71)',
+      split: { pedestrian: 0.27, bike: 0.13, car: 0.27, passenger: 0.13, publicTransport: 0.20 } },
+    { id: 'grossstadt', label: 'Regiopole / Großstadt (72)',
+      split: { pedestrian: 0.24, bike: 0.13, car: 0.34, passenger: 0.14, publicTransport: 0.15 } },
+    { id: 'mittelstadt', label: 'Mittel-/Kleinstadt, städtisch (73/74)',
+      split: { pedestrian: 0.22, bike: 0.11, car: 0.42, passenger: 0.15, publicTransport: 0.10 } },
+    { id: 'kleinstadt', label: 'Kleinstädtisch / ländlich (75/76)',
+      split: { pedestrian: 0.18, bike: 0.10, car: 0.49, passenger: 0.16, publicTransport: 0.07 } },
+    { id: 'laendlich', label: 'Ländlich / dörflich (77)',
+      split: { pedestrian: 0.16, bike: 0.08, car: 0.55, passenger: 0.16, publicTransport: 0.05 } },
+  ];
+
+  selectedPreset = '';
+
+  /** Füllt den Kalibrierungs-Zielwert mit der gewählten Regionstyp-Vorlage (danach editierbar). */
+  applyRegionPreset(id: string): void {
+    const preset = this.regionPresets.find(p => p.id === id);
+    if (preset && this.scenario) {
+      this.scenario.population.calibrationTarget = { ...preset.split };
+    }
+  }
+
   hasTarget(target: string): boolean {
     return this.scenario?.targetModels?.includes(target) ?? false;
   }

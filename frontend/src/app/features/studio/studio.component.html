@@ -153,11 +153,21 @@
         <div class="calib-target" *ngIf="hasTarget('logitopp') && scenario.population.calibrateModeChoice"
              title="Ziel-Modus-Anteile (Default MiD 2017 bundesweit; für die Region anpassbar)">
           <span class="targets-label">Ziel-Modal-Split (Anteile)</span>
+          <label class="calib-row"
+                 title="Regionstyp-Vorlage (RegioStaR) – füllt die Zielwerte; danach frei anpassbar">
+            Vorlage
+            <select [(ngModel)]="selectedPreset" (ngModelChange)="applyRegionPreset($event)">
+              <option value="" disabled>– Regionstyp wählen –</option>
+              <option *ngFor="let p of regionPresets" [value]="p.id">{{ p.label }}</option>
+            </select>
+          </label>
           <label class="calib-row" *ngFor="let m of calibrationModes">
             {{ m.label }}
             <input type="number" min="0" max="1" step="0.01"
                    [(ngModel)]="scenario.population.calibrationTarget[m.key]">
           </label>
+          <p class="hint">Richtwerte nach RegioStaR-Raumtyp (MiD-2017-Muster) – an offizielle
+            Regionaltabellen anpassbar.</p>
         </div>
         <label class="checkbox" *ngIf="hasTarget('logitopp')"
                title="Experimentell (GTA 3c): zusätzliche LLM-gestützte Moduswahl je Distanzband auf den simulierten Trips – liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt das lokale LLM.">

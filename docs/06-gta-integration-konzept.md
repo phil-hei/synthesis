@@ -298,7 +298,12 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   editierbar je Region); Frontend-Eingaben (Fuß/Rad/MIV-F/MIV-Mitf/ÖV) bei aktivierter Kalibrierung.
   Verifiziert: benutzerdefiniertes Auto-lastiges Ziel (58 %) → Modal-Split konvergiert dorthin
   (Auto 22→41 %, RMSE 0,235→0,086), klar über dem MiD-Lauf (32 %).
-- *Offen:* vorgefertigte Regionstyp-Presets (MiD RegioStaR) statt manueller Eingabe — Datenanbindung.
+- **RegioStaR-Presets (✅, 2026-07-06):** Studio-Dropdown „Vorlage" füllt die Zielwerte mit
+  regionstyp-typischen Modal-Splits (RegioStaR7: Metropole 71 · Regiopole/Großstadt 72 ·
+  Mittel-/Kleinstadt 73/74 · kleinstädtisch/ländlich 75/76 · ländlich/dörflich 77 · MiD-bundesweit);
+  danach frei editierbar. Richtwerte nach dem MiD-2017-Stadt-Land-Muster (Pkw-Anteil steigt
+  urban→ländlich, ÖV/Fuß fallen), je Vorlage auf 1,0 normiert. *Offen/optional:* Ersatz durch
+  exakte offizielle MiD-RegioStaR-Tabellen; automatische Vorauswahl aus der Bevölkerungsdichte.
 
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und
