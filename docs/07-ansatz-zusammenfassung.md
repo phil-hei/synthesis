@@ -38,7 +38,7 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | 10 | Manifest | Lauf-Metadaten | `manifest.json` |
 | 11 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete (+ optional Kalibrierungsschleife) | `demandsimulationResult.csv`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
 | 12 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-Trips + Zustelltouren** (Lkw/Lastenrad); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp) | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte) |
-| 13 | **Netz-Feedback (optional)** | Stau-Faktoren je Zonenrelation (frei vs. staugewichtet auf dem SUMO-Netz, 1–3) skalieren die Pkw-Matrix → logiTopp entscheidet einmal neu | aktualisierte `CAR_TTC`-Matrizen + neue `kpis.json` |
+| 13 | **Netz-Feedback (optional)** | Gleichgewichts-Schleife: Stau-Faktoren je Zonenrelation (1–3), **MSA-gedämpft** in die Pkw-Matrix → logiTopp entscheidet neu → SUMO erneut – bis Konvergenz (Δ<0,01, max. 3 Iterationen) | aktualisierte `CAR_TTC`-Matrizen + neue `kpis.json`/SUMO-Artefakte |
 | 14 | **LLM-Moduswahl (A, GTA 3c)** | LLM wählt Modus je Distanzband auf simulierten Trips | `simulation/llm-mode-choice.json` |
 
 ## 4. Die KI-Pipeline (GTA) im Detail
@@ -60,7 +60,7 @@ person.csv → Persona je Person (Erwerbsstatus × Altersband × Geschlecht)
 - **Effizient:** z. B. 651 Personen → nur 18 LLM-Calls (~140 s). Fallback auf actiTopp, wenn LLM
   nicht erreichbar.
 
-**(b) LLM-Moduswahl (Stufe 13, GTA 3c)** – geerdet in Reisezeiten:
+**(b) LLM-Moduswahl (Stufe 14, GTA 3c)** – geerdet in Reisezeiten:
 
 ```
 demandsimulationResult.csv (distanceInKm) → Trips nach Distanzband bündeln
@@ -98,7 +98,7 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
         ↓
   ── Achse B: Zielmodell ──  logiTopp | SUMO | MobileCity
         ↓            ↑______________|
-        ↓        (Netz-Feedback: SUMO-Stauzeiten → Pkw-Matrix → neue Entscheidung)
+        ↓        (Netz-Feedback: SUMO-Stauzeiten → Pkw-Matrix → neue Entscheidung, MSA-iterativ bis Konvergenz)
   KPIs / Touren / CO₂ / Netzlast-Karte / LLM-Moduswahl
         ↓
 [Studio-Panels + Szenario-Vergleich (UI, inkl. Emissionsvergleich)]
@@ -113,9 +113,9 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
 - **Ehrlicher KI-Befund:** rohe LLM-Moduswahl hat einen **Bias zu aktiven Modi** (zu viel Rad),
   weil ihr die kalibrierten Modus-Konstanten fehlen – sie ist eine interessante, aber
   kalibrierbedürftige Alternativlinse.
-- **Netz-Feedback wirkt:** bei voller Population entstehen reale Stau-Faktoren (Ø 1,32, max 3,0);
-  auf den staubelasteten Reisezeiten entscheidet logiTopp neu → Pkw 27 %→25 %, Fuß 45 %→49 % –
-  die Nachfrage weicht dem Stau aus (SUMO verbessert das Nachfragemodell, statt es nur zu nutzen).
+- **Netz-Feedback konvergiert:** Gleichgewichts-Schleife mit MSA-Dämpfung erreicht bei voller
+  Population nach 2 Iterationen das Gleichgewicht (Δ 0,33 → 0,008; Ø Faktor 1,32) →
+  Pkw 27 %→24 %, Fuß 45 %→49 % – die Nachfrage weicht dem Stau aus, stabil statt oszillierend.
 - **Emissionsvergleich als Kern-Use-Case:** CO₂ je Fahrzeugtyp (HBEFA) macht Logistik-Szenarien
   wie „Lastenrad- statt Lkw-Flotte" direkt im Szenario-Vergleich quantifizierbar.
 

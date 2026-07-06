@@ -315,15 +315,18 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   (1014 Fahrzeuge, Ø 3,2 km / 54,8 km/h / 3,9 min); Frontend-Checkbox „SUMO" aktiv + Ergebnis-Panel
   im Browser bestätigt. Macht uns für eigene Mikrosimulation **unabhängig von Takomat**.
 - Konfiguration: `SynthesisProperties.Sumo` (Binär-/SUMO_HOME-Pfade, `day`, `maxTrips`, `timeoutMinutes`).
-- **Nachfrage↔Netz-Feedback (2026-07-06):** Flag `population.sumoFeedback` (benötigt logiTopp+SUMO).
-  Neue Stufe „Netz-Feedback": alle Zonen-Zentroid-Paare werden zweimal auf dem SUMO-Netz geroutet
-  (duarouter frei vs. `--weight-files edgedata.xml`, also staugewichtet); das Zeitverhältnis je
-  Relation (geklemmt 1–3) skaliert die bestehende CAR_TTC-Matrix (GraphHopper-Basis bleibt, nur der
-  Stau-Effekt fließt ein), dann entscheidet **logiTopp einmal neu**. Eine Iteration, kein
-  Gleichgewichts-Looping; Zonen-Kappe `sumo.feedbackMaxZones` (150, OD ist n²). **Live-Beweis
-  (Rastatt, volle Population):** 324 Relationen, Ø Faktor 1,32 (max 3,0) → Modal-Split reagiert:
-  Pkw 27 %→25 %, Fuß 45 %→49 % – die Nachfrage weicht dem Stau aus. Damit verbessert SUMO
-  erstmals das Nachfragemodell statt es nur zu konsumieren.
+- **Nachfrage↔Netz-Feedback als Gleichgewichts-Schleife (2026-07-06):** Flag
+  `population.sumoFeedback` (benötigt logiTopp+SUMO). Stufe „Netz-Feedback": je Iteration werden
+  alle Zonen-Zentroid-Paare zweimal auf dem SUMO-Netz geroutet (duarouter frei vs.
+  `--weight-files edgedata.xml`); das Zeitverhältnis (geklemmt 1–3) wird **MSA-gedämpft**
+  (Schrittweite 1/k, verhindert Oszillieren) in die CAR_TTC-Matrix gemischt (GraphHopper-Basis
+  bleibt), **logiTopp entscheidet neu und SUMO simuliert die neue Nachfrage** – bis die mittlere
+  Faktor-Änderung unter die Toleranz fällt (`sumo.feedbackTolerance` 0,01) oder das Limit erreicht
+  ist (`sumo.feedbackIterations` 3); Zonen-Kappe `feedbackMaxZones` 150 (OD ist n²). Die
+  SUMO-Artefakte (CO₂, Netzlast) bleiben konsistent zur finalen Nachfrage. **Live-Beweis (Rastatt,
+  volle Population): Konvergenz nach 2 Iterationen** (Δ 0,33 → 0,008), Ø Faktor 1,32 auf 324
+  Relationen, Modal-Split Pkw 27 %→24 %, Fuß 45 %→49 % – Nachfrage und Netz im Gleichgewicht.
+  Damit verbessert SUMO das Nachfragemodell, statt es nur zu konsumieren.
 - **Netzlast-Karte (2026-07-05):** tages-aggregierte edgeData-Messung + zweiter netconvert-Lauf
   (`--plain-output-prefix --proj.plain-geo`) verbinden Kantenmesswerte mit WGS84-Geometrien zu
   `sumo/congestion.geojson` (nur befahrene Kanten; Attribute speedKmh/limitKmh/relSpeed/timeLoss).

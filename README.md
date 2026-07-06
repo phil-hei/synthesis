@@ -35,8 +35,8 @@ Mit Zielmodell **SUMO** wird die logiTopp-Nachfrage mikroskopisch simuliert (OSM
 `duarouter` → `sumo`, rein nativ ohne Python/pyproj) – **PKW-Trips plus Zustelltouren**
 (Lkw/Lastenrad aus logiTopp). Ergebnisse: Verkehrs-KPIs (Fahrzeuge, Ø Reisedauer/Geschwindigkeit),
 **CO₂ je Fahrzeugtyp** (HBEFA-Emissionsklassen), eine **Netzlast-Karte** (Kanten nach relSpeed
-eingefärbt) und optional das **Netz-Feedback**: staubelastete SUMO-Reisezeiten fließen in die
-Pkw-Matrix zurück, logiTopp entscheidet einmal neu. Der **Szenario-Vergleich** stellt Nachfrage-,
+eingefärbt) und optional das **Netz-Feedback**: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die
+Pkw-Matrix zurück, logiTopp und SUMO iterieren bis zum Nachfrage-Netz-Gleichgewicht. Der **Szenario-Vergleich** stellt Nachfrage-,
 Logistik- und Emissions-Kennzahlen mehrerer Szenarien nebeneinander (z. B. Lkw- vs.
 Lastenrad-Flotte). Benötigt eine lokale SUMO-Installation (`$SUMO_HOME`).
 

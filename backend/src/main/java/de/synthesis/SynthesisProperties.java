@@ -80,6 +80,10 @@ public class SynthesisProperties {
         private int timeoutMinutes = 15;
         /** Zonen-Obergrenze fürs Netz-Feedback (OD-Routing ist n²). */
         private int feedbackMaxZones = 150;
+        /** Max. Gleichgewichts-Iterationen (je Iteration ein logiTopp- + SUMO-Lauf). */
+        private int feedbackIterations = 3;
+        /** Konvergenz: Abbruch, wenn die mittlere Faktor-Änderung darunter liegt. */
+        private double feedbackTolerance = 0.01;
 
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -95,6 +99,10 @@ public class SynthesisProperties {
         public void setTimeoutMinutes(int timeoutMinutes) { this.timeoutMinutes = timeoutMinutes; }
         public int getFeedbackMaxZones() { return feedbackMaxZones; }
         public void setFeedbackMaxZones(int feedbackMaxZones) { this.feedbackMaxZones = feedbackMaxZones; }
+        public int getFeedbackIterations() { return feedbackIterations; }
+        public void setFeedbackIterations(int feedbackIterations) { this.feedbackIterations = feedbackIterations; }
+        public double getFeedbackTolerance() { return feedbackTolerance; }
+        public void setFeedbackTolerance(double feedbackTolerance) { this.feedbackTolerance = feedbackTolerance; }
     }
 
     /** KIT actiTopp (actitoppNG) activity scheduling, run as a Gradle task. */

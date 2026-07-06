@@ -32,6 +32,9 @@ synthesis:
   #   day: 0                                   # simulierter Tag (0 = Montag)
   #   max-trips: 4000                          # Obergrenze eingespeister PKW-Trips
   #   timeout-minutes: 15
+  #   feedback-max-zones: 150                  # Netz-Feedback: Zonen-Obergrenze (OD-Routing ist n²)
+  #   feedback-iterations: 3                   # Gleichgewichts-Iterationen (je 1 logiTopp- + SUMO-Lauf)
+  #   feedback-tolerance: 0.01                 # Konvergenz bei mittlerer Faktor-Änderung darunter
   # llm:                                       # GTA-Verhaltensquelle + LLM-Moduswahl (OpenAI-kompatibel, z. B. Ollama)
   #   enabled: true
   #   endpoint: http://localhost:11434/v1

@@ -10,6 +10,7 @@ import de.synthesis.generation.pipeline.ActivityGenerator;
 import de.synthesis.generation.pipeline.AttractivityCalculator;
 import de.synthesis.generation.pipeline.CsvArtifacts;
 import de.synthesis.generation.pipeline.ExternalZones;
+import de.synthesis.generation.pipeline.FeedbackMath;
 import de.synthesis.generation.pipeline.GeoJson;
 import de.synthesis.generation.pipeline.GridZoning;
 import de.synthesis.generation.pipeline.LegacyExportGenerator;
@@ -625,11 +626,12 @@ public class GenerationService {
     // --- Stufe 13: Netz-Feedback (Nachfrage ↔ Netz) --------------------------------------------
 
     /**
-     * Speist die staubelasteten SUMO-Reisezeiten in die Pkw-Matrix zurück und lässt logiTopp
-     * einmal neu entscheiden (Ziel-/Verkehrsmittelwahl reagiert auf Stau). Mechanik: je Zonenpaar
-     * das Verhältnis staugewichteter zu freier Routenzeit auf dem SUMO-Netz (Faktor 1–3), angewandt
-     * auf die bestehende CAR_TTC-Matrix – die GraphHopper-Basis bleibt erhalten, nur der
-     * Stau-Effekt fließt ein. Eine Iteration (kein Gleichgewichts-Looping).
+     * Gleichgewichts-Schleife Nachfrage ↔ Netz: je Iteration werden die Stau-Faktoren je
+     * Zonenpaar (staugewichtete / freie Routenzeit auf dem SUMO-Netz, 1–3) per MSA gedämpft
+     * in die Pkw-Matrix gemischt (Basis = GraphHopper-Zeiten), logiTopp entscheidet neu und
+     * SUMO simuliert die neue Nachfrage – bis die mittlere Faktor-Änderung unter die Toleranz
+     * fällt oder das Iterationslimit erreicht ist. Die Dämpfung verhindert das Oszillieren
+     * ungedämpfter Rückkopplungen (Stau → alle weichen aus → kein Stau → …).
      */
     private void stageNetworkFeedback(PipelineContext ctx) {
         Scenario scenario = ctx.scenario;
@@ -660,52 +662,90 @@ public class GenerationService {
         }
         try {
             SumoRunner runner = new SumoRunner(properties.getSumo());
-            job.log("Berechne Stau-Faktoren je Zonenrelation (frei vs. staugewichtet auf dem SUMO-Netz)…");
-            SumoRunner.OdFactors od = runner.computeOdFactors(
-                    artifacts.resolve("sumo"), ctx.zones, job::log);
-            if (od.routedPairs() == 0) {
-                job.stage("Netz-Feedback").status = "SKIPPED";
-                job.log("Netz-Feedback übersprungen (keine routbaren Zonenrelationen auf dem SUMO-Netz)");
-                return;
-            }
-            int n = ctx.zones.size();
-            float[][] scaled = new float[n][n];
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    scaled[i][j] = (float) (ctx.carTravelTimeMin[i][j] * od.factors()[i][j]);
-                }
-            }
-            VisumMatrixWriter.write(
-                    artifacts.resolve("matrix").resolve("travel_times").resolve("CAR_TTC.mtx.bz2"),
-                    ctx.zones, scaled);
-            VisumMatrixWriter.write(
-                    artifacts.resolve("legacy").resolve("matrices").resolve("travel_times")
-                            .resolve("CAR_TTC.mtx"),
-                    ctx.zones, scaled);
-            job.log(String.format(
-                    "Pkw-Matrix mit Stau-Faktoren aktualisiert: %d Relationen, Ø Faktor %.2f, max %.2f",
-                    od.routedPairs(), od.meanFactor(), od.maxFactor()));
-
-            Map<String, Double> before = readModalSplit(
-                    artifacts.resolve("simulation").resolve("kpis.json"));
-            job.log("logiTopp entscheidet neu auf staubelasteten Reisezeiten…");
             SimulationRunner simRunner = new SimulationRunner(properties.getSimulation());
             Path calibrated = artifacts.resolve("simulation").resolve("mode_choice_calibrated.txt");
-            SimulationRunner.Result run = Files.exists(calibrated)
-                    ? simRunner.run(scenario, artifacts, job::log, calibrated)
-                    : simRunner.run(scenario, artifacts, job::log);
-            new SimulationResultIngestor(mapper).ingest(run.resultsDir(), artifacts, run.durationSeconds());
-            Map<String, Double> after = readModalSplit(
+            Path demandResult = artifacts.resolve("simulation").resolve("results")
+                    .resolve("demandsimulationResult.csv");
+            Path plannedTours = artifacts.resolve("simulation").resolve("results")
+                    .resolve("planned-tours.csv");
+            int maxIterations = Math.max(1, properties.getSumo().getFeedbackIterations());
+            double tolerance = properties.getSumo().getFeedbackTolerance();
+            int n = ctx.zones.size();
+            double[][] smoothed = new double[n][n];
+            for (double[] row : smoothed) {
+                java.util.Arrays.fill(row, 1);
+            }
+            Map<String, Double> initialSplit = readModalSplit(
+                    artifacts.resolve("simulation").resolve("kpis.json"));
+            job.log("Gleichgewichts-Schleife: max. " + maxIterations
+                    + " Iterationen, MSA-Dämpfung, Konvergenz bei Δ<" + tolerance);
+
+            int iteration = 0;
+            double delta = Double.MAX_VALUE;
+            SumoRunner.OdFactors od = null;
+            while (iteration < maxIterations) {
+                iteration++;
+                od = runner.computeOdFactors(artifacts.resolve("sumo"), ctx.zones, job::log);
+                if (od.routedPairs() == 0) {
+                    job.stage("Netz-Feedback").status = "SKIPPED";
+                    job.log("Netz-Feedback übersprungen (keine routbaren Zonenrelationen)");
+                    return;
+                }
+                delta = FeedbackMath.msaUpdate(smoothed, od.factors(), iteration);
+                job.log(String.format(
+                        "Iteration %d: %d Relationen, Ø Faktor %.2f (max %.2f), Δ nach Dämpfung %.4f",
+                        iteration, od.routedPairs(), od.meanFactor(), od.maxFactor(), delta));
+                if (iteration > 1 && delta < tolerance) {
+                    job.log(String.format("Konvergiert nach %d Iterationen (Δ %.4f < %.2f) – "
+                            + "Nachfrage und Netz sind im Gleichgewicht", iteration, delta, tolerance));
+                    break;
+                }
+                float[][] scaled = new float[n][n];
+                for (int i = 0; i < n; i++) {
+                    for (int j = 0; j < n; j++) {
+                        scaled[i][j] = (float) (ctx.carTravelTimeMin[i][j] * smoothed[i][j]);
+                    }
+                }
+                VisumMatrixWriter.write(
+                        artifacts.resolve("matrix").resolve("travel_times").resolve("CAR_TTC.mtx.bz2"),
+                        ctx.zones, scaled);
+                VisumMatrixWriter.write(
+                        artifacts.resolve("legacy").resolve("matrices").resolve("travel_times")
+                                .resolve("CAR_TTC.mtx"),
+                        ctx.zones, scaled);
+                job.log("logiTopp entscheidet neu auf gedämpften Stauzeiten (Iteration " + iteration + ")…");
+                SimulationRunner.Result run = Files.exists(calibrated)
+                        ? simRunner.run(scenario, artifacts, job::log, calibrated)
+                        : simRunner.run(scenario, artifacts, job::log);
+                new SimulationResultIngestor(mapper)
+                        .ingest(run.resultsDir(), artifacts, run.durationSeconds());
+                // SUMO auf der neuen Nachfrage – liefert die Faktoren der nächsten Iteration
+                // und hält CO₂/Netzlast-Artefakte konsistent zur finalen Nachfrage
+                String osmXml = roadNetworkOsm(ctx);
+                SumoRunner.Result sumo = runner.run(artifacts, osmXml, demandResult,
+                        plannedTours, job::log);
+                writeSumoSummary(artifacts.resolve("sumo").resolve("summary.json"), sumo);
+                job.summary.put("sumoVehicles", sumo.vehicles());
+            }
+
+            Map<String, Double> finalSplit = readModalSplit(
                     artifacts.resolve("simulation").resolve("kpis.json"));
             job.log(String.format(
-                    "Netz-Feedback: Pkw %.0f%%→%.0f%%, Fuß %.0f%%→%.0f%%, Rad %.0f%%→%.0f%%, ÖV %.0f%%→%.0f%%",
-                    before.getOrDefault("car", 0.0) * 100, after.getOrDefault("car", 0.0) * 100,
-                    before.getOrDefault("pedestrian", 0.0) * 100, after.getOrDefault("pedestrian", 0.0) * 100,
-                    before.getOrDefault("bike", 0.0) * 100, after.getOrDefault("bike", 0.0) * 100,
-                    before.getOrDefault("publicTransport", 0.0) * 100,
-                    after.getOrDefault("publicTransport", 0.0) * 100));
-            job.summary.put("feedbackMeanFactor", Math.round(od.meanFactor() * 100) / 100.0);
-            job.summary.put("feedbackRelations", od.routedPairs());
+                    "Netz-Feedback (%d Iterationen): Pkw %.0f%%→%.0f%%, Fuß %.0f%%→%.0f%%, "
+                            + "Rad %.0f%%→%.0f%%, ÖV %.0f%%→%.0f%%",
+                    iteration,
+                    initialSplit.getOrDefault("car", 0.0) * 100, finalSplit.getOrDefault("car", 0.0) * 100,
+                    initialSplit.getOrDefault("pedestrian", 0.0) * 100,
+                    finalSplit.getOrDefault("pedestrian", 0.0) * 100,
+                    initialSplit.getOrDefault("bike", 0.0) * 100, finalSplit.getOrDefault("bike", 0.0) * 100,
+                    initialSplit.getOrDefault("publicTransport", 0.0) * 100,
+                    finalSplit.getOrDefault("publicTransport", 0.0) * 100));
+            job.summary.put("feedbackIterations", iteration);
+            job.summary.put("feedbackDelta", Math.round(delta * 10000) / 10000.0);
+            if (od != null) {
+                job.summary.put("feedbackMeanFactor", Math.round(od.meanFactor() * 100) / 100.0);
+                job.summary.put("feedbackRelations", od.routedPairs());
+            }
         } catch (Exception e) {
             job.stage("Netz-Feedback").status = "FAILED";
             job.stage("Netz-Feedback").message = String.valueOf(e);
