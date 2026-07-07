@@ -125,10 +125,11 @@
             <td *ngIf="mid"></td>
           </tr>
           <tr>
-            <td>CO₂ Pkw / Lieferverkehr</td>
+            <td>CO₂ Pkw / Lieferv. / Bus</td>
             <td *ngFor="let e of entries">
               {{ e.sumo?.co2KgByType ? ((e.sumo.co2KgByType['pkw'] || 0 | number:'1.0-1') + ' / '
-                 + (e.sumo.co2KgByType['lkw'] || 0 | number:'1.0-1') + ' kg') : '–' }}</td>
+                 + (e.sumo.co2KgByType['lkw'] || 0 | number:'1.0-1') + ' / '
+                 + (e.sumo.co2KgByType['bus'] || 0 | number:'1.0-1') + ' kg') : '–' }}</td>
             <td *ngIf="mid"></td>
           </tr>
         </ng-container>

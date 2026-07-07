@@ -194,7 +194,7 @@ public class SynthesisProperties {
         private int windowEndHour = 10;
         /** gtfs2pt-Map-Matching (tracemapper) ist langsam → großzügiger Timeout, Ergebnis wird gecacht. */
         private int timeoutMinutes = 25;
-        /** SUMO-vClasses des ÖV (aktuell nur Bus, da das Netz road-only ist). */
+        /** gtfs2pt-Modi (OSM-Namen). Aktuell Bus (Netz ist road-only; Rail/Tram s. docs). */
         private String modes = "bus";
 
         private static String defaultGtfs2pt() {

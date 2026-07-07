@@ -421,7 +421,9 @@
           <td>{{ sumoSummary.co2Kg | number:'1.0-1' }} kg
             <span class="mid" *ngIf="sumoSummary.co2KgByType">
               Pkw {{ sumoSummary.co2KgByType['pkw'] || 0 | number:'1.0-1' }} /
-              Lkw {{ sumoSummary.co2KgByType['lkw'] || 0 | number:'1.0-1' }} kg</span></td></tr>
+              Lkw {{ sumoSummary.co2KgByType['lkw'] || 0 | number:'1.0-1' }}
+              <ng-container *ngIf="sumoSummary.co2KgByType['bus']">/
+              Bus {{ sumoSummary.co2KgByType['bus'] | number:'1.0-1' }}</ng-container> kg</span></td></tr>
         <tr><td>Ø Reisedauer</td><td>{{ sumoSummary.meanDurationMin }} min</td></tr>
         <tr><td>Ø Routenlänge</td><td>{{ sumoSummary.meanRouteLengthKm }} km</td></tr>
         <tr title="Mittlere Reisegeschwindigkeit inkl. Halte/Wartezeiten">

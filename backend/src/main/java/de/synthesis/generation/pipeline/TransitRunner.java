@@ -94,15 +94,35 @@ public class TransitRunner {
     private Path writeVtypes(Path outDir) throws IOException {
         Path vtypes = outDir.resolve("pt_vtypes.add.xml");
         StringBuilder sb = new StringBuilder("<additional>\n");
+        java.util.Set<String> written = new java.util.LinkedHashSet<>();
         for (String mode : modes.split(",")) {
-            String m = mode.trim();
-            if (!m.isEmpty()) {
-                sb.append(String.format("  <vType id=\"%s\" vClass=\"%s\"/>%n", m, m));
+            // gtfs2pt referenziert die Fahrzeuge über die SUMO-vClass (train→rail), nicht den OSM-Namen
+            String vClass = vClassOf(mode.trim());
+            if (!vClass.isEmpty() && written.add(vClass)) {
+                sb.append(String.format("  <vType id=\"%s\" vClass=\"%s\" emissionClass=\"%s\"/>%n",
+                        vClass, vClass, emissionClass(vClass)));
             }
         }
         sb.append("</additional>\n");
         Files.writeString(vtypes, sb.toString());
         return vtypes;
+    }
+
+    /** OSM-Modus (--modes) → SUMO-vClass, wie gtfs2pt.py sie in die Fahrzeug-Datei schreibt. */
+    private static String vClassOf(String osmMode) {
+        return switch (osmMode) {
+            case "bus" -> "bus";
+            case "train" -> "rail";
+            case "tram" -> "tram";
+            case "light_rail", "monorail" -> "rail_urban";
+            case "subway" -> "subway";
+            default -> osmMode;
+        };
+    }
+
+    /** HBEFA3-Emissionsklasse je vClass: Bus dieselbetrieben, Schiene/Tram elektrisch (Zero). */
+    private static String emissionClass(String vClass) {
+        return "bus".equals(vClass) ? "HBEFA3/Bus" : "Zero";
     }
 
     private static int count(Path file, String needle) throws IOException {
