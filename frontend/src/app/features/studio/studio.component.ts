@@ -155,6 +155,28 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /** GTFS-Feed hochladen (ÖV-Fallback); Szenario muss gespeichert sein. */
+  onGtfsSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const id = this.scenario?.id;
+    if (!file || !id) {
+      return;
+    }
+    this.busy = true;
+    this.api.uploadGtfs(id, file).subscribe({
+      next: saved => {
+        this.scenario = saved;
+        this.busy = false;
+        this.message = 'GTFS-Feed hochgeladen';
+      },
+      error: err => {
+        this.busy = false;
+        this.message = 'GTFS-Upload fehlgeschlagen: ' + (err.error?.message ?? err.message);
+      }
+    });
+  }
+
   deleteSelected(): void {
     const selected = this.scenarios.find(s => s.id === this.selectedScenarioId);
     if (!selected?.id || !confirm(`Szenario "${selected.name}" löschen?`)) {

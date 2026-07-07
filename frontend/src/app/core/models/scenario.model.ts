@@ -48,6 +48,10 @@ export interface Scenario {
     gtaWhatIf: string;
     /** Netz-Feedback: SUMO-Stauzeiten → Pkw-Matrix → erneute logiTopp-Entscheidung. */
     sumoFeedback: boolean;
+    /** ÖV in SUMO (Phase C): GTFS → gtfs2pt.py → Bus-Fahrplan, Nachfrage fährt intermodal mit. */
+    publicTransport: boolean;
+    /** Optional hochgeladener GTFS-Feed (Pfad); Fallback zum Auto-Fetch. */
+    gtfsUploadPath?: string;
     useActitopp: boolean;
     useKitPopulation: boolean;
     calibrateModeChoice: boolean;

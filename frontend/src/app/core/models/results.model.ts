@@ -38,6 +38,9 @@ export interface SumoSummary {
   bikeTrips?: number;
   walkTrips?: number;
   deliveryTrips?: number;
+  /** ÖV (Phase C): mitfahrende Nachfrage-Personen und fahrplangebundene ÖV-Fahrzeuge (Bus). */
+  ptRiders?: number;
+  ptVehicles?: number;
   /** CO₂ in kg (HBEFA-Emissionsklassen), gesamt und je Fahrzeugtyp (pkw/lkw/lastenrad). */
   co2Kg?: number;
   co2KgByType?: { [vType: string]: number };

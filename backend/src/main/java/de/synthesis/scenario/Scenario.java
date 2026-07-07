@@ -89,6 +89,14 @@ public class Scenario {
          * Pkw-Matrix zurück und logiTopp entscheidet einmal neu (benötigt logiTopp + SUMO).
          */
         public boolean sumoFeedback = false;
+        /**
+         * ÖV in SUMO (experimentell, Phase C): GTFS → gtfs2pt.py → Bus-Fahrplan; Nachfrage-
+         * Personen fahren intermodal mit. Braucht Ziel SUMO + ein Python-venv; GTFS per
+         * Auto-Fetch (nach Region) mit Upload-Fallback. gtfs2pt-Mapping ist langsam (gecacht).
+         */
+        public boolean publicTransport = false;
+        /** Optionaler hochgeladener GTFS-Feed (Pfad); Fallback, falls kein Auto-Fetch greift. */
+        public String gtfsUploadPath;
         /** Ziel-Modal-Split der Kalibrierung (Anteile je Modus); Default = MiD 2017 bundesweit, editierbar/regional. */
         public Map<String, Double> calibrationTarget = defaultModalSplit();
         public double carsPerHousehold = 1.0;

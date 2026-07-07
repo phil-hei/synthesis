@@ -45,6 +45,13 @@ export class ApiService {
     return this.http.post<UploadSummary>(`${this.base}/scenarios/${id}/uploads/population-grid`, form);
   }
 
+  /** GTFS-Feed für die ÖV-Simulation hochladen (Phase-C-Fallback zum Auto-Fetch). */
+  uploadGtfs(id: string, file: File): Observable<Scenario> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<Scenario>(`${this.base}/scenarios/${id}/gtfs`, form);
+  }
+
   listUploads(id: string): Observable<UploadInfo[]> {
     return this.http.get<UploadInfo[]>(`${this.base}/scenarios/${id}/uploads`);
   }

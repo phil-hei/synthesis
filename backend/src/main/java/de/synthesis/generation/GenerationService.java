@@ -27,7 +27,9 @@ import de.synthesis.generation.pipeline.SimulationResultIngestor;
 import de.synthesis.generation.pipeline.SimulationRunner;
 import de.synthesis.generation.pipeline.VisumMatrixWriter;
 import de.synthesis.generation.pipeline.LlmModeChoiceRunner;
+import de.synthesis.generation.pipeline.GtfsSource;
 import de.synthesis.generation.pipeline.SumoRunner;
+import de.synthesis.generation.pipeline.TransitRunner;
 import de.synthesis.generation.pipeline.Zone;
 import de.synthesis.scenario.Scenario;
 import de.synthesis.scenario.ScenarioRepository;
@@ -606,14 +608,16 @@ public class GenerationService {
             job.log("Baue SUMO-Netz und simuliere Verkehr…");
             Path plannedTours = artifacts.resolve("simulation").resolve("results")
                     .resolve("planned-tours.csv");
+            SumoRunner.PtProvider ptProvider = buildPtProvider(ctx);
             SumoRunner.Result sumo = runner.run(artifacts, osmXml, demandResult,
-                    plannedTours, job::log);
+                    plannedTours, ptProvider, job::log);
             writeSumoSummary(artifacts.resolve("sumo").resolve("summary.json"), sumo);
-            job.log(String.format("SUMO: %d Fahrzeuge (%d PKW, %d Rad, %d Lieferverkehr) + %d Fuß, "
-                            + "Ø %.1f min / %.1f km / %.0f km/h, CO₂ %.1f kg (%d s)",
+            job.log(String.format("SUMO: %d Fahrzeuge (%d PKW, %d Rad, %d Lieferverkehr) + %d Fuß "
+                            + "+ %d ÖV-Fahrgäste, Ø %.1f min / %.1f km / %.0f km/h, CO₂ %.1f kg (%d s)",
                     sumo.vehicles(), sumo.carTrips(), sumo.bikeTrips(), sumo.deliveryTrips(),
-                    sumo.walkTrips(), sumo.meanDurationSec() / 60, sumo.meanRouteLengthM() / 1000,
-                    sumo.meanSpeedMs() * 3.6, sumo.co2Kg(), sumo.durationSeconds()));
+                    sumo.walkTrips(), sumo.ptRiders(), sumo.meanDurationSec() / 60,
+                    sumo.meanRouteLengthM() / 1000, sumo.meanSpeedMs() * 3.6, sumo.co2Kg(),
+                    sumo.durationSeconds()));
             job.summary.put("sumoVehicles", sumo.vehicles());
         } catch (Exception e) {
             // FAILED statt SKIPPED: der Nutzer soll Fehler von bewusster Abwahl unterscheiden können
@@ -621,6 +625,42 @@ public class GenerationService {
             job.stage("SUMO (Verkehr)").message = String.valueOf(e);
             job.log("SUMO fehlgeschlagen: " + e);
         }
+    }
+
+    /**
+     * Baut den ÖV-Provider für den SUMO-Lauf (Phase C): sobald das Netz steht, wird der GTFS-Feed
+     * beschafft (Auto-Fetch nach Region, Upload-Fallback), zugeschnitten und via gtfs2pt.py in die
+     * Fahrplan-Infrastruktur überführt. {@code null} = ohne ÖV (Flag aus oder venv/gtfs2pt fehlt).
+     */
+    private SumoRunner.PtProvider buildPtProvider(PipelineContext ctx) {
+        Scenario scenario = ctx.scenario;
+        GenerationJob job = ctx.job;
+        if (!scenario.population.publicTransport || !properties.getTransit().isEnabled()) {
+            return null;
+        }
+        TransitRunner transit = new TransitRunner(properties.getTransit(),
+                properties.getSumo().getSumoHome());
+        if (!transit.isAvailable()) {
+            job.log("ÖV übersprungen (Python-venv/gtfs2pt nicht konfiguriert – synthesis.transit.venv-python)");
+            return null;
+        }
+        GtfsSource gtfs = new GtfsSource(properties.getTransit());
+        Path transitDir = ctx.artifacts.resolve("sumo").resolve("transit");
+        Path rawCache = Path.of(properties.getDataDir()).resolve("gtfs-cache");
+        Path croppedFeed = transitDir.resolve("feed-cropped.zip");
+        Path uploaded = scenario.population.gtfsUploadPath != null
+                && !scenario.population.gtfsUploadPath.isBlank()
+                ? Path.of(scenario.population.gtfsUploadPath) : null;
+        String date = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        return net -> {
+            Files.createDirectories(transitDir);
+            GtfsSource.Resolved resolved = gtfs.resolve(scenario.region, uploaded, rawCache,
+                    croppedFeed, job::log);
+            if (resolved == null) {
+                return null;
+            }
+            return transit.build(net, resolved.croppedFeed(), date, transitDir, job::log);
+        };
     }
 
     // --- Stufe 13: Netz-Feedback (Nachfrage ↔ Netz) --------------------------------------------
@@ -859,6 +899,8 @@ public class GenerationService {
         node.put("bikeTrips", sumo.bikeTrips());
         node.put("walkTrips", sumo.walkTrips());
         node.put("deliveryTrips", sumo.deliveryTrips());
+        node.put("ptRiders", sumo.ptRiders());
+        node.put("ptVehicles", sumo.ptVehicles());
         node.put("co2Kg", sumo.co2Kg());
         node.set("co2KgByType", mapper.valueToTree(sumo.co2KgByType()));
         mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), node);

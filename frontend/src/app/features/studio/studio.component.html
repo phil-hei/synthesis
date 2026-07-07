@@ -179,6 +179,19 @@
           <input type="checkbox" [(ngModel)]="scenario.population.sumoFeedback">
           Netz-Feedback: SUMO-Stau ⇄ Nachfrage (iterativ)
         </label>
+        <label class="checkbox" *ngIf="hasTarget('sumo')"
+               title="ÖV (Bus) in der SUMO-Simulation: GTFS-Fahrplan (Auto-Fetch nach Region, Upload-Fallback) wird via gtfs2pt.py zu Haltestellen und Bus-Fahrten; ÖV-Nachfrage fährt intermodal mit (Fußweg → Bus → Fußweg). Braucht ein Python-venv; gtfs2pt-Mapping ist langsam (Ergebnis wird gecacht).">
+          <input type="checkbox" [(ngModel)]="scenario.population.publicTransport">
+          ÖV/Bus in SUMO (GTFS, experimentell – Phase C)
+        </label>
+        <div class="hint" *ngIf="scenario.population.publicTransport && hasTarget('sumo')">
+          GTFS wird automatisch nach Region geladen. Kein Feed verfügbar?
+          <label class="linklike">GTFS-ZIP hochladen
+            <input type="file" accept=".zip" hidden
+                   [disabled]="!scenario.id" (change)="onGtfsSelected($event)"></label>
+          <span *ngIf="!scenario.id"> (erst Szenario speichern)</span>
+          <span *ngIf="scenario.population.gtfsUploadPath"> ✓ Feed hochgeladen</span>
+        </div>
       </section>
 
       <section class="block">
@@ -397,6 +410,11 @@
             <span class="mid">/ {{ sumoSummary.bikeTrips || 0 | number:'1.0-0' }} Rad
             / {{ sumoSummary.walkTrips || 0 | number:'1.0-0' }} Fuß
             <ng-container *ngIf="sumoSummary.deliveryTrips != null">/ {{ sumoSummary.deliveryTrips | number:'1.0-0' }} Lieferverkehr</ng-container></span></td></tr>
+        <tr *ngIf="sumoSummary.ptVehicles"
+            title="ÖV (GTFS → gtfs2pt.py): fahrplangebundene Bus-Fahrten und intermodal mitfahrende Nachfrage-Personen (Fußweg → Bus → Fußweg)">
+          <td>ÖV (Bus)</td>
+          <td>{{ sumoSummary.ptVehicles | number:'1.0-0' }} Fahrten
+            <span class="mid">/ {{ sumoSummary.ptRiders || 0 | number:'1.0-0' }} Fahrgäste</span></td></tr>
         <tr *ngIf="sumoSummary.co2Kg != null"
             title="CO₂-Schätzung über HBEFA-Emissionsklassen (Pkw: Benzin EU4, Lkw: Diesel-Lieferwagen EU4, Lastenrad: emissionsfrei)">
           <td>CO₂ (HBEFA)</td>

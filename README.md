@@ -31,14 +31,18 @@ Swagger-UI: http://localhost:8090/swagger-ui.html
 (actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, inkl. Was-wäre-wenn-Szenarien) ×
 _Achse B – Zielmodell_ (logiTopp · MobileCity-Export · **SUMO**, Mehrfachauswahl).
 
-Mit Zielmodell **SUMO** wird die logiTopp-Nachfrage mikroskopisch simuliert (OSM → `netconvert` →
-`duarouter` → `sumo`, rein nativ ohne Python/pyproj) – **PKW-Trips plus Zustelltouren**
-(Lkw/Lastenrad aus logiTopp). Ergebnisse: Verkehrs-KPIs (Fahrzeuge, Ø Reisedauer/Geschwindigkeit),
+Mit Zielmodell **SUMO** wird die logiTopp-Nachfrage **multimodal** mikroskopisch simuliert (OSM →
+`netconvert` → `duarouter` → `sumo`) – **PKW-, Rad- und Fuß-Trips** der Personen-Nachfrage
+(Fußgänger als SUMO-Personen) **plus Zustelltouren** (Lkw/Lastenrad aus logiTopp). Optional auch
+**ÖV/Bus** (Phase C): ein GTFS-Fahrplan (Auto-Fetch nach Region via NVBW/MobiData-BW, Upload-Fallback)
+wird per `gtfs2pt.py` zu Haltestellen und fahrplangebundenen Bussen; die ÖV-Nachfrage fährt intermodal
+mit (Fußweg → Bus → Fußweg). Ergebnisse: Verkehrs-KPIs (Fahrzeuge, Ø Reisedauer/Geschwindigkeit),
 **CO₂ je Fahrzeugtyp** (HBEFA-Emissionsklassen), eine **Netzlast-Karte** (Kanten nach relSpeed
 eingefärbt) und optional das **Netz-Feedback**: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die
 Pkw-Matrix zurück, logiTopp und SUMO iterieren bis zum Nachfrage-Netz-Gleichgewicht. Der **Szenario-Vergleich** stellt Nachfrage-,
 Logistik- und Emissions-Kennzahlen mehrerer Szenarien nebeneinander (z. B. Lkw- vs.
-Lastenrad-Flotte). Benötigt eine lokale SUMO-Installation (`$SUMO_HOME`).
+Lastenrad-Flotte). Benötigt eine lokale SUMO-Installation (`$SUMO_HOME`); ÖV zusätzlich ein
+Python-venv (pandas/rtree/pyproj) für `gtfs2pt.py` (gekapselt, sonst wird die ÖV-Stufe übersprungen).
 
 Die Verhaltensquelle **GTA** erzeugt Persona-Tagespläne über ein lokales LLM (Ollama,
 OpenAI-kompatibel, Plan-Cache, seed-reproduzierbar) und fällt auf actiTopp zurück, wenn es nicht

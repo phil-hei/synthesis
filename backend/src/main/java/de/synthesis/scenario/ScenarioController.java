@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -63,6 +64,32 @@ public class ScenarioController {
     public ResponseEntity<Void> delete(@PathVariable String id) {
         repository.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * GTFS-Upload (Phase-C-Fallback): speichert einen Feed für das Szenario und verankert den
+     * Pfad in {@code population.gtfsUploadPath}. Greift, wenn der Auto-Fetch keinen Regionsfeed
+     * findet oder der Feed zu groß ist.
+     */
+    @PostMapping("/{id}/gtfs")
+    public Scenario uploadGtfs(@PathVariable String id,
+                               @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        Scenario scenario = get(id);
+        if (file.isEmpty() || file.getOriginalFilename() == null
+                || !file.getOriginalFilename().toLowerCase().endsWith(".zip")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bitte eine GTFS-ZIP-Datei hochladen");
+        }
+        try {
+            java.nio.file.Path uploads = repository.uploadsDir(id);
+            java.nio.file.Files.createDirectories(uploads);
+            java.nio.file.Path dest = uploads.resolve("gtfs.zip");
+            file.transferTo(dest.toAbsolutePath());
+            scenario.population.gtfsUploadPath = dest.toString();
+            return repository.save(scenario);
+        } catch (java.io.IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "GTFS-Upload fehlgeschlagen: " + e.getMessage());
+        }
     }
 
     private void validate(Scenario scenario) {

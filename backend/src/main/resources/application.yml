@@ -42,3 +42,19 @@ synthesis:
   #   temperature: 0.7
   #   timeout-seconds: 120
   #   max-personas: 60                         # Obergrenze distinkter Personas (LLM-Calls) je Lauf
+  # transit:                                   # ÖV-Zielmodell (Phase C): GTFS → gtfs2pt.py → Bus-Fahrplan
+  #   enabled: true
+  #   venv-python: ../validation/transit-venv/bin/python  # Python-venv mit pandas/rtree/pyproj (Pflicht, sonst SKIPPED)
+  #   # gtfs2pt: $SUMO_HOME/tools/import/gtfs/gtfs2pt.py   # Default aus $SUMO_HOME
+  #   window-start-hour: 6                      # Fahrplan-Zuschnitt-Fenster (begrenzt gtfs2pt-Laufzeit)
+  #   window-end-hour: 10
+  #   max-feed-mb: 200                          # größere Auto-Fetch-Feeds → Upload empfohlen
+  #   timeout-minutes: 25                       # gtfs2pt (tracemapper) ist langsam; Ergebnis wird gecacht
+  #   modes: bus                               # aktuell nur Bus (Netz ist road-only)
+  #   feeds:                                    # Auto-Fetch-Registry (Verbund-GTFS + Abdeckungs-Bbox)
+  #     - name: kvv
+  #       url: https://www.nvbw.de/fileadmin/user_upload/service/open_data/fahrplandaten_mit_liniennetz/kvv.zip
+  #       min-lat: 48.55
+  #       min-lon: 7.95
+  #       max-lat: 49.25
+  #       max-lon: 8.95

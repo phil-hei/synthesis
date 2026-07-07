@@ -11,6 +11,7 @@ public class SynthesisProperties {
     private Simulation simulation = new Simulation();
     private Actitopp actitopp = new Actitopp();
     private Sumo sumo = new Sumo();
+    private Transit transit = new Transit();
     private Llm llm = new Llm();
 
     /**
@@ -173,6 +174,105 @@ public class SynthesisProperties {
         }
     }
 
+    /**
+     * ÖV-Zielmodell (Achse B, Phase C): GTFS → gtfs2pt.py → SUMO-Fahrplan-Infrastruktur.
+     * Braucht ein Python-venv mit pandas/rtree/pyproj (gekapselt, Stage SKIPPED wenn fehlt).
+     * GTFS-Quelle: Auto-Fetch aus der Feed-Registry (nach Region) mit Upload-Fallback.
+     */
+    public static class Transit {
+        private boolean enabled = true;
+        /** Python-Interpreter eines venv mit pandas/rtree/pyproj; leer = ÖV-Stage nicht verfügbar. */
+        private String venvPython = "";
+        /** gtfs2pt.py; Default aus $SUMO_HOME/tools abgeleitet. */
+        private String gtfs2pt = defaultGtfs2pt();
+        /** Auto-Fetch-Feeds (Verbund-GTFS mit Abdeckungs-Bbox). */
+        private java.util.List<Feed> feeds = new java.util.ArrayList<>(java.util.List.of(Feed.kvv()));
+        /** Obergrenze für den Auto-Fetch-Download (MB); größere Feeds → Upload-Empfehlung. */
+        private int maxFeedMb = 200;
+        /** Zeitfenster (Stunden) für den Fahrplan-Zuschnitt – begrenzt die gtfs2pt-Laufzeit. */
+        private int windowStartHour = 6;
+        private int windowEndHour = 10;
+        /** gtfs2pt-Map-Matching (tracemapper) ist langsam → großzügiger Timeout, Ergebnis wird gecacht. */
+        private int timeoutMinutes = 25;
+        /** SUMO-vClasses des ÖV (aktuell nur Bus, da das Netz road-only ist). */
+        private String modes = "bus";
+
+        private static String defaultGtfs2pt() {
+            String env = System.getenv("SUMO_HOME");
+            String home = env != null && !env.isBlank()
+                    ? env : Sumo.MAC_FRAMEWORK + "/share/sumo";
+            return java.nio.file.Path.of(home, "tools", "import", "gtfs", "gtfs2pt.py").toString();
+        }
+
+        /** Ein Verbund-GTFS-Feed mit der Region, die er abdeckt. */
+        public static class Feed {
+            private String name;
+            private String url;
+            private double minLat;
+            private double minLon;
+            private double maxLat;
+            private double maxLon;
+
+            public Feed() {
+            }
+
+            public Feed(String name, String url, double minLat, double minLon,
+                        double maxLat, double maxLon) {
+                this.name = name;
+                this.url = url;
+                this.minLat = minLat;
+                this.minLon = minLon;
+                this.maxLat = maxLat;
+                this.maxLon = maxLon;
+            }
+
+            /** Karlsruher Verkehrsverbund (deckt u. a. Rastatt) – NVBW/MobiData-BW, ODbL. */
+            static Feed kvv() {
+                return new Feed("kvv",
+                        "https://www.nvbw.de/fileadmin/user_upload/service/open_data/"
+                                + "fahrplandaten_mit_liniennetz/kvv.zip",
+                        48.55, 7.95, 49.25, 8.95);
+            }
+
+            /** Enthält die Feed-Bbox das Regions-Zentrum? */
+            public boolean covers(double lat, double lon) {
+                return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
+            }
+
+            public String getName() { return name; }
+            public void setName(String name) { this.name = name; }
+            public String getUrl() { return url; }
+            public void setUrl(String url) { this.url = url; }
+            public double getMinLat() { return minLat; }
+            public void setMinLat(double v) { this.minLat = v; }
+            public double getMinLon() { return minLon; }
+            public void setMinLon(double v) { this.minLon = v; }
+            public double getMaxLat() { return maxLat; }
+            public void setMaxLat(double v) { this.maxLat = v; }
+            public double getMaxLon() { return maxLon; }
+            public void setMaxLon(double v) { this.maxLon = v; }
+        }
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public String getVenvPython() { return venvPython; }
+        public void setVenvPython(String venvPython) { this.venvPython = venvPython; }
+        public String getGtfs2pt() { return gtfs2pt; }
+        public void setGtfs2pt(String gtfs2pt) { this.gtfs2pt = gtfs2pt; }
+        public java.util.List<Feed> getFeeds() { return feeds; }
+        public void setFeeds(java.util.List<Feed> feeds) { this.feeds = feeds; }
+        public int getMaxFeedMb() { return maxFeedMb; }
+        public void setMaxFeedMb(int maxFeedMb) { this.maxFeedMb = maxFeedMb; }
+        public int getWindowStartHour() { return windowStartHour; }
+        public void setWindowStartHour(int h) { this.windowStartHour = h; }
+        public int getWindowEndHour() { return windowEndHour; }
+        public void setWindowEndHour(int h) { this.windowEndHour = h; }
+        public int getTimeoutMinutes() { return timeoutMinutes; }
+        public void setTimeoutMinutes(int timeoutMinutes) { this.timeoutMinutes = timeoutMinutes; }
+        public String getModes() { return modes; }
+        public void setModes(String modes) { this.modes = modes; }
+    }
+
     public String getDataDir() { return dataDir; }
     public void setDataDir(String dataDir) { this.dataDir = dataDir; }
     public int getMaxZones() { return maxZones; }
@@ -185,6 +285,8 @@ public class SynthesisProperties {
     public void setActitopp(Actitopp actitopp) { this.actitopp = actitopp; }
     public Sumo getSumo() { return sumo; }
     public void setSumo(Sumo sumo) { this.sumo = sumo; }
+    public Transit getTransit() { return transit; }
+    public void setTransit(Transit transit) { this.transit = transit; }
     public Llm getLlm() { return llm; }
     public void setLlm(Llm llm) { this.llm = llm; }
 }

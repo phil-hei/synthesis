@@ -108,6 +108,12 @@
               ? ((e.sumo.bikeTrips || 0 | number:'1.0-0') + ' / ' + (e.sumo.walkTrips || 0 | number:'1.0-0')) : '–' }}</td>
             <td *ngIf="mid"></td>
           </tr>
+          <tr title="ÖV (Bus, GTFS→gtfs2pt): fahrplangebundene Fahrten und intermodal mitfahrende Nachfrage-Personen">
+            <td>ÖV Fahrten / Fahrgäste</td>
+            <td *ngFor="let e of entries">{{ e.sumo?.ptVehicles
+              ? ((e.sumo.ptVehicles | number:'1.0-0') + ' / ' + (e.sumo.ptRiders || 0 | number:'1.0-0')) : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
           <tr>
             <td>Ø Geschwindigkeit</td>
             <td *ngFor="let e of entries">{{ e.sumo?.meanSpeedKmh != null ? e.sumo.meanSpeedKmh + ' km/h' : '–' }}</td>
