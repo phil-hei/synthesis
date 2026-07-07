@@ -102,6 +102,12 @@
             <td *ngFor="let e of entries">{{ e.sumo?.deliveryTrips != null ? (e.sumo.deliveryTrips | number:'1.0-0') : '–' }}</td>
             <td *ngIf="mid"></td>
           </tr>
+          <tr title="Eingespeiste Rad- und Fuß-Trips der Personen-Nachfrage (Fußgänger als SUMO-Personen)">
+            <td>Rad / Fuß</td>
+            <td *ngFor="let e of entries">{{ e.sumo?.carTrips != null
+              ? ((e.sumo.bikeTrips || 0 | number:'1.0-0') + ' / ' + (e.sumo.walkTrips || 0 | number:'1.0-0')) : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
           <tr>
             <td>Ø Geschwindigkeit</td>
             <td *ngFor="let e of entries">{{ e.sumo?.meanSpeedKmh != null ? e.sumo.meanSpeedKmh + ' km/h' : '–' }}</td>

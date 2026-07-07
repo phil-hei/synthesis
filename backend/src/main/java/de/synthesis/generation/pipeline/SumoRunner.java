@@ -31,8 +31,8 @@ import java.util.regex.Pattern;
 public class SumoRunner {
 
     public record Result(int vehicles, double meanDurationSec, double meanRouteLengthM,
-                         double meanSpeedMs, long durationSeconds, int carTrips, int deliveryTrips,
-                         double co2Kg, Map<String, Double> co2KgByType) {
+                         double meanSpeedMs, long durationSeconds, int carTrips, int bikeTrips,
+                         int walkTrips, int deliveryTrips, double co2Kg, Map<String, Double> co2KgByType) {
     }
 
     /** Max. Snapping-Distanz (m) von Geo-Koordinate zu Netzkante in duarouter. */
@@ -76,16 +76,20 @@ public class SumoRunner {
         Files.writeString(dir.resolve("network.osm"), osmXml, StandardCharsets.UTF_8);
 
         long start = System.currentTimeMillis();
-        // 1. OSM → SUMO-Netz (mit Geo-Projektion für das spätere LonLat-Mapping)
+        // 1. OSM → SUMO-Netz: Auto-/Radkanten + Gehwege/Querungen für die multimodale Simulation
         exec(dir, log, binDir.resolve("netconvert").toString(),
                 "--osm-files", "network.osm", "-o", "net.net.xml",
                 "--geometry.remove", "--ramps.guess", "--junctions.join",
                 "--tls.guess-signals", "--tls.discard-simple",
-                "--keep-edges.by-vclass", "passenger", "--remove-edges.isolated", "--no-turnarounds");
+                "--keep-edges.by-vclass", "passenger,bicycle,pedestrian", "--remove-edges.isolated",
+                "--no-turnarounds", "--sidewalks.guess", "--crossings.guess");
 
-        // 2. PKW-Trips der Nachfrage + Zustelltouren-Legs als Geo-Trips schreiben
+        // 2. PKW- und Rad-Trips der Nachfrage + Zustelltouren-Legs als Geo-Trips schreiben
         List<Trip> trips = new ArrayList<>(readCarTrips(demandResult));
         int carTrips = trips.size();
+        List<Trip> bikes = readBikeTrips(demandResult);
+        int bikeTrips = bikes.size();
+        trips.addAll(bikes);
         int deliveryTrips = 0;
         if (plannedTours != null && Files.exists(plannedTours)) {
             List<Trip> delivery = readDeliveryLegs(plannedTours);
@@ -93,12 +97,22 @@ public class SumoRunner {
             trips.addAll(delivery);
         }
         writeTripsXml(trips, dir.resolve("trips.xml"));
-        log.accept(carTrips + " PKW-Trips (Tag " + day + ", max " + maxTrips + ") + "
-                + deliveryTrips + " Lieferverkehr-Legs (Lkw/Lastenrad) übernommen");
 
-        // 3. Geo-Trips auf Netzkanten abbilden + routen (duarouter snappt LonLat nativ)
+        // Fußgänger sind in SUMO keine Fahrzeuge, sondern <person>-Elemente mit <personTrip>
+        List<Trip> walks = readWalkTrips(demandResult);
+        int walkTrips = walks.size();
+        String routeFiles = "trips.xml";
+        if (walkTrips > 0) {
+            writePersonsXml(walks, dir.resolve("persons.xml"));
+            routeFiles = "trips.xml,persons.xml";
+        }
+        log.accept(carTrips + " PKW- + " + bikeTrips + " Rad- + " + walkTrips + " Fuß-Trips (Tag "
+                + day + ", max " + maxTrips + " je Modus) + " + deliveryTrips
+                + " Lieferverkehr-Legs (Lkw/Lastenrad) übernommen");
+
+        // 3. Geo-Trips/-Personen auf Netzkanten abbilden + routen (duarouter snappt LonLat nativ)
         exec(dir, log, binDir.resolve("duarouter").toString(),
-                "-n", "net.net.xml", "--route-files", "trips.xml", "-o", "routes.rou.xml",
+                "-n", "net.net.xml", "--route-files", routeFiles, "-o", "routes.rou.xml",
                 "--mapmatch.distance", String.valueOf(MAPMATCH_DISTANCE_M),
                 "--ignore-errors", "--no-step-log");
 
@@ -130,7 +144,8 @@ public class SumoRunner {
 
         long duration = (System.currentTimeMillis() - start) / 1000;
         Map<String, Double> co2 = parseEmissions(dir.resolve("tripinfo.xml"));
-        return parseStatistics(dir.resolve("statistics.xml"), duration, carTrips, deliveryTrips, co2);
+        return parseStatistics(dir.resolve("statistics.xml"), duration, carTrips, bikeTrips,
+                walkTrips, deliveryTrips, co2);
     }
 
     // --- Netz-Feedback: OD-Stau-Faktoren -------------------------------------------
@@ -394,6 +409,81 @@ public class SumoRunner {
         return trips;
     }
 
+    /** demandsimulationResult.csv → Rad-Trips des Tages (Typ "fahrrad", tripMode 0 = BICYCLE). */
+    private List<Trip> readBikeTrips(Path demandResult) throws IOException {
+        int dayStart = day * 1440;
+        int dayEnd = (day + 1) * 1440;
+        List<Trip> trips = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(demandResult, StandardCharsets.UTF_8)) {
+            reader.readLine(); // header
+            String line;
+            while ((line = reader.readLine()) != null && trips.size() < maxTrips) {
+                if (line.isBlank()) {
+                    continue;
+                }
+                String[] c = line.split(";", -1);
+                // legId(1)==0, tripMode(12)==0 (StandardMode.BICYCLE), tripBegin(42) in Minuten
+                if (c.length < 43 || !"0".equals(c[1]) || !"0".equals(c[12])) {
+                    continue;
+                }
+                int begin = (int) Double.parseDouble(c[42]);
+                if (begin < dayStart || begin >= dayEnd) {
+                    continue;
+                }
+                trips.add(new Trip((begin - dayStart) * 60, "fahrrad", c[38], c[39], c[40], c[41]));
+            }
+        }
+        return trips;
+    }
+
+    /** demandsimulationResult.csv → Fuß-Trips des Tages (Typ "fuss", tripMode 3 = PEDESTRIAN). */
+    private List<Trip> readWalkTrips(Path demandResult) throws IOException {
+        int dayStart = day * 1440;
+        int dayEnd = (day + 1) * 1440;
+        List<Trip> trips = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(demandResult, StandardCharsets.UTF_8)) {
+            reader.readLine(); // header
+            String line;
+            while ((line = reader.readLine()) != null && trips.size() < maxTrips) {
+                if (line.isBlank()) {
+                    continue;
+                }
+                String[] c = line.split(";", -1);
+                // legId(1)==0, tripMode(12)==3 (StandardMode.PEDESTRIAN), tripBegin(42) in Minuten
+                if (c.length < 43 || !"0".equals(c[1]) || !"3".equals(c[12])) {
+                    continue;
+                }
+                int begin = (int) Double.parseDouble(c[42]);
+                if (begin < dayStart || begin >= dayEnd) {
+                    continue;
+                }
+                trips.add(new Trip((begin - dayStart) * 60, "fuss", c[38], c[39], c[40], c[41]));
+            }
+        }
+        return trips;
+    }
+
+    /**
+     * Fuß-Trips als SUMO-Personen schreiben: jede Person läuft einen &lt;personTrip&gt; von
+     * ihrer Geo-Quelle zum Geo-Ziel (Standardmodus Fußweg). duarouter snappt die
+     * LonLat-Koordinaten wie bei Fahrzeug-Trips über {@code --mapmatch.distance} auf das
+     * Gehwegnetz.
+     */
+    private void writePersonsXml(List<Trip> walks, Path out) throws IOException {
+        walks.sort(Comparator.comparingInt(Trip::departSec));
+        try (Writer writer = Files.newBufferedWriter(out)) {
+            writer.write("<routes>\n");
+            int id = 0;
+            for (Trip t : walks) {
+                writer.write(String.format(
+                        "  <person id=\"p%d\" depart=\"%d\">"
+                        + "<personTrip fromLonLat=\"%s,%s\" toLonLat=\"%s,%s\"/></person>%n",
+                        id++, t.departSec(), t.fromLon(), t.fromLat(), t.toLon(), t.toLat()));
+            }
+            writer.write("</routes>\n");
+        }
+    }
+
     /**
      * planned-tours.csv → Zustelltouren-Legs des Tages: jede Zeile ist ein Stopp
      * (fromX/Y → toX/Y) mit Fahrzeugtyp (logiTopp-Codes: 1=BIKE→Lastenrad,
@@ -455,8 +545,9 @@ public class SumoRunner {
         trips.sort(Comparator.comparingInt(Trip::departSec));
         try (Writer writer = Files.newBufferedWriter(out)) {
             writer.write("<routes>\n");
-            // HBEFA3-Emissionsklassen: Benzin-Pkw EU4, Diesel-Lieferwagen EU4, Lastenrad emissionsfrei
+            // HBEFA3-Emissionsklassen: Benzin-Pkw EU4, Diesel-Lieferwagen EU4, Rad/Lastenrad emissionsfrei
             writer.write("  <vType id=\"pkw\" vClass=\"passenger\" emissionClass=\"HBEFA3/PC_G_EU4\"/>\n");
+            writer.write("  <vType id=\"fahrrad\" vClass=\"bicycle\" emissionClass=\"Zero\"/>\n");
             writer.write("  <vType id=\"lkw\" vClass=\"delivery\" emissionClass=\"HBEFA3/LDV_D_EU4\"/>\n");
             writer.write("  <vType id=\"lastenrad\" vClass=\"bicycle\" emissionClass=\"Zero\"/>\n");
             int id = 0;
@@ -471,8 +562,9 @@ public class SumoRunner {
 
     private static final Pattern STAT_TAG = Pattern.compile("<vehicleTripStatistics\\b[^>]*/>");
 
-    private Result parseStatistics(Path statistics, long durationSeconds, int carTrips,
-                                   int deliveryTrips, Map<String, Double> co2ByType) throws IOException {
+    private Result parseStatistics(Path statistics, long durationSeconds, int carTrips, int bikeTrips,
+                                   int walkTrips, int deliveryTrips, Map<String, Double> co2ByType)
+            throws IOException {
         double co2Total = Math.round(co2ByType.values().stream().mapToDouble(Double::doubleValue).sum()
                 * 100) / 100.0;
         String xml = Files.exists(statistics) ? Files.readString(statistics) : "";
@@ -480,10 +572,11 @@ public class SumoRunner {
         if (tag.find()) {
             String el = tag.group();
             return new Result((int) attr(el, "count"), attr(el, "duration"),
-                    attr(el, "routeLength"), attr(el, "speed"), durationSeconds, carTrips, deliveryTrips,
-                    co2Total, co2ByType);
+                    attr(el, "routeLength"), attr(el, "speed"), durationSeconds, carTrips, bikeTrips,
+                    walkTrips, deliveryTrips, co2Total, co2ByType);
         }
-        return new Result(0, 0, 0, 0, durationSeconds, carTrips, deliveryTrips, co2Total, co2ByType);
+        return new Result(0, 0, 0, 0, durationSeconds, carTrips, bikeTrips, walkTrips, deliveryTrips,
+                co2Total, co2ByType);
     }
 
     /** Liest ein numerisches Attribut aus einem XML-Element (Reihenfolge-unabhängig). */

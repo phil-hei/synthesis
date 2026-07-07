@@ -33,8 +33,10 @@ export interface SumoSummary {
   meanRouteLengthKm: number;
   meanSpeedKmh: number;
   runtimeSeconds: number;
-  /** Eingespeiste PKW-Trips bzw. Zustelltouren-Legs (ältere Läufe: nicht vorhanden). */
+  /** Eingespeiste PKW-, Rad-, Fuß- bzw. Zustelltouren-Legs (ältere Läufe: nicht vorhanden). */
   carTrips?: number;
+  bikeTrips?: number;
+  walkTrips?: number;
   deliveryTrips?: number;
   /** CO₂ in kg (HBEFA-Emissionsklassen), gesamt und je Fahrzeugtyp (pkw/lkw/lastenrad). */
   co2Kg?: number;

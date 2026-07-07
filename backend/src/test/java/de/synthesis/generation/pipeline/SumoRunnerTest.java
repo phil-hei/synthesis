@@ -51,6 +51,8 @@ class SumoRunnerTest {
             assertTrue(result.meanSpeedMs() > 0, "Geschwindigkeit > 0 erwartet");
             assertTrue(result.meanDurationSec() > 0, "Reisedauer > 0 erwartet");
             assertTrue(result.carTrips() > 0, "PKW-Trips eingespeist");
+            assertTrue(result.bikeTrips() > 0, "Rad-Trips (multimodal) eingespeist");
+            assertTrue(result.walkTrips() > 0, "Fuß-Trips (Fußgänger als SUMO-Personen) eingespeist");
             assertTrue(result.co2Kg() > 0, "CO₂-Emissionen (HBEFA) sollten ausgewertet werden");
             assertTrue(result.co2KgByType().getOrDefault("pkw", 0.0) > 0, "PKW-CO₂ > 0");
             Path congestion = artifacts.resolve("sumo").resolve("congestion.geojson");

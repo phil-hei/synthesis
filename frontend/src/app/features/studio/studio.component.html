@@ -385,16 +385,18 @@
 
     <section class="block" *ngIf="sumoSummary">
       <h2>SUMO (mikroskopischer Verkehr)</h2>
-      <p class="hint">Mikroskopische Simulation der Auto-Trips aus der logiTopp-Nachfrage
+      <p class="hint">Mikroskopische Simulation der Auto- und Rad-Trips aus der logiTopp-Nachfrage
         (OSM-Netz → netconvert → duarouter → sumo).</p>
       <table class="kpis">
         <tr title="Eingespeiste und erfolgreich abgeschlossene Fahrzeug-Fahrten">
           <td>Fahrzeuge</td><td>{{ sumoSummary.vehicles | number:'1.0-0' }}</td></tr>
-        <tr *ngIf="sumoSummary.deliveryTrips != null"
-            title="Zustelltouren-Legs aus logiTopp (Lkw als vClass delivery, Lastenräder als bicycle)">
-          <td>davon Lieferverkehr</td>
-          <td>{{ sumoSummary.deliveryTrips | number:'1.0-0' }}
-            <span class="mid">+ {{ sumoSummary.carTrips | number:'1.0-0' }} PKW</span></td></tr>
+        <tr *ngIf="sumoSummary.carTrips != null"
+            title="Zusammensetzung der eingespeisten Trips: PKW, Rad und Fuß aus der Personen-Nachfrage (Fußgänger als SUMO-Personen), Lieferverkehr aus logiTopp (Lkw als vClass delivery, Lastenräder als bicycle)">
+          <td>Zusammensetzung</td>
+          <td>{{ sumoSummary.carTrips | number:'1.0-0' }} PKW
+            <span class="mid">/ {{ sumoSummary.bikeTrips || 0 | number:'1.0-0' }} Rad
+            / {{ sumoSummary.walkTrips || 0 | number:'1.0-0' }} Fuß
+            <ng-container *ngIf="sumoSummary.deliveryTrips != null">/ {{ sumoSummary.deliveryTrips | number:'1.0-0' }} Lieferverkehr</ng-container></span></td></tr>
         <tr *ngIf="sumoSummary.co2Kg != null"
             title="CO₂-Schätzung über HBEFA-Emissionsklassen (Pkw: Benzin EU4, Lkw: Diesel-Lieferwagen EU4, Lastenrad: emissionsfrei)">
           <td>CO₂ (HBEFA)</td>
