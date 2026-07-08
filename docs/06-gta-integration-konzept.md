@@ -349,8 +349,52 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   455 Liefer-Legs (342 Lkw + 113 Lastenrad) neben ~1000 PKW. `summary.json` + Studio-Panel weisen
   `carTrips`/`deliveryTrips` getrennt aus. Damit simuliert SUMO die **Last-Mile-Logistik im realen
   Straßenverkehr** – Grundlage für Emissions-/Netzlast-Auswertungen je Fahrzeugtyp (offen).
-- *Offen/optional:* Rückspeisung der SUMO-Reisezeiten in die KPIs/Matrizen; Karten-Layer der Flüsse;
-  Lauf-Projekte als feste Abhängigkeit/Container (siehe Phase 4).
+- **Rad multimodal (2026-07-06):** neben PKW+Lieferverkehr speist SUMO jetzt auch die **Rad-Trips**
+  der Personen-Nachfrage ein (`readBikeTrips`, `tripMode==0`=BICYCLE, `vType="fahrrad"` vClass
+  bicycle, emissionsfrei); Netz behält Radkanten (`--keep-edges.by-vclass passenger,bicycle`).
+  `Result.bikeTrips` + `summary.json` + Studio-Zeile „Zusammensetzung" (PKW/Rad/Lieferverkehr).
+- **Fuß multimodal (2026-07-06):** Fußgänger sind in SUMO **keine Fahrzeuge**, sondern
+  `<person>` mit `<personTrip>` (kein `<trip>`) — eigener Schreibpfad (`persons.xml`), Netz um
+  Gehwege/Querungen erweitert (`--sidewalks.guess --crossings.guess`). `duarouter --mapmatch.distance`
+  snappt die Geo-Koordinaten wie bei Fahrzeugen; Fahrzeuge und Personen werden in **einem**
+  duarouter-Lauf geroutet. `readWalkTrips` (`tripMode==3`=PEDESTRIAN); kein CO₂.
+- **ÖV/Bus via GTFS — Phase C (✅ 2026-07-07):** GTFS-Fahrplan → `gtfs2pt.py` → Bus-Haltestellen/-Fahrten;
+  Nachfrage-Personen mit `tripMode==4` (PUBLICTRANSPORT) fahren **intermodal** mit
+  (`modes="public"` → Fußweg → `<ride>` → Fußweg). Pipeline: **`GtfsCropper`** schneidet einen
+  Verbund-Feed streaming auf Region+Zeitfenster zu (verwirft `shapes.txt`, wahrt referenzielle
+  Integrität; KVV-Feed 121 MB → 720 KB) → **`GtfsSource`** löst die Quelle auf: **Auto-Fetch** aus
+  einer Feed-Registry (Bbox-Abdeckung, z. B. KVV/NVBW für Rastatt; Größen-Cap) mit
+  **Upload-Fallback** (`POST /api/scenarios/{id}/gtfs`), falls kein Feed passt oder er zu groß ist
+  → **`TransitRunner`** ruft `gtfs2pt.py` in einem **gekapselten Python-venv** (pandas/rtree/pyproj;
+  einzige Python-Abhängigkeit im Projekt, Stage wird SKIPPED wenn das venv fehlt) und **cached** das
+  Ergebnis. **Wichtiger Praxis-Befund:** `gtfs2pt.py` findet ohne kompilierte Mapping-Bibliothek
+  (Java-Jar, 16-GB-Heap) keinen schnellen Mapper und fällt auf den langsamen `tracemapper` zurück
+  (~20–25 Min. für ein Zeitfenster) — deshalb Zuschnitt auf ein konfigurierbares Zeitfenster
+  (Default 6–10 Uhr) statt den ganzen Tag, plus Cache. **Bug gefunden+gefixt:** `gtfs2pt.py`
+  schreibt den `<vType id="bus">` nur in eine Zwischendatei, nicht in die Fahrzeug-Ausgabe →
+  SUMO „vehicle type 'bus' is not known"; `TransitRunner.writeVtypes` stellt die vTypes jetzt
+  separat bereit. Verifiziert per `PtIntegrationTest` (voller Kettenlauf, gated auf
+  `SYNTHESIS_TRANSIT_VENV`, da langsam): 141 Haltestellen, 498 Busse, Fahrgäste real geroutet.
+  Konfiguration `SynthesisProperties.Transit` (venv/Feed-Registry/Zeitfenster/Größen-Cap/Timeout).
+  Nur **Bus** (das SUMO-Netz ist road-only).
+- **ÖV-Emissionen (✅ 2026-07-07):** Bus-vType bekommt `emissionClass="HBEFA3/Bus"` (gegen SUMO 1.26
+  validiert) → CO₂ je Bus wird automatisch erfasst wie bei Pkw/Lkw; Studio-Panel + Szenario-Vergleich
+  zeigen CO₂ jetzt als Pkw/Lieferverkehr/Bus.
+- **Rail/Tram versucht, zurückgerollt (2026-07-07) — ehrlicher Technik-Befund:** die Rastatt-Region
+  hat neben Bus (1532 GTFS-Fahrten) auch Tram (995) und Rail (903) — implementiert war der
+  railway-OSM-Fetch (`way["railway"~"rail|tram|light_rail|subway"]`, GraphHopper ignoriert es),
+  `netconvert --keep-edges.by-vclass +rail,rail_urban,tram --railway.topology.repair` (baute
+  869 Rail-Kanten) und `gtfs2pt --modes bus,train,tram`. **Blocker:** `duarouter --mapmatch.distance`
+  snappt Personen-Koordinaten auf die **nächste Kante ohne vClass-Filter** — nahe Bahnhöfen sind das
+  die Rail-Kanten, auf denen Fußgänger nicht laufen können → „No destination edge for walk or
+  personTrip" bricht den Lauf ab; die Alternative `--mapmatch.junctions` verwirft die betroffenen
+  Personen **kommentarlos** (0 geroutet), kein echter Fix. Es gibt kein `--mapmatch.vclass` in
+  duarouter. **Lösungsweg für einen späteren Anlauf:** explizites, vClass-gefiltertes
+  Edge-Snapping in Java (Netz selbst einlesen, je Trip die nächste fußgänger-/pkw-fähige Kante
+  bestimmen, `<personTrip from=EDGE to=EDGE>` statt `fromLonLat`) — eigenes Teilprojekt. Alle
+  Rail-Änderungen wurden zurückgerollt, Bus-ÖV bleibt solide (Test-Suite 18/18 grün).
+- *Offen/optional:* Rail/Tram (s. Blocker oben); ÖV-Fahrgäste im Netz-Feedback berücksichtigen
+  (bisher nur Pkw); Lauf-Projekte als feste Abhängigkeit/Container (siehe Phase 4).
 
 ### Phase 3 – GTA als KI-Verhaltensquelle (Achse A)
 - **3a Setup — ✅ UMGESETZT (2026-06-26):** lokales LLM via **Ollama** (`brew install ollama`,
