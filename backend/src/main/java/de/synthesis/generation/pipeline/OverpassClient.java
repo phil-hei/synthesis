@@ -110,34 +110,39 @@ public class OverpassClient {
      * @throws Exception on any network failure; callers fall back to beeline matrices.
      */
     public String fetchRoadNetworkOsm(Scenario.Region region) throws Exception {
+        int serverTimeout = properties.getOverpass().getRoadNetworkTimeoutSeconds();
+        // Client wartet etwas länger als das serverseitige Query-Budget, sonst bricht er ab,
+        // während Overpass die schwere Extraktion noch fertigstellt.
+        return post(roadNetworkQuery(region), serverTimeout + 30L);
+    }
+
+    /** Overpass-Query für das routbare Straßennetz (eigenes {@code [timeout:…]}-Budget). */
+    String roadNetworkQuery(Scenario.Region region) {
         double latPad = (region.maxLat - region.minLat) * 0.1 + 0.005;
         double lonPad = (region.maxLon - region.minLon) * 0.1 + 0.005;
         String bbox = (region.minLat - latPad) + "," + (region.minLon - lonPad) + ","
                 + (region.maxLat + latPad) + "," + (region.maxLon + lonPad);
-        String query = """
+        return """
                 [out:xml][timeout:%d];
                 (
                   way["highway"](%s);
                   >;
                 );
                 out body qt;
-                """.formatted(properties.getOverpass().getTimeoutSeconds(), bbox);
-        return executeRaw(query);
-    }
-
-    private String executeRaw(String query) throws Exception {
-        return post(query, 45L);
+                """.formatted(properties.getOverpass().getRoadNetworkTimeoutSeconds(), bbox);
     }
 
     private JsonNode execute(String query) throws Exception {
-        return mapper.readTree(post(query, 15L));
+        return mapper.readTree(post(query, properties.getOverpass().getTimeoutSeconds() + 15L));
     }
 
     /**
      * Sends the query to the primary endpoint and, if it fails (HTTP error/timeout),
      * to each configured mirror in turn. Only the last failure is surfaced.
+     *
+     * @param clientTimeoutSeconds absolutes HTTP-Timeout je Endpunkt
      */
-    private String post(String query, long extraTimeoutSeconds) throws Exception {
+    private String post(String query, long clientTimeoutSeconds) throws Exception {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
@@ -149,7 +154,7 @@ public class OverpassClient {
             try {
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(endpoint))
-                        .timeout(Duration.ofSeconds(properties.getOverpass().getTimeoutSeconds() + extraTimeoutSeconds))
+                        .timeout(Duration.ofSeconds(clientTimeoutSeconds))
                         .header("Content-Type", "application/x-www-form-urlencoded")
                         .POST(HttpRequest.BodyPublishers.ofString(body))
                         .build();

@@ -332,6 +332,29 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   ±1,0, EIN Lauf, Distanzprofil-Delta gegen die Vorhersage (Ø-km steigt) prüfen. Eingezäunte
   Irrwege (ferne externe Zonen, LLM-Prompt-Steuerung, Roh-Ziel 12,5 km in kleiner Region) siehe
   Skill `synthesis-failure-archaeology` bzw. Kampagnen-Skill.
+- **Phase-0-Versuch kontaminiert (2026-07-12):** Baseline-Lauf (Szenario `0e020eab`, seed 42,
+  samplingFraction 0,05, `useRealRouting=true`, Bbox 48.825/8.155–48.885/8.245 aus den
+  Testfixtures) zeigte im Job-Log
+  `"Routing nicht verfügbar (request timed out) – Fallback auf Luftlinie"` beim
+  OSM-Straßennetz-Abruf (nach dem erfolgreichen POI-Abruf) → Luftlinien-Fallback, per Skill-Kriterium
+  als Baseline unzulässig. Gemessen (zur Doku, nicht als Baseline verwendbar):
+  Ø 2,65 km, Median 1,91 km, Fuß-Anteil 48,9 % (2634 Trips) — überlappt mit beiden erwarteten
+  Signaturen (Luftlinie ~2,0 km/50 % Fuß vs. geroutet ~2,9 km/35 % Fuß), was genau zeigt, warum
+  der Job-Log-Grep und nicht die Zahlen allein entscheiden muss. Die Session-Disziplin
+  (max. ein Generierungslauf, kein blindes Wiederholen schwerer Overpass-Abfragen) verbietet
+  einen zweiten Lauf in derselben Session — die Elastizitäts-Sonde (Phase 2b) bleibt daher
+  **offen**, Phase-2a-Infrastruktur ist unverändert einsatzbereit.
+- **✅ Routing-Netzabruf gehärtet (2026-07-12):** Ursachenkorrektur zur obigen Vermutung — die
+  Overpass-**Mirror**-Fallbacks (`OverpassClient.post` → `allEndpoints()`) gelten sehr wohl auch für
+  den Straßennetz-Abruf des Routings (`fetchRoadNetworkOsm`), nicht nur für SUMO. Die eigentliche
+  Ursache war das zu knappe, **serverseitige** Query-Budget: die schwere `way["highway"]`+recurse-
+  Extraktion lief mit dem allgemeinen `[timeout:30]` unter Last auf **allen** Endpunkten in den
+  Timeout (der leichte POI-Abruf mit `[timeout:30]` kam durch). Fix: eigenes
+  `synthesis.overpass.road-network-timeout-seconds` (Default **180**) wird in die Query eingebettet
+  UND als Client-Timeout genutzt (`post` nimmt jetzt ein absolutes Client-Timeout). `OverpassClientTest`
+  prüft die Einbettung; Suite 23/23 grün. Damit sollte der nächste Baseline-Anlauf durchrouten;
+  bleibt Overpass komplett aus, ist die Bbox klein (Region verkleinern) oder ein self-hosted/PBF-Weg
+  der robustere Produktions-Ausbau (docs §D/§F).
 
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und

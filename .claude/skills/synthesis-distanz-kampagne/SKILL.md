@@ -91,9 +91,13 @@ useRealRouting=true, Ziel logitopp; synthesis-run-and-operate) und im Job-Log pr
 grep -i "Luftlinie\|Fallback" <job-log bzw. Generierungs-Protokoll>
 ```
 
-Kein Fallback-Treffer ⇒ der Lauf ist geroutet und taugt als Baseline. Bei Treffer:
-Overpass-Problem beheben (Mirrors, später erneut — synthesis-debugging-playbook #2) und
-neu generieren. Ein CSV OHNE zugehöriges Job-Log ist als Baseline UNZULÄSSIG.
+Kein Fallback-Treffer ⇒ der Lauf ist geroutet und taugt als Baseline. Bei Treffer
+`"Routing nicht verfügbar (request timed out) – Fallback auf Luftlinie"`: das
+serverseitige Overpass-Query-Budget für den Straßennetz-Abruf war zu knapp — seit
+2026-07-12 steuerbar über `synthesis.overpass.road-network-timeout-seconds` (Default 180;
+notfalls höher setzen oder die Region verkleinern). NICHT blind wiederholen (schwere
+Overpass-Queries; synthesis-debugging-playbook #2/#3). Ein CSV OHNE zugehöriges Job-Log
+ist als Baseline UNZULÄSSIG.
 
 **Schritt 0b — Messen:**
 

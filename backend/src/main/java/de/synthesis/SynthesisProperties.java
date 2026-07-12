@@ -151,6 +151,12 @@ public class SynthesisProperties {
                 "https://overpass.kumi.systems/api/interpreter",
                 "https://overpass.private.coffee/api/interpreter"));
         private int timeoutSeconds = 30;
+        /**
+         * Eigenes, großzügiges Zeitbudget für den schweren Straßennetz-Abruf (GraphHopper-Routing):
+         * die {@code way["highway"]}+recurse-Extraktion überschreitet das allgemeine 30-s-Budget
+         * unter Overpass-Last regelmäßig → Timeout auf allen Endpunkten → Luftlinien-Fallback.
+         */
+        private int roadNetworkTimeoutSeconds = 180;
 
         public String getEndpoint() { return endpoint; }
         public void setEndpoint(String endpoint) { this.endpoint = endpoint; }
@@ -158,6 +164,8 @@ public class SynthesisProperties {
         public void setMirrors(java.util.List<String> mirrors) { this.mirrors = mirrors; }
         public int getTimeoutSeconds() { return timeoutSeconds; }
         public void setTimeoutSeconds(int timeoutSeconds) { this.timeoutSeconds = timeoutSeconds; }
+        public int getRoadNetworkTimeoutSeconds() { return roadNetworkTimeoutSeconds; }
+        public void setRoadNetworkTimeoutSeconds(int s) { this.roadNetworkTimeoutSeconds = s; }
 
         /** Primärer Endpunkt zuerst, dann die Mirrors (deduped). */
         public java.util.List<String> allEndpoints() {

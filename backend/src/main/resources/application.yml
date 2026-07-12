@@ -16,7 +16,8 @@ synthesis:
   max-zones: 600
   overpass:
     endpoint: https://overpass-api.de/api/interpreter
-    timeout-seconds: 30
+    timeout-seconds: 30                        # allgemeines Budget (leichte POI-/Place-Queries)
+    road-network-timeout-seconds: 180          # eigenes, großes Budget für den GraphHopper-Netzabruf (way[highway]+recurse)
     # mirrors:                                 # Ausweich-Endpunkte bei 504/429 (Default: kumi.systems, private.coffee)
     #   - https://overpass.kumi.systems/api/interpreter
   simulation:
