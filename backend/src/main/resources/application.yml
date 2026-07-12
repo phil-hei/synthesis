@@ -24,8 +24,10 @@ synthesis:
     enabled: true                              # Stufe 11: logiTopp-Wochensimulation
     project-dir: ../validation/mobitopp-rastatt # Legacy-Projekt mit runDeliverySynthesis
     timeout-minutes: 30
-    # calibration-iterations: 8                # max. Iterationen der Modal-Split-Kalibrierung
+    # calibration-iterations: 8                # max. Iterationen der Modal-Split-/Distanz-Kalibrierung
     # calibration-tolerance: 0.02              # Abbruch, wenn RMSE zum Ziel darunter liegt
+    # distance-calibration-target-near-share: 0.14  # Ziel-Anteil Wege <1 km (Zielwahl b_intrazonal); Näherungswert, tunbar
+    # distance-calibration-tolerance: 0.02     # Abbruch, wenn |Ist-Ziel| des <1-km-Anteils darunter
   # sumo:                                      # Zielmodell SUMO (Defaults aus $SUMO_HOME abgeleitet)
   #   enabled: true
   #   bin-dir: /pfad/zu/sumo/bin               # enthält sumo/netconvert/duarouter

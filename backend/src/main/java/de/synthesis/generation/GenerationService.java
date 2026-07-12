@@ -17,6 +17,7 @@ import de.synthesis.generation.pipeline.LegacyExportGenerator;
 import de.synthesis.generation.pipeline.LogisticsGenerator;
 import de.synthesis.generation.pipeline.MatrixGenerator;
 import de.synthesis.generation.pipeline.MobileCityExporter;
+import de.synthesis.generation.pipeline.DistanceCalibrator;
 import de.synthesis.generation.pipeline.ModeChoiceCalibrator;
 import de.synthesis.generation.pipeline.OverpassClient;
 import de.synthesis.generation.pipeline.PopulationEstimator;
@@ -537,7 +538,33 @@ public class GenerationService {
         }
         job.log("Starte logiTopp-Wochensimulation (" + runner.projectDir().getFileName() + ")…");
         SimulationResultIngestor.Summary summary;
-        if (scenario.population.calibrateModeChoice) {
+        if (scenario.population.calibrateDistance) {
+            // Phase 1b: Distanz-Kalibrierung der Zielwahl (b_intrazonal) gegen Ziel-<1km-Anteil
+            Path baseParams = runner.projectDir().resolve("config/shared/parameters");
+            Path dcDir = artifacts.resolve("simulation").resolve("dc-calibrated");
+            SimulationResultIngestor.Summary[] last = {null};
+            double targetNear = properties.getSimulation().getDistanceCalibrationTargetNearShare();
+            DistanceCalibrator calibrator = new DistanceCalibrator(baseParams, dcDir, targetNear,
+                    properties.getSimulation().getCalibrationIterations(),
+                    properties.getSimulation().getDistanceCalibrationTolerance());
+            job.log(String.format("Distanz-Kalibrierung: Ziel <1km-Anteil %.0f%% (max. %d Iterationen)…",
+                    targetNear * 100, properties.getSimulation().getCalibrationIterations()));
+            DistanceCalibrator.Result cal = calibrator.calibrate(dc -> {
+                SimulationRunner.Result run = runner.run(scenario, artifacts, job::log, null, dc);
+                last[0] = new SimulationResultIngestor(mapper)
+                        .ingest(run.resultsDir(), artifacts, run.durationSeconds());
+                return readNearDistanceShare(run.resultsDir());
+            });
+            cal.log().forEach(job::log);
+            job.log(String.format(
+                    "Distanz-Kalibrierung beendet: %d Iterationen, <1km %.1f%% → %.1f%% (Ziel %.0f%%)",
+                    cal.iterations(), cal.startNearShare() * 100, cal.finalNearShare() * 100,
+                    targetNear * 100));
+            job.summary.put("distanceCalibrationIterations", cal.iterations());
+            job.summary.put("distanceCalibrationNearShare",
+                    Math.round(cal.finalNearShare() * 1000) / 1000.0);
+            summary = last[0];
+        } else if (scenario.population.calibrateModeChoice) {
             // Phase 1: iterative ASC-Kalibrierung gegen MiD-Modal-Split (mehrere Sim-Läufe)
             Path baseMnl = runner.projectDir().resolve(
                     "config/shared/parameters/mode_choice_main_parameters-multi-nomial-logit.txt");
@@ -964,6 +991,38 @@ public class GenerationService {
         } catch (IOException e) {
             return Map.of();
         }
+    }
+
+    /** Anteil der Wege &lt; 1 km aus demandsimulationResult.csv (legId==0, distanceInKm idx16). */
+    private double readNearDistanceShare(Path resultsDir) {
+        Path csv = resultsDir.resolve("demandsimulationResult.csv");
+        long near = 0;
+        long total = 0;
+        try (java.io.BufferedReader r = Files.newBufferedReader(csv)) {
+            r.readLine(); // header
+            String line;
+            while ((line = r.readLine()) != null) {
+                if (line.isBlank()) {
+                    continue;
+                }
+                String[] c = line.split(";", -1);
+                if (c.length < 17 || !"0".equals(c[1].trim())) {
+                    continue; // nur legId==0 zählt jeden Weg einmal
+                }
+                try {
+                    double km = Double.parseDouble(c[16].trim());
+                    total++;
+                    if (km < 1.0) {
+                        near++;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Zeile ohne gültige Distanz überspringen
+                }
+            }
+        } catch (IOException e) {
+            return Double.NaN;
+        }
+        return total == 0 ? Double.NaN : (double) near / total;
     }
 
     private interface StageWork<T> {

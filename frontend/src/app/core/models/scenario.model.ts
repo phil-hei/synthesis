@@ -55,6 +55,8 @@ export interface Scenario {
     useActitopp: boolean;
     useKitPopulation: boolean;
     calibrateModeChoice: boolean;
+    /** Distanz-Kalibrierung der Zielwahl (b_intrazonal → Ziel-<1km-Anteil), experimentell. */
+    calibrateDistance: boolean;
     /** Ziel-Modal-Split der Kalibrierung (Modus → Anteil), Default MiD. */
     calibrationTarget: { [mode: string]: number };
     /** GTA 3c: zusätzliche LLM-Moduswahl auf den simulierten Trips (Vergleich zu MNL/MiD). */

@@ -374,10 +374,20 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Ø-Decke ist ein Gebietsgrößen-Problem (→ größeres Untersuchungsgebiet bzw. gravitationskonsistente
   externe Zonen, Kampagnen-Optionen B/C). Provenienz: geteilter Export → Δ/Richtung/Monotonie valide,
   absolute Werte NICHT die (geroutet) saubere Produktions-Baseline.
-- *Nächster Schritt (Phase 3, jetzt empirisch gerechtfertigt):* `DistanceCalibrator` nach dem
-  `ModeChoiceCalibrator`-Muster (Flag `calibrateDistance` default=false), der `b_intrazonal`
-  (ggf. + `b_0_1`/`b_1_2`) gegen eine Ziel-Distanzband-Verteilung iteriert; Kalibrierziel ist die
-  **Verteilungs-FORM** (Bänder), nicht der absolute Ø-Mittelwert.
+- **✅ Phase 3 — `DistanceCalibrator` umgesetzt + validiert (2026-07-12):** neuer Kalibrator nach
+  `ModeChoiceCalibrator`-Muster (Flag `population.calibrateDistance` default=false; benötigt Ziel
+  logiTopp). Stellgröße `b_intrazonal` in allen vier Zweck-Dateien, Zielgröße = `<1 km`-Wegeanteil;
+  Update `Δb = 3·ln(Ziel/Ist)` mit Clamp ±2 je Iteration (die Konstante 3 ≈ 1/0,32 aus der
+  gemessenen Elastizität). Läuft über den `destinationChoiceDir`-Override, patcht die Dateien in
+  `artifacts/simulation/dc-calibrated/`, Ziel-Nahanteil `synthesis.simulation.distance-calibration-
+  target-near-share` (Default 0,14, Näherungswert/tunbar — KEIN amtlicher MiD-Wert). `DistanceCalibratorTest`
+  (Fake-Sim-Konvergenz + Clamp) grün, Suite 25/25. Studio-Checkbox „Distanz-Verteilung kalibrieren".
+  **End-to-End-Validierung auf realem logiTopp:** ein Kalibrator-Schritt (`Δb −1,74`) brachte den
+  `<1 km`-Anteil von 0,250 auf **0,142** (Ziel 0,14) — die Regel konvergiert in einer Iteration.
+- *Weiterhin offen (Grenze, nicht Kalibrier-Ziel):* der absolute Ø (~2,9 km) — dafür braucht es ein
+  größeres Untersuchungsgebiet bzw. gravitationskonsistente externe Zonen. Optional: Multi-Band-Ziel
+  (zusätzliche Hebel `b_0_1`/`b_1_2`); Komposition mit der Modal-Split-Kalibrierung (heute
+  gegenseitig ausschließend, `calibrateDistance` hat Vorrang).
 
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und

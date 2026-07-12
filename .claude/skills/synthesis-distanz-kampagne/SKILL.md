@@ -172,18 +172,24 @@ Hebel **bestätigt**. Grenze: absolute Ø-Decke ~2,9 km bleibt (Gebietsgröße �
 formt die Bänder, erzeugt keine Fernwege). logiTopp-Läufe je ~5 s (warmer Daemon). Damit ist
 Phase 3 empirisch gerechtfertigt.
 
-### Phase 3 — DistanceCalibrator implementieren
+### Phase 3 — DistanceCalibrator ✅ UMGESETZT + VALIDIERT (2026-07-12)
 
-Blaupause: `ModeChoiceCalibrator` (backend/.../pipeline). Übernimm wörtlich dessen Struktur:
-- Ziel: konfigurierbare Distanzband-Verteilung (Default: MiD-Form auf Regionsgröße
-  skaliert; Ziel-Definition ist Teil der Arbeit — dokumentiere die Herleitung).
-- Update-Regel je Iteration mit **Clamp** (Vorbild ±1,5) auf den gewählten Hebel-Termen;
-  ein Anker-Parameter bleibt fix (Identifikation!, Vorbild `asc_car_d`).
-- Konvergenz: Band-RMSE < 0,05 oder max. 8 Iterationen.
-- Flag `population.calibrateDistance` default=false (Scenario.java + scenario.model.ts +
-  Studio-Checkbox — Checkliste in synthesis-config-and-flags).
-- Unit-Test nach `ModeChoiceCalibratorTest`-Muster (Fake-Sim statt logiTopp; beachte
-  dessen Clamp-Semantik: Datei hält Zustand VOR dem letzten Update).
+Erledigt (`backend/.../pipeline/DistanceCalibrator.java`, Muster `ModeChoiceCalibrator`):
+- **Zielgröße** = `<1 km`-Wegeanteil (EIN Ziel, EINE Stellgröße — bewusst kein Multi-Band, das
+  wäre über-determiniert mit nur `b_intrazonal`). **Stellgröße** = `b_intrazonal` in allen 4
+  Zweck-Dateien. **Update** `Δb = 3·ln(Ziel/Ist)`, Clamp ±2/Iteration; die Konstante 3 ≈ 1/0,32
+  ist die inverse gemessene Elastizität.
+- Läuft über den `destinationChoiceDir`-Override (Phase 2a), patcht nach
+  `artifacts/simulation/dc-calibrated/`. Flag `population.calibrateDistance` default=false; Ziel
+  `synthesis.simulation.distance-calibration-target-near-share` (0,14, tunbar — kein amtlicher MiD-Wert).
+- `DistanceCalibratorTest` (Fake-Sim-Konvergenz + Clamp-Semantik: Datei hält Zustand VOR dem
+  letzten Update) grün; Suite 25/25. Studio-Checkbox vorhanden.
+- **End-to-End-validiert:** ein Schritt (`Δb −1,74`) brachte `<1 km` 0,250 → **0,142** (Ziel 0,14)
+  auf realem logiTopp → konvergiert in einer Iteration.
+
+*Offen für später:* Multi-Band-Ziel (Hebel `b_0_1`/`b_1_2` ergänzen); Komposition mit der
+Modal-Split-Kalibrierung (heute gegenseitig ausschließend, `calibrateDistance` hat Vorrang); und
+die absolute Ø-Decke bleibt ein Gebietsgrößen-Problem (Kampagnen-Option B).
 
 ### Phase 4 — Joint-Validierung & Beförderung
 

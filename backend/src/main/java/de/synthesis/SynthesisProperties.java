@@ -131,6 +131,14 @@ public class SynthesisProperties {
         private int calibrationIterations = 8;
         /** Abbruch-Toleranz (RMSE der Modus-Anteile). */
         private double calibrationTolerance = 0.02;
+        /**
+         * Ziel-Anteil der Wege &lt; 1 km für die Distanz-Kalibrierung (Zielwahl, b_intrazonal).
+         * NÄHERUNGSWERT/tunbar — kein amtlicher MiD-Wert; ersetzt die Nahdistanz-Überkonzentration
+         * (Rastatt roh ~0,25). Kalibriert die Verteilungs-FORM, nicht den absoluten Ø (docs/06 „Phase 1b").
+         */
+        private double distanceCalibrationTargetNearShare = 0.14;
+        /** Abbruch-Toleranz (|Ist − Ziel| des &lt;1-km-Anteils). */
+        private double distanceCalibrationTolerance = 0.02;
 
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -142,6 +150,10 @@ public class SynthesisProperties {
         public void setCalibrationIterations(int n) { this.calibrationIterations = n; }
         public double getCalibrationTolerance() { return calibrationTolerance; }
         public void setCalibrationTolerance(double t) { this.calibrationTolerance = t; }
+        public double getDistanceCalibrationTargetNearShare() { return distanceCalibrationTargetNearShare; }
+        public void setDistanceCalibrationTargetNearShare(double s) { this.distanceCalibrationTargetNearShare = s; }
+        public double getDistanceCalibrationTolerance() { return distanceCalibrationTolerance; }
+        public void setDistanceCalibrationTolerance(double t) { this.distanceCalibrationTolerance = t; }
     }
 
     public static class Overpass {

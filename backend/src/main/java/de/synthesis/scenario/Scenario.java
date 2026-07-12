@@ -79,6 +79,12 @@ public class Scenario {
         /** Iterative ASC-Kalibrierung der Moduswahl gegen MiD-Modal-Split (teuer: mehrere Sim-Läufe). */
         public boolean calibrateModeChoice = false;
         /**
+         * Distanz-Kalibrierung der Zielwahl (experimentell): passt b_intrazonal iterativ an,
+         * bis der simulierte &lt;1-km-Wegeanteil den Zielwert trifft (mehrere logiTopp-Läufe).
+         * Benötigt Ziel logiTopp. Kalibriert die Verteilungs-Form, nicht den absoluten Ø.
+         */
+        public boolean calibrateDistance = false;
+        /**
          * Achse A (GTA 3c, experimentell): zusätzlich zur logiTopp-Moduswahl (MNL) eine
          * LLM-gestützte Moduswahl auf den simulierten Trips, geerdet in Reisezeiten je Modus –
          * liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt logiTopp + LLM.
