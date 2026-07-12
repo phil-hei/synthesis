@@ -202,10 +202,16 @@ Messung ausschließlich per Skripte (distance_profile.py, modal_split.py, kpi_re
 Beförderung über synthesis-change-control (Tests grün, docs/06-✅-Eintrag mit
 vorher→nachher-Zahlen, Flag bleibt opt-in bis Partner-Feedback).
 
-**Abbruchkriterium Richtung Option B:** Wenn nach sauberer Sonde + 2 Kalibrier-Anläufen
-die Band-RMSE nicht unter das Doppelte der Schwelle fällt, ist die Region zu klein —
-dann Untersuchungsgebiet vergrößern (Kosten: Matrizen n², `synthesis.max-zones` 600,
-OOM-Grenze ~12 GB logiTopp-JVM) und Kampagne auf dem größeren Gebiet wiederholen.
+**Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
+Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
+**4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.
+**ABER neue Grenze:** grobe Zonen (max-zones 600 erzwingt ~2,3-km-Zellen über großer Fläche)
++ der **feste Intrazonal-Distanz-Boden 0,3 km** (`MatrixGenerator` ~Z. 79, skaliert NICHT mit
+der Zellgröße) → Median-Kollaps auf 0,30 km, bimodale Verteilung. Die drei Hebel sind
+**komplementär:** (1) größere Fläche (Fernwege), (2) feinere Zonen / zellgrößen-skalierter
+Intrazonal-Boden (kurzes Ende), (3) `DistanceCalibrator` (Nahanteil). Details + vorgeschlagener
+Fix (eigener Change-Control-Zyklus, weil er die Matrix jedes Luftlinien-Laufs verschiebt):
+docs/06 „Phase 1b". Kosten großer Läufe: Matrizen n², OOM-Grenze ~12 GB logiTopp-JVM.
 
 ## Wann diesen Skill NICHT nutzen
 

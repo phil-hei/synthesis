@@ -388,6 +388,23 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   größeres Untersuchungsgebiet bzw. gravitationskonsistente externe Zonen. Optional: Multi-Band-Ziel
   (zusätzliche Hebel `b_0_1`/`b_1_2`); Komposition mit der Modal-Split-Kalibrierung (heute
   gegenseitig ausschließend, `calibrateDistance` hat Vorrang).
+- **🔬 Gebietsgröße getestet (Option B, 2026-07-12) — These bestätigt, neue Grenze entdeckt:**
+  zwei kontrollierte **Offline**-Läufe (identisch, je 4000 Personen, Template-Verhalten, seed 42,
+  `useRealRouting=false` → kein Overpass), nur die Fläche unterschiedlich: klein ~10 km (108 Zonen)
+  vs. groß ~55 km (594 Zonen). Ergebnis Ø 2,58 → **4,95 km** (+92 %), und die große Fläche erzeugt
+  **erstmals Fernwege** (>10 km: 0 % → 13,3 %). **These bestätigt:** die Gebietsgröße ist der Hebel
+  für den absoluten Ø. **ABER neue Grenze:** im großen Gebiet bricht der Median auf 0,30 km ein und
+  der `<1 km`-Anteil springt auf 52,6 % — die Verteilung wird bimodal. Ursache (verifiziert): alle
+  `<1 km`-Wege liegen bei **exakt 0,30 km** — der Intrazonal-Distanz-Boden in `MatrixGenerator`
+  (Zeile ~79, `Math.max(0.3, beelineKm·CAR_DETOUR)`) ist **fest** und skaliert NICHT mit der
+  Zellgröße; das Zonenlimit (`max-zones` 600) erzwingt über großer Fläche grobe Zellen (~2,3 km), in
+  denen Intra-Zonen-Wege real ~1,2 km lang wären, aber als 0,30 km erfasst werden.
+  **Konsequenz (die drei Hebel sind komplementär, nicht alternativ):** (1) größere Fläche für die
+  Fernwege, (2) **feinere Zonen** (höheres `max-zones`) bzw. ein zellgrößen-skalierter Intrazonal-
+  Boden, damit das kurze Ende stimmt, (3) `DistanceCalibrator` für den Nahdistanz-Anteil.
+  *Vorgeschlagener Fix (eigener Change-Control-Zyklus, weil er die Matrix JEDES Luftlinien-Laufs und
+  damit bestehende Kalibrier-Baselines verschiebt):* Intrazonal-Boden ≈ halbe Zellbreite statt fester
+  0,3 km — mit Spike + Re-Validierung der Kalibrier-Ergebnisse.
 
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und
