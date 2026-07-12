@@ -305,6 +305,34 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   urban→ländlich, ÖV/Fuß fallen), je Vorlage auf 1,0 normiert. *Offen/optional:* Ersatz durch
   exakte offizielle MiD-RegioStaR-Tabellen; automatische Vorauswahl aus der Bevölkerungsdichte.
 
+### Phase 1b – Distanz-Sensitivität der Zielwahl (größte offene Plausibilitätslücke) — 🔬 IN ARBEIT (2026-07-10)
+- **Problem:** Die Modal-Split-Kalibrierung (Phase 1) trifft die Modus-*Anteile*, aber die
+  *Weglängen* bleiben viel zu kurz (geroutet Ø ~2,9 km vs. MiD 12,5 km; die Zielwahl wählt fast
+  immer nahe Ziele). Die ausführbare, gegatete Kampagne dazu steht im Skill
+  `.claude/skills/synthesis-distanz-kampagne/`.
+- **Theorie (Phase 1 der Kampagne):** Die Zielwahl-Parameter liegen in
+  `validation/mobitopp-rastatt/config/shared/parameters/destination_choice_*` und sind über
+  `destinationChoice:` in der Run-Config verdrahtet. Die Kurzdistanz-Hebel je Zweck:
+  `b_intrazonal` (Bonus für Ziel in derselben Zone, SHOPPING = 2,25), `b_0_1`/`b_1_2`
+  (Nahband-Boni 0–1/1–2 km). In einem 6×5-km-Gebiet dominieren diese die Zielwahl. Additive
+  Term-Syntax (`0.93 -0.2 -0.1` = Summe) — Patches als zusätzlicher Term.
+- **Befund Baseline-Kontamination:** Das vorgefundene
+  `output/synthesis/results/demandsimulationResult.csv` (Ø 2,0 km, Fuß 52 %) trägt exakt die
+  Luftlinien-Fallback-Signatur (docs/05) — als Kampagnen-Baseline unzulässig ohne Job-Log-Prüfung
+  („Fallback auf Luftlinie"). Der zugehörige Legacy-Export ist nicht mehr vorhanden (lebte in
+  `artifacts/`/`/tmp`), ein Probelauf braucht also eine Neugenerierung (empfohlen klein,
+  `samplingFraction` 0,05, damit logiTopp in Sekunden läuft — wie bei der Modal-Split-Kalibrierung).
+- **✅ Phase 2a der Kampagne umgesetzt (Infrastruktur):** `SimulationRunner.run(…, modeChoiceMnl,
+  destinationChoiceDir)` — optionales Verzeichnis mit gepatchten Zielwahl-Dateien überschreibt die
+  fünf `destinationChoice:`-Pfade (gleiche Dateinamen), analog zum bewährten `modeChoiceMnl`-Weg;
+  `null` = Projekt-Standard (verhaltensgleich, `SimulationRunnerTest` beweist beide Fälle + dass die
+  Moduswahl unberührt bleibt). Damit ist der Hebel für die Elastizitäts-Sonde (Phase 2b) und einen
+  späteren `DistanceCalibrator` (Phase 3, Flag `calibrateDistance` default=false) verdrahtet.
+- *Nächster Schritt:* Elastizitäts-Sonde auf einem sauberen (gerouteten) Lauf — `b_intrazonal`
+  ±1,0, EIN Lauf, Distanzprofil-Delta gegen die Vorhersage (Ø-km steigt) prüfen. Eingezäunte
+  Irrwege (ferne externe Zonen, LLM-Prompt-Steuerung, Roh-Ziel 12,5 km in kleiner Region) siehe
+  Skill `synthesis-failure-archaeology` bzw. Kampagnen-Skill.
+
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und
   vorhandene logiTopp-Trips (`demandsimulationResult.csv`), sonst SKIPPED. Toolchain als externe

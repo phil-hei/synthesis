@@ -40,20 +40,30 @@ public class SimulationRunner {
 
     public Result run(Scenario scenario, Path artifacts, Consumer<String> log)
             throws IOException, InterruptedException {
-        return run(scenario, artifacts, log, null);
+        return run(scenario, artifacts, log, null, null);
+    }
+
+    public Result run(Scenario scenario, Path artifacts, Consumer<String> log, Path modeChoiceMnl)
+            throws IOException, InterruptedException {
+        return run(scenario, artifacts, log, modeChoiceMnl, null);
     }
 
     /**
-     * @param modeChoiceMnl optionaler Override für die MNL-Mode-Choice-Parameterdatei
-     *                      (für die Kalibrierung); {@code null} = Standarddatei des Projekts
+     * @param modeChoiceMnl        optionaler Override für die MNL-Mode-Choice-Parameterdatei
+     *                             (Modal-Split-Kalibrierung); {@code null} = Standarddatei des Projekts
+     * @param destinationChoiceDir optionales Verzeichnis mit gepatchten Zielwahl-Parameterdateien
+     *                             (gleiche Dateinamen wie {@code config/shared/parameters/destination_choice_*});
+     *                             {@code null} = Standarddateien des Projekts. Für die
+     *                             Distanz-Sensitivitäts-Kalibrierung (Skill {@code synthesis-distanz-kampagne}).
      */
-    public Result run(Scenario scenario, Path artifacts, Consumer<String> log, Path modeChoiceMnl)
-            throws IOException, InterruptedException {
+    public Result run(Scenario scenario, Path artifacts, Consumer<String> log, Path modeChoiceMnl,
+                      Path destinationChoiceDir) throws IOException, InterruptedException {
         Path simulationDir = artifacts.resolve("simulation");
         Path resultsDir = simulationDir.resolve("results");
         Files.createDirectories(resultsDir);
 
-        Path config = writeRunConfig(scenario, artifacts, simulationDir, resultsDir, modeChoiceMnl);
+        Path config = writeRunConfig(scenario, artifacts, simulationDir, resultsDir, modeChoiceMnl,
+                destinationChoiceDir);
         log.accept("Run-Config geschrieben: " + artifacts.relativize(config));
 
         Path logFile = simulationDir.resolve("run.log");
@@ -83,12 +93,24 @@ public class SimulationRunner {
      * Szenario-Daten (Legacy-Export, Depots, Ergebnisse) absolut, Modellparameter
      * (Wahlmodelle, Visum-Netz) relativ zum Legacy-Projekt — der Prozess läuft dort.
      */
-    private Path writeRunConfig(Scenario scenario, Path artifacts, Path simulationDir,
-                                Path resultsDir, Path modeChoiceMnl) throws IOException {
+    // package-private für SimulationRunnerTest (verifiziert die Override-Verdrahtung ohne Gradle-Lauf)
+    Path writeRunConfig(Scenario scenario, Path artifacts, Path simulationDir,
+                        Path resultsDir, Path modeChoiceMnl, Path destinationChoiceDir)
+            throws IOException {
         Path legacy = artifacts.resolve("legacy").toAbsolutePath();
         String mnlFile = modeChoiceMnl != null
                 ? modeChoiceMnl.toAbsolutePath().toString()
                 : "config/shared/parameters/mode_choice_main_parameters-multi-nomial-logit.txt";
+        String dcBase = destinationChoicePath(destinationChoiceDir,
+                "destination_choice_utility_calculation_parameters.txt");
+        String dcBusiness = destinationChoicePath(destinationChoiceDir,
+                "destination_choice_parameters_BUSINESS.txt");
+        String dcLeisure = destinationChoicePath(destinationChoiceDir,
+                "destination_choice_parameters_LEISURE.txt");
+        String dcService = destinationChoicePath(destinationChoiceDir,
+                "destination_choice_parameters_SERVICE.txt");
+        String dcShopping = destinationChoicePath(destinationChoiceDir,
+                "destination_choice_parameters_SHOPPING.txt");
         String yaml = """
                 dataSource: !file
                   demandDataFolder: %s/demand-data
@@ -104,11 +126,11 @@ public class SimulationRunner {
                   zoneRepositoryFolder: %s/zone-repository/
                 days: 7
                 destinationChoice:
-                  base: config/shared/parameters/destination_choice_utility_calculation_parameters.txt
-                  business: config/shared/parameters/destination_choice_parameters_BUSINESS.txt
-                  leisure: config/shared/parameters/destination_choice_parameters_LEISURE.txt
-                  service: config/shared/parameters/destination_choice_parameters_SERVICE.txt
-                  shopping: config/shared/parameters/destination_choice_parameters_SHOPPING.txt
+                  base: %s
+                  business: %s
+                  leisure: %s
+                  service: %s
+                  shopping: %s
                 modeChoice:
                   model: MNL
                   MNL: %s
@@ -136,6 +158,7 @@ public class SimulationRunner {
                   logModeChoiceN: 0
                 """.formatted(
                 legacy, legacy, legacy, legacy, legacy, legacy, legacy, legacy, legacy, legacy,
+                dcBase, dcBusiness, dcLeisure, dcService, dcShopping,
                 mnlFile,
                 scenario.population.seed, scenario.population.seed,
                 simulationDir.toAbsolutePath(), simulationDir.toAbsolutePath(),
@@ -146,6 +169,13 @@ public class SimulationRunner {
         Path config = simulationDir.resolve("run-config.yaml");
         Files.writeString(config, yaml);
         return config;
+    }
+
+    /** Zielwahl-Parameterpfad: gepatchte Kopie im Override-Verzeichnis (absolut) oder Projekt-Standard. */
+    private static String destinationChoicePath(Path destinationChoiceDir, String filename) {
+        return destinationChoiceDir != null
+                ? destinationChoiceDir.resolve(filename).toAbsolutePath().toString()
+                : "config/shared/parameters/" + filename;
     }
 
     /** Volles Gradle-Log wird zweistellig groß (MB); im Erfolgsfall reicht das Ende. */
