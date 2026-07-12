@@ -355,6 +355,29 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   prüft die Einbettung; Suite 23/23 grün. Damit sollte der nächste Baseline-Anlauf durchrouten;
   bleibt Overpass komplett aus, ist die Bbox klein (Region verkleinern) oder ein self-hosted/PBF-Weg
   der robustere Produktions-Ausbau (docs §D/§F).
+- **✅ Elastizitäts-Sonde (Phase 2b) — Hebel empirisch bestätigt (2026-07-12):** Zwei logiTopp-Läufe
+  auf DEMSELBEN Legacy-Export (Szenario `0e020eab`, seed 42, fraction 0,05) über den neuen
+  `destinationChoiceDir`-Override, einziger Unterschied = `b_intrazonal` in allen vier Zweck-Dateien
+  (business/leisure/service/shopping) um einen additiven Term reduziert. Vorhersage (vor dem Lauf):
+  Ø steigt, `<1 km`-Anteil fällt. Ergebnis (streng monoton):
+
+  | `b_intrazonal` Δ | Ø-Distanz | Median | `<1 km` | `2–5 km` |
+  |---|---|---|---|---|
+  | 0 (Baseline) | 2,65 km | 1,91 | 25,0 % | 37,1 % |
+  | −1,0 | 2,80 km (+5,7 %) | 1,91 | 18,1 % | 39,7 % |
+  | −3,0 | 2,94 km (+10,9 %) | 1,91 | 9,4 % | 40,8 % |
+
+  **Befund:** Die Zielwahl-Distanz reagiert korrekt signiert und dosisabhängig auf `b_intrazonal` —
+  der Hebel für eine Distanz-Kalibrierung ist bewiesen. **Grenze (ehrlich):** selbst bei −3,0 bleibt
+  Ø ~2,9 km; die Kalibrierung löst die **Nahdistanz-Überkonzentration** (Intrazonal-Kollaps 25→9 %),
+  kann aber **keine Fernwege erzeugen**, wo im ~6-km-Gebiet keine fernen Ziele liegen — die absolute
+  Ø-Decke ist ein Gebietsgrößen-Problem (→ größeres Untersuchungsgebiet bzw. gravitationskonsistente
+  externe Zonen, Kampagnen-Optionen B/C). Provenienz: geteilter Export → Δ/Richtung/Monotonie valide,
+  absolute Werte NICHT die (geroutet) saubere Produktions-Baseline.
+- *Nächster Schritt (Phase 3, jetzt empirisch gerechtfertigt):* `DistanceCalibrator` nach dem
+  `ModeChoiceCalibrator`-Muster (Flag `calibrateDistance` default=false), der `b_intrazonal`
+  (ggf. + `b_0_1`/`b_1_2`) gegen eine Ziel-Distanzband-Verteilung iteriert; Kalibrierziel ist die
+  **Verteilungs-FORM** (Bänder), nicht der absolute Ø-Mittelwert.
 
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und

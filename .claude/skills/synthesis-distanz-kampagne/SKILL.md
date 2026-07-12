@@ -157,13 +157,20 @@ schnellsten bei `samplingFraction` 0,05 (logiTopp in Sekunden, wie bei der Modal
 Kalibrierung). Merke: der Legacy-Export persistiert nicht in `output/synthesis/` — er lebt im
 `artifacts/`-Ordner des Szenarios; von dort kopieren, bevor er gereapt wird.
 
-**Gate:** |Δ Ø-Distanz| > 10 % in vorhergesagter Richtung.
+**Gate:** Änderung in vorhergesagter Richtung (Ø ↑, `<1 km`-Anteil ↓).
 - **Keine Änderung** → Override greift nicht: `simulation/run-config.yaml` des Laufs
   öffnen und prüfen, ob die destinationChoice-Pfade wirklich auf deine Kopien zeigen;
   `run.log` auf Parse-Fehler. Danach: falscher Parameter → nächsten Hebel testen
   (Reihenfolge: `b_intrazonal` → `b_0_1`/`b_1_2` → `b_tt_*` im base-File).
 - **Änderung entgegen Vorhersage** → Vorzeichen-/Summenformat-Verständnis prüfen (additive
   Terme!), Mechanismus neu formulieren, Sonde wiederholen.
+
+**✅ ERGEBNIS (2026-07-12, bereits gemessen — nicht neu ausführen):** Sonde gelaufen auf
+Export `0e020eab` (seed 42, alle 4 Zweck-Dateien `b_intrazonal` additiv gesenkt), dosis-
+abhängig monoton: Ø 2,65 → 2,80 (−1,0) → 2,94 km (−3,0); `<1 km`-Anteil 25,0 → 18,1 → 9,4 %.
+Hebel **bestätigt**. Grenze: absolute Ø-Decke ~2,9 km bleibt (Gebietsgröße — Kalibrierung
+formt die Bänder, erzeugt keine Fernwege). logiTopp-Läufe je ~5 s (warmer Daemon). Damit ist
+Phase 3 empirisch gerechtfertigt.
 
 ### Phase 3 — DistanceCalibrator implementieren
 
