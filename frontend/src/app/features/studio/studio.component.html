@@ -39,6 +39,13 @@
           Zellgröße Zonenraster (m) ⓘ
           <input type="number" [(ngModel)]="scenario.zoning.cellSizeMeters" min="200" step="100">
         </label>
+        <label title="Zonierungs-Gitter. 'Bbox-Raster' = metrisches Quadratgitter ab der Regionsecke (global). 'INSPIRE/Zensus' = flächengleiches EPSG:3035-Gitter (nur Europa), rastet auf das Zensus-Standardgitter ein (100 m/1 km/10 km) — vergleichbare IDs, verlustfreie Zensus-Zuordnung.">
+          Zonierungs-Gitter ⓘ
+          <select [(ngModel)]="scenario.zoning.mode">
+            <option value="grid">Bbox-Raster (global)</option>
+            <option value="inspire">INSPIRE/Zensus (EPSG:3035, Europa)</option>
+          </select>
+        </label>
       </section>
 
       <section class="block">

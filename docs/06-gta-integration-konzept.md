@@ -405,6 +405,20 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   *Vorgeschlagener Fix (eigener Change-Control-Zyklus, weil er die Matrix JEDES Luftlinien-Laufs und
   damit bestehende Kalibrier-Baselines verschiebt):* Intrazonal-Boden ≈ halbe Zellbreite statt fester
   0,3 km — mit Spike + Re-Validierung der Kalibrier-Ergebnisse.
+- **✅ INSPIRE-/EPSG:3035-Zonierung als Provider (2026-07-13, Europa-Fokus):** Zweiter
+  Zonierungs-Modus `zoning.mode = grid | inspire` (Default `grid`, unverändert). `inspire` rastet
+  die Zonen auf das europaweite, **flächengleiche** Zensus-Standardgitter (EPSG:3035/ETRS89-LAEA)
+  ein — kanonische Auflösungen 100 m/1 km/10 km, INSPIRE-Zell-IDs (`CRS3035RESxmN…E…`),
+  überlappungsfreies Containment in LAEA-Metern. Neu: `Epsg3035.fromLatLon` (Forward-Projektion,
+  Roundtrip-getestet), `InspireGridZoning`, `Zone.laeaE/laeaN/laeaRes`. Nutzen: europaweit
+  vergleichbare/mergebare Zonen-IDs und die **verlustfreie** Zuordnung der Zensus-Rasterdaten (die
+  `PopulationGridParser` ohnehin in EPSG:3035 liest) statt Re-Gridding. **Nur Europa** (EPSG:3035
+  ist für den EU/EWR-Raum definiert) → der globale Bbox-Modus bleibt Default/Fallback. Tests:
+  `Epsg3035Test`, `InspireGridZoningTest` + E2E-Variante `fullPipelineWithInspireZoningOffline`
+  (INSPIRE-Zonen laufen durch die ganze Pipeline, `zones.csv` trägt die INSPIRE-IDs); Suite 32/32,
+  ng build grün. Studio-Auswahl „Zonierungs-Gitter". *Ausblick:* das oben genannte Intrazonal-Boden-
+  Problem wird mit INSPIRE-Zellen sauber lösbar (bekannte, echte Zellkante → Boden ≈ 0,5214·R);
+  OLC/Geohash bleiben, falls je gebraucht, abgeleitete Zentroid-Labels (keine Geometrie-Änderung).
 
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und

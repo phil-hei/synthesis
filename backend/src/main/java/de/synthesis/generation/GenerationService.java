@@ -13,6 +13,7 @@ import de.synthesis.generation.pipeline.ExternalZones;
 import de.synthesis.generation.pipeline.FeedbackMath;
 import de.synthesis.generation.pipeline.GeoJson;
 import de.synthesis.generation.pipeline.GridZoning;
+import de.synthesis.generation.pipeline.InspireGridZoning;
 import de.synthesis.generation.pipeline.LegacyExportGenerator;
 import de.synthesis.generation.pipeline.LogisticsGenerator;
 import de.synthesis.generation.pipeline.MatrixGenerator;
@@ -97,8 +98,17 @@ public class GenerationService {
     public record ZonePreview(List<Zone> zones, double cellSizeMeters, boolean autoAdjusted) {
     }
 
-    /** Auto-raises the cell size to the finest resolution within the zone limit. */
     public ZonePreview previewZones(Scenario.Region region, double cellSizeMeters) {
+        return previewZones(region, cellSizeMeters, "grid");
+    }
+
+    /** Auto-raises the cell size to the finest resolution within the zone limit; honours the zoning mode. */
+    public ZonePreview previewZones(Scenario.Region region, double cellSizeMeters, String mode) {
+        if ("inspire".equalsIgnoreCase(mode)) {
+            int res = InspireGridZoning.pickResolution(region, cellSizeMeters, properties.getMaxZones());
+            return new ZonePreview(InspireGridZoning.generate(region, res, properties.getMaxZones()),
+                    res, res != cellSizeMeters);
+        }
         double effective = GridZoning.autoCellSize(region, cellSizeMeters, properties.getMaxZones());
         return new ZonePreview(
                 GridZoning.generate(region, effective, properties.getMaxZones()),
@@ -238,6 +248,15 @@ public class GenerationService {
     private List<Zone> stageZoning(PipelineContext ctx) {
         Scenario scenario = ctx.scenario;
         GenerationJob job = ctx.job;
+        if ("inspire".equalsIgnoreCase(scenario.zoning.mode)) {
+            int res = InspireGridZoning.pickResolution(
+                    scenario.region, scenario.zoning.cellSizeMeters, properties.getMaxZones());
+            List<Zone> result = InspireGridZoning.generate(scenario.region, res, properties.getMaxZones());
+            job.summary.put("cellSizeMeters", res);
+            job.summary.put("zoningMode", "inspire");
+            job.log(result.size() + " Zonen erzeugt (INSPIRE/EPSG:3035, " + res + " m Raster)");
+            return result;
+        }
         double effective = GridZoning.autoCellSize(
                 scenario.region, scenario.zoning.cellSizeMeters, properties.getMaxZones());
         if (effective != scenario.zoning.cellSizeMeters) {

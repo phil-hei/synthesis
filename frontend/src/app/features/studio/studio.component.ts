@@ -345,7 +345,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       this.message = 'Bitte zuerst eine Region auf der Karte zeichnen';
       return;
     }
-    this.api.previewZones(this.scenario.region, this.scenario.zoning.cellSizeMeters).subscribe({
+    this.api.previewZones(this.scenario.region, this.scenario.zoning.cellSizeMeters,
+        this.scenario.zoning.mode).subscribe({
       next: geojson => {
         this.zoneLayer?.remove();
         this.zoneLayer = L.geoJSON(geojson, {

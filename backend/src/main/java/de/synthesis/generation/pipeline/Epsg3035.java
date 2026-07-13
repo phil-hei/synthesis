@@ -47,6 +47,25 @@ public final class Epsg3035 {
         return new double[]{Math.toDegrees(lat), Math.toDegrees(lon)};
     }
 
+    /**
+     * Forward-Projektion (Lat/Lon → LAEA-Meter), inverse zu {@link #toLatLon}; nötig, um Zonen
+     * am INSPIRE-/Zensus-Gitter auszurichten. Gültig für den EU/EWR-Raum (EPSG:3035).
+     *
+     * @return {easting, northing} in Metern
+     */
+    public static double[] fromLatLon(double latDeg, double lonDeg) {
+        double lat = Math.toRadians(latDeg);
+        double lon = Math.toRadians(lonDeg);
+        double beta = Math.asin(q(lat) / QP);
+        double denom = 1 + Math.sin(BETA0) * Math.sin(beta)
+                + Math.cos(BETA0) * Math.cos(beta) * Math.cos(lon - LON0);
+        double b = RQ * Math.sqrt(2 / denom);
+        double x = b * D * Math.cos(beta) * Math.sin(lon - LON0);
+        double y = (b / D) * (Math.cos(BETA0) * Math.sin(beta)
+                - Math.sin(BETA0) * Math.cos(beta) * Math.cos(lon - LON0));
+        return new double[]{x + FALSE_EASTING, y + FALSE_NORTHING};
+    }
+
     private static double q(double lat) {
         double sinLat = Math.sin(lat);
         return (1 - E2) * (sinLat / (1 - E2 * sinLat * sinLat)

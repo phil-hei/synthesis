@@ -44,6 +44,11 @@ public class Scenario {
     public static class Zoning {
         /** Edge length of a square grid cell in meters. */
         public double cellSizeMeters = 1000;
+        /**
+         * Zonierungs-Modus: {@code "grid"} = metrisches Bbox-Raster (global, Default) |
+         * {@code "inspire"} = EPSG:3035/Zensus-Gitter (europäisch, flächengleich, Zensus-aligned).
+         */
+        public String mode = "grid";
     }
 
     public static class Population {

@@ -92,4 +92,52 @@ class GenerationPipelineE2ETest {
         assertTrue(Files.exists(artifacts.resolve("simulation/results/demandsimulationResult.csv")),
                 "demandsimulationResult.csv fehlt");
     }
+
+    /**
+     * Dieselbe Offline-Pipeline mit INSPIRE-/EPSG:3035-Zonierung: beweist, dass die
+     * gitterausgerichteten Zonen durch die ganze Kette (Population, Matrizen, Legacy-Export,
+     * MobileCity) laufen und die zones.csv INSPIRE-Zell-IDs trägt.
+     */
+    @Test
+    void fullPipelineWithInspireZoningOffline() throws Exception {
+        Path dataDir = Files.createTempDirectory("e2e-inspire");
+        SynthesisProperties props = new SynthesisProperties();
+        props.setDataDir(dataDir.toString());
+        ObjectMapper mapper = new ObjectMapper();
+        ScenarioRepository repo = new ScenarioRepository(mapper, props);
+        GenerationService service = new GenerationService(
+                repo, new OverpassClient(props, mapper), props, mapper);
+
+        Scenario scenario = new Scenario();
+        scenario.id = "e2e-inspire";
+        scenario.region = new Scenario.Region();
+        scenario.region.minLat = 48.85;
+        scenario.region.minLon = 8.19;
+        scenario.region.maxLat = 48.87;
+        scenario.region.maxLon = 8.22;
+        scenario.zoning.mode = "inspire";            // ← INSPIRE/EPSG:3035-Gitter
+        scenario.population.totalPersons = 250;
+        scenario.population.useOsmData = false;
+        scenario.population.useRealRouting = false;
+        scenario.population.behaviorSource = "template";
+        scenario.targetModels = new java.util.ArrayList<>(List.of("logitopp", "mobilecity"));
+        scenario = repo.save(scenario);
+
+        GenerationJob job = service.start(scenario.id);
+        long deadline = System.currentTimeMillis() + 6 * 60_000;
+        while (job.state == GenerationJob.State.QUEUED || job.state == GenerationJob.State.RUNNING) {
+            assertTrue(System.currentTimeMillis() < deadline, "Pipeline-Timeout (6 min)");
+            Thread.sleep(1000);
+        }
+        assertEquals(GenerationJob.State.DONE, job.state,
+                "INSPIRE-Pipeline muss durchlaufen; error=" + job.error);
+        for (GenerationJob.StageInfo stage : job.stages) {
+            assertTrue(!"FAILED".equals(stage.status), "Stufe fehlgeschlagen: " + stage.name);
+        }
+        assertEquals("inspire", job.summary.get("zoningMode"));
+        String zonesCsv = Files.readString(
+                repo.artifactsDir(scenario.id).resolve("zone-repository/zones.csv"));
+        assertTrue(zonesCsv.contains("CRS3035RES"),
+                "zones.csv muss INSPIRE-Zell-IDs enthalten");
+    }
 }

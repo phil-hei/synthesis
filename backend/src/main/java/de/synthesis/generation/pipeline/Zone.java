@@ -20,6 +20,11 @@ public class Zone {
     public double centroidLon;
     public double areaKm2;
 
+    /** INSPIRE-Zonen: SW-Ecke in EPSG:3035-Metern + Zellkante; {@code laeaRes > 0} → LAEA-Containment. */
+    public long laeaE;
+    public long laeaN;
+    public int laeaRes;
+
     public double population;
     public int households;
     /** External destination zone outside the study area (no residents, beeline impedance). */
@@ -28,6 +33,13 @@ public class Zone {
     public Map<String, Double> attractivities = new LinkedHashMap<>();
 
     public boolean contains(double lat, double lon) {
+        if (laeaRes > 0) {
+            // Korrekte, überlappungsfreie Partition in LAEA-Metern (das Lat/Lon-Bbox eines
+            // LAEA-Quadrats überlappt Nachbarn und würde falsch zuordnen).
+            double[] en = Epsg3035.fromLatLon(lat, lon);
+            return en[0] >= laeaE && en[0] < laeaE + laeaRes
+                    && en[1] >= laeaN && en[1] < laeaN + laeaRes;
+        }
         return lat >= minLat && lat < maxLat && lon >= minLon && lon < maxLon;
     }
 }

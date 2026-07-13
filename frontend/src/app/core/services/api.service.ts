@@ -31,8 +31,8 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/scenarios/${id}`);
   }
 
-  previewZones(region: Region, cellSizeMeters: number): Observable<any> {
-    return this.http.post<any>(`${this.base}/preview/zones`, { region, cellSizeMeters });
+  previewZones(region: Region, cellSizeMeters: number, mode = 'grid'): Observable<any> {
+    return this.http.post<any>(`${this.base}/preview/zones`, { region, cellSizeMeters, mode });
   }
 
   estimateRegion(region: Region): Observable<RegionEstimate> {

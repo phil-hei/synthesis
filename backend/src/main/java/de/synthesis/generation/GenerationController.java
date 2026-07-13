@@ -24,7 +24,7 @@ import java.util.List;
 @RequestMapping("/api")
 public class GenerationController {
 
-    public record ZonePreviewRequest(Scenario.Region region, double cellSizeMeters) {
+    public record ZonePreviewRequest(Scenario.Region region, double cellSizeMeters, String mode) {
     }
 
     private final GenerationService generation;
@@ -64,7 +64,8 @@ public class GenerationController {
     public ObjectNode previewZones(@RequestBody ZonePreviewRequest request) {
         try {
             GenerationService.ZonePreview preview =
-                    generation.previewZones(request.region(), request.cellSizeMeters());
+                    generation.previewZones(request.region(), request.cellSizeMeters(),
+                        request.mode() != null ? request.mode() : "grid");
             ObjectNode collection = GeoJson.zonesToFeatureCollection(mapper, preview.zones());
             collection.put("cellSizeMeters", preview.cellSizeMeters());
             collection.put("autoAdjusted", preview.autoAdjusted());
