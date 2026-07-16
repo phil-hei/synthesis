@@ -12,6 +12,7 @@ import de.synthesis.generation.pipeline.CsvArtifacts;
 import de.synthesis.generation.pipeline.ExternalZones;
 import de.synthesis.generation.pipeline.FeedbackMath;
 import de.synthesis.generation.pipeline.GeoJson;
+import de.synthesis.generation.pipeline.Epsg3035;
 import de.synthesis.generation.pipeline.GridZoning;
 import de.synthesis.generation.pipeline.InspireGridZoning;
 import de.synthesis.generation.pipeline.LegacyExportGenerator;
@@ -104,7 +105,9 @@ public class GenerationService {
 
     /** Auto-raises the cell size to the finest resolution within the zone limit; honours the zoning mode. */
     public ZonePreview previewZones(Scenario.Region region, double cellSizeMeters, String mode) {
-        if ("inspire".equalsIgnoreCase(mode)) {
+        // INSPIRE nur im EPSG:3035-Gültigkeitsbereich (Europa) — außerhalb Bbox-Raster zeigen
+        if ("inspire".equalsIgnoreCase(mode)
+                && Epsg3035.covers(region.minLat, region.minLon, region.maxLat, region.maxLon)) {
             int res = InspireGridZoning.pickResolution(region, cellSizeMeters, properties.getMaxZones());
             return new ZonePreview(InspireGridZoning.generate(region, res, properties.getMaxZones()),
                     res, res != cellSizeMeters);
@@ -249,13 +252,18 @@ public class GenerationService {
         Scenario scenario = ctx.scenario;
         GenerationJob job = ctx.job;
         if ("inspire".equalsIgnoreCase(scenario.zoning.mode)) {
-            int res = InspireGridZoning.pickResolution(
-                    scenario.region, scenario.zoning.cellSizeMeters, properties.getMaxZones());
-            List<Zone> result = InspireGridZoning.generate(scenario.region, res, properties.getMaxZones());
-            job.summary.put("cellSizeMeters", res);
-            job.summary.put("zoningMode", "inspire");
-            job.log(result.size() + " Zonen erzeugt (INSPIRE/EPSG:3035, " + res + " m Raster)");
-            return result;
+            Scenario.Region r = scenario.region;
+            if (Epsg3035.covers(r.minLat, r.minLon, r.maxLat, r.maxLon)) {
+                int res = InspireGridZoning.pickResolution(
+                        scenario.region, scenario.zoning.cellSizeMeters, properties.getMaxZones());
+                List<Zone> result = InspireGridZoning.generate(scenario.region, res, properties.getMaxZones());
+                job.summary.put("cellSizeMeters", res);
+                job.summary.put("zoningMode", "inspire");
+                job.log(result.size() + " Zonen erzeugt (INSPIRE/EPSG:3035, " + res + " m Raster)");
+                return result;
+            }
+            job.log("Region außerhalb des EPSG:3035-Gültigkeitsbereichs (Europa) – "
+                    + "Fallback auf Bbox-Raster");
         }
         double effective = GridZoning.autoCellSize(
                 scenario.region, scenario.zoning.cellSizeMeters, properties.getMaxZones());
@@ -266,6 +274,7 @@ public class GenerationService {
         }
         List<Zone> result = GridZoning.generate(scenario.region, effective, properties.getMaxZones());
         job.summary.put("cellSizeMeters", Math.round(effective));
+        job.summary.put("zoningMode", "grid");
         job.log(result.size() + " Zonen erzeugt (" + Math.round(effective) + " m Raster)");
         return result;
     }

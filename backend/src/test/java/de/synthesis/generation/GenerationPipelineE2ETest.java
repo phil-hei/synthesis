@@ -140,4 +140,26 @@ class GenerationPipelineE2ETest {
         assertTrue(zonesCsv.contains("CRS3035RES"),
                 "zones.csv muss INSPIRE-Zell-IDs enthalten");
     }
+
+    /** Außerhalb des EPSG:3035-Gültigkeitsbereichs (Europa) fällt "inspire" aufs Bbox-Raster zurück. */
+    @Test
+    void inspireRequestOutsideEuropeFallsBackToGrid() throws Exception {
+        Path dataDir = Files.createTempDirectory("e2e-guard");
+        SynthesisProperties props = new SynthesisProperties();
+        props.setDataDir(dataDir.toString());
+        ObjectMapper mapper = new ObjectMapper();
+        GenerationService service = new GenerationService(
+                new ScenarioRepository(mapper, props), new OverpassClient(props, mapper), props, mapper);
+
+        Scenario.Region newYork = new Scenario.Region();
+        newYork.minLat = 40.70;
+        newYork.minLon = -74.02;
+        newYork.maxLat = 40.75;
+        newYork.maxLon = -73.95;
+        GenerationService.ZonePreview preview = service.previewZones(newYork, 1000, "inspire");
+        assertTrue(preview.zones().size() > 1, "Fallback muss Zonen liefern");
+        for (var zone : preview.zones()) {
+            assertEquals(0, zone.laeaRes, "außerhalb Europas entstehen Bbox-Raster-Zonen (kein LAEA)");
+        }
+    }
 }

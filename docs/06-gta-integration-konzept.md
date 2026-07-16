@@ -436,6 +436,19 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   sich; das Kalibrier-Ziel (0,14) bleibt gültig, da der Kalibrator auf `b_intrazonal` regelt.
   Tests: neuer `MatrixGeneratorTest` (Skalierung mit Zellgröße, Interzonal ohne Boden, intrazonal
   nie geroutet); Suite 35/35, ng build grün.
+- **✅ Zonierungs-Default für Neuanlagen auf INSPIRE geflippt (2026-07-16):**
+  `GET /api/scenarios/defaults` (Quelle des Studio-„Neues Szenario") liefert jetzt
+  `zoning.mode = inspire`. Der **Feld-Default in `Scenario.Zoning` bleibt bewusst `grid`**:
+  drei persistierte Alt-Szenarien tragen keinen `mode`-Key und würden bei einem Feld-Default-Flip
+  stillschweigend aufs INSPIRE-Gitter wechseln (andere Zonen bei Regenerierung) — so behalten
+  Bestandsdateien und rohe API-POSTs ohne `mode` ihr Bbox-Raster (Muster wie der
+  `targets()`-Fallback). Dazu **Europa-Guard**: `Epsg3035.covers(bbox)` prüft den amtlichen
+  EPSG:3035-Gültigkeitsbereich (lat 32,88–84,73, lon −16,1–40,18); Regionen außerhalb fallen in
+  `previewZones` UND in der Zonierungs-Stufe aufs Bbox-Raster zurück (Job-Log-Hinweis,
+  `summary.zoningMode` meldet jetzt in beiden Modi den tatsächlich verwendeten Provider).
+  Verifiziert per Live-API: `/defaults` → `inspire`; Alt-Szenario ohne Key lädt weiter `grid`.
+  Tests: `coversOnlyTheEuropeanAreaOfUse` (Epsg3035Test), E2E
+  `inspireRequestOutsideEuropeFallsBackToGrid` (New-York-Bbox → Grid-Zonen); Suite 37/37.
 
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und

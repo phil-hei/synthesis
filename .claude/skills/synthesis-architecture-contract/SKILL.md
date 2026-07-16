@@ -48,7 +48,7 @@ Achtung: Das Javadoc an `run()` sagt „13 Pipeline-Stufen" — das ist veraltet
 
 | # | Stufe | Gate / SKIPPED-Bedingung | FAILED möglich? |
 |---|---|---|---|
-| 1 | Zonierung | immer; `zoning.mode` `grid` (Bbox-Raster, Default) \| `inspire` (EPSG:3035-Gitter, nur Europa, seit 2026-07-13); Zellgröße wird auf `synthesis.max-zones` (600) auto-angehoben (grid) bzw. auf die nächstgröbere kanonische Auflösung 100 m/1 km/10 km quantisiert (inspire) | Lauf bricht ab |
+| 1 | Zonierung | immer; `zoning.mode` `grid` (Bbox-Raster, Feld-Default) \| `inspire` (EPSG:3035-Gitter, nur Europa; seit 2026-07-16 Default für NEUANLAGEN via `/defaults`, Feld-Default bleibt `grid` für Alt-Szenarien ohne Key); Region außerhalb Europas → `Epsg3035.covers`-Guard fällt auf Bbox-Raster zurück; Zellgröße wird auf `synthesis.max-zones` (600) auto-angehoben (grid) bzw. auf die nächstgröbere kanonische Auflösung 100 m/1 km/10 km quantisiert (inspire) | Lauf bricht ab |
 | 2 | OSM-Daten (POIs) | SKIPPED wenn `population.useOsmData=false`; Overpass-Fehler ⇒ Fallback synthetisch, Stage bleibt DONE mit `message` | nein (Fallback) |
 | — | `preparePopulationDistribution` | **kein eigener Schritt**, läuft zwischen 2 und 3 (Nutzerwert > Upload-Raster > OSM-Schätzung > Dichte) | Lauf bricht ab |
 | 3 | Attraktivitäten | immer; ohne POIs synthetisch; `externalTrips` hängt externe Zielzonen an | Lauf bricht ab |

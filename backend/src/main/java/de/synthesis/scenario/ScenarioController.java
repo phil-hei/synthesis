@@ -34,7 +34,13 @@ public class ScenarioController {
 
     @GetMapping("/defaults")
     public Scenario defaults() {
-        return new Scenario();
+        Scenario scenario = new Scenario();
+        // Neuanlagen starten auf dem INSPIRE-/Zensus-Gitter (Europa-Projektfokus). Der
+        // FELD-Default in Scenario.Zoning bleibt "grid", damit persistierte Alt-Szenarien
+        // ohne mode-Key ihr Bbox-Raster behalten; außerhalb Europas fällt die Zonierungs-
+        // Stufe ohnehin auf das Bbox-Raster zurück (Epsg3035.covers).
+        scenario.zoning.mode = "inspire";
+        return scenario;
     }
 
     @GetMapping("/{id}")

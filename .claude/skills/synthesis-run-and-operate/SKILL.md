@@ -247,7 +247,7 @@ SKIPPED = bewusst übersprungen (Gate nicht erfüllt), FAILED = versucht und ges
 
 | # | Stufe (Job-Log-Name) | Gate (läuft nur wenn …) | SKIPPED wenn … | Dauer (überliefert, Größenordnung) |
 |---|---|---|---|---|
-| 1 | Zonierung | immer (`zoning.mode`: `grid` Bbox-Raster \| `inspire` EPSG:3035-Gitter; Modus landet in `summary.zoningMode`) | – | Sekunden |
+| 1 | Zonierung | immer (`zoning.mode`: `grid` Bbox-Raster \| `inspire` EPSG:3035-Gitter, Neuanlagen-Default seit 2026-07-16; außerhalb Europas Fallback auf Bbox-Raster mit Log-Hinweis; tatsächlicher Provider in `summary.zoningMode`) | – | Sekunden |
 | 2 | OSM-Daten (POIs) | `population.useOsmData` | Flag aus. Bei Overpass-Fehler **kein** SKIPPED, sondern Fallback auf synthetische Daten (`message` gesetzt, Stufe DONE) | Sekunden–Minute (Overpass) |
 | 3 | Attraktivitäten | immer | – | Sekunden |
 | 4 | Bevölkerungssynthese | immer | – | Sekunden |

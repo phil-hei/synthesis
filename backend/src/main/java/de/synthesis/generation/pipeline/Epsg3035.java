@@ -23,7 +23,19 @@ public final class Epsg3035 {
             / Math.sqrt(1 - E2 * Math.sin(LAT0) * Math.sin(LAT0))
             / (RQ * Math.cos(BETA0));
 
+    // Gültigkeitsbereich von EPSG:3035 (EPSG-Registry, Area of Use "Europe"):
+    // außerhalb ist die LAEA-Projektion zwar rechenbar, aber stark verzerrt und nicht amtlich.
+    private static final double MIN_LAT = 32.88;
+    private static final double MAX_LAT = 84.73;
+    private static final double MIN_LON = -16.1;
+    private static final double MAX_LON = 40.18;
+
     private Epsg3035() {
+    }
+
+    /** @return true, wenn die Bounding-Box vollständig im EPSG:3035-Gültigkeitsbereich liegt. */
+    public static boolean covers(double minLat, double minLon, double maxLat, double maxLon) {
+        return minLat >= MIN_LAT && maxLat <= MAX_LAT && minLon >= MIN_LON && maxLon <= MAX_LON;
     }
 
     /** @return {lat, lon} in WGS84/ETRS89 degrees (difference is negligible at grid scale). */

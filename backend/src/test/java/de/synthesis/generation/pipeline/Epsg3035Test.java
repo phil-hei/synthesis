@@ -45,4 +45,13 @@ class Epsg3035Test {
         assertTrue(Math.abs(en[0] - e) < 0.01 && Math.abs(en[1] - n) < 0.01,
                 "LAEA-Roundtrip < 1 cm: " + en[0] + "," + en[1]);
     }
+
+    @Test
+    void coversOnlyTheEuropeanAreaOfUse() {
+        assertTrue(Epsg3035.covers(48.80, 8.15, 48.90, 8.27), "Rastatt liegt im EU/EWR-Raum");
+        assertTrue(Epsg3035.covers(59.2, 17.9, 59.4, 18.2), "Stockholm liegt im EU/EWR-Raum");
+        assertTrue(!Epsg3035.covers(40.6, -74.1, 40.8, -73.9), "New York liegt außerhalb");
+        assertTrue(!Epsg3035.covers(35.0, -20.0, 48.0, 8.0),
+                "Boxen, die den Gültigkeitsrand überlappen, gelten als außerhalb");
+    }
 }
