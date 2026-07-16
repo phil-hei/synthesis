@@ -1,5 +1,12 @@
 # 04 – Roadmap, MVP-Schnitt, Risiken
 
+> **Historisch (Juni 2026, nicht mehr gepflegt):** Diese MVP-Roadmap ist im Wesentlichen
+> umgesetzt (Phasen 0–4 vollständig, Phase 5 teilweise); die offenen Checkboxen unten wurden
+> nie nachgetragen. Die **lebende Roadmap** ist der Phasenplan in
+> [06-gta-integration-konzept.md](06-gta-integration-konzept.md) (Abschnitt F), den aktuellen
+> Gesamtstand fasst [07-ansatz-zusammenfassung.md](07-ansatz-zusammenfassung.md) zusammen.
+> Die Risikotabelle am Ende bleibt als Entscheidungs-Kontext lesenswert.
+
 ## Grundsatzentscheidung: mobiTopp-Version
 
 | Option | Pro | Contra |
