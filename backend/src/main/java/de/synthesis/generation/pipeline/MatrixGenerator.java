@@ -19,6 +19,13 @@ import java.util.Map;
 public class MatrixGenerator {
 
     private static final double CAR_DETOUR = 1.35;
+    /**
+     * Erwartete Luftlinie eines Weges INNERHALB einer Zelle: E[Distanz zweier gleichverteilter
+     * Punkte im Einheitsquadrat] ≈ 0,5214 x Kantenlänge. Ersetzt den früheren festen
+     * 0,3-km-Boden, der nicht mit der Zellgröße skalierte (Median-Kollaps bei groben Zonen,
+     * Befund docs/06 "Phase 1b", 2026-07-12).
+     */
+    private static final double INTRAZONAL_BEELINE_FACTOR = 0.5214;
     private static final double CAR_SPEED_KMH = 28;
     private static final double BIKE_SPEED_KMH = 14;
     private static final double WALK_SPEED_KMH = 4.7;
@@ -70,13 +77,18 @@ public class MatrixGenerator {
         float[][] airDistance = new float[n][n];
         for (Zone from : zones) {
             for (Zone to : zones) {
-                double beelineKm = GridZoning.distanceKm(from, to);
+                // Intrazonal (Zentroid==Zentroid, Luftlinie 0): erwartete Binnendistanz der Zelle
+                // statt 0 — sonst ist z. B. Laufen innerhalb der Zone "gratis" (0 min) und die
+                // Distanzmatrix kollabiert auf einen festen Wert. Alle Modi erben konsistent.
+                double beelineKm = from.index == to.index
+                        ? INTRAZONAL_BEELINE_FACTOR * Math.sqrt(from.areaKm2)
+                        : GridZoning.distanceKm(from, to);
                 int i = from.index;
                 int j = to.index;
 
-                // Auto: Routing, sonst Luftlinie x Umwegfaktor (min. 0,3 km intrazonal)
+                // Auto: Routing, sonst Luftlinie x Umwegfaktor
                 double[] car = route(impedance, from, to, TravelMode.CAR);
-                double carKm = car != null ? car[0] / 1000 : Math.max(0.3, beelineKm * CAR_DETOUR);
+                double carKm = car != null ? car[0] / 1000 : beelineKm * CAR_DETOUR;
                 double carMin = car != null ? car[1] : carKm / CAR_SPEED_KMH * 60 + 3;
 
                 double[] bike = route(impedance, from, to, TravelMode.BIKE);
@@ -130,7 +142,8 @@ public class MatrixGenerator {
     private static double[] route(Impedance impedance, Zone from, Zone to, TravelMode mode) {
         // Externe Zonen liegen außerhalb des gerouteten Netzes: GraphHopper würde sie auf
         // den nächsten Randknoten snappen (zu kurz) → für sie immer Luftlinie verwenden.
-        if (impedance == null || from.external || to.external) {
+        // Intrazonal (from==to) wäre Zentroid→sich selbst = 0 m → Binnendistanz-Schätzer nutzen.
+        if (impedance == null || from.external || to.external || from.index == to.index) {
             return null;
         }
         return impedance.impedance(from, to, mode);

@@ -419,6 +419,23 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   ng build grün. Studio-Auswahl „Zonierungs-Gitter". *Ausblick:* das oben genannte Intrazonal-Boden-
   Problem wird mit INSPIRE-Zellen sauber lösbar (bekannte, echte Zellkante → Boden ≈ 0,5214·R);
   OLC/Geohash bleiben, falls je gebraucht, abgeleitete Zentroid-Labels (keine Geometrie-Änderung).
+- **✅ Intrazonal-Boden zellgrößen-skaliert (2026-07-16):** der feste 0,3-km-Boden in
+  `MatrixGenerator` ist ersetzt durch die **erwartete Binnendistanz der Zelle**
+  (Luftlinie = 0,5214 · √`areaKm2`, der Erwartungswert der Distanz zweier gleichverteilter Punkte
+  im Quadrat); alle Modi erben konsistent (vorher hatte NUR das Auto den Boden — Fuß/Rad waren
+  intrazonal 0 km/0 min, Laufen innerhalb der Zone also „gratis" → Fuß-Bias). Intrazonale Paare
+  werden nicht mehr geroutet (Zentroid→sich selbst wäre 0 m). Kontrollierter A/B (je zwei
+  identische Offline-Läufe, Template, seed 42, 4000 Personen, Vorhersage vorab notiert):
+  **großes Gebiet** (600 Zonen, ~2,3-km-Zellen): Median 0,30 → **3,10 km**, `<1 km` 51,2 → **0,0 %**,
+  Ø 5,07 → 5,86 km, Bimodalität weg (der frühere 0,30-Spike liegt jetzt exakt auf der Formel:
+  1,62 km = 0,5214·2,3·1,35), Fuß 45,8 → 34,0 %, Modal-RMSE 0,161 → 0,119. **Standard-Gebiet**
+  (1-km-Zellen): Ø 2,08 → 2,24 km, Median 1,35 → 1,72 km, `<1 km` 31,8 → 29,1 %, Fuß 51,5 → 48,5 %,
+  RMSE 0,165 → 0,150; Wegezahl exakt unverändert (87 010 Trips, 3,108 Wege/Person·Tag) — der Fix
+  verschiebt nur Distanzen/Impedanzen, keine Nachfrage. **Konsequenz für Kalibrier-Baselines:**
+  alle vorherigen Luftlinien-Kennzahlen (z. B. `<1 km`-Ist des `DistanceCalibrator`) verschieben
+  sich; das Kalibrier-Ziel (0,14) bleibt gültig, da der Kalibrator auf `b_intrazonal` regelt.
+  Tests: neuer `MatrixGeneratorTest` (Skalierung mit Zellgröße, Interzonal ohne Boden, intrazonal
+  nie geroutet); Suite 35/35, ng build grün.
 
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und

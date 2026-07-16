@@ -205,19 +205,24 @@ vorher→nachher-Zahlen, Flag bleibt opt-in bis Partner-Feedback).
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.
-**ABER neue Grenze:** grobe Zonen (max-zones 600 erzwingt ~2,3-km-Zellen über großer Fläche)
-+ der **feste Intrazonal-Distanz-Boden 0,3 km** (`MatrixGenerator` ~Z. 79, skaliert NICHT mit
-der Zellgröße) → Median-Kollaps auf 0,30 km, bimodale Verteilung. Die drei Hebel sind
+**ABER neue Grenze (inzwischen behoben, s. u.):** grobe Zonen (max-zones 600 erzwingt ~2,3-km-
+Zellen über großer Fläche) + der damals **feste Intrazonal-Distanz-Boden 0,3 km** im
+`MatrixGenerator` → Median-Kollaps auf 0,30 km, bimodale Verteilung. Die drei Hebel sind
 **komplementär:** (1) größere Fläche (Fernwege), (2) feinere Zonen / zellgrößen-skalierter
-Intrazonal-Boden (kurzes Ende), (3) `DistanceCalibrator` (Nahanteil). Details + vorgeschlagener
-Fix (eigener Change-Control-Zyklus, weil er die Matrix jedes Luftlinien-Laufs verschiebt):
-docs/06 „Phase 1b". Kosten großer Läufe: Matrizen n², OOM-Grenze ~12 GB logiTopp-JVM.
+Intrazonal-Boden (kurzes Ende), (3) `DistanceCalibrator` (Nahanteil).
+Kosten großer Läufe: Matrizen n², OOM-Grenze ~12 GB logiTopp-JVM.
 
-**Grundlage für den Boden-Fix (seit 2026-07-13):** Die INSPIRE-Zonierung (`zoning.mode=inspire`,
-Commit `cb2f40a`) trägt die exakte Zellkante in Metern an jeder Zone (`Zone.laeaRes`, kanonisch
-100 m/1 km/10 km) — der zellgrößen-skalierte Intrazonal-Boden kann daran gekoppelt werden
-(≈ 0,5214 · Kantenlänge, Erwartungswert der Distanz zweier gleichverteilter Punkte im Quadrat),
-statt an der fixen 0,3-km-Konstante in `MatrixGenerator` ~Z. 79.
+**✅ Intrazonal-Boden zellgrößen-skaliert (2026-07-16):** `MatrixGenerator` setzt für
+intrazonale Paare jetzt die **erwartete Binnendistanz der Zelle** an
+(Luftlinie = 0,5214 · √`areaKm2`; alle Modi erben konsistent — vorher hatte nur das Auto den
+0,3-km-Boden, Fuß/Rad waren intrazonal 0 km/0 min → Fuß-Bias); intrazonal wird nicht mehr
+geroutet. A/B-validiert (Vorhersage vorab, Offline-Läufe seed 42): großes Gebiet Median
+0,30→3,10 km, `<1 km` 51,2→0,0 %, Bimodalität weg, Fuß 45,8→34,0 %; Standard-Gebiet (1-km-Zellen)
+Ø 2,08→2,24 km, `<1 km` 31,8→29,1 %, Wegezahl exakt unverändert. **Achtung Baselines:** alle
+Luftlinien-Kennzahlen vor 2026-07-16 (auch die Option-B-Zahlen oben und die
+`DistanceCalibrator`-Ist-Werte) sind mit dem neuen Boden nicht mehr direkt vergleichbar;
+das Kalibrier-Ziel 0,14 bleibt gültig (Kalibrator regelt auf `b_intrazonal`).
+Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `MatrixGeneratorTest`.
 
 ## Wann diesen Skill NICHT nutzen
 
