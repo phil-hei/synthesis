@@ -213,6 +213,12 @@ Intrazonal-Boden (kurzes Ende), (3) `DistanceCalibrator` (Nahanteil). Details + 
 Fix (eigener Change-Control-Zyklus, weil er die Matrix jedes Luftlinien-Laufs verschiebt):
 docs/06 „Phase 1b". Kosten großer Läufe: Matrizen n², OOM-Grenze ~12 GB logiTopp-JVM.
 
+**Grundlage für den Boden-Fix (seit 2026-07-13):** Die INSPIRE-Zonierung (`zoning.mode=inspire`,
+Commit `cb2f40a`) trägt die exakte Zellkante in Metern an jeder Zone (`Zone.laeaRes`, kanonisch
+100 m/1 km/10 km) — der zellgrößen-skalierte Intrazonal-Boden kann daran gekoppelt werden
+(≈ 0,5214 · Kantenlänge, Erwartungswert der Distanz zweier gleichverteilter Punkte im Quadrat),
+statt an der fixen 0,3-km-Konstante in `MatrixGenerator` ~Z. 79.
+
 ## Wann diesen Skill NICHT nutzen
 
 | Situation | Stattdessen |

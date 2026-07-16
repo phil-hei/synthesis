@@ -48,7 +48,7 @@ Achtung: Das Javadoc an `run()` sagt „13 Pipeline-Stufen" — das ist veraltet
 
 | # | Stufe | Gate / SKIPPED-Bedingung | FAILED möglich? |
 |---|---|---|---|
-| 1 | Zonierung | immer; Zellgröße wird auf `synthesis.max-zones` (600) auto-angehoben | Lauf bricht ab |
+| 1 | Zonierung | immer; `zoning.mode` `grid` (Bbox-Raster, Default) \| `inspire` (EPSG:3035-Gitter, nur Europa, seit 2026-07-13); Zellgröße wird auf `synthesis.max-zones` (600) auto-angehoben (grid) bzw. auf die nächstgröbere kanonische Auflösung 100 m/1 km/10 km quantisiert (inspire) | Lauf bricht ab |
 | 2 | OSM-Daten (POIs) | SKIPPED wenn `population.useOsmData=false`; Overpass-Fehler ⇒ Fallback synthetisch, Stage bleibt DONE mit `message` | nein (Fallback) |
 | — | `preparePopulationDistribution` | **kein eigener Schritt**, läuft zwischen 2 und 3 (Nutzerwert > Upload-Raster > OSM-Schätzung > Dichte) | Lauf bricht ab |
 | 3 | Attraktivitäten | immer; ohne POIs synthetisch; `externalTrips` hängt externe Zielzonen an | Lauf bricht ab |
@@ -146,6 +146,13 @@ Es gibt zwei Zonen-ID-Räume, und sie werden von verschiedenen Konsumenten erwar
 **WARUM kritisch:** Verwechslung erzeugt **still** falsche Zuordnungen — im A2-Fall wurden
 externe IDs kommentarlos verworfen (0 Haushalte). Kein Fehler, kein Crash, nur leises
 falsches Ergebnis. Bei jeder Änderung an Zonen-Exporten beide Befunde in docs/05 gegenlesen.
+
+**INSPIRE-Ergänzung (2026-07-13, Commit `cb2f40a`):** Im Modus `zoning.mode=inspire` bleibt die
+numerische ID-Mechanik unverändert (fortlaufend ab 100 001, OID/matrixColumn wie gehabt);
+zusätzlich trägt `Zone.name` die INSPIRE-Zell-ID (`CRS3035RES<res>mN<north>E<east>`) und
+`Zone.laeaE/laeaN/laeaRes` die EPSG:3035-Zellkoordinaten — das Punkt-Containment läuft dann in
+LAEA-Metern statt über die Lat/Lon-Bbox. Den `name` nie als numerische ID interpretieren; er ist
+der europaweit vergleichbare Zell-Code (verlustfreier Join zu Zensus-2022-/GEOSTAT-Rastern).
 
 ### 6. Reproduzierbarkeit: alles hängt am Szenario-Seed
 

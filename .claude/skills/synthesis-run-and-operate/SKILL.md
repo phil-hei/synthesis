@@ -83,7 +83,7 @@ curl -s -X POST http://localhost:8090/api/scenarios \
   -d '{
     "name": "Rastatt klein",
     "region": {"minLat": 48.83, "minLon": 8.15, "maxLat": 48.88, "maxLon": 8.25},
-    "zoning": {"cellSizeMeters": 1000},
+    "zoning": {"cellSizeMeters": 1000, "mode": "grid"},
     "population": {"totalPersons": 250, "seed": 42, "behaviorSource": "actitopp"},
     "targetModels": ["logitopp", "sumo"]
   }'
@@ -91,7 +91,9 @@ curl -s -X POST http://localhost:8090/api/scenarios \
 ```
 
 Wichtigste Felder des Scenario-JSON (`Scenario.java`): `region` (BBox),
-`zoning.cellSizeMeters`, `population.{totalPersons, samplingFraction, seed, useOsmData,
+`zoning.{cellSizeMeters, mode}` (`mode`: `grid` Bbox-Raster (Default) \| `inspire`
+EPSG:3035-/Zensus-Gitter, nur Europa — siehe `synthesis-config-and-flags`),
+`population.{totalPersons, samplingFraction, seed, useOsmData,
 useRealRouting, externalTrips, behaviorSource, gtaWhatIf, calibrateModeChoice,
 calibrationTarget, llmModeChoice, sumoFeedback, publicTransport, carsPerHousehold}`,
 `logistics.{parcelsPerPersonWeek, shareHome/Work/Packstation, depots[], services[]}`,
@@ -245,7 +247,7 @@ SKIPPED = bewusst übersprungen (Gate nicht erfüllt), FAILED = versucht und ges
 
 | # | Stufe (Job-Log-Name) | Gate (läuft nur wenn …) | SKIPPED wenn … | Dauer (überliefert, Größenordnung) |
 |---|---|---|---|---|
-| 1 | Zonierung | immer | – | Sekunden |
+| 1 | Zonierung | immer (`zoning.mode`: `grid` Bbox-Raster \| `inspire` EPSG:3035-Gitter; Modus landet in `summary.zoningMode`) | – | Sekunden |
 | 2 | OSM-Daten (POIs) | `population.useOsmData` | Flag aus. Bei Overpass-Fehler **kein** SKIPPED, sondern Fallback auf synthetische Daten (`message` gesetzt, Stufe DONE) | Sekunden–Minute (Overpass) |
 | 3 | Attraktivitäten | immer | – | Sekunden |
 | 4 | Bevölkerungssynthese | immer | – | Sekunden |

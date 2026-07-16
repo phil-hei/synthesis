@@ -63,6 +63,7 @@ driften, daher nur Block + Bedienelement).
 | `createdAt` | Instant | – | Metadatum | produktiv |
 | `region` | Region (`minLat/minLon/maxLat/maxLon`) | `null` bis Karte gezeichnet | Bounding-Box aller Stufen (Zonierung, OSM, Routing, GTFS-Feed-Auswahl) | produktiv |
 | `zoning.cellSizeMeters` | double | `1000` | Kantenlänge quadratischer Rasterzelle (m); `GridZoning.autoCellSize` vergröbert automatisch bis zum `synthesis.max-zones`-Limit. UI: Block „Szenario", Zahlenfeld „Zellgröße Zonenraster (m)" | produktiv |
+| `zoning.mode` | String | `"grid"` | Zonierungs-Modus (seit 2026-07-13, Commit `cb2f40a`): `grid` = metrisches Bbox-Raster (global) \| `inspire` = INSPIRE-/Zensus-Gitter (EPSG:3035/ETRS89-LAEA, **nur Europa**, flächengleich). Bei `inspire` quantisiert `InspireGridZoning.pickResolution` die `cellSizeMeters` auf die kanonischen Auflösungen 100 m/1 km/10 km; `Zone.name` trägt die INSPIRE-Zell-ID (`CRS3035RES…mN…E…`), Containment läuft in LAEA-Metern (`Zone.laeaE/laeaN/laeaRes`). Job-Summary: `zoningMode`. UI: Block „Szenario", Select „Zonierung" | produktiv (Default `grid` unverändert) |
 | `targetModels` | List\<String\> | `["logitopp", "mobilecity"]` | **Achse B**, Mehrfachauswahl: `logitopp` \| `mobilecity` \| `sumo`. UI: Block „Modellierung", Checkbox-Gruppe „Zielmodell" (`hasTarget(...)`/`toggleTarget(...)`) | produktiv (`sumo` nicht im Default) |
 
 **`targets()`-Helper (wichtig!):** Leere oder `null` Liste fällt auf `["logitopp", "mobilecity"]`
@@ -146,7 +147,7 @@ Keys mitpflegen.
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
 | `synthesis.data-dir` | `data` | Wurzel für Szenarien (`data/scenarios/<id>`), `llm-cache`, `gtfs-cache` | `ScenarioRepository`, `GenerationService` |
-| `synthesis.max-zones` | `600` | Zonen-Obergrenze; `GridZoning.autoCellSize` vergröbert die Zellgröße automatisch | `GenerationService` → `GridZoning` |
+| `synthesis.max-zones` | `600` | Zonen-Obergrenze; `GridZoning.autoCellSize` vergröbert die Zellgröße automatisch, `InspireGridZoning.pickResolution` weicht analog auf die nächstgröbere kanonische Auflösung aus | `GenerationService` → `GridZoning`/`InspireGridZoning` |
 
 ### 2.1 `synthesis.overpass` (OSM-Datenquelle)
 
