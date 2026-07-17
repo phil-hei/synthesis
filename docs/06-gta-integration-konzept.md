@@ -616,13 +616,55 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
     uns): Rücksprache mit Lars aussteht. → beide Punkte offen, warten auf Rückmeldung.
   - **Nachfrage-Schnittstelle bestätigt:** ausschließlich aggregierte District-Tabellen; kein
     Import von Einzelwegen/Touren (am nächsten kommen Maßnahmen/Governances auf Teilabschnitten).
+  - **TEC- und Governance-Formate analysiert (2026-07-16,** aus dem IML/Takomat-Austausch
+    2026-07-10: `MC_CityConfig_TEC.xlsx` Arbeitsstand 04–05/2026 + `GovernanceConfig
+    ME0400_B8_OnDemandShuttle.xlsx`**):**
+    - **TECCarFleet** = private Pkw-Flotte **je District × Jahr** (2016–2025):
+      `registrations.total/.shareElectric`, `stock.total/.shareElectric`; Zeilen sind
+      `districtID`s in derselben NUTS3-artigen Systematik wie REGdistricts (`DE122-01` …).
+      Arbeitsstand mit Lücken („values under revision", 0 = fehlend).
+    - **TECTransit** = Klasse `TECStartValues`, study-area-weit je Jahr (`bus/train.stock.total`,
+      `seatsPerVehicle`, `kmPerVehiclePerYear`, `capacityUtilisation`) **plus**
+      `seasonTicketRate` je District **mit `default`-Zeile** — d. h. District-Tabellen müssen
+      NICHT vollständig sein, ein Default-Fallback ist vorgesehen (Granularität je District vs.
+      study-area-weit wird laut Sheet-Kommentaren bei Takomat/KIT noch diskutiert).
+    - **TECEmissions** = Well-to-Wheel-Emissionsfaktoren gCO₂/vkm je Jahr (Car/Bus/Train ×
+      Verbrenner/Elektro, Pedelec) + E-Anteile + Bus/Bahn-pkm-Split — Literatur-/Bestandswerte,
+      nicht aus unserer Pipeline zu erzeugen (unsere SUMO-/HBEFA-CO₂-KPIs taugen aber als
+      Plausibilisierung).
+    - **Governance/Maßnahmen (ME_xx)** = die Spielelemente des Serious Game: Master-Typologie
+      (CGET, z. B. `B` = Bauen/Investieren), je Maßnahme ME_XX_00 (Typ) + ME_XX_NN (Variationen).
+      Kern-Attribute: `planningTime`/`buildingTime`/`lifespan`, `investment`/`maintenance`,
+      **`effectClimate`/`effectLivability`/`effectFinance` als −3..+3-Scores**,
+      `shareCar/Bike/Transit` (Kontenzuordnung), `acceptance*` (±50 Siegpunkte), `min/maxAmount`,
+      `parameterFile` (Instanz-CSV) — plus maßnahmen-spezifische Attribute (Beispiel On-Demand-
+      Shuttle: `times`, `vehicleType`, `drive`, `accessability`) und DE/EN-TEXT-Tabellen
+      (Motivation/Description/Specifics). Status-Workflow: 0 = offen, 1 = KIT definiert,
+      2 = Takomat implementiert. Referenzbeispiel: 10 KVV.MyShuttle-Bediengebiete (BEV
+      „London Taxi", Abend-/Nachtbetrieb).
+    - **Konsequenzen für uns (Folge-Items):** (a) **TECCarFleet-Beitrag machbar:**
+      `stock.total` je District können wir direkt aus unserer synthetischen Population liefern
+      (car.csv × household.homeZone → 6. MobileCity-Exporttabelle im EpigeneCSV-Stil);
+      `registrations`/`shareElectric` bewusst NICHT (keine Neuzulassungs-/Antriebsmix-
+      Modellierung) → Takomat-Defaults. (b) **Maßnahmen-Evidenz-Export (Konzept):** die
+      ±3-Wirkungs-Scores sind grob — unser Szenario-Vergleich liefert die quantitative
+      Grundlage je Maßnahme (Basis- vs. Maßnahmen-Szenario → Δ CO₂ aus SUMO/HBEFA,
+      Δ Modal-Split, Δ km), aus der KIT/Takomat Scores und `parameterFile`-Inhalte ableiten
+      können — das ist die konkrete Andockstelle unserer Zwei-Achsen-Vergleiche an MobileCity.
+      (c) On-Demand-Shuttle als eigener Modus ist im Legacy-logiTopp-Stack nicht abbildbar
+      (kein Ride-Pooling) → kein kurzfristiges Pipeline-Ziel, allenfalls fern SUMO-DRT.
 - **KIT:** actitoppNG-Lizenz, logiTopp-Migrationsstand, ggf. MiD-/Zensus-Datenzugang.
 - **GTA-Autoren (Leipzig/ScaDS.AI):** Kooperation, Persona-/MiD-Datengrundlage.
 
 ### Empfohlene Reihenfolge
 **0 ✅ → 1 ✅ → (2 ✅ ∥ 3 ✅) → 4**, Phase 5 durchgehend parallel. Phasen 0–3 vollständig umgesetzt
 (3a–3d): Zwei-Achsen-Gerüst, On-demand-Kalibrierung, SUMO-Zielmodell inkl. Lieferverkehr,
-GTA-Verhaltensquelle (lokales LLM, Cache, Reproduzierbarkeit), LLM-Moduswahl, Was-wäre-wenn-Szenarien
-mit Agenten-Begründungen. Offen: **Phase 4** (Produktiv-Härtung: Lauf-Projekte als feste
-Abhängigkeit/Container, self-hosted Overpass) sowie die SUMO-Ausbauideen (Emissions-/Netzlast-KPIs,
-Nachfrage↔Netz-Feedback).
+Emissions-/Netzlast-KPIs und Nachfrage↔Netz-Feedback (alle ✅), GTA-Verhaltensquelle (lokales LLM,
+Cache, Reproduzierbarkeit), LLM-Moduswahl, Was-wäre-wenn-Szenarien mit Agenten-Begründungen.
+Offen: **Phase 4** (Produktiv-Härtung: Lauf-Projekte als feste Abhängigkeit/Container, self-hosted
+Overpass). Optionale nächste Bausteine aus der TEC-/Governance-Analyse (2026-07-16, s. Phase 5):
+**TECCarFleet-Export** (klein: `stock.total` je District aus car.csv/household.csv als 6.
+MobileCity-Tabelle) und **Maßnahmen-Evidenz-Export** (Konzept: Szenario-Deltas als quantitative
+Grundlage für ME-Wirkungs-Scores — vor Umsetzung mit Takomat/KIT abstimmen). Aus der
+INSPIRE-Schiene weiter offen: Zensus-Direktzuordnung (Rasterzelle→INSPIRE-Zone ohne Re-Gridding)
+und INSPIRE-Zell-IDs als MobileCity-`districtId` statt `SYN-NNN`.
