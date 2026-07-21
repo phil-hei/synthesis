@@ -113,3 +113,44 @@ Alles andere beschafft oder generiert die Pipeline selbst:
 | 6 | Matrizen | GraphHopper (OSM) + R5 (GTFS) | – (immer berechenbar) |
 | 7 | Wahlmodell-Parameter | Tutorial-Defaults | – |
 | 8 | Logistik (Depots, Pakete, Flotten) | OSM-POIs + UI | Zufall mit Seed |
+
+## Verifizierte Bezugsquellen & Integrationsstand (Stand: 2026-07-17)
+
+Web-Recherche 2026-07-17, alle Quellen geprüft (Bezugsweg, Format, Lizenz). Die Status-Spalte
+sagt, was die Pipeline heute damit macht.
+
+### Deutschland-/europaweit
+
+| Quelle | Inhalt / Format | Lizenz | Status in der Pipeline |
+|---|---|---|---|
+| **Zensus 2022 Gitterdaten** — `destatis.de/static/DE/zensus/gitterdaten/` (zensus2022.de leitet inzwischen auf destatis um) | Einwohner, Altersklassen, Ø-Haushaltsgröße, Wohnungen, Miete u. a.; 100 m/1 km/10 km, CSV in EPSG:3035 | dl-de/by-2-0 | ✅ Upload-Slot (`PopulationGridParser`, Dialekte `x_mp_*` und `GITTER_ID_*`); ⏳ offen: Auto-Fetch (P2b) + Alter/Haushalte als Synthese-Randsummen (P3) |
+| **Eurostat Census Grid 2021** — GISCO, `ec.europa.eu/eurostat/web/gisco/geodata/grids` | Bevölkerung EU-weit (30 Länder), 1 km; GPKG/CSV/Parquet, EPSG:3035 | CC BY | ✅ Upload-Slot (Dialekt `GRD_ID`+`T`, seit 2026-07-17); passt verlustfrei auf die INSPIRE-Zonierung |
+| **gtfs.de / DELFI** — `download.gtfs.de` | GTFS deutschlandweit, täglich neu; Subsets de_full/de_nv/de_rv/de_fv; de_nv ~223 MB (Stand 2026-07) | CC BY 4.0 | ✅ Default-Registry-Eintrag `gtfs-de-nahverkehr` (nach Verbund-Feeds; über `max-feed-mb`-Default → Hinweis statt Auto-Download) |
+| **Regionalstatistik, Tabelle 13111** — `regionalstatistik.de` (GENESIS-API, Gratis-Account) | SvB am Arbeitsort je Gemeinde | dl-de/by-2-0 | ⏳ offen (P4): Arbeitsplatz-Randsummen für die Zielwahl |
+| **BA-Pendlerstatistik / Pendleratlas** — `statistik.arbeitsagentur.de` | Ein-/Auspendler-Verflechtungen je Gemeinde, jährlich | frei mit Quellenvermerk | ⏳ offen (P4): Anker für externe Trips (Distanz-Kampagne) |
+| **MiD 2023** — `mobilitaet-in-deutschland.de` (Ergebnisbericht seit 2025-11-21) | Modal-Split (Fuß 26 %, Rad 11 %, ÖV 11 %), Wegelängen, RegioStaR-Auswertungen | Berichte frei; Mikrodaten nur lizenziert | ⏳ offen (P5): Kalibrieranker-Update (heute MiD 2017 — eigener Change-Control-Zyklus, verschiebt Kalibrierziele); Mikrodaten bleiben Provider-Slot (Ebene D) |
+| **BASt-Dauerzählstellen** — `bast.de` | 2 116 automatische Zählstellen (BAB + Bundesstraßen), Stundenwerte ab 2003 | offen | ⏳ offen (P5): SUMO-Validierung (edgeData vs. Zählwerte) |
+| **Transitous / european-transport-feeds** — `transitous.org`, `eu.data.public-transport.earth` | >1 800 GTFS-Feeds aus 55 Ländern; EU-NAP-Verzeichnis | je Feed | Registry-Quelle für Europa-Szenarien (manuell eintragen) |
+
+### NRW / kommunal (Beispiel Dortmund)
+
+- **MOBIDROM Datenplattform** (`mobilitaetsdaten.nrw`, live seit 2025-05-23, Registrierung,
+  DATEX II/OCPI): dynamische **Angebotsdaten** (Verkehrslage, Baustellen, Parken, Laden) — für
+  die Nachfrageerzeugung ungeeignet, nützlich als Validierungsquelle (NRW-Zählwerte).
+- **Stadt Dortmund** (`dortmund.opendatasoft.com`, 822 Datensätze, einheitliche Explore-API,
+  überwiegend dl-de): `fb62-statistischebezirke` (62 Bezirks-Polygone), kleinräumige
+  Bevölkerungsstatistik (Alter/Geschlecht/Migration je Bezirk),
+  `fb61-mobilitatsbefragung-2019-personen/-haushalte` (10 296 Personen, **dl-de/zero** —
+  Nutzungshäufigkeiten/Einstellungen, KEINE Wegetagebücher → lokaler Kalibrier-/Validierungs-
+  anker, kein SurveyPopulation-Ersatz), Verkehrszählungs-Zählstellenplan, Rad-Dauerzählstelle,
+  Parkplatzsensoren-Historie. Muster gilt für andere Opendatasoft-/CKAN-Kommunen; Andockpunkt
+  bleibt der generische lat/lon-CSV-Upload.
+
+### Integrationspfade (priorisiert)
+
+1. **P1 ✅ (2026-07-17):** GTFS-Registry um den gtfs.de-DE-Feed ergänzt (Verbund-Feeds gewinnen).
+2. **P2a ✅ (2026-07-17):** Eurostat-/INSPIRE-ID-Dialekt im `PopulationGridParser`.
+3. **P2b ⏳:** Zensus-Auto-Fetch (Download + Cache + Bbox-Filter) → Qualitätsstufe „öffentlich" ohne Upload.
+4. **P3 ⏳:** Zensus-Altersklassen/Haushaltsgrößen als echte Synthese-Randsummen (auch MobileCity `REGdistricts`).
+5. **P4 ⏳:** Arbeitsplätze (13111) + Pendlermatrix → Zielwahl-Anker (größter fachlicher Hebel, Distanz-Kampagne).
+6. **P5 ⏳:** Zähldaten-Validierung (BASt/Dortmund) + MiD-2023-Anker-Update.

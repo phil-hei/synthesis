@@ -449,6 +449,21 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Verifiziert per Live-API: `/defaults` → `inspire`; Alt-Szenario ohne Key lädt weiter `grid`.
   Tests: `coversOnlyTheEuropeanAreaOfUse` (Epsg3035Test), E2E
   `inspireRequestOutsideEuropeFallsBackToGrid` (New-York-Bbox → Grid-Zonen); Suite 37/37.
+- **✅ Bevölkerungs-Upload liest INSPIRE-/Eurostat-Zell-IDs + gtfs.de in der Feed-Registry
+  (2026-07-17):** Dritter Parser-Dialekt in `PopulationGridParser`: Zell-IDs
+  `CRS3035RES<res>mN…E…` (Eurostat Census Grid 2021, Spalte `GRD_ID`+`T`; Zensus-Dateien ohne
+  `x_mp`-Spalten via `GITTER_ID_*`) und GEOSTAT-Kurzform `1kmN…E…` (Koordinate × Auflösung);
+  verarbeitet wird der Zellmittelpunkt (Ecke + res/2), Rest (LAEA→WGS84, Zonen-Zuordnung,
+  Geheimhaltungs-Skip) unverändert. Damit ist der Europa-Teil der INSPIRE-Zonierung erstmals mit
+  echten Daten befüllbar (EU-weites 1-km-Zensusgitter, CC BY). Dazu `Feed.gtfsDeNahverkehr()`
+  als **letzter** Default-Registry-Eintrag (gtfs.de/DELFI, CC BY 4.0, Bbox Deutschland):
+  Verbund-Feeds gewinnen per `findFirst`; der ~223-MB-Feed (Stand 2026-07) liegt bewusst über
+  dem `max-feed-mb`-Default 200 → deutsche Regionen ohne Verbund-Feed bekommen statt „kein Feed"
+  die handlungsfähige „Upload empfohlen"-Meldung (max-feed-mb erhöhen ODER Upload). Quellen-
+  Recherche (Zensus/Eurostat/13111/Pendler/MiD 2023/BASt/MOBIDROM/Dortmund) als neuer Abschnitt
+  „Verifizierte Bezugsquellen" in docs/02. **Verifiziert:** neuer `PopulationGridParserTest`
+  (6 Tests, u. a. Langform-ID ≙ `x_mp`-Punkt derselben Zelle, Kurzform ≙ Langform,
+  Geheimhaltungs-Skip, Regressions-Dialekte); Suite 43/43, `ng build` grün.
 
 ### Phase 2 – SUMO als Zielmodell (Achse B) — ✅ UMGESETZT (2026-06-26)
 - Stufe „SUMO (Verkehr)" nach der logiTopp-Simulation; **gated** auf Zielmodell `sumo` und

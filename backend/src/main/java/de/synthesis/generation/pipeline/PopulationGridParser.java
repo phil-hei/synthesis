@@ -8,14 +8,21 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Reads point-based population grids from CSV. Two dialects are detected via
+ * Reads point-based population grids from CSV. Three dialects are detected via
  * the header row:
  *
  * 1. Zensus-Gitter (Zensus 2022, EPSG:3035): columns x_mp_100m;y_mp_100m and a
  *    population column (e.g. "Einwohner"); coordinates are converted from LAEA.
- * 2. Generic WGS84: columns lat/lon (or latitude/longitude) + population/einwohner.
+ * 2. INSPIRE-Zell-IDs (Eurostat Census Grid 2021 "GRD_ID", Zensus "GITTER_ID_*"):
+ *    Langform CRS3035RES&lt;res&gt;mN&lt;northing&gt;E&lt;easting&gt; (Meter) oder
+ *    GEOSTAT-Kurzform 1kmN2684E4334 (Koordinate x Aufloesung); verarbeitet wird der
+ *    Zellmittelpunkt (Ecke + res/2). Einwohner-Spalte akzeptiert hier zusaetzlich
+ *    die Eurostat-Namen "T"/"TOT_P"/"OBS_VALUE".
+ * 3. Generic WGS84: columns lat/lon (or latitude/longitude) + population/einwohner.
  *
  * Point data is zoning-agnostic: the pipeline maps points into whatever zone
  * grid the scenario uses, which sidesteps the format heterogeneity of
@@ -49,13 +56,22 @@ public final class PopulationGridParser {
             int yCol = indexOf(header, "y_mp_100m", "y_mp_1km", "y");
             int latCol = indexOf(header, "lat", "latitude", "breite");
             int lonCol = indexOf(header, "lon", "lng", "longitude", "laenge");
-            int popCol = indexOf(header, "einwohner", "population", "pop", "anzahl", "insgesamt");
+            int gridIdCol = indexOf(header, "grd_id", "gitter_id_100m", "gitter_id_1km",
+                    "gitter_id_10km", "gitter_id");
 
             boolean zensus = xCol >= 0 && yCol >= 0;
-            if (!zensus && (latCol < 0 || lonCol < 0)) {
+            boolean gridId = !zensus && gridIdCol >= 0;
+            if (!zensus && !gridId && (latCol < 0 || lonCol < 0)) {
                 throw new IllegalArgumentException(
-                        "Spalten nicht erkannt. Erwartet: Zensus-Gitter (x_mp_100m;y_mp_100m;Einwohner) "
+                        "Spalten nicht erkannt. Erwartet: Zensus-Gitter (x_mp_100m;y_mp_100m;Einwohner), "
+                                + "INSPIRE-/Eurostat-Gitter (GRD_ID bzw. GITTER_ID + Einwohner/T) "
                                 + "oder WGS84 (lat;lon;population). Gefunden: " + String.join(", ", header));
+            }
+            int popCol = indexOf(header, "einwohner", "population", "pop", "anzahl", "insgesamt");
+            if (popCol < 0 && gridId) {
+                // Eurostat-Namen: Census Grid 2021 "T", GEOSTAT "TOT_P", SDMX-Exporte "OBS_VALUE" —
+                // bewusst nur im Gitter-ID-Dialekt, damit das generische "t" nichts falsch matcht.
+                popCol = indexOf(header, "t", "tot_p", "obs_value");
             }
             if (popCol < 0) {
                 throw new IllegalArgumentException(
@@ -80,6 +96,11 @@ public final class PopulationGridParser {
                                 parseNumber(cells[xCol]), parseNumber(cells[yCol]));
                         lat = latLon[0];
                         lon = latLon[1];
+                    } else if (gridId) {
+                        double[] centre = gridIdToCentre(cells[gridIdCol]);
+                        double[] latLon = Epsg3035.toLatLon(centre[0], centre[1]);
+                        lat = latLon[0];
+                        lon = latLon[1];
                     } else {
                         lat = parseNumber(cells[latCol]);
                         lon = parseNumber(cells[lonCol]);
@@ -89,8 +110,42 @@ public final class PopulationGridParser {
                     skipped++;
                 }
             }
-            return new ParseResult(points, zensus ? "zensus-gitter-epsg3035" : "wgs84-punkte", skipped);
+            String format = zensus ? "zensus-gitter-epsg3035"
+                    : gridId ? "inspire-grid-id-epsg3035" : "wgs84-punkte";
+            return new ParseResult(points, format, skipped);
         }
+    }
+
+    /** Langform: volle LAEA-Meter (Eurostat Census 2021, Zensus 2022 GITTER_ID). */
+    private static final Pattern GRID_ID_FULL =
+            Pattern.compile("CRS3035RES(\\d+)mN(\\d+)E(\\d+)", Pattern.CASE_INSENSITIVE);
+    /** Kurzform (GEOSTAT/Zensus 2011): Koordinate in Einheiten der Aufloesung, z. B. 1kmN2684E4334. */
+    private static final Pattern GRID_ID_SHORT =
+            Pattern.compile("(\\d+)(m|km)N(\\d+)E(\\d+)", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * INSPIRE-Zell-ID → LAEA-Zellmittelpunkt {easting, northing}. Beide ID-Formen adressieren
+     * die Zell-Ecke (links unten); der Mittelpunkt (+res/2) haelt die Punkt-in-Zone-Zuordnung
+     * deckungsgleich mit den x_mp/y_mp-Mittelpunktspalten der Zensus-CSVs.
+     */
+    private static double[] gridIdToCentre(String value) {
+        String id = value.trim().replace("\"", "");
+        Matcher full = GRID_ID_FULL.matcher(id);
+        if (full.matches()) {
+            double res = Double.parseDouble(full.group(1));
+            double northing = Double.parseDouble(full.group(2));
+            double easting = Double.parseDouble(full.group(3));
+            return new double[]{easting + res / 2, northing + res / 2};
+        }
+        Matcher shortForm = GRID_ID_SHORT.matcher(id);
+        if (shortForm.matches()) {
+            double res = Double.parseDouble(shortForm.group(1))
+                    * ("km".equalsIgnoreCase(shortForm.group(2)) ? 1000 : 1);
+            double northing = Double.parseDouble(shortForm.group(3)) * res;
+            double easting = Double.parseDouble(shortForm.group(4)) * res;
+            return new double[]{easting + res / 2, northing + res / 2};
+        }
+        throw new IllegalArgumentException("Keine INSPIRE-Zell-ID: " + value);
     }
 
     private static int indexOf(String[] header, String... candidates) {

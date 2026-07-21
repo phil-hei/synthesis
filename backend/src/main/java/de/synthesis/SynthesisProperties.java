@@ -205,8 +205,9 @@ public class SynthesisProperties {
         private String venvPython = "";
         /** gtfs2pt.py; Default aus $SUMO_HOME/tools abgeleitet. */
         private String gtfs2pt = defaultGtfs2pt();
-        /** Auto-Fetch-Feeds (Verbund-GTFS mit Abdeckungs-Bbox). */
-        private java.util.List<Feed> feeds = new java.util.ArrayList<>(java.util.List.of(Feed.kvv()));
+        /** Auto-Fetch-Feeds (Verbund-GTFS mit Abdeckungs-Bbox; Reihenfolge = Priorität, spezifisch vor DE-weit). */
+        private java.util.List<Feed> feeds = new java.util.ArrayList<>(
+                java.util.List.of(Feed.kvv(), Feed.gtfsDeNahverkehr()));
         /** Obergrenze für den Auto-Fetch-Download (MB); größere Feeds → Upload-Empfehlung. */
         private int maxFeedMb = 200;
         /** Zeitfenster (Stunden) für den Fahrplan-Zuschnitt – begrenzt die gtfs2pt-Laufzeit. */
@@ -252,6 +253,19 @@ public class SynthesisProperties {
                         "https://www.nvbw.de/fileadmin/user_upload/service/open_data/"
                                 + "fahrplandaten_mit_liniennetz/kvv.zip",
                         48.55, 7.95, 49.25, 8.95);
+            }
+
+            /**
+             * Deutschlandweiter ÖPNV-Gesamtfeed aus dem DELFI-Datensatz (gtfs.de, CC BY 4.0,
+             * täglich regeneriert). ~223 MB (Stand 2026-07) und damit bewusst über dem
+             * maxFeedMb-Default: ohne erhöhtes max-feed-mb liefert der HEAD-Check die
+             * "Upload empfohlen"-Meldung statt "kein Feed". Steht NACH den Verbund-Feeds,
+             * damit findFirst spezifische Feeds bevorzugt.
+             */
+            static Feed gtfsDeNahverkehr() {
+                return new Feed("gtfs-de-nahverkehr",
+                        "https://download.gtfs.de/germany/nv_free/latest.zip",
+                        47.2, 5.8, 55.1, 15.1);
             }
 
             /** Enthält die Feed-Bbox das Regions-Zentrum? */

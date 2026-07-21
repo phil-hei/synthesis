@@ -93,7 +93,7 @@
         </label>
 
         <div class="upload"
-             title="Punktbasiertes Bevölkerungsraster als CSV: Zensus-2022-Gitter (Spalten x_mp_100m;y_mp_100m;Einwohner, EPSG:3035 wird automatisch umgerechnet) oder generisch (lat;lon;population). Hat Vorrang vor OSM- und Dichte-Schätzung.">
+             title="Punktbasiertes Bevölkerungsraster als CSV: Zensus-2022-Gitter (x_mp_100m;y_mp_100m;Einwohner), INSPIRE-/Eurostat-Gitter-IDs (GRD_ID bzw. GITTER_ID + Einwohner/T, z. B. Eurostat Census Grid 2021 europaweit) oder generisch (lat;lon;population). EPSG:3035 wird automatisch umgerechnet. Hat Vorrang vor OSM- und Dichte-Schätzung.">
           <ng-container *ngIf="!upload">
             <label class="upload-button" [class.disabled]="!scenario.id || uploadBusy">
               {{ uploadBusy ? 'Wird verarbeitet…' : 'Bevölkerungsraster hochladen (CSV) ⓘ' }}

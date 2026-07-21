@@ -61,3 +61,9 @@ synthesis:
   #       min-lon: 7.95
   #       max-lat: 49.25
   #       max-lon: 8.95
+  #     - name: gtfs-de-nahverkehr               # DE-weiter DELFI-ÖPNV-Feed (gtfs.de, CC BY 4.0), ~223 MB (Stand 2026-07)
+  #       url: https://download.gtfs.de/germany/nv_free/latest.zip  # Default-Registry: NACH den Verbund-Feeds; braucht max-feed-mb > 223
+  #       min-lat: 47.2
+  #       min-lon: 5.8
+  #       max-lat: 55.1
+  #       max-lon: 15.1
