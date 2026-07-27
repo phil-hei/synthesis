@@ -346,6 +346,37 @@ Parser-Emulation (repliziert die Block-/emptyLine-Logik) bestätigt: alle vier `
 greifen, Spalten/Zeilen/Werte korrekt. **Mit Takomat abzustimmen**: NUTS3-District-IDs (statt
 `SYN-NNN`), vollständiger Study-Area-Import (Netz/TEC/MOD), Messagepack via Config Tool (.NET 8).
 
+## Distanz-Kalibrierung über drei Seeds (2026-07-27) — teilweise wirksam
+
+Präregistrierter A/B-Vergleich mit Seeds 42/43/44, je ca. 2.000 exportierten Personen, actiTopp,
+logiTopp und lokalem Rastatt-OSM-Extrakt. Pro Seed war `population.calibrateDistance` der einzige
+inhaltliche Unterschied. Alle sechs Läufe verwendeten GraphHopper
+(`dataQuality.matrices = graphhopper-with-local-fallbacks`); actiTopp-, Routing- und
+logiTopp-Fallbacks traten nicht auf.
+
+| Seed | `<1 km` A→B | Ø km A→B | Modal-RMSE A→B | Wege/P/Tag | Iterationen B |
+|---|---:|---:|---:|---:|---:|
+| 42 | 15,2→15,2 % | 3,77→3,77 | 0,069→0,069 | 3,20 | 1 |
+| 43 | 16,1→13,3 % | 3,76→3,84 | 0,073→0,070 | 3,26 | 2 |
+| 44 | 15,5→15,5 % | 3,87→3,87 | 0,072→0,072 | 3,19 | 1 |
+
+**Befund**: Das vorab festgelegte Nahdistanzfenster 12–16 % wird bei allen B-Läufen erreicht;
+der Mittelwert sinkt 15,6→14,7 %. Zwei Baselines lagen bereits im Toleranzband und bleiben deshalb
+absichtlich unverändert. Nur Seed 43 löst einen Parameterschritt aus; dort verbessert sich zugleich
+der Modal-RMSE um 0,003. Die Schutzmetriken bestehen: Modal-RMSE verschlechtert sich nirgends,
+Wege/P/Tag liegen durchgehend in [3,0; 3,4].
+
+**Sampling-Fix verifiziert**: `samplingFraction=0,05` erzeugt 2.045/2.033/2.037 Personen;
+logiTopp verarbeitet den Export mit `fractionOfPopulation: 1.0`, woraus
+2.020/2.007/2.010 mobile Ergebnis-Personen entstehen (98,7–98,8 % statt einer zweiten
+5-%-Auswahl).
+
+**Konsequenz**: Die Nahdistanz-Regel ist über drei Seeds robust genug für weitere Experimente,
+aber noch nicht für einen Default-Flip. Der absolute Distanzmittelwert bleibt mit 3,77–3,87 km
+weit vom MiD-Anker 12,5 km entfernt. Außerdem liegt im Repository keine belastbare Zielverteilung
+für die sechs Diagnosebänder `<1`, `1–2`, `2–5`, `5–10`, `10–20`, `>20 km`; der vollständige
+Sechs-Band-RMSE-Promotionsentscheid bleibt daher offen.
+
 ## Offene Punkte (nächste Schritte)
 
 1. **MobileCity finalisieren** (Takomat): Parser-Anforderungen klären (Jahresspalten, NUTS3-IDs),

@@ -158,6 +158,12 @@ public class SynthesisProperties {
 
     public static class Overpass {
         private String endpoint = "https://overpass-api.de/api/interpreter";
+        /**
+         * Optionale lokale OSM-XML-Datei für den Straßennetz-Import. Ist sie gesetzt,
+         * wird nur der schwere Routing-Abruf ersetzt; POI-/Place-Abfragen bleiben
+         * unverändert. Das ermöglicht reproduzierbare Offline-Läufe ohne Overpass-Fallback.
+         */
+        private String roadNetworkFile = "";
         /** Ausweich-Endpunkte, falls der primäre Server rate-limited/überlastet ist (504/429). */
         private java.util.List<String> mirrors = new java.util.ArrayList<>(java.util.List.of(
                 "https://overpass.kumi.systems/api/interpreter",
@@ -172,6 +178,8 @@ public class SynthesisProperties {
 
         public String getEndpoint() { return endpoint; }
         public void setEndpoint(String endpoint) { this.endpoint = endpoint; }
+        public String getRoadNetworkFile() { return roadNetworkFile; }
+        public void setRoadNetworkFile(String roadNetworkFile) { this.roadNetworkFile = roadNetworkFile; }
         public java.util.List<String> getMirrors() { return mirrors; }
         public void setMirrors(java.util.List<String> mirrors) { this.mirrors = mirrors; }
         public int getTimeoutSeconds() { return timeoutSeconds; }

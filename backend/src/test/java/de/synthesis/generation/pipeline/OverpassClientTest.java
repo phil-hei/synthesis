@@ -4,8 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.scenario.Scenario;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Verifiziert (ohne Netz), dass der Straßennetz-Abruf sein eigenes, großzügiges
@@ -47,5 +54,45 @@ class OverpassClientTest {
                 "Allgemeines Overpass-Timeout unverändert");
         assertTrue(props.getOverpass().getRoadNetworkTimeoutSeconds() >= 120,
                 "Straßennetz-Budget deutlich großzügiger als das allgemeine");
+    }
+
+    @Test
+    void configuredRoadNetworkFileReplacesOnlyTheNetworkRequest(@TempDir Path tempDir) throws Exception {
+        Path fixture = tempDir.resolve("network.osm");
+        String osm = "<?xml version=\"1.0\"?><osm version=\"0.6\"></osm>";
+        Files.writeString(fixture, osm);
+
+        SynthesisProperties props = new SynthesisProperties();
+        props.getOverpass().setRoadNetworkFile(fixture.toString());
+        OverpassClient client = new OverpassClient(props, new ObjectMapper());
+
+        assertEquals(osm, client.fetchRoadNetworkOsm(rastatt()));
+        assertTrue(client.roadNetworkSource().contains(fixture.toAbsolutePath().toString()));
+    }
+
+    @Test
+    void localRastattExtractBuildsARoutableGraph() throws Exception {
+        Path fixture = Path.of("../validation/rastatt-test.osm").toAbsolutePath().normalize();
+        assumeTrue(Files.isRegularFile(fixture),
+                "Lokales Rastatt-OSM-Fixture fehlt; vollständiger GraphHopper-Import wird übersprungen");
+
+        SynthesisProperties props = new SynthesisProperties();
+        props.getOverpass().setRoadNetworkFile(fixture.toString());
+        OverpassClient client = new OverpassClient(props, new ObjectMapper());
+        List<Zone> zones = GridZoning.generate(rastatt(), 1_000, 600);
+
+        boolean routable = false;
+        try (RoutingEngine engine = RoutingEngine.fromOsmXml(client.fetchRoadNetworkOsm(rastatt()))) {
+            for (int from = 0; from < zones.size() && !routable; from++) {
+                for (int to = from + 1; to < zones.size(); to++) {
+                    if (engine.impedance(zones.get(from), zones.get(to),
+                            MatrixGenerator.TravelMode.CAR) != null) {
+                        routable = true;
+                        break;
+                    }
+                }
+            }
+        }
+        assertTrue(routable, "Lokales OSM-XML muss mindestens ein Zonenpaar routbar machen");
     }
 }

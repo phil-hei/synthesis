@@ -94,7 +94,8 @@ scenario:
   population:
     structuralData: { provider: zensus2022 | synthetic | upload }
     surveyTemplate: { provider: synthetic-default | upload }
-    samplingFraction: 0.25        # mobiTopp fractionOfPopulation
+    samplingFraction: 0.25        # Anteil, den SyntheSis synthetisiert/exportiert;
+                                  # Downstream-Modelle verarbeiten diesen Export vollständig
   logistics:
     parcelDemand: { meanPerPersonWeek: 0.75, stdDev: 0.5, max: 10 }
     destinationShares: { home: 0.8, work: 0.1, packstation: 0.1 }

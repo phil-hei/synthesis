@@ -436,6 +436,16 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   sich; das Kalibrier-Ziel (0,14) bleibt gültig, da der Kalibrator auf `b_intrazonal` regelt.
   Tests: neuer `MatrixGeneratorTest` (Skalierung mit Zellgröße, Interzonal ohne Boden, intrazonal
   nie geroutet); Suite 35/35, ng build grün.
+- **🔬 Phase 4 — Drei-Seed-A/B teilweise bestanden (2026-07-27):** Präregistrierter Vergleich
+  mit Seeds 42/43/44, actiTopp, logiTopp und lokalem Rastatt-OSM-Extrakt; einziger
+  A/B-Unterschied `population.calibrateDistance`. Der `<1 km`-Anteil änderte sich
+  **15,2→15,2 / 16,1→13,3 / 15,5→15,5 %** (Mittel 15,6→14,7 %); zwei Baselines lagen bereits
+  innerhalb der Toleranz und wurden korrekt nicht verstellt. Modal-RMSE
+  **0,069→0,069 / 0,073→0,070 / 0,072→0,072**, Wege/P/Tag 3,19–3,26. Alle sechs Läufe
+  nutzten GraphHopper ohne Stufen-Fallback. **Ehrliche Grenze:** Ø bleibt 3,77–3,87 km;
+  mangels belastbarer Zielwerte für die sechs Diagnose-Distanzbänder ist der vollständige
+  Promotionsentscheid offen und `calibrateDistance` bleibt default=false. Details:
+  `docs/05-validierung.md`.
 - **✅ Zonierungs-Default für Neuanlagen auf INSPIRE geflippt (2026-07-16):**
   `GET /api/scenarios/defaults` (Quelle des Studio-„Neues Szenario") liefert jetzt
   `zoning.mode = inspire`. Der **Feld-Default in `Scenario.Zoning` bleibt bewusst `grid`**:
@@ -611,6 +621,17 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   echten logiTopp-Lauf; weitere Prompt-/Frequenz-Kalibrierung.
 
 ### Phase 4 – Produktiv-Härtung (querschnittlich)
+- **✅ Sampling-Vertrag und Routing-Provenienz korrigiert (2026-07-27):**
+  `samplingFraction` wird bereits in `PopulationGenerator` auf die synthetisierte/exportierte
+  Bevölkerung angewandt; logiTopp verarbeitet diesen Export jetzt mit
+  `fractionOfPopulation: 1.0` statt denselben Anteil ein zweites Mal zu ziehen. Im Drei-Seed-Lauf
+  wurden damit 98,7–98,8 % der exportierten Personen als mobile Ergebnis-Personen beobachtet.
+  Für reproduzierbare Offline-Läufe kann `synthesis.overpass.road-network-file` ein lokales
+  OSM-XML nur für den schweren Routing-Abruf vorgeben. Das Manifest meldet die tatsächliche
+  Matrizenquelle (`graphhopper-with-local-fallbacks` statt des vorher statischen
+  `beeline-estimate`) und erläutert die lokalen Heuristiken. **Verifiziert:**
+  `SimulationRunnerTest`, `OverpassClientTest` (lokales OSM→GraphHopper→Route) und
+  `GenerationPipelineE2ETest` (beide Manifest-Varianten); sechs echte logiTopp-Läufe.
 - **✅ Szenario-API validiert Konfigurationsgrenzen (2026-07-27):** Create/Update weisen
   fehlende Teilkonfigurationen, nicht-endliche oder außerhalb der Erdkoordinaten liegende
   Regionen, unbekannte Zonierungs-/Verhaltens-/Zielmodellwerte und Stichprobenanteile außerhalb

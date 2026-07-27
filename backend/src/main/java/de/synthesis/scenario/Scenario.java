@@ -59,7 +59,7 @@ public class Scenario {
         /** Total persons in the region; null = estimate via personsPerKm2. */
         public Integer totalPersons;
         public double personsPerKm2 = 1500;
-        /** Fraction of the population that is synthesized (mobiTopp fractionOfPopulation). */
+        /** Fraction of the regional population synthesized and exported to downstream models. */
         public double samplingFraction = 1.0;
         public long seed = 42;
         /** Fetch POIs from OSM (Overpass) for attractivities; falls back to synthetic on failure. */

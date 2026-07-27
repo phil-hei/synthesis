@@ -12,6 +12,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -110,10 +112,27 @@ public class OverpassClient {
      * @throws Exception on any network failure; callers fall back to beeline matrices.
      */
     public String fetchRoadNetworkOsm(Scenario.Region region) throws Exception {
+        String configuredFile = properties.getOverpass().getRoadNetworkFile();
+        if (configuredFile != null && !configuredFile.isBlank()) {
+            Path file = Path.of(configuredFile).toAbsolutePath().normalize();
+            if (!Files.isRegularFile(file)) {
+                throw new IllegalStateException("Lokale OSM-Netzdatei nicht gefunden: " + file);
+            }
+            return Files.readString(file, StandardCharsets.UTF_8);
+        }
         int serverTimeout = properties.getOverpass().getRoadNetworkTimeoutSeconds();
         // Client wartet etwas länger als das serverseitige Query-Budget, sonst bricht er ab,
         // während Overpass die schwere Extraktion noch fertigstellt.
         return post(roadNetworkQuery(region), serverTimeout + 30L);
+    }
+
+    /** Menschenlesbare Quelle für Job-Protokolle und Diagnose. */
+    public String roadNetworkSource() {
+        String configuredFile = properties.getOverpass().getRoadNetworkFile();
+        if (configuredFile == null || configuredFile.isBlank()) {
+            return "Overpass";
+        }
+        return "Datei " + Path.of(configuredFile).toAbsolutePath().normalize();
     }
 
     /** Overpass-Query für das routbare Straßennetz (eigenes {@code [timeout:…]}-Budget). */

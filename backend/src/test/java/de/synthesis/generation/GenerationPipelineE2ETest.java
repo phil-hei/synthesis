@@ -15,6 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * End-to-End-Smoke-Test der kompletten Generierungs-Pipeline – das Sicherheitsnetz
@@ -87,6 +88,9 @@ class GenerationPipelineE2ETest {
             assertTrue(Files.exists(artifacts.resolve(file)), "Artefakt fehlt: " + file);
         }
         assertEquals("Template", job.summary.get("activitySource"), "Template-Verhalten erwartet");
+        assertEquals("beeline-estimate",
+                mapper.readTree(artifacts.resolve("manifest.json").toFile())
+                        .path("dataQuality").path("matrices").asText());
 
         // Stufen-Status: nichts FAILED; SUMO/LLM sauber übersprungen (nicht gewählt)
         for (GenerationJob.StageInfo stage : job.stages) {
@@ -145,6 +149,53 @@ class GenerationPipelineE2ETest {
                 repo.artifactsDir(scenario.id).resolve("zone-repository/zones.csv"));
         assertTrue(zonesCsv.contains("CRS3035RES"),
                 "zones.csv muss INSPIRE-Zell-IDs enthalten");
+    }
+
+    @Test
+    void localRoutingIsReportedTruthfullyInManifest() throws Exception {
+        Path fixture = Path.of("../validation/rastatt-test.osm").toAbsolutePath().normalize();
+        assumeTrue(Files.isRegularFile(fixture), "Lokales Rastatt-OSM-Fixture fehlt");
+
+        Path dataDir = tempDirectory("e2e-routing-manifest");
+        SynthesisProperties props = new SynthesisProperties();
+        props.setDataDir(dataDir.toString());
+        props.getOverpass().setRoadNetworkFile(fixture.toString());
+        props.getSimulation().setEnabled(false);
+        ObjectMapper mapper = new ObjectMapper();
+        ScenarioRepository repo = new ScenarioRepository(mapper, props);
+        GenerationService service = new GenerationService(
+                repo, new OverpassClient(props, mapper), props, mapper);
+        services.add(service);
+
+        Scenario scenario = new Scenario();
+        scenario.id = "e2e-routing";
+        scenario.region = new Scenario.Region();
+        scenario.region.minLat = 48.85;
+        scenario.region.minLon = 8.19;
+        scenario.region.maxLat = 48.87;
+        scenario.region.maxLon = 8.22;
+        scenario.population.totalPersons = 50;
+        scenario.population.useOsmData = false;
+        scenario.population.useRealRouting = true;
+        scenario.population.externalTrips = false;
+        scenario.population.behaviorSource = "template";
+        scenario.targetModels = new ArrayList<>(List.of("mobilecity"));
+        scenario = repo.save(scenario);
+
+        GenerationJob job = service.start(scenario.id);
+        long deadline = System.currentTimeMillis() + 6 * 60_000;
+        while (job.state == GenerationJob.State.QUEUED || job.state == GenerationJob.State.RUNNING) {
+            assertTrue(System.currentTimeMillis() < deadline, "Routing-Pipeline-Timeout (6 min)");
+            Thread.sleep(100);
+        }
+        assertEquals(GenerationJob.State.DONE, job.state, "Routing-Pipeline muss durchlaufen");
+        assertEquals("graphhopper-with-local-fallbacks", job.summary.get("matrixSource"));
+
+        var manifest = mapper.readTree(repo.artifactsDir(scenario.id).resolve("manifest.json").toFile());
+        assertEquals("graphhopper-with-local-fallbacks",
+                manifest.path("dataQuality").path("matrices").asText());
+        assertTrue(manifest.path("notes").toString().contains("GraphHopper"));
+        assertTrue(!manifest.path("notes").toString().contains("Roadmap Phase 1"));
     }
 
     /** Außerhalb des EPSG:3035-Gültigkeitsbereichs (Europa) fällt "inspire" aufs Bbox-Raster zurück. */

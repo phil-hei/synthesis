@@ -49,6 +49,8 @@ class SimulationRunnerTest {
         assertTrue(yaml.contains(
                 "MNL: config/shared/parameters/mode_choice_main_parameters-multi-nomial-logit.txt"),
                 "Ohne Override zeigt die MNL-Moduswahl auf die Projekt-Standarddatei");
+        assertTrue(yaml.contains("fractionOfPopulation: 1.0"),
+                "Die bereits gesampelte Export-Population darf in logiTopp nicht erneut reduziert werden");
     }
 
     @Test

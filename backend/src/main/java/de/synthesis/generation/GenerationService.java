@@ -168,6 +168,8 @@ public class GenerationService {
         LogisticsGenerator.Result logistics;
         /** Pkw-Reisezeitmatrix (Minuten) aus der Matrizen-Stufe – Basis fürs Netz-Feedback. */
         float[][] carTravelTimeMin;
+        /** Tatsächlich verwendete Matrizenquelle für Manifest und Diagnose. */
+        String matrixSource = "beeline-estimate";
 
         PipelineContext(Scenario scenario, GenerationJob job, Path artifacts) {
             this.scenario = scenario;
@@ -482,6 +484,9 @@ public class GenerationService {
             MatrixGenerator generator = new MatrixGenerator();
             List<String> files = generator.generate(ctx.artifacts.resolve("matrix"), ctx.zones, routing);
             ctx.carTravelTimeMin = generator.carTravelTimeMin();
+            ctx.matrixSource = routing != null
+                    ? "graphhopper-with-local-fallbacks" : "beeline-estimate";
+            ctx.job.summary.put("matrixSource", ctx.matrixSource);
             ctx.job.log(files.size() + " Visum-Matrizen (" + ctx.zones.size() + "x" + ctx.zones.size()
                     + ") + Matrix-Konfigurationen geschrieben ("
                     + (routing != null ? "GraphHopper-Routing" : "Luftlinie") + ")");
@@ -540,7 +545,7 @@ public class GenerationService {
     private void stageManifest(PipelineContext ctx) throws IOException {
         writeManifest(ctx.artifacts, ctx.scenario, ctx.job, ctx.zones.size(), ctx.population,
                 ctx.logistics, !ctx.pois.isEmpty(), ctx.populationSource, ctx.totalPersons,
-                ctx.logisticsGenerator.sources(), ctx.distributionSource);
+                ctx.logisticsGenerator.sources(), ctx.distributionSource, ctx.matrixSource);
     }
 
     // --- Stufe 11: Simulation logiTopp (Achse B) ----------------------------------------------
@@ -937,7 +942,7 @@ public class GenerationService {
             ctx.job.log("OSM-Straßennetz aus diesem Lauf wiederverwendet");
             return cached;
         }
-        ctx.job.log("Lade OSM-Straßennetz (Overpass)…");
+        ctx.job.log("Lade OSM-Straßennetz (" + overpass.roadNetworkSource() + ")…");
         String osmXml = overpass.fetchRoadNetworkOsm(ctx.scenario.region);
         ctx.roadNetwork.set(osmXml);
         return osmXml;
@@ -1092,7 +1097,7 @@ public class GenerationService {
                                PopulationGenerator.Result population, LogisticsGenerator.Result logistics,
                                boolean osmUsed, String populationSource, int totalPersons,
                                LogisticsGenerator.Sources logisticsSources,
-                               String distributionSource) throws IOException {
+                               String distributionSource, String matrixSource) throws IOException {
         ObjectNode manifest = mapper.createObjectNode();
         manifest.put("scenarioId", scenario.id);
         manifest.put("scenarioName", scenario.name);
@@ -1113,20 +1118,27 @@ public class GenerationService {
         quality.put("populationTotal", populationSource);
         quality.put("populationDistribution", distributionSource);
         quality.put("populationStructure", "synthetic");
-        quality.put("matrices", "beeline-estimate");
+        quality.put("matrices", matrixSource);
         quality.put("depots", !scenario.logistics.depots.isEmpty() ? "user-defined"
                 : logisticsSources.depotsFromOsm() ? "osm-pois" : "auto-placed");
         quality.put("packstations", logisticsSources.packstationsFromOsm() ? "osm-pois" : "synthetic");
         manifest.putObject("populationEstimate").put("totalPersons", totalPersons);
 
-        manifest.putArray("notes")
+        var notes = manifest.putArray("notes");
+        notes
                 .add("Formate validiert (2026-06-10) gegen einen erfolgreichen Short-Term-Lauf des "
                         + "mobiTopp-Tutorials (main-Branch); Details in docs/05-validierung.md.")
                 .add("Matrizen liegen im Visum-$V;D3-Textformat (.mtx.bz2) vor; Distanzen in Metern; "
-                        + "Distanzmatrizen unter other/ (Tutorial-Layout).")
-                .add("Matrizen sind Luftlinien-Schätzungen (Umwegfaktor); für realistische Werte "
-                        + "GraphHopper/R5-Routing einsetzen (Roadmap Phase 1).")
-                .add("activity.csv nutzt numerische Aktivitätscodes (LegacyActivityType); das "
+                        + "Distanzmatrizen unter other/ (Tutorial-Layout).");
+        if ("graphhopper-with-local-fallbacks".equals(matrixSource)) {
+            notes.add("Interzonale Binnenbeziehungen werden mit GraphHopper geroutet; intrazonale, "
+                    + "externe oder nicht routbare Beziehungen verwenden die dokumentierten "
+                    + "Luftlinien-Heuristiken.");
+        } else {
+            notes.add("Matrizen sind Luftlinien-Schätzungen (Umwegfaktor); für realistische Werte "
+                    + "GraphHopper/R5-Routing einsetzen.");
+        }
+        notes.add("activity.csv nutzt numerische Aktivitätscodes (LegacyActivityType); das "
                         + "Aktivitätsset des Zielprojekts muss die Codes 31/32/33/41/42/51/52 enthalten.")
                 .add("fixedDestination-logitopp.csv enthält zusätzlich PICK_UP_PARCEL-Ziele für "
                         + "logiTopp (Legacy-Stack); fixedDestination.csv ist Tutorial-kompatibel.")

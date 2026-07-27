@@ -162,7 +162,10 @@ public class SimulationRunner {
                 mnlFile,
                 scenario.population.seed, scenario.population.seed,
                 simulationDir.toAbsolutePath(), simulationDir.toAbsolutePath(),
-                String.valueOf(scenario.population.samplingFraction),
+                // PopulationGenerator hat samplingFraction bereits auf die exportierten
+                // Personen angewandt. logiTopp muss diesen Bestand vollständig verarbeiten;
+                // andernfalls würde derselbe Anteil ein zweites Mal gezogen.
+                "1.0",
                 resultsDir.toAbsolutePath(),
                 scenario.population.seed,
                 legacy, legacy);
