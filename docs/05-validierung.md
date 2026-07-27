@@ -360,11 +360,12 @@ logiTopp-Fallbacks traten nicht auf.
 | 43 | 16,1→13,3 % | 3,76→3,84 | 0,1014→0,1094 | 0,073→0,070 | 3,26 | 2 |
 | 44 | 15,5→15,5 % | 3,87→3,87 | 0,1019→0,1019 | 0,072→0,072 | 3,19 | 1 |
 
-**Befund**: Das vorab festgelegte Nahdistanzfenster 12–16 % wird bei allen B-Läufen erreicht;
-der Mittelwert sinkt 15,6→14,7 %. Zwei Baselines lagen bereits im Toleranzband und bleiben deshalb
-absichtlich unverändert. Nur Seed 43 löst einen Parameterschritt aus; dort verbessert sich zugleich
-der Modal-RMSE um 0,003. Die Schutzmetriken bestehen: Modal-RMSE verschlechtert sich nirgends,
-Wege/P/Tag liegen durchgehend in [3,0; 3,4].
+**Befund**: Das vorab festgelegte Nahdistanzfenster 12–16 % wird bei allen B-Läufen technisch
+erreicht; der Mittelwert sinkt 15,6→14,7 %. Dieses Gate beruhte jedoch auf dem provisorischen
+Default 0,14 und ist nach Beschaffung der amtlichen Tabelle fachlich ungültig: MiD weist für
+`<1 km` 21 % aus; 14 % gehören zur benachbarten Klasse `1–<2 km`. Seed 43 wurde damit aktiv
+in die falsche Richtung geregelt. Die Schutzmetriken des Laufs bestehen weiterhin:
+Modal-RMSE verschlechtert sich nirgends, Wege/P/Tag liegen durchgehend in [3,0; 3,4].
 
 **Sampling-Fix verifiziert**: `samplingFraction=0,05` erzeugt 2.045/2.033/2.037 Personen;
 logiTopp verarbeitet den Export mit `fractionOfPopulation: 1.0`, woraus
@@ -383,9 +384,12 @@ sich zudem um 0,0080.
 **Konsequenz**: Die Nahdistanz-Regel ist für weitere Experimente isoliert brauchbar, aber der
 vollständige Distanz-Gate ist nicht bestanden. Der absolute Distanzmittelwert bleibt mit
 3,77–3,87 km weit vom MiD-Anker 12,5 km entfernt; `calibrateDistance` bleibt
-`default=false`. `SimulationResultIngestor` schreibt deshalb die sechs gemessenen Anteile,
-den MiD-Zielvektor samt Quellenhinweis und `distanceBandRmseToMid2017` direkt nach
-`simulation/kpis.json`, damit weitere Läufe den Befund automatisch sichtbar machen.
+`default=false`. Der Betriebs-Default `distance-calibration-target-near-share` ist
+**0,14→0,21** korrigiert und teilt nun dieselbe `Mid2017`-Referenz wie die KPI-Auswertung.
+Die Drei-Seed-Kampagne validiert den korrigierten Zielwert ausdrücklich noch nicht und muss
+vor einer Beförderung wiederholt werden. `SimulationResultIngestor` schreibt die sechs
+gemessenen Anteile, den MiD-Zielvektor samt Quellenlink und `distanceBandRmseToMid2017`
+direkt nach `simulation/kpis.json`.
 
 ## Offene Punkte (nächste Schritte)
 

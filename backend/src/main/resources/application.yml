@@ -27,7 +27,7 @@ synthesis:
     timeout-minutes: 30
     # calibration-iterations: 8                # max. Iterationen der Modal-Split-/Distanz-Kalibrierung
     # calibration-tolerance: 0.02              # Abbruch, wenn RMSE zum Ziel darunter liegt
-    # distance-calibration-target-near-share: 0.14  # Ziel-Anteil Wege <1 km (Zielwahl b_intrazonal); Näherungswert, tunbar
+    # distance-calibration-target-near-share: 0.21  # MiD 2017 A W12: 10 % <0,5 km + 11 % 0,5–<1 km
     # distance-calibration-tolerance: 0.02     # Abbruch, wenn |Ist-Ziel| des <1-km-Anteils darunter
   # sumo:                                      # Zielmodell SUMO (Defaults aus $SUMO_HOME abgeleitet)
   #   enabled: true

@@ -1,5 +1,6 @@
 package de.synthesis;
 
+import de.synthesis.reference.Mid2017;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "synthesis")
@@ -133,10 +134,10 @@ public class SynthesisProperties {
         private double calibrationTolerance = 0.02;
         /**
          * Ziel-Anteil der Wege &lt; 1 km für die Distanz-Kalibrierung (Zielwahl, b_intrazonal).
-         * NÄHERUNGSWERT/tunbar — kein amtlicher MiD-Wert; ersetzt die Nahdistanz-Überkonzentration
-         * (Rastatt roh ~0,25). Kalibriert die Verteilungs-FORM, nicht den absoluten Ø (docs/06 „Phase 1b").
+         * MiD 2017, Tabelle A W12: 10 % unter 0,5 km + 11 % von 0,5 bis unter 1 km.
+         * Kalibriert nur dieses Nahband, nicht den absoluten Ø (docs/06 „Phase 1b").
          */
-        private double distanceCalibrationTargetNearShare = 0.14;
+        private double distanceCalibrationTargetNearShare = Mid2017.NEAR_TRIP_SHARE;
         /** Abbruch-Toleranz (|Ist − Ziel| des &lt;1-km-Anteils). */
         private double distanceCalibrationTolerance = 0.02;
 

@@ -380,10 +380,13 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Update `Δb = 3·ln(Ziel/Ist)` mit Clamp ±2 je Iteration (die Konstante 3 ≈ 1/0,32 aus der
   gemessenen Elastizität). Läuft über den `destinationChoiceDir`-Override, patcht die Dateien in
   `artifacts/simulation/dc-calibrated/`, Ziel-Nahanteil `synthesis.simulation.distance-calibration-
-  target-near-share` (Default 0,14, Näherungswert/tunbar — KEIN amtlicher MiD-Wert). `DistanceCalibratorTest`
-  (Fake-Sim-Konvergenz + Clamp) grün, Suite 25/25. Studio-Checkbox „Distanz-Verteilung kalibrieren".
-  **End-to-End-Validierung auf realem logiTopp:** ein Kalibrator-Schritt (`Δb −1,74`) brachte den
-  `<1 km`-Anteil von 0,250 auf **0,142** (Ziel 0,14) — die Regel konvergiert in einer Iteration.
+  target-near-share`. Der damalige Näherungs-Default 0,14 ist am 2026-07-27 nach Beschaffung
+  der amtlichen MiD-Tabelle auf **0,21** korrigiert worden. `DistanceCalibratorTest`
+  (Fake-Sim-Konvergenz in beide Regelrichtungen + Clamp) grün. Studio-Checkbox
+  „Distanz-Verteilung kalibrieren". **Historische End-to-End-Mechanikprüfung:** ein Schritt
+  (`Δb −1,74`) brachte den `<1 km`-Anteil von 0,250 auf **0,142** und bewies die
+  Reglerwirkung; der dabei verwendete Zielwert 0,14 ist fachlich verworfen und diese Messung
+  validiert den neuen Zielwert 0,21 nicht.
 - *Weiterhin offen (Grenze, nicht Kalibrier-Ziel):* der absolute Ø (~2,9 km) — dafür braucht es ein
   größeres Untersuchungsgebiet bzw. gravitationskonsistente externe Zonen. Optional: Multi-Band-Ziel
   (zusätzliche Hebel `b_0_1`/`b_1_2`); Komposition mit der Modal-Split-Kalibrierung (heute
@@ -440,14 +443,18 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   mit Seeds 42/43/44, actiTopp, logiTopp und lokalem Rastatt-OSM-Extrakt; einziger
   A/B-Unterschied `population.calibrateDistance`. Der `<1 km`-Anteil änderte sich
   **15,2→15,2 / 16,1→13,3 / 15,5→15,5 %** (Mittel 15,6→14,7 %); zwei Baselines lagen bereits
-  innerhalb der Toleranz und wurden korrekt nicht verstellt. Modal-RMSE
+  innerhalb der damaligen Toleranz und wurden nicht verstellt. **Zielwert-Korrektur:** Das
+  damalige Näherungsziel 0,14 ist fachlich verworfen; MiD A W12 ergibt für `<1 km`
+  **0,21** (10 % + 11 %), während 0,14 zur Klasse `1–<2 km` gehört. Seed 43 wurde daher
+  in die falsche Richtung geregelt. Modal-RMSE
   **0,069→0,069 / 0,073→0,070 / 0,072→0,072**, Wege/P/Tag 3,19–3,26. Alle sechs Läufe
   nutzten GraphHopper ohne Stufen-Fallback. **Ehrliche Grenze:** Ø bleibt 3,77–3,87 km;
   gegen den amtlich aus MiD-Tabelle A W12 aggregierten Sechs-Band-Zielvektor
   `[21, 14, 23, 16, 13, 13] %` scheitert der vorab fixierte RMSE-Gate:
   **0,1055→0,1055 / 0,1014→0,1094 / 0,1019→0,1019** (Ziel höchstens 0,05).
-  `calibrateDistance` bleibt `default=false`; `kpis.json` weist Bandanteile, Ziel und RMSE
-  für Folgeläufe direkt aus. Details: `docs/05-validierung.md`.
+  `calibrateDistance` bleibt `default=false`; der Ziel-Property-Default ist **0,14→0,21**
+  korrigiert, aber noch nicht E2E revalidiert. `kpis.json` weist Bandanteile, Ziel, Quelle
+  und RMSE für Folgeläufe direkt aus. Details: `docs/05-validierung.md`.
 - **✅ Zonierungs-Default für Neuanlagen auf INSPIRE geflippt (2026-07-16):**
   `GET /api/scenarios/defaults` (Quelle des Studio-„Neues Szenario") liefert jetzt
   `zoning.mode = inspire`. Der **Feld-Default in `Scenario.Zoning` bleibt bewusst `grid`**:

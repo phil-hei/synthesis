@@ -1,5 +1,6 @@
 package de.synthesis.generation.pipeline;
 
+import de.synthesis.reference.Mid2017;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -55,11 +56,12 @@ class DistanceCalibratorTest {
     void convergesTowardTargetNearShare() throws Exception {
         Path base = writeFixture();
         Path out = Files.createTempDirectory("dc-out").resolve("dc-calibrated");
-        DistanceCalibrator calibrator = new DistanceCalibrator(base, out, 0.12, 10, 0.01);
+        DistanceCalibrator calibrator = new DistanceCalibrator(
+                base, out, Mid2017.NEAR_TRIP_SHARE, 10, 0.005);
 
         DistanceCalibrator.Result r = calibrator.calibrate(DistanceCalibratorTest::fakeSim);
 
-        assertTrue(Math.abs(r.finalNearShare() - 0.12) <= 0.01,
+        assertTrue(Math.abs(r.finalNearShare() - Mid2017.NEAR_TRIP_SHARE) <= 0.005,
                 "muss den Ziel-Nahanteil erreichen, ist=" + r.finalNearShare());
         assertTrue(r.finalNearShare() < r.startNearShare(),
                 "Nahanteil muss in Richtung Ziel sinken: " + r.startNearShare() + " -> " + r.finalNearShare());
@@ -71,6 +73,27 @@ class DistanceCalibratorTest {
         assertTrue(shopping.contains("shift_intrazonal_on_attr = -0.064"),
                 "shift_intrazonal_on_attr darf nicht verändert werden");
         assertTrue(shopping.contains("max_attractivity = 1000000"), "übrige Zeilen erhalten");
+    }
+
+    @Test
+    void increasesNearShareWhenItIsBelowOfficialTarget() throws Exception {
+        Path base = writeFixture();
+        Path out = Files.createTempDirectory("dc-out-low").resolve("dc-calibrated");
+        double lowBaseShare = 0.15;
+        DistanceCalibrator calibrator = new DistanceCalibrator(
+                base, out, Mid2017.NEAR_TRIP_SHARE, 10, 0.005);
+
+        DistanceCalibrator.Result r = calibrator.calibrate(dcDir -> {
+            double delta = shoppingB(dcDir) - ORIGINAL_B;
+            return lowBaseShare * Math.exp(FAKE_ELASTICITY * delta);
+        });
+
+        assertTrue(Math.abs(r.finalNearShare() - Mid2017.NEAR_TRIP_SHARE) <= 0.005,
+                "muss den amtlichen Ziel-Nahanteil erreichen, ist=" + r.finalNearShare());
+        assertTrue(r.finalNearShare() > r.startNearShare(),
+                "Nahanteil muss in Richtung Ziel steigen: "
+                        + r.startNearShare() + " -> " + r.finalNearShare());
+        assertTrue(r.appliedDelta() > 0, "b_intrazonal wird erhöht (Δ>0), war " + r.appliedDelta());
     }
 
     @Test

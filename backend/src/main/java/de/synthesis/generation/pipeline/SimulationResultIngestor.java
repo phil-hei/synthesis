@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import de.synthesis.reference.Mid2017;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,22 +31,6 @@ public class SimulationResultIngestor {
     private static final Map<String, Double> MID_MODAL_SPLIT = Map.of(
             "pedestrian", 0.22, "bike", 0.11, "car", 0.43,
             "passenger", 0.14, "publicTransport", 0.10);
-    private static final String[] DISTANCE_BAND_KEYS = {
-            "under1Km", "km1ToUnder2", "km2ToUnder5",
-            "km5ToUnder10", "km10ToUnder20", "km20AndMore"
-    };
-    /**
-     * MiD 2017, Tabelle A W12 „Wegelänge“, Gesamt, alle Wege inklusive
-     * imputierter Werte. Die neun amtlichen Klassen
-     * [10, 11, 14, 23, 16, 13, 9, 2, 2] % werden nur an vorhandenen
-     * Klassengrenzen zu sechs Diagnosebändern aggregiert.
-     */
-    private static final double[] MID_DISTANCE_BAND_SHARES = {
-            0.21, 0.14, 0.23, 0.16, 0.13, 0.13
-    };
-    private static final String MID_DISTANCE_BANDS_SOURCE =
-            "MiD 2017, Tabelle A W12, Gesamt; alle Wege inklusive imputierter Werte";
-
     private final ObjectMapper mapper;
 
     public SimulationResultIngestor(ObjectMapper mapper) {
@@ -83,7 +68,7 @@ public class SimulationResultIngestor {
         double totalKm;
         final Set<String> persons = new HashSet<>();
         final Map<String, Long> modeCounts = new LinkedHashMap<>();
-        final long[] distanceBandCounts = new long[DISTANCE_BAND_KEYS.length];
+        final long[] distanceBandCounts = new long[Mid2017.DISTANCE_BANDS.size()];
     }
 
     private Demand readDemand(Path file) throws IOException {
@@ -235,18 +220,19 @@ public class SimulationResultIngestor {
         ObjectNode midSplit = mid.putObject("modalSplit");
         MID_MODAL_SPLIT.forEach(midSplit::put);
         ObjectNode midDistanceBands = mid.putObject("distanceBands");
-        for (int i = 0; i < DISTANCE_BAND_KEYS.length; i++) {
-            midDistanceBands.put(DISTANCE_BAND_KEYS[i], MID_DISTANCE_BAND_SHARES[i]);
+        for (Mid2017.DistanceBand band : Mid2017.DISTANCE_BANDS) {
+            midDistanceBands.put(band.key(), band.share());
         }
-        mid.put("distanceBandsSource", MID_DISTANCE_BANDS_SOURCE);
+        mid.put("distanceBandsSource", Mid2017.DISTANCE_BANDS_SOURCE);
+        mid.put("distanceBandsSourceUrl", Mid2017.DISTANCE_BANDS_SOURCE_URL);
 
         mapper.writerWithDefaultPrettyPrinter().writeValue(out.toFile(), kpis);
     }
 
     private static void putDistanceBands(ObjectNode node, long[] counts, long trips) {
-        for (int i = 0; i < DISTANCE_BAND_KEYS.length; i++) {
+        for (int i = 0; i < Mid2017.DISTANCE_BANDS.size(); i++) {
             double share = trips == 0 ? 0 : counts[i] / (double) trips;
-            node.put(DISTANCE_BAND_KEYS[i], round4(share));
+            node.put(Mid2017.DISTANCE_BANDS.get(i).key(), round4(share));
         }
     }
 
@@ -270,12 +256,13 @@ public class SimulationResultIngestor {
     }
 
     static double distanceBandRmse(long[] counts, long trips) {
-        if (counts.length != MID_DISTANCE_BAND_SHARES.length || trips <= 0) {
+        if (counts.length != Mid2017.DISTANCE_BANDS.size() || trips <= 0) {
             throw new IllegalArgumentException("Sechs Distanzbänder und mindestens ein Weg erwartet");
         }
         double squaredError = 0;
         for (int i = 0; i < counts.length; i++) {
-            double difference = counts[i] / (double) trips - MID_DISTANCE_BAND_SHARES[i];
+            double difference = counts[i] / (double) trips
+                    - Mid2017.DISTANCE_BANDS.get(i).share();
             squaredError += difference * difference;
         }
         return Math.sqrt(squaredError / counts.length);

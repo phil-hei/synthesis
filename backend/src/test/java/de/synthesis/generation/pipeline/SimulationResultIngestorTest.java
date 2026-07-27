@@ -61,5 +61,7 @@ class SimulationResultIngestorTest {
         assertThat(kpis.at("/mid2017/distanceBands/km20AndMore").asDouble()).isEqualTo(0.13);
         assertThat(kpis.at("/mid2017/distanceBandsSource").asText())
                 .contains("Tabelle A W12");
+        assertThat(kpis.at("/mid2017/distanceBandsSourceUrl").asText())
+                .endsWith("MiD2017_Tabellenband_Deutschland.pdf");
     }
 }

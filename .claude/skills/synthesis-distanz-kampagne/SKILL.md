@@ -181,11 +181,14 @@ Erledigt (`backend/.../pipeline/DistanceCalibrator.java`, Muster `ModeChoiceCali
   ist die inverse gemessene Elastizität.
 - Läuft über den `destinationChoiceDir`-Override (Phase 2a), patcht nach
   `artifacts/simulation/dc-calibrated/`. Flag `population.calibrateDistance` default=false; Ziel
-  `synthesis.simulation.distance-calibration-target-near-share` (0,14, tunbar — kein amtlicher MiD-Wert).
-- `DistanceCalibratorTest` (Fake-Sim-Konvergenz + Clamp-Semantik: Datei hält Zustand VOR dem
-  letzten Update) grün; Suite 25/25. Studio-Checkbox vorhanden.
-- **End-to-End-validiert:** ein Schritt (`Δb −1,74`) brachte `<1 km` 0,250 → **0,142** (Ziel 0,14)
-  auf realem logiTopp → konvergiert in einer Iteration.
+  `synthesis.simulation.distance-calibration-target-near-share` (Default **0,21** aus MiD 2017
+  Tabelle A W12: 10 % `<0,5 km` + 11 % `0,5–<1 km`; tunbar).
+- `DistanceCalibratorTest` (Fake-Sim-Konvergenz von oberhalb UND unterhalb des Ziels +
+  Clamp-Semantik: Datei hält Zustand VOR dem letzten Update) grün. Studio-Checkbox vorhanden.
+- **Mechanik End-to-End-validiert, Zielwert damals falsch:** Ein Schritt (`Δb −1,74`) brachte
+  `<1 km` 0,250 → **0,142** auf realem logiTopp. Das bewies die Reglerwirkung, verwendete aber
+  den am 2026-07-27 fachlich verworfenen Näherungswert 0,14; der neue amtliche Default 0,21 ist
+  noch nicht E2E revalidiert.
 
 *Offen für später:* Multi-Band-Ziel (Hebel `b_0_1`/`b_1_2` ergänzen); Komposition mit der
 Modal-Split-Kalibrierung (heute gegenseitig ausschließend, `calibrateDistance` hat Vorrang); und
@@ -201,6 +204,13 @@ Erfolg NUR wenn alle drei gleichzeitig (über ≥3 Seeds):
 Messung ausschließlich per Skripte (distance_profile.py, modal_split.py, kpi_report.py).
 Beförderung über synthesis-change-control (Tests grün, docs/06-✅-Eintrag mit
 vorher→nachher-Zahlen, Flag bleibt opt-in bis Partner-Feedback).
+
+**🔬 Drei-Seed-Gate 2026-07-27 gescheitert:** Der Lauf mit dem inzwischen verworfenen
+Näherungsziel 0,14 senkte `<1 km` im Mittel 15,6→14,7 %, verfehlte aber den amtlich aus
+MiD A W12 aggregierten Sechs-Band-Vektor `[21, 14, 23, 16, 13, 13] %`: B-RMSE
+0,1019–0,1094 bei vorab gesetztem Ziel ≤0,05; Seed 43 verschlechterte sich um 0,0080.
+Kein Default-Flip. Wiederholung erst mit Default 0,21; `kpis.json` liefert Bandanteile und
+`distanceBandRmseToMid2017` direkt.
 
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
@@ -221,7 +231,7 @@ geroutet. A/B-validiert (Vorhersage vorab, Offline-Läufe seed 42): großes Gebi
 Ø 2,08→2,24 km, `<1 km` 31,8→29,1 %, Wegezahl exakt unverändert. **Achtung Baselines:** alle
 Luftlinien-Kennzahlen vor 2026-07-16 (auch die Option-B-Zahlen oben und die
 `DistanceCalibrator`-Ist-Werte) sind mit dem neuen Boden nicht mehr direkt vergleichbar;
-das Kalibrier-Ziel 0,14 bleibt gültig (Kalibrator regelt auf `b_intrazonal`).
+der frühere Näherungs-Zielwert 0,14 ist seit 2026-07-27 durch den amtlichen Wert 0,21 ersetzt.
 Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `MatrixGeneratorTest`.
 
 ## Wann diesen Skill NICHT nutzen
@@ -233,12 +243,13 @@ Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `M
 | Frage „wurde X schon probiert?" | synthesis-failure-archaeology |
 | Prozess-/Evidenzfragen | synthesis-research-methodology |
 
-## Provenienz & Wartung (Stand: 2026-07-10)
+## Provenienz & Wartung (Stand: 2026-07-27)
 
 Verifiziert am 2026-07-10: Parameterdateien + Inhalte (ls/cat oben), `destinationChoice:`-
 Verdrahtung (grep in SimulationRunner.java Z. 106–114), Baseline-Messung (distance_profile.py,
 70 188 Trips). Überliefert: Externe-Zonen-Befunde (docs/06, 2026-06-12), Kalibrier-Blaupause-
-Kennwerte (docs/06, 2026-06-21).
+Kennwerte (docs/06, 2026-06-21). MiD-Distanzziel: Tabellenband Deutschland, Tabelle A W12;
+Drei-Seed-Gate und Zielwert-Korrektur: docs/05–06 (2026-07-27).
 
 Re-Verifikation:
 ```bash
