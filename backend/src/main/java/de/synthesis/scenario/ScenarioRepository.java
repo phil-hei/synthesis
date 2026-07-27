@@ -65,7 +65,11 @@ public class ScenarioRepository {
             return Optional.empty();
         }
         try {
-            return Optional.of(mapper.readValue(file.toFile(), Scenario.class));
+            Scenario scenario = mapper.readValue(file.toFile(), Scenario.class);
+            // Alte Szenarien hatten nur useActitopp. Nach dem Lesen auf den neuen Vertrag
+            // normalisieren, damit API und nächster Save ausschließlich behaviorSource nutzen.
+            scenario.population.behaviorSource = scenario.population.behaviorSourceEffective();
+            return Optional.of(scenario);
         } catch (IOException e) {
             throw new UncheckedIOException("Szenario konnte nicht gelesen werden: " + id, e);
         }

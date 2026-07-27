@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ScenarioRepositoryTest {
@@ -35,6 +36,60 @@ class ScenarioRepositoryTest {
                     }
                 });
             }
+        }
+    }
+
+    @Test
+    void migratesLegacyActivityFlagToBehaviorSource() throws Exception {
+        Path dataDir = Files.createTempDirectory("scenario-legacy");
+        try {
+            SynthesisProperties properties = new SynthesisProperties();
+            properties.setDataDir(dataDir.toString());
+            ObjectMapper mapper = new ObjectMapper();
+            ScenarioRepository repository = new ScenarioRepository(mapper, properties);
+            Path scenarioDir = repository.scenarioDir("legacy-template");
+            Files.createDirectories(scenarioDir);
+            Files.writeString(scenarioDir.resolve("scenario.json"), """
+                    {
+                      "id": "legacy-template",
+                      "population": { "useActitopp": false }
+                    }
+                    """);
+
+            Scenario migrated = repository.findById("legacy-template").orElseThrow();
+
+            assertEquals("template", migrated.population.behaviorSource);
+            assertEquals("template", migrated.population.behaviorSourceEffective());
+            assertFalse(mapper.writeValueAsString(migrated).contains("useActitopp"));
+        } finally {
+            deleteRecursively(dataDir);
+        }
+    }
+
+    @Test
+    void explicitBehaviorSourceWinsOverLegacyFlag() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Scenario scenario = mapper.readValue("""
+                {
+                  "population": {
+                    "behaviorSource": "gta",
+                    "useActitopp": false
+                  }
+                }
+                """, Scenario.class);
+
+        assertEquals("gta", scenario.population.behaviorSourceEffective());
+    }
+
+    private static void deleteRecursively(Path dir) throws Exception {
+        try (var paths = Files.walk(dir)) {
+            paths.sorted(java.util.Comparator.reverseOrder()).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (Exception ignored) {
+                    // Best effort in test cleanup.
+                }
+            });
         }
     }
 }

@@ -1,5 +1,9 @@
 package de.synthesis.scenario;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -70,6 +74,8 @@ public class Scenario {
          * experimentell – Fallback auf actiTopp), {@code template} (einfacher Generator).
          */
         public String behaviorSource = "actitopp";
+        @JsonIgnore
+        private boolean behaviorSourceConfigured;
         /**
          * GTA 3d: optionaler Was-wäre-wenn-Kontext (Policy/Technologie, Freitext), den die
          * LLM-Agenten bei der Tagesplanung berücksichtigen – z. B. „Die Innenstadt ist autofrei"
@@ -78,6 +84,7 @@ public class Scenario {
         public String gtaWhatIf = "";
         /** @deprecated durch {@link #behaviorSource} ersetzt; nur für Rückwärtskompatibilität gelesen. */
         @Deprecated
+        @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
         public boolean useActitopp = true;
         /** Draw households from a KIT-synthesized demographic sample (realistic compositions) instead of ad-hoc draws. */
         public boolean useKitPopulation = true;
@@ -124,10 +131,18 @@ public class Scenario {
 
         /** Effective behavior source: explicit field wins, else derived from the legacy flag. */
         public String behaviorSourceEffective() {
-            if (behaviorSource != null && !behaviorSource.isBlank()) {
+            if (behaviorSource != null && !behaviorSource.isBlank()
+                    && (behaviorSourceConfigured || !"actitopp".equals(behaviorSource))) {
                 return behaviorSource;
             }
             return useActitopp ? "actitopp" : "template";
+        }
+
+        /** Merkt, ob ein persistiertes Szenario bereits das neue Feld enthält. */
+        @JsonSetter("behaviorSource")
+        public void setBehaviorSource(String behaviorSource) {
+            this.behaviorSource = behaviorSource;
+            this.behaviorSourceConfigured = true;
         }
     }
 

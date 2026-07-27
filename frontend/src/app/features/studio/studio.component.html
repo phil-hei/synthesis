@@ -83,10 +83,6 @@
           <input type="checkbox" [(ngModel)]="scenario.population.externalTrips">
           Außenbeziehungen (externe Zielzonen)
         </label>
-        <label class="checkbox" title="Wochen-Aktivitätenpläne mit dem kalibrierten KIT-Modell actiTopp erzeugen (statt einfacher Vorlagen). Bei Fehlschlag automatisch Vorlagen-Generator.">
-          <input type="checkbox" [(ngModel)]="scenario.population.useActitopp">
-          KIT actiTopp für Aktivitätenpläne
-        </label>
         <label class="checkbox" title="Haushalte aus einem KIT-synthetisierten Demografie-Sample ziehen (realistische Alters-/Geschlechts-/Haushaltsgrößen-Verteilung) statt aus Ad-hoc-Annahmen.">
           <input type="checkbox" [(ngModel)]="scenario.population.useKitPopulation">
           KIT-Demografie-Sample (Haushalte)
@@ -122,6 +118,7 @@
           <select [(ngModel)]="scenario.population.behaviorSource">
             <option value="actitopp">actiTopp (KIT, kalibriert)</option>
             <option value="gta">GTA – KI-Agenten (lokales LLM, experimentell)</option>
+            <option value="template">Vorlagen (einfach, vollständig offline)</option>
           </select>
         </label>
         <p class="hint" *ngIf="scenario.population.behaviorSource === 'gta'">

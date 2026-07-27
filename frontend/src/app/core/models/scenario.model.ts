@@ -52,7 +52,6 @@ export interface Scenario {
     publicTransport: boolean;
     /** Optional hochgeladener GTFS-Feed (Pfad); Fallback zum Auto-Fetch. */
     gtfsUploadPath?: string;
-    useActitopp: boolean;
     useKitPopulation: boolean;
     calibrateModeChoice: boolean;
     /** Distanz-Kalibrierung der Zielwahl (b_intrazonal → Ziel-<1km-Anteil), experimentell. */

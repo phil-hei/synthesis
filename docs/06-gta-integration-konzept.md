@@ -611,6 +611,15 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   echten logiTopp-Lauf; weitere Prompt-/Frequenz-Kalibrierung.
 
 ### Phase 4 – Produktiv-Härtung (querschnittlich)
+- **✅ Verhaltensquellen-Vertrag bereinigt (2026-07-27):** Die wirkungslose
+  `useActitopp`-Checkbox wurde aus dem Studio entfernt; `behaviorSource` ist nun die einzige
+  sichtbare Steuerung und bietet `actitopp`, `gta` sowie `template` explizit an. Persistierte
+  Altszenarien ohne `behaviorSource` werden einmalig aus dem Legacy-Flag migriert; das veraltete
+  Feld bleibt nur noch write-only für die Deserialisierung und wird nicht erneut ausgegeben.
+  **Verifiziert:** `ScenarioRepositoryTest` deckt Migration und Vorrang des neuen Felds ab;
+  Offline-Suite 46/46 grün (6 umgebungsabhängige Tests übersprungen), Angular-Build mit Node 20
+  erfolgreich. Der optionale Angular-Disk-Cache bleibt deaktiviert, da dessen natives
+  `lmdb`-Modul auf dem aktuellen macOS reproduzierbar mit `SIGABRT` abstürzt.
 - **✅ Szenario-/Test-Härtung (2026-07-27):** Szenario-IDs werden im Repository auf ein
   pfadsicheres Format begrenzt; damit können Artefakt-, Upload- und Löschpfade das
   Szenario-Verzeichnis nicht mehr verlassen. Die Offline-E2E-Tests deaktivieren die externe
