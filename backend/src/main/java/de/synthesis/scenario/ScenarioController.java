@@ -15,11 +15,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/scenarios")
 public class ScenarioController {
+
+    private static final Set<String> BEHAVIOR_SOURCES = Set.of("actitopp", "gta", "template");
+    private static final Set<String> TARGET_MODELS = Set.of("logitopp", "sumo", "mobilecity");
 
     private final ScenarioRepository repository;
 
@@ -99,15 +103,49 @@ public class ScenarioController {
     }
 
     private void validate(Scenario scenario) {
+        if (scenario.zoning == null) {
+            throw badRequest("Zonierungsparameter fehlen");
+        }
+        if (scenario.population == null) {
+            throw badRequest("Bevölkerungsparameter fehlen");
+        }
+        if (scenario.logistics == null) {
+            throw badRequest("Logistikparameter fehlen");
+        }
         Scenario.Region r = scenario.region;
         if (r == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bitte zuerst eine Region auf der Karte festlegen");
+            throw badRequest("Bitte zuerst eine Region auf der Karte festlegen");
+        }
+        if (!Double.isFinite(r.minLat) || !Double.isFinite(r.minLon)
+                || !Double.isFinite(r.maxLat) || !Double.isFinite(r.maxLon)
+                || r.minLat < -90 || r.maxLat > 90 || r.minLon < -180 || r.maxLon > 180) {
+            throw badRequest("Region enthält ungültige Koordinaten");
         }
         if (r.minLat >= r.maxLat || r.minLon >= r.maxLon) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ungültige Region (minLat/minLon müssen kleiner als maxLat/maxLon sein)");
+            throw badRequest("Ungültige Region (minLat/minLon müssen kleiner als maxLat/maxLon sein)");
         }
-        if (scenario.zoning.cellSizeMeters < 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zellgröße muss mindestens 100 m betragen");
+        if (!Double.isFinite(scenario.zoning.cellSizeMeters) || scenario.zoning.cellSizeMeters < 100) {
+            throw badRequest("Zellgröße muss mindestens 100 m betragen");
         }
+        if (!"grid".equals(scenario.zoning.mode) && !"inspire".equals(scenario.zoning.mode)) {
+            throw badRequest("Unbekannter Zonierungsmodus");
+        }
+        String behaviorSource = scenario.population.behaviorSourceEffective();
+        if (!BEHAVIOR_SOURCES.contains(behaviorSource)) {
+            throw badRequest("Unbekannte Verhaltensquelle");
+        }
+        if (scenario.targetModels != null
+                && scenario.targetModels.stream()
+                .anyMatch(target -> target == null || !TARGET_MODELS.contains(target))) {
+            throw badRequest("Unbekanntes Zielmodell");
+        }
+        double samplingFraction = scenario.population.samplingFraction;
+        if (!Double.isFinite(samplingFraction) || samplingFraction <= 0 || samplingFraction > 1) {
+            throw badRequest("Stichprobenanteil muss größer 0 und höchstens 1 sein");
+        }
+    }
+
+    private static ResponseStatusException badRequest(String reason) {
+        return new ResponseStatusException(HttpStatus.BAD_REQUEST, reason);
     }
 }

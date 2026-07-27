@@ -611,6 +611,12 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   echten logiTopp-Lauf; weitere Prompt-/Frequenz-Kalibrierung.
 
 ### Phase 4 – Produktiv-Härtung (querschnittlich)
+- **✅ Szenario-API validiert Konfigurationsgrenzen (2026-07-27):** Create/Update weisen
+  fehlende Teilkonfigurationen, nicht-endliche oder außerhalb der Erdkoordinaten liegende
+  Regionen, unbekannte Zonierungs-/Verhaltens-/Zielmodellwerte und Stichprobenanteile außerhalb
+  `(0, 1]` als HTTP 400 ab, statt später mit einem 500er oder stillschweigendem Template-Fallback
+  zu reagieren. **Verifiziert:** `ScenarioControllerTest` deckt die Fehlerklassen mit vier
+  Negativtests ab; Offline-Suite 50/50 grün (6 umgebungsabhängige Tests übersprungen).
 - **✅ Verhaltensquellen-Vertrag bereinigt (2026-07-27):** Die wirkungslose
   `useActitopp`-Checkbox wurde aus dem Studio entfernt; `behaviorSource` ist nun die einzige
   sichtbare Steuerung und bietet `actitopp`, `gta` sowie `template` explizit an. Persistierte

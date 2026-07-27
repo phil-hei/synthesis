@@ -245,6 +245,10 @@ die actiTopp-Typen (WORK/EDUCATION/SHOPPING/LEISURE/TRANSPORT/HOME) in die Legac
 Steuerung: Flag `useActitopp` (Default an, Frontend-Checkbox), Fallback auf den Template-Generator
 bei Abschaltung/Fehler.
 
+**Aktueller Stand (2026-07-27):** Die Verhaltensquelle wird inzwischen ausschließlich über
+`behaviorSource` (`actitopp` | `gta` | `template`) gewählt. `useActitopp` wird nur noch beim
+Einlesen alter Szenario-Dateien berücksichtigt und nicht mehr in API-Antworten ausgegeben.
+
 **Befund (kritisch)**: actiTopp entscheidet anhand seines eigenen Modells, wer arbeitet/lernt —
 unsere `needsWorkZone`-Heuristik passte nicht dazu, die Legacy-Zielwahl brach mit
 *„No destination available for activity type: WORK"* ab. Fix: **jede Person bekommt ein festes
