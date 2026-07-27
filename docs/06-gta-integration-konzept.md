@@ -611,6 +611,15 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   echten logiTopp-Lauf; weitere Prompt-/Frequenz-Kalibrierung.
 
 ### Phase 4 – Produktiv-Härtung (querschnittlich)
+- **✅ Szenario-/Test-Härtung (2026-07-27):** Szenario-IDs werden im Repository auf ein
+  pfadsicheres Format begrenzt; damit können Artefakt-, Upload- und Löschpfade das
+  Szenario-Verzeichnis nicht mehr verlassen. Die Offline-E2E-Tests deaktivieren die externe
+  logiTopp-Simulation explizit, beenden ihren Executor und räumen Temp-Daten auf. Der
+  GTFS-„kein Feed"-Test verwendet eine leere Feed-Registry statt versehentlich einen Download zu
+  starten; das Studio-Polling bleibt an der beim Start erfassten Szenario-ID. Frontend verlangt
+  Node 20/22 (`.nvmrc`/`engines`), weil Node 26 mit Angular 18/esbuild abstürzte.
+  **Verifiziert:** Backend-Suite 44 Tests grün (6 externe Skips), `npx ng build` grün mit
+  Node 20.20.2.
 - Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
   `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,
   vgl. docs/05); GPL-Konformität (Arm's-length-Trennung) dokumentieren.

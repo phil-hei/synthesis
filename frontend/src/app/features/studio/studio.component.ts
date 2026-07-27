@@ -84,6 +84,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   newScenario(): void {
+    this.stopPolling();
     this.api.scenarioDefaults().subscribe(defaults => {
       this.scenario = defaults;          // region ist hier null: noch kein Rechteck
       this.selectedScenarioId = '';
@@ -100,6 +101,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onScenarioSelected(): void {
+    this.stopPolling();
     const selected = this.scenarios.find(s => s.id === this.selectedScenarioId);
     if (!selected) {
       this.newScenario();
@@ -485,19 +487,20 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       next: job => {
         this.job = job;
         this.artifacts = [];
-        this.startPolling();
+        this.startPolling(job.scenarioId);
       },
       error: err => this.message = 'Fehler: ' + (err.error?.message ?? err.message)
     });
   }
 
-  private startPolling(): void {
+  private startPolling(scenarioId: string): void {
     this.stopPolling();
     this.pollTimer = setInterval(() => {
-      if (!this.scenario?.id) {
-        return;
-      }
-      this.api.generationStatus(this.scenario.id).subscribe(job => {
+      this.api.generationStatus(scenarioId).subscribe(job => {
+        if (this.scenario?.id !== scenarioId) {
+          this.stopPolling();
+          return;
+        }
         this.job = job;
         if (job.state === 'DONE' || job.state === 'FAILED') {
           this.stopPolling();

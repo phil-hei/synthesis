@@ -1,6 +1,9 @@
 {
   "name": "synthesis-frontend",
   "version": "0.1.0",
+  "engines": {
+    "node": "^20.11.1 || ^22.0.0"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 4300 --proxy-config proxy.conf.json",

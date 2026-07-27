@@ -12,21 +12,31 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 @Repository
 public class ScenarioRepository {
+
+    private static final Pattern SCENARIO_ID = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_-]{0,127}");
 
     private final ObjectMapper mapper;
     private final Path scenariosDir;
 
     public ScenarioRepository(ObjectMapper mapper, SynthesisProperties properties) {
         this.mapper = mapper;
-        this.scenariosDir = Path.of(properties.getDataDir(), "scenarios");
+        this.scenariosDir = Path.of(properties.getDataDir(), "scenarios").toAbsolutePath().normalize();
     }
 
     public Path scenarioDir(String id) {
-        return scenariosDir.resolve(id);
+        if (id == null || !SCENARIO_ID.matcher(id).matches()) {
+            throw new IllegalArgumentException("Ungültige Szenario-ID");
+        }
+        Path dir = scenariosDir.resolve(id).normalize();
+        if (!dir.startsWith(scenariosDir)) {
+            throw new IllegalArgumentException("Ungültige Szenario-ID");
+        }
+        return dir;
     }
 
     public Path artifactsDir(String id) {

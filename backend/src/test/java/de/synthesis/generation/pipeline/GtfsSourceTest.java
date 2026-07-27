@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -67,20 +68,34 @@ class GtfsSourceTest {
     void noFeedForUncoveredRegionWithoutUpload() throws Exception {
         Path rawCache = Files.createTempDirectory("gtfs-raw-empty");
         Path cropped = Files.createTempFile("cropped-none", ".zip");
-        // Region weit außerhalb der KVV-Abdeckung (Nordsee) und kein Upload
+        // Ohne Registry-Feed und ohne Upload muss die ÖV-Stufe sauber übersprungen werden.
         Scenario.Region region = new Scenario.Region();
         region.minLat = 54.0;
         region.minLon = 8.0;
         region.maxLat = 54.1;
         region.maxLon = 8.1;
         try {
-            GtfsSource.Resolved resolved = new GtfsSource(new SynthesisProperties.Transit())
+            SynthesisProperties.Transit config = new SynthesisProperties.Transit();
+            config.setFeeds(List.of());
+            GtfsSource.Resolved resolved = new GtfsSource(config)
                     .resolve(region, null, rawCache, cropped, msg -> { });
             org.junit.jupiter.api.Assertions.assertNull(resolved,
                     "Ohne abdeckenden Feed und ohne Upload → null (ÖV übersprungen)");
         } finally {
             Files.deleteIfExists(cropped);
-            Files.deleteIfExists(rawCache);
+            deleteRecursively(rawCache);
+        }
+    }
+
+    private static void deleteRecursively(Path dir) throws Exception {
+        try (var paths = Files.walk(dir)) {
+            paths.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    Files.deleteIfExists(p);
+                } catch (Exception ignored) {
+                    // Best effort in test cleanup.
+                }
+            });
         }
     }
 }
