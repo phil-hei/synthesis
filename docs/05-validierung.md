@@ -354,11 +354,11 @@ inhaltliche Unterschied. Alle sechs Läufe verwendeten GraphHopper
 (`dataQuality.matrices = graphhopper-with-local-fallbacks`); actiTopp-, Routing- und
 logiTopp-Fallbacks traten nicht auf.
 
-| Seed | `<1 km` A→B | Ø km A→B | Modal-RMSE A→B | Wege/P/Tag | Iterationen B |
-|---|---:|---:|---:|---:|---:|
-| 42 | 15,2→15,2 % | 3,77→3,77 | 0,069→0,069 | 3,20 | 1 |
-| 43 | 16,1→13,3 % | 3,76→3,84 | 0,073→0,070 | 3,26 | 2 |
-| 44 | 15,5→15,5 % | 3,87→3,87 | 0,072→0,072 | 3,19 | 1 |
+| Seed | `<1 km` A→B | Ø km A→B | Distanz-RMSE A→B | Modal-RMSE A→B | Wege/P/Tag | Iterationen B |
+|---|---:|---:|---:|---:|---:|---:|
+| 42 | 15,2→15,2 % | 3,77→3,77 | 0,1055→0,1055 | 0,069→0,069 | 3,20 | 1 |
+| 43 | 16,1→13,3 % | 3,76→3,84 | 0,1014→0,1094 | 0,073→0,070 | 3,26 | 2 |
+| 44 | 15,5→15,5 % | 3,87→3,87 | 0,1019→0,1019 | 0,072→0,072 | 3,19 | 1 |
 
 **Befund**: Das vorab festgelegte Nahdistanzfenster 12–16 % wird bei allen B-Läufen erreicht;
 der Mittelwert sinkt 15,6→14,7 %. Zwei Baselines lagen bereits im Toleranzband und bleiben deshalb
@@ -371,11 +371,21 @@ logiTopp verarbeitet den Export mit `fractionOfPopulation: 1.0`, woraus
 2.020/2.007/2.010 mobile Ergebnis-Personen entstehen (98,7–98,8 % statt einer zweiten
 5-%-Auswahl).
 
-**Konsequenz**: Die Nahdistanz-Regel ist über drei Seeds robust genug für weitere Experimente,
-aber noch nicht für einen Default-Flip. Der absolute Distanzmittelwert bleibt mit 3,77–3,87 km
-weit vom MiD-Anker 12,5 km entfernt. Außerdem liegt im Repository keine belastbare Zielverteilung
-für die sechs Diagnosebänder `<1`, `1–2`, `2–5`, `5–10`, `10–20`, `>20 km`; der vollständige
-Sechs-Band-RMSE-Promotionsentscheid bleibt daher offen.
+**Amtlicher Zielvektor und vollständiger Gate**: Die
+[MiD-2017-Tabelle A W12](https://www.mobilitaet-in-deutschland.de/archive/pdf/MiD2017_Tabellenband_Deutschland.pdf)
+weist bundesweit für alle Wege inklusive imputierter Werte neun Anteile
+`[10, 11, 14, 23, 16, 13, 9, 2, 2] %` aus. Ohne Interpolation zu den sechs vorhandenen
+Diagnosebändern aggregiert ergibt das `[21, 14, 23, 16, 13, 13] %`. Der vor der ersten
+Berechnung ergänzte Gate (RMSE je B-Lauf höchstens 0,05; Verschlechterung gegenüber A
+höchstens 0,005) scheitert: alle B-Läufe liegen bei 0,1019–0,1094, Seed 43 verschlechtert
+sich zudem um 0,0080.
+
+**Konsequenz**: Die Nahdistanz-Regel ist für weitere Experimente isoliert brauchbar, aber der
+vollständige Distanz-Gate ist nicht bestanden. Der absolute Distanzmittelwert bleibt mit
+3,77–3,87 km weit vom MiD-Anker 12,5 km entfernt; `calibrateDistance` bleibt
+`default=false`. `SimulationResultIngestor` schreibt deshalb die sechs gemessenen Anteile,
+den MiD-Zielvektor samt Quellenhinweis und `distanceBandRmseToMid2017` direkt nach
+`simulation/kpis.json`, damit weitere Läufe den Befund automatisch sichtbar machen.
 
 ## Offene Punkte (nächste Schritte)
 

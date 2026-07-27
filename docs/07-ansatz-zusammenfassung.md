@@ -78,8 +78,9 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
 - **mobiTopp-Inputs:** `zones`, `attractivities`, `person`, `household`, `activity`, `car`,
   `fixedDestination` (CSV) + Visum-Matrizen (`.mtx.bz2`)
 - **logiTopp/Logistik:** `legacy/`, `distribution-centers`, `cepsp-shares`
-- **Ergebnisse:** `kpis.json` (Wege/Person·Tag, Ø Weglänge, Modal-Split vs. MiD), `tours.geojson`,
-  `parcel-density.geojson`, `demandsimulationResult.csv`
+- **Ergebnisse:** `kpis.json` (Wege/Person·Tag, Ø Weglänge, Modal-Split sowie sechs
+  Distanzbänder inkl. RMSE vs. MiD), `tours.geojson`, `parcel-density.geojson`,
+  `demandsimulationResult.csv`
 - **SUMO:** `sumo/statistics.xml`, `summary.json` (Fahrzeuge nach PKW/Rad/Fuß/Lieferverkehr/ÖV,
   CO₂ je Fahrzeugtyp inkl. Bus), `congestion.geojson` (Netzlast)
 - **KI:** `llm-mode-choice.json`, `gta-personas.json` (Begründungen + Was-wäre-wenn)
@@ -113,6 +114,9 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
 - **GTA trifft die MiD-Wegehäufigkeit** (~3,1 Wege/Person·Tag) nach Prompt-Tuning.
 - **GTA + Kalibrierung sind kombinierbar:** Kalibrierung halbiert den Modal-Split-Fehler auf
   GTA-Output (RMSE 0,16 → 0,07).
+- **Ehrlicher Distanz-Befund:** Die Nahdistanz-Kalibrierung senkt `<1 km` im Drei-Seed-Mittel
+  15,6→14,7 %, verfehlt aber die amtliche MiD-Sechs-Band-Verteilung deutlich
+  (B-RMSE 0,1019–0,1094 bei Ziel höchstens 0,05); kein Default-Flip.
 - **Ehrlicher KI-Befund:** rohe LLM-Moduswahl hat einen **Bias zu aktiven Modi** (zu viel Rad),
   weil ihr die kalibrierten Modus-Konstanten fehlen – sie ist eine interessante, aber
   kalibrierbedürftige Alternativlinse.

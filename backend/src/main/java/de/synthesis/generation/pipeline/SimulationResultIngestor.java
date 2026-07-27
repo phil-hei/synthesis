@@ -30,6 +30,21 @@ public class SimulationResultIngestor {
     private static final Map<String, Double> MID_MODAL_SPLIT = Map.of(
             "pedestrian", 0.22, "bike", 0.11, "car", 0.43,
             "passenger", 0.14, "publicTransport", 0.10);
+    private static final String[] DISTANCE_BAND_KEYS = {
+            "under1Km", "km1ToUnder2", "km2ToUnder5",
+            "km5ToUnder10", "km10ToUnder20", "km20AndMore"
+    };
+    /**
+     * MiD 2017, Tabelle A W12 „Wegelänge“, Gesamt, alle Wege inklusive
+     * imputierter Werte. Die neun amtlichen Klassen
+     * [10, 11, 14, 23, 16, 13, 9, 2, 2] % werden nur an vorhandenen
+     * Klassengrenzen zu sechs Diagnosebändern aggregiert.
+     */
+    private static final double[] MID_DISTANCE_BAND_SHARES = {
+            0.21, 0.14, 0.23, 0.16, 0.13, 0.13
+    };
+    private static final String MID_DISTANCE_BANDS_SOURCE =
+            "MiD 2017, Tabelle A W12, Gesamt; alle Wege inklusive imputierter Werte";
 
     private final ObjectMapper mapper;
 
@@ -68,19 +83,30 @@ public class SimulationResultIngestor {
         double totalKm;
         final Set<String> persons = new HashSet<>();
         final Map<String, Long> modeCounts = new LinkedHashMap<>();
+        final long[] distanceBandCounts = new long[DISTANCE_BAND_KEYS.length];
     }
 
     private Demand readDemand(Path file) throws IOException {
         Demand demand = new Demand();
+        Map<String, Double> tripDistances = new HashMap<>();
+        Set<String> startedTrips = new HashSet<>();
         forEachRow(file, (header, cells) -> {
-            demand.persons.add(cells[header.get("personOid")]);
-            demand.totalKm += parseDouble(cells[header.get("distanceInKm")]);
+            String personOid = cells[header.get("personOid")];
+            demand.persons.add(personOid);
+            String tripKey = personOid + '\0' + cells[header.get("tripId")];
+            tripDistances.merge(tripKey,
+                    parseDouble(cells[header.get("distanceInKm")]), Double::sum);
             // eine Zeile je Weg-Etappe; legId 0 = Wegbeginn
-            if ("0".equals(cells[header.get("legId")])) {
+            if ("0".equals(cells[header.get("legId")]) && startedTrips.add(tripKey)) {
                 demand.trips++;
                 demand.modeCounts.merge(modeName(cells[header.get("tripMode")]), 1L, Long::sum);
             }
         });
+        for (String tripKey : startedTrips) {
+            double distanceKm = tripDistances.getOrDefault(tripKey, 0.0);
+            demand.totalKm += distanceKm;
+            demand.distanceBandCounts[distanceBandIndex(distanceKm)]++;
+        }
         return demand;
     }
 
@@ -185,6 +211,14 @@ public class SimulationResultIngestor {
         demandNode.put("tripsPerPersonDay", round2(tripsPerPersonDay));
         double avgTripKm = demand.trips == 0 ? 0 : demand.totalKm / demand.trips;
         demandNode.put("avgTripKm", round2(avgTripKm));
+        putDistanceBands(demandNode.putObject("distanceBands"),
+                demand.distanceBandCounts, demand.trips);
+        if (demand.trips == 0) {
+            demandNode.putNull("distanceBandRmseToMid2017");
+        } else {
+            demandNode.put("distanceBandRmseToMid2017",
+                    round4(distanceBandRmse(demand.distanceBandCounts, demand.trips)));
+        }
         ObjectNode split = demandNode.putObject("modalSplit");
         demand.modeCounts.forEach((mode, count) ->
                 split.put(mode, round2(count / (double) Math.max(1, demand.trips))));
@@ -200,8 +234,51 @@ public class SimulationResultIngestor {
         mid.put("avgTripKm", MID_AVG_TRIP_KM);
         ObjectNode midSplit = mid.putObject("modalSplit");
         MID_MODAL_SPLIT.forEach(midSplit::put);
+        ObjectNode midDistanceBands = mid.putObject("distanceBands");
+        for (int i = 0; i < DISTANCE_BAND_KEYS.length; i++) {
+            midDistanceBands.put(DISTANCE_BAND_KEYS[i], MID_DISTANCE_BAND_SHARES[i]);
+        }
+        mid.put("distanceBandsSource", MID_DISTANCE_BANDS_SOURCE);
 
         mapper.writerWithDefaultPrettyPrinter().writeValue(out.toFile(), kpis);
+    }
+
+    private static void putDistanceBands(ObjectNode node, long[] counts, long trips) {
+        for (int i = 0; i < DISTANCE_BAND_KEYS.length; i++) {
+            double share = trips == 0 ? 0 : counts[i] / (double) trips;
+            node.put(DISTANCE_BAND_KEYS[i], round4(share));
+        }
+    }
+
+    static int distanceBandIndex(double distanceKm) {
+        if (distanceKm < 1.0) {
+            return 0;
+        }
+        if (distanceKm < 2.0) {
+            return 1;
+        }
+        if (distanceKm < 5.0) {
+            return 2;
+        }
+        if (distanceKm < 10.0) {
+            return 3;
+        }
+        if (distanceKm < 20.0) {
+            return 4;
+        }
+        return 5;
+    }
+
+    static double distanceBandRmse(long[] counts, long trips) {
+        if (counts.length != MID_DISTANCE_BAND_SHARES.length || trips <= 0) {
+            throw new IllegalArgumentException("Sechs Distanzbänder und mindestens ein Weg erwartet");
+        }
+        double squaredError = 0;
+        for (int i = 0; i < counts.length; i++) {
+            double difference = counts[i] / (double) trips - MID_DISTANCE_BAND_SHARES[i];
+            squaredError += difference * difference;
+        }
+        return Math.sqrt(squaredError / counts.length);
     }
 
     private void writeDepotStats(Path out, Map<String, DepotStats> depots) throws IOException {
@@ -337,5 +414,9 @@ public class SimulationResultIngestor {
 
     private static double round2(double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    private static double round4(double value) {
+        return Math.round(value * 10_000.0) / 10_000.0;
     }
 }

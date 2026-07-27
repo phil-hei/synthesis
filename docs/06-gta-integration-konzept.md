@@ -443,9 +443,11 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   innerhalb der Toleranz und wurden korrekt nicht verstellt. Modal-RMSE
   **0,069→0,069 / 0,073→0,070 / 0,072→0,072**, Wege/P/Tag 3,19–3,26. Alle sechs Läufe
   nutzten GraphHopper ohne Stufen-Fallback. **Ehrliche Grenze:** Ø bleibt 3,77–3,87 km;
-  mangels belastbarer Zielwerte für die sechs Diagnose-Distanzbänder ist der vollständige
-  Promotionsentscheid offen und `calibrateDistance` bleibt default=false. Details:
-  `docs/05-validierung.md`.
+  gegen den amtlich aus MiD-Tabelle A W12 aggregierten Sechs-Band-Zielvektor
+  `[21, 14, 23, 16, 13, 13] %` scheitert der vorab fixierte RMSE-Gate:
+  **0,1055→0,1055 / 0,1014→0,1094 / 0,1019→0,1019** (Ziel höchstens 0,05).
+  `calibrateDistance` bleibt `default=false`; `kpis.json` weist Bandanteile, Ziel und RMSE
+  für Folgeläufe direkt aus. Details: `docs/05-validierung.md`.
 - **✅ Zonierungs-Default für Neuanlagen auf INSPIRE geflippt (2026-07-16):**
   `GET /api/scenarios/defaults` (Quelle des Studio-„Neues Szenario") liefert jetzt
   `zoning.mode = inspire`. Der **Feld-Default in `Scenario.Zoning` bleibt bewusst `grid`**:
