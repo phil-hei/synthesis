@@ -79,8 +79,8 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
   `fixedDestination` (CSV) + Visum-Matrizen (`.mtx.bz2`)
 - **logiTopp/Logistik:** `legacy/`, `distribution-centers`, `cepsp-shares`
 - **Ergebnisse:** `kpis.json` (Wege/Person·Tag, Ø Weglänge, Modal-Split sowie sechs
-  Distanzbänder inkl. RMSE vs. MiD), `tours.geojson`, `parcel-density.geojson`,
-  `demandsimulationResult.csv`
+  Distanzbänder inkl. RMSE vs. MiD; im Studio und Szenariovergleich sichtbar),
+  `tours.geojson`, `parcel-density.geojson`, `demandsimulationResult.csv`
 - **SUMO:** `sumo/statistics.xml`, `summary.json` (Fahrzeuge nach PKW/Rad/Fuß/Lieferverkehr/ÖV,
   CO₂ je Fahrzeugtyp inkl. Bus), `congestion.geojson` (Netzlast)
 - **KI:** `llm-mode-choice.json`, `gta-personas.json` (Begründungen + Was-wäre-wenn)
@@ -105,7 +105,7 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
         ↓
   KPIs / Touren / CO₂ / Netzlast-Karte / LLM-Moduswahl
         ↓
-[Studio-Panels + Szenario-Vergleich (UI, inkl. Emissionsvergleich)]
+[Studio-Panels + Szenario-Vergleich (UI, inkl. Distanz- und Emissionsvergleich)]
 ```
 
 ## 7. Kernbefunde (für „Ergebnis"-Folien)

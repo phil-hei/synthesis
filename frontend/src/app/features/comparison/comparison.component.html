@@ -71,6 +71,20 @@
           <td class="mid-col" *ngIf="mid">{{ mid.avgTripKm }} km</td>
         </tr>
 
+        <ng-container *ngIf="distanceBandRows.length > 0">
+          <tr class="group"><td [attr.colspan]="entries.length + 2">Distanzverteilung</td></tr>
+          <tr>
+            <td>RMSE zu MiD</td>
+            <td *ngFor="let e of entries">{{ e.kpis?.demand?.distanceBandRmseToMid2017 ?? '–' }}</td>
+            <td class="mid-col" *ngIf="mid">0</td>
+          </tr>
+          <tr *ngFor="let band of distanceBandRows">
+            <td>{{ band.label }}</td>
+            <td *ngFor="let e of entries">{{ pct1(e.kpis?.demand?.distanceBands?.[band.key]) }}</td>
+            <td class="mid-col" *ngIf="mid">{{ pct1(mid.distanceBands?.[band.key]) }}</td>
+          </tr>
+        </ng-container>
+
         <tr class="group"><td [attr.colspan]="entries.length + 2">Modal Split</td></tr>
         <tr *ngFor="let key of modeKeys">
           <td>{{ modeLabel(key) }}</td>

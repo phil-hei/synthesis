@@ -467,6 +467,15 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   `calibrateDistance` bleibt deshalb `default=false`. Nächster falsifizierbarer Hebel ist das
   lange Ende über größeren Untersuchungsraum und/oder gravitationskonsistente externe Ziele,
   danach Multi-Band-Kalibrierung. Details: `docs/05-validierung.md`.
+- **✅ Distanzdiagnostik im Studio und Szenario-Vergleich (2026-07-28):** Die sechs
+  `distanceBands` und `distanceBandRmseToMid2017` aus `kpis.json` sind typisiert und werden neben
+  der MiD-2017-Referenz im Studio sowie im A/B-Vergleich angezeigt. Ältere KPI-Dateien ohne diese
+  Felder bleiben kompatibel. Dabei behoben: Nach einem Backend-Neustart war der flüchtige
+  Generierungsstatus nicht mehr verfügbar; das Studio lud dann nur die Artefaktliste, aber keine
+  persistierten Simulationsergebnisse. Der Fehlerpfad ruft nun `loadArtifacts()` inklusive KPIs
+  auf. **Verifiziert:** Angular-AOT-Build grün; lokaler Wiederanlauftest lädt Szenario
+  `0876c317` mit RMSE 0,0946 und allen sechs Bändern; A/B-Vergleich
+  `ced38f5e`→`0876c317` zeigt 0,1055→0,0946; keine Browserwarnungen/-fehler.
 - **✅ Zonierungs-Default für Neuanlagen auf INSPIRE geflippt (2026-07-16):**
   `GET /api/scenarios/defaults` (Quelle des Studio-„Neues Szenario") liefert jetzt
   `zoning.mode = inspire`. Der **Feld-Default in `Scenario.Zoning` bleibt bewusst `grid`**:

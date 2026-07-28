@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { DISTANCE_BAND_ROWS, DistanceBands } from '../../core/models/results.model';
 import { Scenario } from '../../core/models/scenario.model';
 
 /**
@@ -49,7 +50,11 @@ export class ComparisonComponent implements OnInit {
     }
     this.api.compare(ids).subscribe(entries => {
       this.entries = entries;
-      this.mid = entries.find(e => e.kpis)?.kpis?.mid2017 ?? null;
+      // Bei gemischten Alt-/Neuläufen die reichste Referenz wählen: ältere kpis.json
+      // enthalten noch keine Distanzbänder, bleiben aber weiterhin vergleichbar.
+      const referenceEntry = entries.find(e => e.kpis?.mid2017?.distanceBands)
+        ?? entries.find(e => e.kpis);
+      this.mid = referenceEntry?.kpis?.mid2017 ?? null;
       const unsimulated = entries.filter(e => !e.simulated).map(e => e.name);
       this.message = unsimulated.length
         ? `Ohne Simulationsergebnis (nur Parameter): ${unsimulated.join(', ')}`
@@ -69,6 +74,13 @@ export class ComparisonComponent implements OnInit {
     return this.modeLabels[key] ?? key;
   }
 
+  /** Distanzbänder, die in mindestens einem Szenario oder der MiD-Referenz vorkommen. */
+  get distanceBandRows(): { key: keyof DistanceBands; label: string }[] {
+    return DISTANCE_BAND_ROWS.filter(({ key }) =>
+      this.entries.some(e => e.kpis?.demand?.distanceBands?.[key] != null)
+      || this.mid?.distanceBands?.[key] != null);
+  }
+
   /** SUMO-Zeilen nur zeigen, wenn mindestens ein Szenario einen SUMO-Lauf hat. */
   get hasSumo(): boolean {
     return this.entries.some(e => !!e.sumo);
@@ -76,5 +88,9 @@ export class ComparisonComponent implements OnInit {
 
   pct(value: number | null | undefined): string {
     return value == null ? '–' : Math.round(value * 100) + ' %';
+  }
+
+  pct1(value: number | null | undefined): string {
+    return value == null ? '–' : (value * 100).toFixed(1).replace('.', ',') + ' %';
   }
 }

@@ -5,17 +5,42 @@ export interface ModalSplit {
   [mode: string]: number;
 }
 
+/** Distanzband → Anteil (0..1), aggregiert aus MiD 2017 Tabelle A W12. */
+export interface DistanceBands {
+  under1Km: number;
+  km1ToUnder2: number;
+  km2ToUnder5: number;
+  km5ToUnder10: number;
+  km10ToUnder20: number;
+  km20AndMore: number;
+}
+
+/** Kanonische Reihenfolge und UI-Bezeichnung der sechs Distanzbänder. */
+export const DISTANCE_BAND_ROWS: ReadonlyArray<{ key: keyof DistanceBands; label: string }> = [
+  { key: 'under1Km', label: '< 1 km' },
+  { key: 'km1ToUnder2', label: '1–< 2 km' },
+  { key: 'km2ToUnder5', label: '2–< 5 km' },
+  { key: 'km5ToUnder10', label: '5–< 10 km' },
+  { key: 'km10ToUnder20', label: '10–< 20 km' },
+  { key: 'km20AndMore', label: '≥ 20 km' }
+];
+
 /** simulation/kpis.json – aggregierte logiTopp-Auswertung. */
 export interface SimKpis {
   demand?: {
     trips?: number;
     tripsPerPersonDay?: number;
     avgTripKm?: number;
+    distanceBands?: DistanceBands;
+    distanceBandRmseToMid2017?: number | null;
     modalSplit?: ModalSplit;
   };
   mid2017?: {
     tripsPerPersonDay?: number;
     avgTripKm?: number;
+    distanceBands?: DistanceBands;
+    distanceBandsSource?: string;
+    distanceBandsSourceUrl?: string;
     modalSplit?: ModalSplit;
   };
   parcels?: {

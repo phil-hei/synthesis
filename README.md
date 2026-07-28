@@ -40,7 +40,7 @@ mit (Fußweg → Bus → Fußweg). Ergebnisse: Verkehrs-KPIs (Fahrzeuge, Ø Reis
 **CO₂ je Fahrzeugtyp** (HBEFA-Emissionsklassen), eine **Netzlast-Karte** (Kanten nach relSpeed
 eingefärbt) und optional das **Netz-Feedback**: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die
 Pkw-Matrix zurück, logiTopp und SUMO iterieren bis zum Nachfrage-Netz-Gleichgewicht. Der **Szenario-Vergleich** stellt Nachfrage-,
-Logistik- und Emissions-Kennzahlen mehrerer Szenarien nebeneinander (z. B. Lkw- vs.
+Distanzverteilungs-, Logistik- und Emissions-Kennzahlen mehrerer Szenarien nebeneinander (z. B. Lkw- vs.
 Lastenrad-Flotte). Benötigt eine lokale SUMO-Installation (`$SUMO_HOME`); ÖV zusätzlich ein
 Python-venv (pandas/rtree/pyproj) für `gtfs2pt.py` (gekapselt, sonst wird die ÖV-Stufe übersprungen).
 ÖV ist aktuell auf **Bus** beschränkt – Schienen-ÖV (Tram/Rail) wurde versucht, scheitert aber an

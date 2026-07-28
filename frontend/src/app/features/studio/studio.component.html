@@ -347,7 +347,7 @@
           <td>Wege/Person/Tag</td>
           <td>{{ simKpis.demand?.tripsPerPersonDay }}
             <span class="mid">MiD {{ simKpis.mid2017?.tripsPerPersonDay }}</span></td></tr>
-        <tr title="Mittlere Weglänge (Luftlinien-Matrizen!); MiD 2017: {{ simKpis.mid2017?.avgTripKm }} km">
+        <tr title="Mittlere Weglänge der simulierten Wege; MiD 2017: {{ simKpis.mid2017?.avgTripKm }} km">
           <td>Ø Weglänge</td>
           <td>{{ simKpis.demand?.avgTripKm }} km
             <span class="mid">MiD {{ simKpis.mid2017?.avgTripKm }} km</span></td></tr>
@@ -369,7 +369,27 @@
         </tr>
       </table>
       <p class="hint">Referenz: MiD 2017, bundesweite Mittelwerte. Abweichungen sind erwartbar:
-        Luftlinien-Matrizen, Rastatt-kalibrierte Wahlmodelle, kleines Untersuchungsgebiet.</p>
+        Rastatt-kalibrierte Wahlmodelle und die Abgrenzung des Untersuchungsgebiets wirken auf
+        die Ergebnisse.</p>
+
+      <ng-container *ngIf="distanceBandRows.length > 0">
+        <h3>Distanzverteilung vs. MiD 2017</h3>
+        <table class="kpis modal-split">
+          <tr><th>Wegelänge</th><th>Simulation</th><th>MiD</th></tr>
+          <tr *ngFor="let row of distanceBandRows">
+            <td>{{ row.label }}</td>
+            <td>{{ row.sim != null ? ((row.sim * 100 | number:'1.1-1') + ' %') : '–' }}</td>
+            <td>{{ row.mid != null ? ((row.mid * 100 | number:'1.1-1') + ' %') : '–' }}</td>
+          </tr>
+        </table>
+        <p class="hint">
+          Sechs-Band-RMSE zu MiD:
+          {{ simKpis.demand?.distanceBandRmseToMid2017 ?? '–' }}.
+          <a *ngIf="simKpis.mid2017?.distanceBandsSourceUrl"
+             [href]="simKpis.mid2017?.distanceBandsSourceUrl"
+             target="_blank" rel="noopener">Quelle: {{ simKpis.mid2017?.distanceBandsSource }}</a>
+        </p>
+      </ng-container>
 
       <ng-container *ngIf="llmModeChoice">
         <h3>LLM-Moduswahl (experimentell) vs. MNL / MiD</h3>

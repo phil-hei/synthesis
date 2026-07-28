@@ -4,7 +4,14 @@ import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 import { ApiService } from '../../core/services/api.service';
 import { ArtifactInfo, Depot, GenerationJob, Scenario, UploadSummary } from '../../core/models/scenario.model';
-import { GtaPersonas, LlmModeChoiceResult, ModalSplit, SimKpis, SumoSummary } from '../../core/models/results.model';
+import {
+  DISTANCE_BAND_ROWS,
+  GtaPersonas,
+  LlmModeChoiceResult,
+  ModalSplit,
+  SimKpis,
+  SumoSummary
+} from '../../core/models/results.model';
 
 @Component({
   selector: 'app-studio',
@@ -125,7 +132,9 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
             this.loadArtifacts();
           }
         },
-        error: () => this.api.listArtifacts(selected.id!).subscribe(a => this.artifacts = a)
+        // Der Job-Status lebt nur im Backend-Prozess. Nach einem Neustart sind die
+        // persistierten Artefakte weiterhin gültig und müssen inklusive KPIs geladen werden.
+        error: () => this.loadArtifacts()
       });
     }
   }
@@ -661,6 +670,20 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     return Object.keys(labels)
       .filter(key => sim[key] != null || mid[key] != null)
       .map(key => ({ label: labels[key], sim: sim[key] ?? 0, mid: mid[key] ?? null }));
+  }
+
+  /** Sechs amtlich aggregierte Distanzbänder der Simulation neben MiD 2017. */
+  get distanceBandRows(): { label: string; sim: number | null; mid: number | null }[] {
+    const sim = this.simKpis?.demand?.distanceBands;
+    const mid = this.simKpis?.mid2017?.distanceBands;
+    if (!sim && !mid) {
+      return [];
+    }
+    return DISTANCE_BAND_ROWS.map(({ key, label }) => ({
+      label,
+      sim: sim?.[key] ?? null,
+      mid: mid?.[key] ?? null
+    }));
   }
 
   artifactUrl(path: string): string {
