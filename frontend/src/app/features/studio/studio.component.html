@@ -151,15 +151,24 @@
 
         <label class="checkbox" *ngIf="hasTarget('logitopp')"
                title="Passt die Moduswahl-Konstanten iterativ an den Ziel-Modal-Split an (mehrere Simulationsläufe, daher deutlich langsamer).">
-          <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeChoice">
+          <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeChoice"
+                 [disabled]="scenario.population.calibrateModeDistance">
           Modal-Split kalibrieren (langsam)
         </label>
         <label class="checkbox" *ngIf="hasTarget('logitopp')"
                title="Distanz-Kalibrierung der Zielwahl (experimentell): passt b_intrazonal iterativ an, bis der Anteil der Wege unter 1 km den Zielwert trifft. Löst die Nahdistanz-Überkonzentration; kann keine Fernwege in einem kleinen Gebiet erzeugen (mehrere Simulationsläufe).">
-          <input type="checkbox" [(ngModel)]="scenario.population.calibrateDistance">
+          <input type="checkbox" [(ngModel)]="scenario.population.calibrateDistance"
+                 [disabled]="scenario.population.calibrateModeDistance">
           Distanz-Verteilung kalibrieren (experimentell, langsam)
         </label>
-        <div class="calib-target" *ngIf="hasTarget('logitopp') && scenario.population.calibrateModeChoice"
+        <label class="checkbox" *ngIf="hasTarget('logitopp')"
+               title="Experimentell: kalibriert das globale ÖV-Niveau über asc_put und den ÖV-Anstieg bei Wegen ab 20 km getrennt über b_tt_put gegen MiD 2017. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe.">
+          <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeDistance"
+                 [disabled]="scenario.population.calibrateModeChoice || scenario.population.calibrateDistance">
+          ÖV nach Distanz kalibrieren (experimentell, langsam)
+        </label>
+        <div class="calib-target"
+             *ngIf="hasTarget('logitopp') && (scenario.population.calibrateModeChoice || scenario.population.calibrateModeDistance)"
              title="Ziel-Modus-Anteile (Default MiD 2017 bundesweit; für die Region anpassbar)">
           <span class="targets-label">Ziel-Modal-Split (Anteile)</span>
           <label class="calib-row"

@@ -506,6 +506,25 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   statt 21 % unter 1 km) ist nicht über Modusparameter heilbar. Kein
   Produktparameter geändert. Nächster Schritt: drei Seeds + Realrouting +
   gemeinsame Distanzmarginale; Legacy-ÖV-Zugang/-Abgang separat korrigieren.
+- **🧪 Zwei-Hebel-Regler opt-in implementiert (2026-07-28; E2E-Promotion weiter offen):**
+  `ModeDistanceCalibrator` setzt die bestätigte Mechanik ohne fest verdrahtete
+  Versuchswerte um. Das Flag `population.calibrateModeDistance` bleibt `default=false`.
+  Pro logiTopp-Iteration regelt `asc_put` die globale ÖV-Log-Odds-Abweichung und
+  `b_tt_put` den ASC-robusteren Kontrast
+  `logit(ÖV >=20 km) − logit(ÖV gesamt)`; Updates sind auf ±0,75 beziehungsweise
+  ±0,04 geklemmt. Ziel sind der konfigurierbare globale ÖV-Anteil
+  (`calibrationTarget.publicTransport`, Default 10 %) und die MiD-Zelle ÖV ab
+  20 km (17,61 %). Weniger als 30 Fernwege brechen mit einer verständlichen
+  Fehlermeldung ab, statt Rauschen zu kalibrieren. Der Regler hat innerhalb der
+  bestehenden Stufe „Simulation (logiTopp)" Vorrang vor den älteren, weiterhin
+  getrennten Kalibrierungsflags; die Studio-Checkboxen verhindern die
+  Mehrfachauswahl.
+  **Verifiziert:** `ModeDistanceCalibratorTest` belegt Konvergenz beider Ziele,
+  getrennte Clamps, unveränderte Fremdparameter und Wegketten-Aggregation vor der
+  Distanzbandzuordnung; gezielter Backend-Lauf 9/9 grün. Der externe Großraum-Spike
+  belegt die Hebelmechanik (9,34 % gesamt / 17,60 % ab 20 km), aber noch nicht die
+  automatische Schleife über drei Seeds mit Realrouting. Daher kein Default-Flip
+  und keine Aussage, dass der 30-Zellen-Promotions-Gate bereits erfüllt sei.
 - **✅ Globale Stichprobengröße zonenzahlfest (2026-07-28):** Der erste Großraumlauf wurde
   verworfen, weil `PopulationGenerator` bei 40.000 × 5 % zonenweise 2.015 Personen (9 Zonen)
   beziehungsweise **2.516** (576 Zonen) erzeugte. Größter-Rest-Verteilung und Begrenzung des

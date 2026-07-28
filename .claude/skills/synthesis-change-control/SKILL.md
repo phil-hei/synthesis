@@ -147,7 +147,8 @@ Klassifiziere JEDE Änderung zuerst; daraus folgt die Absicherung:
 - **Regel:** Neue experimentelle Fähigkeiten bekommen ein Flag in
   `backend/src/main/java/de/synthesis/scenario/Scenario.java` mit Default `false` und werden erst
   nach E2E-Verifikation + Doku-Eintrag befördert. Belegte Beispiele (Stand: 2026-07-08):
-  `calibrateModeChoice`, `llmModeChoice`, `sumoFeedback`, `publicTransport` – alle `= false`.
+  `calibrateModeChoice`, `calibrateDistance`, `calibrateModeDistance`, `llmModeChoice`,
+  `sumoFeedback`, `publicTransport` – alle `= false`.
 - **FAILED ≠ SKIPPED:** Optionale Pipeline-Stufen setzen bei **Fehlern** den Status `FAILED`,
   nicht `SKIPPED`. `SKIPPED` ist ausschließlich für bewusste Abwahl/fehlende Tools reserviert –
   der Nutzer muss beides unterscheiden können. Belegt als Kommentar in `GenerationService.java`:

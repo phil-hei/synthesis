@@ -321,6 +321,15 @@ nicht in den Produktcode übernommen. Nächster Pflichtschritt: gemeinsamer
 Drei-Seed-Vergleich mit echtem Routing und korrigierter Distanzmarginale;
 ÖV-Zugang/Abgang im Legacy-Helper bleibt ein separater Modellierungsfehler.
 
+**Konsequenz im Produktcode (2026-07-28):** Die Mechanik ist als experimenteller
+`ModeDistanceCalibrator` hinter `population.calibrateModeDistance=false`
+verfügbar, ohne die gefundenen Werte `-0,11/-1,22` zu übernehmen. Der Regler
+schätzt die nötigen Änderungen aus jedem Lauf und führt `asc_put` (Niveau) und
+`b_tt_put` (Distanzschräge) getrennt. Das ist eine Implementierung des positiven
+Mechanismusbelegs, keine nachträgliche Beförderung des gescheiterten
+30-Zellen-Gates; drei Seeds, Realrouting und korrigierte Distanzmarginale bleiben
+Pflicht vor einem Default-Flip.
+
 ## KIT actiTopp statt Template-Aktivitätenpläne (2026-06-12) — erfolgreich
 
 Die Wochenpläne kommen jetzt aus dem **kalibrierten KIT-Modell actiTopp** (actitoppNG, Kotlin),

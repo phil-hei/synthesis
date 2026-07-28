@@ -46,9 +46,9 @@ Zusatzregeln:
 
 ## 2. Test-Inventar (Stand 2026-07-28)
 
-Alle 23 Testklassen liegen unter `backend/src/test/java/de/synthesis/`. Frischer
-Suite-Lauf: `cd backend && mvn -o test` → 60 Tests, 0 Fehler, 6
-umgebungsabhängige Skips, 1:21 min. `PtIntegrationTest` bleibt ohne
+Alle 24 Testklassen liegen unter `backend/src/test/java/de/synthesis/`. Frischer
+Suite-Lauf: `cd backend && mvn -o test` → 63 Tests, 0 Fehler, 6
+umgebungsabhängige Skips, 1:02 min. `PtIntegrationTest` bleibt ohne
 `SYNTHESIS_TRANSIT_VENV` geskippt; der vollständige Lauf ist historisch mit
 ~23 min überliefert. Die Tabelle hebt die externen, integrativen und für
 fachliche Invarianten wichtigsten Klassen hervor.
@@ -59,6 +59,7 @@ fachliche Invarianten wichtigsten Klassen hervor.
 | `generation/pipeline/FeedbackMathTest.java` | Reine Mathematik der MSA-Dämpfung: k=1 übernimmt Faktoren ungedämpft, konstante Faktoren → Δ=0 (Konvergenz), Oszillation 1↔2 wird Richtung Mittel gedämpft (Ergebnis in (1.3, 1.7)) | keine | keine |
 | `generation/pipeline/PopulationGeneratorTest.java` | Globale Stichprobeninvariante über 576 Zonen mit KIT-Haushalten: 5 % von 40.000 ergeben exakt 2.000 Personen in Ergebnis und CSV; verhindert zonenzahlabhängige Rundungs-/Haushaltsüberschreitung | keine | gebündeltes `kit-population-sample.csv` |
 | `generation/pipeline/ModeChoiceCalibratorTest.java` | ASC-Kalibrierung gegen Fake-Sim (Softmax über die ASCs): RMSE sinkt und erreicht ≤0,02 in ≤10 Iterationen; Anker `asc_car_d` und `b_time` bleiben unverändert; Kommentarzeilen der MNL-Datei erhalten. Clamp-Test: ΔASC je Iteration auf ±1,5 begrenzt. **Clamp-Semantik:** die geschriebene Datei hält den Stand VOR dem letzten Update, daher Assert `(iterations-1) * 1.5` | keine | keine (MNL-Fixture inline als String) |
+| `generation/pipeline/ModeDistanceCalibratorTest.java` | Zwei-Hebel-Kalibrierung konvergiert gleichzeitig auf ÖV gesamt und ÖV ab 20 km; `asc_put`-/`b_tt_put`-Schritte sind getrennt geklemmt, Fremdparameter/Kommentare bleiben erhalten, der persistierte Stand entspricht dem letzten Simulationslauf. Zusätzlich: mehrteilige Wegdistanzen werden vor der Bandzuordnung summiert | keine | keine (MNL- und Demand-Fixtures inline) |
 | `generation/pipeline/ShapefileWriterTest.java` | Liest das geschriebene ESRI-Shapefile binär zurück: file code 9994, Version 1000, shape type 5 (Polygon), Bbox, Record-Struktur (Header BE / Inhalt LE), geschlossener 5-Punkte-Ring, `.shx`-Offsets, dBase-Feld exakt `districtID` mit Werten `SYN-001`/`SYN-002`, `.prj` enthält `WGS_1984` — das Format, das der MobileCity-/Takomat-Import erwartet | keine | keine |
 | `generation/pipeline/GtfsCropperTest.java` | Bbox-Zuschnitt am echten KVV-Feed auf Rastatt: Halte/Trips/Routen > 0, Ergebnis < 1/20 der Feed-Größe, `shapes.txt` verworfen, **referenzielle Integrität** (jede trip_id/stop_id aus `stop_times.txt` existiert in `trips.txt`/`stops.txt`). Zweiter Test: Zeitfenster 6–10 Uhr reduziert die Trip-Zahl echt | `Files.exists(validation/kvv-gtfs.zip)` | `validation/kvv-gtfs.zip` |
 | `generation/pipeline/GtfsSourceTest.java` | GTFS-Quellenauflösung **ohne Netz**: Raw-Cache wird mit `kvv.zip` vorbelegt → `resolve()` liefert `source()=="fetch"`, `feedName()=="kvv"`, zugeschnittener Feed geschrieben und < 1/20 der Rohgröße. Zweiter Test: Region ohne Feed-Abdeckung (Nordsee) und ohne Upload → `null` (ÖV wird übersprungen) — läuft komplett fixture-frei | Test 1: `Files.exists(validation/kvv-gtfs.zip)`; Test 2: keins | `validation/kvv-gtfs.zip` (nur Test 1) |
@@ -71,7 +72,7 @@ fachliche Invarianten wichtigsten Klassen hervor.
 Verifizierte Kommandos:
 
 ```bash
-cd backend && mvn -o test                       # 60 Tests, 6 umgebungsabhängige Skips (2026-07-28)
+cd backend && mvn -o test                       # 63 Tests, 6 umgebungsabhängige Skips (2026-07-28)
 mvn -o test -Dtest=SumoRunnerTest               # nur SUMO-Kette
 SUMO_HOME=… SYNTHESIS_TRANSIT_VENV=validation/transit-venv/bin/python \
   mvn -o test -Dtest=PtIntegrationTest          # voller ÖV-Test (~23 min überliefert)

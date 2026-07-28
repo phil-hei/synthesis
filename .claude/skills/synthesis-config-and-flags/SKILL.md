@@ -92,7 +92,9 @@ UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellier
 | `useActitopp` | boolean | `true` | **@Deprecated** – durch `behaviorSource` ersetzt; nur noch in `behaviorSourceEffective()` gelesen. UI: Checkbox „KIT actiTopp für Aktivitätenpläne" (Block „Bevölkerung") existiert noch | Legacy |
 | `useKitPopulation` | boolean | `true` | Haushalte aus KIT-synthetisiertem Demografie-Sample (realistische Zusammensetzungen) statt Ad-hoc-Ziehung. Konsument: `PopulationGenerator` | produktiv |
 | `calibrateModeChoice` | boolean | **`false`** | Iterative ASC-Kalibrierung der Moduswahl gegen Ziel-Modal-Split (mehrere Sim-Läufe, teuer). Konsument: `GenerationService` (Stufe „Simulation (logiTopp)") → `ModeChoiceCalibrator`. UI: Checkbox „Modal-Split kalibrieren (langsam)", gated `*ngIf="hasTarget('logitopp')"` | **experimentell** |
-| `calibrationTarget` | Map\<String, Double\> | MiD 2017 bundesweit: `pedestrian 0.22, bike 0.11, car 0.43, passenger 0.14, publicTransport 0.10` | Ziel-Modal-Split der Kalibrierung; leer/null → Fallback `ModeChoiceCalibrator.MID_2017`. Auch von der LLM-Moduswahl als Referenz gelesen. UI: editierbare Zeilen + RegioStaR-Preset-Select, nur sichtbar wenn `calibrateModeChoice` an | Datum produktiv; nur von experimentellen Flags genutzt |
+| `calibrateDistance` | boolean | **`false`** | Iterative Zielwahl-Kalibrierung von `b_intrazonal` gegen den MiD-`<1 km`-Anteil. Konsument: `GenerationService` → `DistanceCalibrator`. UI: „Distanz-Verteilung kalibrieren" | **experimentell** |
+| `calibrateModeDistance` | boolean | **`false`** | Zwei-Hebel-Kalibrierung gegen ÖV gesamt + ÖV ab 20 km: `asc_put` führt das Niveau, `b_tt_put` die Distanzschräge; mindestens 30 Fernwege. Konsument: `GenerationService` → `ModeDistanceCalibrator`. Hat bei widersprüchlichen Alt-Szenarien Vorrang; Studio verhindert Mehrfachauswahl. | **experimentell** |
+| `calibrationTarget` | Map\<String, Double\> | MiD 2017 bundesweit: `pedestrian 0.22, bike 0.11, car 0.43, passenger 0.14, publicTransport 0.10` | Ziel-Modal-Split der Kalibrierung; leer/null → Fallback `ModeChoiceCalibrator.MID_2017`. `publicTransport` ist zugleich das globale Niveauziel von `calibrateModeDistance`; dessen Fernwegziel 17,61 % kommt aus MiD A W10.5. Auch von der LLM-Moduswahl als Referenz gelesen. UI: editierbare Zeilen + RegioStaR-Preset-Select bei Modus- oder Modus-Distanz-Kalibrierung | Datum produktiv; nur von experimentellen Flags genutzt |
 | `llmModeChoice` | boolean | **`false`** | GTA 3c: zusätzliche LLM-gestützte Moduswahl auf den simulierten Trips (geerdet in Reisezeiten je Modus) – alternativer Modal-Split zum Vergleich mit MNL/MiD. Benötigt logiTopp + LLM. Konsument: Stufe „LLM-Moduswahl" → `LlmModeChoiceRunner`. UI: Checkbox, gated `hasTarget('logitopp')` | **experimentell** |
 | `sumoFeedback` | boolean | **`false`** | Netz-Feedback: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu (Gleichgewichts-Schleife). Benötigt logiTopp + SUMO. Konsument: Stufe „Netz-Feedback" → `FeedbackMath`. UI: Checkbox, gated `hasTarget('logitopp') && hasTarget('sumo')` | **experimentell** |
 | `publicTransport` | boolean | **`false`** | ÖV/Bus in SUMO (Phase C): GTFS (Auto-Fetch nach Region, Upload-Fallback) → `gtfs2pt.py` → Bus-Fahrplan; ÖV-Nachfrage fährt intermodal mit. Braucht Ziel SUMO + Python-venv; gtfs2pt-Mapping langsam (gecacht). Konsument: `GenerationService.buildPtProvider(...)` → `GtfsSource`/`GtfsCropper`/`TransitRunner`. UI: Checkbox, gated `hasTarget('sumo')` | **experimentell** |
@@ -124,7 +126,8 @@ GTA-Lauf eine Exception wirft (Log: „… Fallback actiTopp").
 ### 1.4 Experimentell vs. produktiv – Kurzliste (Stand 2026-07-08)
 
 **Experimentell (alle default `false` bzw. nicht die Default-Option; Beförderung nur über das
-Gate in `synthesis-change-control`):** `calibrateModeChoice`, `llmModeChoice`, `sumoFeedback`,
+Gate in `synthesis-change-control`):** `calibrateModeChoice`, `calibrateDistance`,
+`calibrateModeDistance`, `llmModeChoice`, `sumoFeedback`,
 `publicTransport`, `behaviorSource = "gta"` (+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
 Ziel `sumo` in `targetModels` ist funktionsfähig, aber **nicht** im Default enthalten.
 
@@ -164,8 +167,8 @@ Keys mitpflegen.
 | `enabled` | `true` | Stufe global abschaltbar (SKIPPED) | `GenerationService`-Gate |
 | `project-dir` | `../validation/mobitopp-rastatt` | Legacy-Projekt mit `gradlew runDeliverySynthesis` | `SimulationRunner` |
 | `timeout-minutes` | `30` | Timeout des Gradle-Laufs | `SimulationRunner` |
-| `calibration-iterations` | `8` | Max. Iterationen der Modal-Split-Kalibrierung (je Iteration ein Sim-Lauf) | Kalibrierschleife (`ModeChoiceCalibrator`) |
-| `calibration-tolerance` | `0.02` | Abbruch, wenn RMSE der Modus-Anteile zum Ziel darunter liegt | Kalibrierschleife |
+| `calibration-iterations` | `8` | Max. Iterationen der drei Kalibrierungen (je Iteration ein Sim-Lauf) | `ModeChoiceCalibrator`, `DistanceCalibrator`, `ModeDistanceCalibrator` |
+| `calibration-tolerance` | `0.02` | Modal-Split: RMSE-Grenze; Modus-Distanz: beide ÖV-Zielabweichungen müssen einzeln innerhalb der Toleranz liegen | `ModeChoiceCalibrator`, `ModeDistanceCalibrator` |
 
 ### 2.3 `synthesis.actitopp` (KIT actiTopp, Stufe „Aktivitätenpläne")
 

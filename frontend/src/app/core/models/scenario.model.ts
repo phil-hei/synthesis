@@ -56,6 +56,8 @@ export interface Scenario {
     calibrateModeChoice: boolean;
     /** Distanz-Kalibrierung der Zielwahl (b_intrazonal → Ziel-<1km-Anteil), experimentell. */
     calibrateDistance: boolean;
+    /** Zwei-Hebel-Kalibrierung: ÖV-Niveau (asc_put) + Fernweg-Schräge (b_tt_put), experimentell. */
+    calibrateModeDistance: boolean;
     /** Ziel-Modal-Split der Kalibrierung (Modus → Anteil), Default MiD. */
     calibrationTarget: { [mode: string]: number };
     /** GTA 3c: zusätzliche LLM-Moduswahl auf den simulierten Trips (Vergleich zu MNL/MiD). */

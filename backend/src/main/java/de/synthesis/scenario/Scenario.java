@@ -97,6 +97,12 @@ public class Scenario {
          */
         public boolean calibrateDistance = false;
         /**
+         * Gemeinsame Modus-Distanz-Kalibrierung (experimentell): regelt das globale
+         * ÖV-Niveau über asc_put und die Fernweg-Schräge über b_tt_put getrennt gegen
+         * MiD 2017. Mehrere logiTopp-Läufe; benötigt genügend Wege ab 20 km.
+         */
+        public boolean calibrateModeDistance = false;
+        /**
          * Achse A (GTA 3c, experimentell): zusätzlich zur logiTopp-Moduswahl (MNL) eine
          * LLM-gestützte Moduswahl auf den simulierten Trips, geerdet in Reisezeiten je Modus –
          * liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt logiTopp + LLM.

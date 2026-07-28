@@ -21,6 +21,7 @@ import de.synthesis.generation.pipeline.MatrixGenerator;
 import de.synthesis.generation.pipeline.MobileCityExporter;
 import de.synthesis.generation.pipeline.DistanceCalibrator;
 import de.synthesis.generation.pipeline.ModeChoiceCalibrator;
+import de.synthesis.generation.pipeline.ModeDistanceCalibrator;
 import de.synthesis.generation.pipeline.OverpassClient;
 import de.synthesis.generation.pipeline.PopulationEstimator;
 import de.synthesis.generation.pipeline.PopulationGenerator;
@@ -36,6 +37,7 @@ import de.synthesis.generation.pipeline.TransitRunner;
 import de.synthesis.generation.pipeline.Zone;
 import de.synthesis.scenario.Scenario;
 import de.synthesis.scenario.ScenarioRepository;
+import de.synthesis.reference.Mid2017;
 import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 
@@ -574,7 +576,65 @@ public class GenerationService {
         }
         job.log("Starte logiTopp-Wochensimulation (" + runner.projectDir().getFileName() + ")…");
         SimulationResultIngestor.Summary summary;
-        if (scenario.population.calibrateDistance) {
+        if (scenario.population.calibrateModeDistance) {
+            // Phase 1c: ÖV-Niveau (asc_put) und Fernweg-Schräge (b_tt_put) getrennt kalibrieren.
+            if (scenario.population.calibrateDistance || scenario.population.calibrateModeChoice) {
+                job.log("Hinweis: Modus-Distanz-Kalibrierung hat Vorrang vor den anderen "
+                        + "Kalibrierungsflags");
+            }
+            Path baseMnl = runner.projectDir().resolve(
+                    "config/shared/parameters/mode_choice_main_parameters-multi-nomial-logit.txt");
+            Path calibFile = artifacts.resolve("simulation")
+                    .resolve("mode_distance_calibrated.txt");
+            SimulationResultIngestor.Summary[] last = {null};
+            double targetOverall = scenario.population.calibrationTarget != null
+                    ? scenario.population.calibrationTarget.getOrDefault(
+                            "publicTransport", ModeChoiceCalibrator.MID_2017.get("publicTransport"))
+                    : ModeChoiceCalibrator.MID_2017.get("publicTransport");
+            double targetLong = Mid2017.MODAL_SPLIT_BY_DISTANCE_BAND.getLast()
+                    .modalSplit().get("publicTransport");
+            ModeDistanceCalibrator calibrator = new ModeDistanceCalibrator(
+                    baseMnl,
+                    calibFile,
+                    targetOverall,
+                    targetLong,
+                    properties.getSimulation().getCalibrationIterations(),
+                    properties.getSimulation().getCalibrationTolerance());
+            job.log(String.format(
+                    "Modus-Distanz-Kalibrierung: ÖV gesamt %.1f%%, ÖV >=20 km %.2f%% "
+                            + "(max. %d Iterationen)…",
+                    targetOverall * 100,
+                    targetLong * 100,
+                    properties.getSimulation().getCalibrationIterations()));
+            ModeDistanceCalibrator.Result cal = calibrator.calibrate(mnl -> {
+                SimulationRunner.Result run = runner.run(scenario, artifacts, job::log, mnl);
+                last[0] = new SimulationResultIngestor(mapper)
+                        .ingest(run.resultsDir(), artifacts, run.durationSeconds());
+                return SimulationResultIngestor.readModeDistanceMetrics(
+                        run.resultsDir().resolve("demandsimulationResult.csv"));
+            });
+            cal.log().forEach(job::log);
+            job.log(String.format(
+                    "Modus-Distanz-Kalibrierung beendet: %d Iterationen, "
+                            + "Zwei-Ziel-RMSE %.4f → %.4f, Joint-RMSE %.4f → %.4f%s",
+                    cal.iterations(),
+                    cal.startError(),
+                    cal.finalError(),
+                    cal.startMetrics().jointRmseToMid2017(),
+                    cal.finalMetrics().jointRmseToMid2017(),
+                    cal.converged() ? "" : " (Toleranz nicht erreicht)"));
+            job.summary.put("modeDistanceCalibrationIterations", cal.iterations());
+            job.summary.put("modeDistanceCalibrationConverged", cal.converged());
+            job.summary.put("modeDistanceCalibrationRmse",
+                    Math.round(cal.finalError() * 10_000) / 10_000.0);
+            job.summary.put("modeDistanceCalibrationJointRmse",
+                    Math.round(cal.finalMetrics().jointRmseToMid2017() * 10_000) / 10_000.0);
+            job.summary.put("modeDistanceCalibrationAscPut",
+                    Math.round(cal.finalAscPut() * 10_000) / 10_000.0);
+            job.summary.put("modeDistanceCalibrationBttPut",
+                    Math.round(cal.finalBttPut() * 10_000) / 10_000.0);
+            summary = last[0];
+        } else if (scenario.population.calibrateDistance) {
             // Phase 1b: Distanz-Kalibrierung der Zielwahl (b_intrazonal) gegen Ziel-<1km-Anteil
             Path baseParams = runner.projectDir().resolve("config/shared/parameters");
             Path dcDir = artifacts.resolve("simulation").resolve("dc-calibrated");

@@ -315,7 +315,8 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   ÖV ab 20 km 17,60 % (MiD 17,61 %); Modal-RMSE 0,105742→0,085375,
   Joint-RMSE 0,054671→0,053002, Nachfrage stabil.
 - **Status/Regel:** Nie `b_tt_put` allein als Produktkalibrierung übernehmen.
-  Schräge (`b_tt_put`) und Niveau (`asc_put`) getrennt komponieren; trotzdem kein
+  Schräge (`b_tt_put`) und Niveau (`asc_put`) getrennt komponieren. Diese Regel ist
+  seit 2026-07-28 im opt-in `ModeDistanceCalibrator` umgesetzt; trotzdem kein
   Default-Flip vor drei Seeds, Realrouting und gemeinsamer Distanzmarginal-
   Kalibrierung. Der Legacy-Helper mit ÖV-Zugang/-Abgang `0.0` bleibt separat zu
   korrigieren. Evidenz: `docs/05-validierung.md`, Abschnitt

@@ -72,7 +72,10 @@ demandsimulationResult.csv (distanceInKm) → Trips nach Distanzband bündeln
 
 **(c) Kalibrierung (Phase 1, NICHT-LLM, aber Teil der „AI-Nähe"):** iterative Anpassung der
 Moduswahl-Konstanten (ASCs) im logiTopp-MNL-Modell gegen einen Ziel-Modal-Split (MiD oder regional),
-mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
+mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA. Experimentell ergänzt ein
+Zwei-Hebel-Regler die gemeinsame Modus-Distanz-Sicht: `asc_put` führt das globale
+ÖV-Niveau, `b_tt_put` dessen Fernweg-Schräge. Er bleibt opt-in, bis drei Seeds mit
+Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 
 ## 5. Wichtigste Artefakt-Gruppen
 - **mobiTopp-Inputs:** `zones`, `attractivities`, `person`, `household`, `activity`, `car`,
@@ -119,6 +122,10 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
   (15,2–16,1 % → 19,5–20,2 %) und verbessert den Sechs-Band-RMSE je Seed um
   0,0095–0,0109. Der Beförderungs-Gate ≤0,05 bleibt mit B-RMSE 0,0912–0,0946 unerreicht,
   weil Fernwege fehlen; das Flag bleibt opt-in.
+- **Modus-Distanz-Mechanik getrennt steuerbar:** Der Großraum-Beleg traf mit
+  zwei Hebeln 9,34 % ÖV gesamt und 17,60 % ab 20 km (MiD: 10/17,61 %).
+  Der opt-in-Regler setzt diese Trennung ohne fest verdrahtete Versuchswerte um;
+  der gemeinsame 30-Zellen-Gate bleibt wegen der falschen Distanzmarginale offen.
 - **Ehrlicher KI-Befund:** rohe LLM-Moduswahl hat einen **Bias zu aktiven Modi** (zu viel Rad),
   weil ihr die kalibrierten Modus-Konstanten fehlen – sie ist eine interessante, aber
   kalibrierbedürftige Alternativlinse.

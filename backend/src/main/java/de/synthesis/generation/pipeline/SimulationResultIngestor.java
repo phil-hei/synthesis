@@ -40,6 +40,19 @@ public class SimulationResultIngestor {
     public record Summary(long trips, long persons, long parcels, long delivered, int tours) {
     }
 
+    /**
+     * Ungeglättete Messwerte für die Zwei-Hebel-Modus-Distanz-Kalibrierung.
+     * {@code longPublicTransportShare} ist bedingt auf Wege ab 20 km; der Joint-RMSE
+     * gewichtet dagegen jede Modus×Distanz-Zelle mit ihrem Anteil an allen Wegen.
+     */
+    public record ModeDistanceMetrics(
+            long trips,
+            long longTrips,
+            double overallPublicTransportShare,
+            double longPublicTransportShare,
+            double jointRmseToMid2017) {
+    }
+
     public Summary ingest(Path resultsDir, Path artifacts, long durationSeconds) throws IOException {
         Path simulationDir = artifacts.resolve("simulation");
 
@@ -72,7 +85,7 @@ public class SimulationResultIngestor {
         final Map<String, long[]> modeDistanceCounts = new LinkedHashMap<>();
     }
 
-    private Demand readDemand(Path file) throws IOException {
+    private static Demand readDemand(Path file) throws IOException {
         Demand demand = new Demand();
         Map<String, Double> tripDistances = new HashMap<>();
         Map<String, String> tripModes = new HashMap<>();
@@ -102,6 +115,22 @@ public class SimulationResultIngestor {
                     [bandIndex]++;
         }
         return demand;
+    }
+
+    /** Liest die für die Modus-Distanz-Kalibrierung benötigten Rohwerte ohne KPI-Rundung. */
+    public static ModeDistanceMetrics readModeDistanceMetrics(Path demandCsv) throws IOException {
+        Demand demand = readDemand(demandCsv);
+        int longBand = Mid2017.DISTANCE_BANDS.size() - 1;
+        long longTrips = demand.distanceBandCounts[longBand];
+        long[] ptByDistance = demand.modeDistanceCounts.get("publicTransport");
+        long ptTrips = demand.modeCounts.getOrDefault("publicTransport", 0L);
+        long longPtTrips = ptByDistance == null ? 0 : ptByDistance[longBand];
+        double overallPtShare = demand.trips == 0 ? Double.NaN : ptTrips / (double) demand.trips;
+        double longPtShare = longTrips == 0 ? Double.NaN : longPtTrips / (double) longTrips;
+        double jointRmse = demand.trips == 0
+                ? Double.NaN : modeDistanceJointRmse(demand.modeDistanceCounts, demand.trips);
+        return new ModeDistanceMetrics(
+                demand.trips, longTrips, overallPtShare, longPtShare, jointRmse);
     }
 
     /** Legacy StandardMode-Codes → MiD-Hauptverkehrsmittel-Gruppen. */
