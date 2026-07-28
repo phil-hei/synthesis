@@ -7,6 +7,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,9 +99,11 @@ public class PopulationGenerator {
             // KIT-Demografie-Sample (echte Haushaltskompositionen) optional zuschalten
             PopulationSample kitSample = scenario.population.useKitPopulation
                     ? PopulationSample.fromResource("/kit-population-sample.csv") : null;
+            int[] sampledPersonsByZone = sampledPersonsByZone(scenario.population.samplingFraction);
 
-            for (Zone zone : zones) {
-                int remaining = (int) Math.round(zone.population * scenario.population.samplingFraction);
+            for (int zonePosition = 0; zonePosition < zones.size(); zonePosition++) {
+                Zone zone = zones.get(zonePosition);
+                int remaining = sampledPersonsByZone[zonePosition];
                 while (remaining > 0) {
                     List<PopulationSample.Member> composition = drawHousehold(kitSample, remaining);
                     int size = composition.size();
@@ -156,13 +159,49 @@ public class PopulationGenerator {
     }
 
     /**
+     * Converts fractional zone populations into one exact global sample using the
+     * largest-remainder method. Rounding independently per zone would make the
+     * sample grow with the zone count (especially for fine grids).
+     */
+    private int[] sampledPersonsByZone(double samplingFraction) {
+        int[] sampled = new int[zones.size()];
+        double[] remainders = new double[zones.size()];
+        double expectedTotal = 0;
+        int floorTotal = 0;
+
+        for (int i = 0; i < zones.size(); i++) {
+            double expected = Math.max(0, zones.get(i).population * samplingFraction);
+            sampled[i] = (int) Math.floor(expected);
+            remainders[i] = expected - sampled[i];
+            expectedTotal += expected;
+            floorTotal += sampled[i];
+        }
+
+        int targetTotal = (int) Math.round(expectedTotal);
+        List<Integer> byRemainder = new ArrayList<>(zones.size());
+        for (int i = 0; i < zones.size(); i++) {
+            byRemainder.add(i);
+        }
+        byRemainder.sort(Comparator
+                .comparingDouble((Integer i) -> remainders[i]).reversed()
+                .thenComparingInt(i -> i));
+        for (int i = 0; i < targetTotal - floorTotal; i++) {
+            sampled[byRemainder.get(i)]++;
+        }
+        return sampled;
+    }
+
+    /**
      * One household composition: a KIT-sampled household when a pool is given
      * (realistic joint age/sex/size), otherwise a template draw (independent ages,
      * random sex) capped at the zone's remaining persons.
      */
     private List<PopulationSample.Member> drawHousehold(PopulationSample kitSample, int remaining) {
         if (kitSample != null) {
-            return kitSample.randomHousehold(random);
+            List<PopulationSample.Member> sampled = kitSample.randomHousehold(random);
+            return sampled.size() <= remaining
+                    ? sampled
+                    : new ArrayList<>(sampled.subList(0, remaining));
         }
         int size = Math.min(drawHouseholdSize(), remaining);
         List<PopulationSample.Member> members = new ArrayList<>(size);

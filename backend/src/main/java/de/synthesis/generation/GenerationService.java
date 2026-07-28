@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -383,7 +384,9 @@ public class GenerationService {
         if (ctx.scenario.population.externalTrips) {
             List<Zone> external = ExternalZones.create(ctx.zones);
             ctx.zones.addAll(external);
-            job.log(external.size() + " externe Zielzonen (~25 km) für Außenbeziehungen ergänzt");
+            job.log(String.format(Locale.ROOT,
+                    "%d externe Zielzonen (~%.0f km Radius) für Außenbeziehungen ergänzt",
+                    external.size(), ExternalZones.radiusKm()));
         }
         Path zoneDir = ctx.artifacts.resolve("zone-repository");
         CsvArtifacts.writeZonesCsv(zoneDir.resolve("zones.csv"), ctx.zones);
@@ -1117,7 +1120,8 @@ public class GenerationService {
         quality.put("attractivities", osmUsed ? "osm-pois" : "synthetic");
         quality.put("populationTotal", populationSource);
         quality.put("populationDistribution", distributionSource);
-        quality.put("populationStructure", "synthetic");
+        quality.put("populationStructure", scenario.population.useKitPopulation
+                ? "kit-population-sample" : "synthetic");
         quality.put("matrices", matrixSource);
         quality.put("depots", !scenario.logistics.depots.isEmpty() ? "user-defined"
                 : logisticsSources.depotsFromOsm() ? "osm-pois" : "auto-placed");

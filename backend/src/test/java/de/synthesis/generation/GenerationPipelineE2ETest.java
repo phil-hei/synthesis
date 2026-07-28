@@ -88,9 +88,11 @@ class GenerationPipelineE2ETest {
             assertTrue(Files.exists(artifacts.resolve(file)), "Artefakt fehlt: " + file);
         }
         assertEquals("Template", job.summary.get("activitySource"), "Template-Verhalten erwartet");
+        var manifest = mapper.readTree(artifacts.resolve("manifest.json").toFile());
         assertEquals("beeline-estimate",
-                mapper.readTree(artifacts.resolve("manifest.json").toFile())
-                        .path("dataQuality").path("matrices").asText());
+                manifest.path("dataQuality").path("matrices").asText());
+        assertEquals("kit-population-sample",
+                manifest.path("dataQuality").path("populationStructure").asText());
 
         // Stufen-Status: nichts FAILED; SUMO/LLM sauber übersprungen (nicht gewählt)
         for (GenerationJob.StageInfo stage : job.stages) {

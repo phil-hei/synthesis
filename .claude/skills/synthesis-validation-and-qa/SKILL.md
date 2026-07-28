@@ -13,8 +13,9 @@ description: >
 # SyntheSis: Validierung & QA
 
 Verkehrsnachfrage-Generator (siehe `README.md`, `docs/05` Validierung, `docs/07`).
-Dieser Skill definiert, was in diesem Projekt als Evidenz zählt, inventarisiert alle
-10 Testklassen samt Gates und Fixtures und beschreibt, wie man Tests korrekt ergänzt.
+Dieser Skill definiert, was in diesem Projekt als Evidenz zählt, inventarisiert die
+fachlich und extern besonders relevanten Testklassen samt Gates und Fixtures und
+beschreibt, wie man Tests korrekt ergänzt.
 
 ## Wann NICHT nutzen
 
@@ -43,17 +44,20 @@ Zusatzregeln:
 - **„Läuft bei mir" zählt nicht.** Das ausgeführte Kommando plus die konkrete Zahl
   (Fahrzeuge, Trips, RMSE, Dateigröße) gehört in die Doku bzw. Commit-Message.
 
-## 2. Test-Inventar (Stand 2026-07-08)
+## 2. Test-Inventar (Stand 2026-07-28)
 
-Alle Tests liegen unter `backend/src/test/java/de/synthesis/`. Suite-Lauf:
-`cd backend && mvn -o test` → 18 Tests; `PtIntegrationTest` wird ohne
-`SYNTHESIS_TRANSIT_VENV` geskippt. Laufzeiten sind **überliefert** (Historie, nicht
-frisch gemessen): Suite komplett ~4–5 min, davon `GtaBehaviorTest` ~2 min (Live-LLM),
-`SumoRunnerTest` ~45 s, E2E ~4–7 s; `PtIntegrationTest` separat ~23 min.
+Alle 23 Testklassen liegen unter `backend/src/test/java/de/synthesis/`. Frischer
+Suite-Lauf: `cd backend && mvn -o test` → 60 Tests, 0 Fehler, 6
+umgebungsabhängige Skips, 1:21 min. `PtIntegrationTest` bleibt ohne
+`SYNTHESIS_TRANSIT_VENV` geskippt; der vollständige Lauf ist historisch mit
+~23 min überliefert. Die Tabelle hebt die externen, integrativen und für
+fachliche Invarianten wichtigsten Klassen hervor.
 
 | Klasse (Pfad relativ zu `backend/src/test/java/de/synthesis/`) | Prüft | Gates (`assumeTrue`) | Fixtures |
 |---|---|---|---|
+| `generation/pipeline/ExternalZonesTest.java` | Externer Ring: 8 eindeutige Zielzonen auf 12-km-Radius, fortlaufende IDs/Indizes, keine Einwohner und je Kategorie exakt vierfache interne Gesamtattraktivität; leeres Raster bleibt leer | keine | keine |
 | `generation/pipeline/FeedbackMathTest.java` | Reine Mathematik der MSA-Dämpfung: k=1 übernimmt Faktoren ungedämpft, konstante Faktoren → Δ=0 (Konvergenz), Oszillation 1↔2 wird Richtung Mittel gedämpft (Ergebnis in (1.3, 1.7)) | keine | keine |
+| `generation/pipeline/PopulationGeneratorTest.java` | Globale Stichprobeninvariante über 576 Zonen mit KIT-Haushalten: 5 % von 40.000 ergeben exakt 2.000 Personen in Ergebnis und CSV; verhindert zonenzahlabhängige Rundungs-/Haushaltsüberschreitung | keine | gebündeltes `kit-population-sample.csv` |
 | `generation/pipeline/ModeChoiceCalibratorTest.java` | ASC-Kalibrierung gegen Fake-Sim (Softmax über die ASCs): RMSE sinkt und erreicht ≤0,02 in ≤10 Iterationen; Anker `asc_car_d` und `b_time` bleiben unverändert; Kommentarzeilen der MNL-Datei erhalten. Clamp-Test: ΔASC je Iteration auf ±1,5 begrenzt. **Clamp-Semantik:** die geschriebene Datei hält den Stand VOR dem letzten Update, daher Assert `(iterations-1) * 1.5` | keine | keine (MNL-Fixture inline als String) |
 | `generation/pipeline/ShapefileWriterTest.java` | Liest das geschriebene ESRI-Shapefile binär zurück: file code 9994, Version 1000, shape type 5 (Polygon), Bbox, Record-Struktur (Header BE / Inhalt LE), geschlossener 5-Punkte-Ring, `.shx`-Offsets, dBase-Feld exakt `districtID` mit Werten `SYN-001`/`SYN-002`, `.prj` enthält `WGS_1984` — das Format, das der MobileCity-/Takomat-Import erwartet | keine | keine |
 | `generation/pipeline/GtfsCropperTest.java` | Bbox-Zuschnitt am echten KVV-Feed auf Rastatt: Halte/Trips/Routen > 0, Ergebnis < 1/20 der Feed-Größe, `shapes.txt` verworfen, **referenzielle Integrität** (jede trip_id/stop_id aus `stop_times.txt` existiert in `trips.txt`/`stops.txt`). Zweiter Test: Zeitfenster 6–10 Uhr reduziert die Trip-Zahl echt | `Files.exists(validation/kvv-gtfs.zip)` | `validation/kvv-gtfs.zip` |
@@ -67,7 +71,7 @@ frisch gemessen): Suite komplett ~4–5 min, davon `GtaBehaviorTest` ~2 min (Liv
 Verifizierte Kommandos:
 
 ```bash
-cd backend && mvn -o test                       # 18 Tests, PtIntegrationTest ohne Env-Var geskippt
+cd backend && mvn -o test                       # 60 Tests, 6 umgebungsabhängige Skips (2026-07-28)
 mvn -o test -Dtest=SumoRunnerTest               # nur SUMO-Kette
 SUMO_HOME=… SYNTHESIS_TRANSIT_VENV=validation/transit-venv/bin/python \
   mvn -o test -Dtest=PtIntegrationTest          # voller ÖV-Test (~23 min überliefert)
@@ -120,21 +124,22 @@ Schwellen werden VOR dem Lauf festgelegt**, nie nachträglich ans Ergebnis angep
   `ModeChoiceCalibratorTest`); ~0,07 erreicht gilt in der echten Simulation als gut.
 - **Netz-Feedback:** Konvergenz bei Δ < 0,01 (MSA-Δ über Relationen, vgl. `FeedbackMathTest`).
 - **Plausibilitätsfenster trips/Person/Tag:** ~2,8–3,5, Referenz MiD 3,1.
-- **Merge-Gate:** Suite 18/18 grün (`cd backend && mvn -o test`) plus
+- **Merge-Gate:** Suite 60/60 grün (`cd backend && mvn -o test`) plus
   `cd frontend && npx ng build` bei Frontend-Änderungen (Details → `synthesis-change-control`).
 - **OD-Stau-Faktoren:** in [1,3] (hart im `SumoRunnerTest` asserted).
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-07-08.** Ground Truth: alle 10 Testklassen unter `backend/src/test/java/`
-  wurden vollständig gelesen; Fixture-Größen per `ls` verifiziert (kvv-gtfs.zip 121 613 482 Bytes
+- **Stand: 2026-07-28.** Ground Truth: Suite mit 23 Testklassen und 60 Tests frisch
+  ausgeführt (0 Fehler, 6 Skips); Fixture-Größen historisch per `ls` verifiziert
+  (kvv-gtfs.zip 121 613 482 Bytes
   = 121 MB dezimal / 116 MiB, vom 2026-07-07 — andere Skills nennen dieselbe Datei
   „121 MB"). Laufzeiten und historische Zählwerte (10.966 Pakete, 141 Halte,
   498 Busse, RMSE ~0,07) sind **überliefert** aus Projekt-Doku/Commits, nicht in dieser
   Skill-Erstellung nachgemessen.
 - **Wartungspflicht:** Bei neuem Test → Tabelle in §2 ergänzen (Gates + Fixtures + Laufzeit).
   Bei neuem/entferntem Fixture → §4. Bei geänderter Schwelle → §5 mit Datum. Die
-  Testanzahl (18) und Skip-Semantik nach jeder Suite-Änderung gegen `mvn -o test` prüfen.
+  Testanzahl (60) und Skip-Semantik nach jeder Suite-Änderung gegen `mvn -o test` prüfen.
 - **Volatil:** kvv-gtfs.zip-Größe/Datum, Laufzeiten (hardwareabhängig), mobitopp-rastatt-Outputs.
 - Geschwister-Skills: `synthesis-change-control`, `synthesis-diagnostics-and-tooling`,
   `synthesis-research-methodology`, `synthesis-build-and-env`, `synthesis-debugging-playbook`.

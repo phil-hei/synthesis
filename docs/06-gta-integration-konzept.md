@@ -467,6 +467,23 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   `calibrateDistance` bleibt deshalb `default=false`. Nächster falsifizierbarer Hebel ist das
   lange Ende über größeren Untersuchungsraum und/oder gravitationskonsistente externe Ziele,
   danach Multi-Band-Kalibrierung. Details: `docs/05-validierung.md`.
+- **🔬 Großraum-Spike nach Intrazonal-Fix (2026-07-28): Gebietshebel bestätigt,
+  weiterhin nicht promotionsfähig.** Kontrolliertes Offline-A/B mit identischer
+  2,3-km-Auflösung, Seed 42, 2.000 Personen, Template-Verhalten, Luftlinienmatrizen und ohne
+  externe Zonen; einziger Szenario-Unterschied war die Region (ca. 7 × 7 km/9 Zonen gegenüber
+  55 × 55 km/576 Zonen). `>=10 km` stieg **0,0→11,6 %**, `>=20 km`
+  **0,0→5,3 %**, Ø **2,46→5,51 km**, Median **1,62→3,09 km** und Distanzband-RMSE
+  **0,2332→0,1693**; Wege/P/Tag blieben 3,09→3,06. Der frühere 0,30-km-Kollaps ist damit
+  nachweislich beseitigt. **Ehrliche Grenze:** MiD (Ø 12,5 km, 13 % ab 20 km, RMSE-Gate
+  höchstens 0,05) bleibt deutlich verfehlt, und 96,7 % der Wege über 20 km fallen auf den ÖV.
+  Nächster Hebel: modusspezifische Distanzsensitivität/Mehrband-Kalibrierung, danach
+  Drei-Seed- und Realrouting-Validierung.
+- **✅ Globale Stichprobengröße zonenzahlfest (2026-07-28):** Der erste Großraumlauf wurde
+  verworfen, weil `PopulationGenerator` bei 40.000 × 5 % zonenweise 2.015 Personen (9 Zonen)
+  beziehungsweise **2.516** (576 Zonen) erzeugte. Größter-Rest-Verteilung und Begrenzung des
+  letzten KIT-Haushalts liefern nun in beiden Gebieten exakt **2.000** Personen;
+  `PopulationGeneratorTest` reproduziert den 576-Zonen-Fall. Das Manifest nennt die aktive
+  Strukturquelle jetzt korrekt `kit-population-sample`. Details: `docs/05-validierung.md`.
 - **✅ Distanzdiagnostik im Studio und Szenario-Vergleich (2026-07-28):** Die sechs
   `distanceBands` und `distanceBandRmseToMid2017` aus `kpis.json` sind typisiert und werden neben
   der MiD-2017-Referenz im Studio sowie im A/B-Vergleich angezeigt. Ältere KPI-Dateien ohne diese

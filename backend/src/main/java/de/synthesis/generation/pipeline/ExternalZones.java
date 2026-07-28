@@ -6,11 +6,11 @@ import java.util.List;
 /**
  * Appends a ring of "external" zones representing destinations outside the study
  * area (jobs, shopping, leisure in the surrounding region). They carry no
- * residents but a pool of attractivity, so mobiTopp's destination choice sends a
- * share of flexible activities outward — producing the long trips a small study
- * area cannot generate internally and lifting the average trip length toward the
- * MiD reference. The zones flow unchanged through zones.csv, attractivities.csv,
- * the matrices (beeline, since they lie outside the routed network) and the legacy
+ * residents but a pool of attractivity, so mobiTopp's destination choice can send
+ * a share of flexible activities outward. The ring approximates surrounding
+ * destinations; it does not by itself reproduce the MiD long-distance tail. The
+ * zones flow unchanged through zones.csv, attractivities.csv, the matrices
+ * (beeline, since they lie outside the routed network) and the legacy
  * opportunities.
  */
 public final class ExternalZones {
@@ -25,6 +25,11 @@ public final class ExternalZones {
     };
 
     private ExternalZones() {
+    }
+
+    /** Radius used by the generated ring and by user-facing diagnostics. */
+    public static double radiusKm() {
+        return DISTANCE_KM;
     }
 
     /**

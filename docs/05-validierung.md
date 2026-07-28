@@ -232,6 +232,46 @@ Wege/Person·Tag bleibt 3,18. Die volle MiD-Distanz (12,5 km) ist so nicht errei
 Rastatt-Modell deckelt Fernwege; der eigentliche Hebel bleibt **Wahlmodell-Kalibrierung** (Distanz-
 Sensitivität) bzw. ein realistisch großes Untersuchungsgebiet.
 
+## Stichprobengröße bei vielen Zonen (2026-07-28) — korrigiert
+
+Ein präregistrierter Großraum-Spike deckte einen Skalierungsfehler in
+`PopulationGenerator` auf: Bei derselben Vorgabe 40.000 Personen × 5 % entstanden
+im kleinen 9-Zonen-Gebiet 2.015 Personen, im 576-Zonen-Gebiet aber 2.516. Die
+Ursache war zweifach: Die erwartete Stichprobe wurde je Zone einzeln gerundet und
+der letzte gezogene KIT-Haushalt durfte die verbleibende Zonensumme überschreiten.
+Der Fehler wuchs damit systematisch mit der Zonenzahl.
+
+**Fix**: Die ganzzahligen Zonensummen werden jetzt per größtem Rest aus der
+**globalen** Soll-Stichprobe abgeleitet; der letzte KIT-Haushalt wird auf die
+verbleibende Personenzahl begrenzt. `PopulationGeneratorTest` reproduziert den
+576-Zonen-Fall: 5 % von 40.000 ergeben exakt 2.000 Personen. Der wiederholte
+End-to-End-Spike bestätigte 2.000 Personen sowohl bei 9 als auch bei 576 Zonen.
+Das Manifest weist zugleich die aktive Strukturquelle korrekt als
+`kit-population-sample` statt pauschal `synthetic` aus.
+
+## Untersuchungsraum und Langdistanz (2026-07-28) — Mechanik bestätigt
+
+Nach dem Stichproben-Fix wurde der frühere Großraum-Befund mit dem inzwischen
+zellgrößen-skalierten Intrazonal-Boden wiederholt. Zwei Offline-Läufe unterschieden
+sich nur in der Region: ca. 7 × 7 km (9 Zonen) gegenüber ca. 55 × 55 km
+(576 Zonen), jeweils 2,3-km-Raster, 2.000 Personen, Template-Verhalten,
+Luftlinienmatrizen, keine externen Ringzonen.
+
+**Befund**: Der größere interne Zielraum erzeugt erstmals eine belastbare
+Langdistanzverteilung: Anteil `>=10 km` **0,0 → 11,6 %**, `>=20 km`
+**0,0 → 5,3 %**, Ø Weglänge **2,46 → 5,51 km**, Median
+**1,62 → 3,09 km** und Sechs-Band-RMSE zu MiD **0,2332 → 0,1693**.
+Wege/Person·Tag bleiben plausibel (**3,09 → 3,06**). Damit ist die Gebietsgröße
+als Hebel bestätigt, reicht allein aber nicht für MiD (12,5 km Ø, 13 % ab
+20 km, RMSE-Gate höchstens 0,05).
+
+**Konsequenz**: Kein weiterer reiner Ringversuch. Der nächste Schritt ist eine
+regionale Mehrband-Kalibrierung beziehungsweise die Distanzsensitivität je Modus:
+96,7 % der Wege über 20 km im Großraumlauf entfallen auf den ÖV, Pkw und
+Mitfahrer tragen zusammen nur 76 von 2.270 Fernwegen. Dieser starke Modus-Effekt
+muss vor einer Produktbeförderung erklärt und über mehrere Seeds mit realem
+Routing validiert werden.
+
 ## KIT actiTopp statt Template-Aktivitätenpläne (2026-06-12) — erfolgreich
 
 Die Wochenpläne kommen jetzt aus dem **kalibrierten KIT-Modell actiTopp** (actitoppNG, Kotlin),
