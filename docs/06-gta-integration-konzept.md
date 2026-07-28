@@ -436,7 +436,8 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   RMSE 0,165 → 0,150; Wegezahl exakt unverändert (87 010 Trips, 3,108 Wege/Person·Tag) — der Fix
   verschiebt nur Distanzen/Impedanzen, keine Nachfrage. **Konsequenz für Kalibrier-Baselines:**
   alle vorherigen Luftlinien-Kennzahlen (z. B. `<1 km`-Ist des `DistanceCalibrator`) verschieben
-  sich; das Kalibrier-Ziel (0,14) bleibt gültig, da der Kalibrator auf `b_intrazonal` regelt.
+  sich; der Kalibrator regelt weiterhin auf `b_intrazonal`, sein amtliches `<1 km`-Ziel ist seit
+  2026-07-27 jedoch 0,21 statt des verworfenen Näherungswerts 0,14.
   Tests: neuer `MatrixGeneratorTest` (Skalierung mit Zellgröße, Interzonal ohne Boden, intrazonal
   nie geroutet); Suite 35/35, ng build grün.
 - **🔬 Phase 4 — Drei-Seed-A/B teilweise bestanden (2026-07-27):** Präregistrierter Vergleich
@@ -453,8 +454,19 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   `[21, 14, 23, 16, 13, 13] %` scheitert der vorab fixierte RMSE-Gate:
   **0,1055→0,1055 / 0,1014→0,1094 / 0,1019→0,1019** (Ziel höchstens 0,05).
   `calibrateDistance` bleibt `default=false`; der Ziel-Property-Default ist **0,14→0,21**
-  korrigiert, aber noch nicht E2E revalidiert. `kpis.json` weist Bandanteile, Ziel, Quelle
+  korrigiert. `kpis.json` weist Bandanteile, Ziel, Quelle
   und RMSE für Folgeläufe direkt aus. Details: `docs/05-validierung.md`.
+- **🔬 Phase 4 — Wiederholung mit amtlichem 21-%-Ziel (2026-07-28): Mechanik bestanden,
+  Beförderung gescheitert.** Präregistrierte A/B-Wiederholung mit derselben Laufmatrix und ohne
+  ausgelöste Fallbacks. Der `<1 km`-Anteil stieg reproduzierbar
+  **15,15→19,49 / 16,05→20,22 / 15,52→19,70 %**; der Sechs-Band-RMSE verbesserte sich
+  **0,1055→0,0946 / 0,1014→0,0919 / 0,1019→0,0912**. Modal-RMSE verschlechterte sich nur um
+  0,0003–0,0048 (Gate höchstens 0,02), Wege/P/Tag blieben bei 3,19–3,26 und 98,7–98,8 % der
+  exportierten Personen waren mobil. **Ehrliche Grenze:** Der absolute RMSE-Gate ≤0,05 scheitert
+  in allen Seeds; mindestens 20 km erreichen in B nur 0,29–0,43 % statt 13 % in MiD.
+  `calibrateDistance` bleibt deshalb `default=false`. Nächster falsifizierbarer Hebel ist das
+  lange Ende über größeren Untersuchungsraum und/oder gravitationskonsistente externe Ziele,
+  danach Multi-Band-Kalibrierung. Details: `docs/05-validierung.md`.
 - **✅ Zonierungs-Default für Neuanlagen auf INSPIRE geflippt (2026-07-16):**
   `GET /api/scenarios/defaults` (Quelle des Studio-„Neues Szenario") liefert jetzt
   `zoning.mode = inspire`. Der **Feld-Default in `Scenario.Zoning` bleibt bewusst `grid`**:

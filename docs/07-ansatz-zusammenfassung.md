@@ -114,10 +114,11 @@ mehrere Sim-Läufe bis RMSE < Toleranz. Kombinierbar mit GTA.
 - **GTA trifft die MiD-Wegehäufigkeit** (~3,1 Wege/Person·Tag) nach Prompt-Tuning.
 - **GTA + Kalibrierung sind kombinierbar:** Kalibrierung halbiert den Modal-Split-Fehler auf
   GTA-Output (RMSE 0,16 → 0,07).
-- **Ehrlicher Distanz-Befund:** Die Nahdistanz-Kalibrierung senkte `<1 km` mit dem inzwischen
-  verworfenen Näherungsziel 14 % im Drei-Seed-Mittel 15,6→14,7 % und verfehlte die amtliche
-  MiD-Sechs-Band-Verteilung deutlich (B-RMSE 0,1019–0,1094 bei Ziel höchstens 0,05).
-  Amtlich sind `<1 km` 21 %; der Default ist korrigiert, aber noch nicht E2E revalidiert.
+- **Ehrlicher Distanz-Befund:** Mit dem amtlichen `<1 km`-Ziel 21 % regelt die
+  Nahdistanz-Kalibrierung über drei Seeds reproduzierbar in die richtige Richtung
+  (15,2–16,1 % → 19,5–20,2 %) und verbessert den Sechs-Band-RMSE je Seed um
+  0,0095–0,0109. Der Beförderungs-Gate ≤0,05 bleibt mit B-RMSE 0,0912–0,0946 unerreicht,
+  weil Fernwege fehlen; das Flag bleibt opt-in.
 - **Ehrlicher KI-Befund:** rohe LLM-Moduswahl hat einen **Bias zu aktiven Modi** (zu viel Rad),
   weil ihr die kalibrierten Modus-Konstanten fehlen – sie ist eine interessante, aber
   kalibrierbedürftige Alternativlinse.

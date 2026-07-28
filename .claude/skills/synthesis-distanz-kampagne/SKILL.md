@@ -185,10 +185,10 @@ Erledigt (`backend/.../pipeline/DistanceCalibrator.java`, Muster `ModeChoiceCali
   Tabelle A W12: 10 % `<0,5 km` + 11 % `0,5–<1 km`; tunbar).
 - `DistanceCalibratorTest` (Fake-Sim-Konvergenz von oberhalb UND unterhalb des Ziels +
   Clamp-Semantik: Datei hält Zustand VOR dem letzten Update) grün. Studio-Checkbox vorhanden.
-- **Mechanik End-to-End-validiert, Zielwert damals falsch:** Ein Schritt (`Δb −1,74`) brachte
-  `<1 km` 0,250 → **0,142** auf realem logiTopp. Das bewies die Reglerwirkung, verwendete aber
-  den am 2026-07-27 fachlich verworfenen Näherungswert 0,14; der neue amtliche Default 0,21 ist
-  noch nicht E2E revalidiert.
+- **Mechanik End-to-End-validiert:** Die historische Einzelprüfung brachte `<1 km` mit dem
+  später verworfenen Näherungswert 0,14 von 0,250 → 0,142. Die präregistrierte
+  Drei-Seed-Wiederholung vom 2026-07-28 validiert den amtlichen Default 0,21:
+  0,1515→0,1949 / 0,1605→0,2022 / 0,1552→0,1970, jeweils nach drei Iterationen.
 
 *Offen für später:* Multi-Band-Ziel (Hebel `b_0_1`/`b_1_2` ergänzen); Komposition mit der
 Modal-Split-Kalibrierung (heute gegenseitig ausschließend, `calibrateDistance` hat Vorrang); und
@@ -209,8 +209,16 @@ vorher→nachher-Zahlen, Flag bleibt opt-in bis Partner-Feedback).
 Näherungsziel 0,14 senkte `<1 km` im Mittel 15,6→14,7 %, verfehlte aber den amtlich aus
 MiD A W12 aggregierten Sechs-Band-Vektor `[21, 14, 23, 16, 13, 13] %`: B-RMSE
 0,1019–0,1094 bei vorab gesetztem Ziel ≤0,05; Seed 43 verschlechterte sich um 0,0080.
-Kein Default-Flip. Wiederholung erst mit Default 0,21; `kpis.json` liefert Bandanteile und
-`distanceBandRmseToMid2017` direkt.
+Kein Default-Flip.
+
+**🔬 Drei-Seed-Wiederholung 2026-07-28 mit Default 0,21: Mechanik bestanden,
+Beförderung gescheitert.** `<1 km` steigt je Seed in das vorab definierte Fenster 19–23 %
+(19,49/20,22/19,70 %); der Sechs-Band-RMSE verbessert sich
+0,1055→0,0946 / 0,1014→0,0919 / 0,1019→0,0912. Modal-RMSE-Verschlechterung
+≤0,0048, Wege/P/Tag 3,19–3,26, keine ausgelösten Fallbacks. Der absolute Gate ≤0,05
+scheitert dennoch in allen Seeds, weil ≥20-km-Wege mit 0,29–0,43 % statt 13 % fast fehlen.
+`calibrateDistance` bleibt opt-in. Nächster Schritt: langes Ende über größeren Raum und/oder
+gravitationskonsistente externe Ziele, danach Multi-Band-Hebel.
 
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
@@ -249,7 +257,7 @@ Verifiziert am 2026-07-10: Parameterdateien + Inhalte (ls/cat oben), `destinatio
 Verdrahtung (grep in SimulationRunner.java Z. 106–114), Baseline-Messung (distance_profile.py,
 70 188 Trips). Überliefert: Externe-Zonen-Befunde (docs/06, 2026-06-12), Kalibrier-Blaupause-
 Kennwerte (docs/06, 2026-06-21). MiD-Distanzziel: Tabellenband Deutschland, Tabelle A W12;
-Drei-Seed-Gate und Zielwert-Korrektur: docs/05–06 (2026-07-27).
+Drei-Seed-Gates und Zielwert-Korrektur: docs/05–06 (2026-07-27/28).
 
 Re-Verifikation:
 ```bash

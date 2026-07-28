@@ -386,10 +386,37 @@ vollständige Distanz-Gate ist nicht bestanden. Der absolute Distanzmittelwert b
 3,77–3,87 km weit vom MiD-Anker 12,5 km entfernt; `calibrateDistance` bleibt
 `default=false`. Der Betriebs-Default `distance-calibration-target-near-share` ist
 **0,14→0,21** korrigiert und teilt nun dieselbe `Mid2017`-Referenz wie die KPI-Auswertung.
-Die Drei-Seed-Kampagne validiert den korrigierten Zielwert ausdrücklich noch nicht und muss
-vor einer Beförderung wiederholt werden. `SimulationResultIngestor` schreibt die sechs
+Die anschließende Drei-Seed-Wiederholung mit 0,21 steht im folgenden Abschnitt.
+`SimulationResultIngestor` schreibt die sechs
 gemessenen Anteile, den MiD-Zielvektor samt Quellenlink und `distanceBandRmseToMid2017`
 direkt nach `simulation/kpis.json`.
+
+## Distanz-Kalibrierung mit 21-%-Ziel (2026-07-28) — Mechanik bestanden, Beförderung gescheitert
+
+Präregistrierte Wiederholung des A/B-Vergleichs mit identischer Laufmatrix (Seeds 42/43/44,
+je 2.045/2.033/2.037 exportierte Personen, actiTopp, logiTopp, lokaler Rastatt-OSM-Extrakt).
+Einziger A/B-Unterschied war erneut `population.calibrateDistance`; alle sechs Jobs endeten
+mit `DONE`, `fractionOfPopulation: 1.0`, 98,7–98,8 % mobilen Personen und ohne ausgelösten
+actiTopp-, Routing- oder logiTopp-Fallback.
+
+| Seed | `<1 km` A→B | Ø km A→B | Median km A→B | Distanz-RMSE A→B | Modal-RMSE A→B | Wege/P/Tag | Iterationen B |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 42 | 15,15→19,49 % | 3,77→3,67 | 2,96→2,83 | 0,1055→0,0946 | 0,0697→0,0740 | 3,20 | 3 |
+| 43 | 16,05→20,22 % | 3,76→3,66 | 2,95→2,83 | 0,1014→0,0919 | 0,0747→0,0795 | 3,26 | 3 |
+| 44 | 15,52→19,70 % | 3,87→3,76 | 3,03→2,87 | 0,1019→0,0912 | 0,0729→0,0732 | 3,19 | 3 |
+
+**Befund**: Der amtliche Zielwert 21 % wirkt reproduzierbar in der richtigen Richtung. Alle
+B-Läufe erreichen das vorab festgelegte Nahdistanzfenster 19–23 %; der Sechs-Band-RMSE verbessert
+sich je Seed um 0,0095–0,0109. Die Schutzmetriken bestehen: Modal-RMSE verschlechtert sich nur um
+0,0003–0,0048 (Gate höchstens 0,02), Wege/P/Tag bleiben in [3,0; 3,4].
+
+**Konsequenz**: Der Beförderungs-Gate `Distanz-RMSE ≤ 0,05` scheitert dennoch bei allen Seeds
+(B: 0,0912–0,0946). Der einzelne `b_intrazonal`-Hebel korrigiert das kurze Ende, erzeugt aber
+keine Fernwege: In B liegen nur 0,29–0,43 % der Wege bei mindestens 20 km statt 13 % in MiD;
+Ø und Median sinken durch mehr Nahwege sogar leicht. `calibrateDistance` bleibt
+`default=false`. Der nächste Versuch muss das lange Ende über einen größeren Untersuchungsraum
+und/oder gravitationskonsistente externe Ziele adressieren; erst danach ist eine Multi-Band-
+Kalibrierung mit getrennten Hebeln sinnvoll.
 
 ## Offene Punkte (nächste Schritte)
 
