@@ -292,6 +292,8 @@ sechs Bänder aggregiert. Für Wege ab 20 km erwartet MiD beispielsweise
 Der nächste Kalibrierlauf muss `b_tt_put` daher zwischen `-0,05` und `-0,20`
 gegen diese gemeinsame Zielmatrix suchen und anschließend über drei Seeds mit
 realem Routing bestehen.
+Das Studio zeigt die vollständige 6×5-Matrix als Simulation/MiD-Paare; der
+Szenario-Vergleich stellt den gemeinsamen RMSE laufübergreifend gegenüber.
 
 ## KIT actiTopp statt Template-Aktivitätenpläne (2026-06-12) — erfolgreich
 

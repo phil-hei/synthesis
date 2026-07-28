@@ -686,6 +686,37 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     }));
   }
 
+  /** Bedingter Modal Split je Distanzband; jede Zelle vergleicht Simulation und MiD. */
+  get modeDistanceRows(): {
+    label: string;
+    modes: { key: string; label: string; sim: number | null; mid: number | null }[];
+  }[] {
+    const sim = this.simKpis?.demand?.modalSplitByDistanceBand;
+    const mid = this.simKpis?.mid2017?.modalSplitByDistanceBand;
+    if (!sim && !mid) {
+      return [];
+    }
+    const modes = [
+      { key: 'pedestrian', label: 'Fuß' },
+      { key: 'bike', label: 'Rad' },
+      { key: 'car', label: 'Pkw' },
+      { key: 'passenger', label: 'Mitf.' },
+      { key: 'publicTransport', label: 'ÖV' }
+    ];
+    return DISTANCE_BAND_ROWS.map(({ key, label }) => ({
+      label,
+      modes: modes.map(mode => ({
+        ...mode,
+        sim: sim?.[key]?.[mode.key] ?? null,
+        mid: mid?.[key]?.[mode.key] ?? null
+      }))
+    }));
+  }
+
+  pct1(value: number | null): string {
+    return value == null ? '–' : (value * 100).toFixed(1).replace('.', ',') + ' %';
+  }
+
   artifactUrl(path: string): string {
     return this.scenario?.id ? this.api.artifactUrl(this.scenario.id, path) : '#';
   }

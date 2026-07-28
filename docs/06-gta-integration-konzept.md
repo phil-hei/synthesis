@@ -490,6 +490,8 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   auf die vorhandenen sechs Distanzbänder aggregiert; ab 20 km: 61,1 % Pkw-Fahrer,
   18,9 % Mitfahrer, 17,6 % ÖV. Nächster Versuch: `b_tt_put` zwischen −0,05 und
   −0,20 gegen diese gemeinsame Zielmatrix, dann drei Seeds und Realrouting.
+  Das Studio visualisiert alle 30 Zellen als Simulation/MiD-Paare; der
+  Szenario-Vergleich zeigt den gemeinsamen RMSE.
 - **✅ Globale Stichprobengröße zonenzahlfest (2026-07-28):** Der erste Großraumlauf wurde
   verworfen, weil `PopulationGenerator` bei 40.000 × 5 % zonenweise 2.015 Personen (9 Zonen)
   beziehungsweise **2.516** (576 Zonen) erzeugte. Größter-Rest-Verteilung und Begrenzung des

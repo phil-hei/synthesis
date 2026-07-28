@@ -391,6 +391,32 @@
         </p>
       </ng-container>
 
+      <ng-container *ngIf="modeDistanceRows.length > 0">
+        <h3>Modal Split je Distanzband</h3>
+        <div class="table-scroll">
+          <table class="kpis mode-distance">
+            <tr>
+              <th>Wegelänge</th>
+              <th *ngFor="let mode of modeDistanceRows[0].modes">{{ mode.label }}</th>
+            </tr>
+            <tr *ngFor="let row of modeDistanceRows">
+              <td>{{ row.label }}</td>
+              <td *ngFor="let mode of row.modes"
+                  title="Simulation / MiD 2017">
+                {{ pct1(mode.sim) }} / {{ pct1(mode.mid) }}
+              </td>
+            </tr>
+          </table>
+        </div>
+        <p class="hint">
+          Je Zelle: Simulation / MiD. Gemeinsamer 30-Zellen-RMSE:
+          {{ simKpis.demand?.modeDistanceJointRmseToMid2017 ?? '–' }}.
+          <a *ngIf="simKpis.mid2017?.modeDistanceSourceUrl"
+             [href]="simKpis.mid2017?.modeDistanceSourceUrl"
+             target="_blank" rel="noopener">Quelle: {{ simKpis.mid2017?.modeDistanceSource }}</a>
+        </p>
+      </ng-container>
+
       <ng-container *ngIf="llmModeChoice">
         <h3>LLM-Moduswahl (experimentell) vs. MNL / MiD</h3>
         <table class="kpis modal-split">

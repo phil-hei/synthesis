@@ -52,7 +52,8 @@ export class ComparisonComponent implements OnInit {
       this.entries = entries;
       // Bei gemischten Alt-/Neuläufen die reichste Referenz wählen: ältere kpis.json
       // enthalten noch keine Distanzbänder, bleiben aber weiterhin vergleichbar.
-      const referenceEntry = entries.find(e => e.kpis?.mid2017?.distanceBands)
+      const referenceEntry = entries.find(e => e.kpis?.mid2017?.modalSplitByDistanceBand)
+        ?? entries.find(e => e.kpis?.mid2017?.distanceBands)
         ?? entries.find(e => e.kpis);
       this.mid = referenceEntry?.kpis?.mid2017 ?? null;
       const unsimulated = entries.filter(e => !e.simulated).map(e => e.name);
@@ -79,6 +80,11 @@ export class ComparisonComponent implements OnInit {
     return DISTANCE_BAND_ROWS.filter(({ key }) =>
       this.entries.some(e => e.kpis?.demand?.distanceBands?.[key] != null)
       || this.mid?.distanceBands?.[key] != null);
+  }
+
+  get hasModeDistanceKpis(): boolean {
+    return this.entries.some(e =>
+      e.kpis?.demand?.modeDistanceJointRmseToMid2017 != null);
   }
 
   /** SUMO-Zeilen nur zeigen, wenn mindestens ein Szenario einen SUMO-Lauf hat. */

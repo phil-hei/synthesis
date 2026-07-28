@@ -92,6 +92,19 @@
           <td class="mid-col" *ngIf="mid">{{ pct(mid.modalSplit?.[key]) }}</td>
         </tr>
 
+        <ng-container *ngIf="hasModeDistanceKpis">
+          <tr class="group">
+            <td [attr.colspan]="entries.length + 2">Modus × Distanz</td>
+          </tr>
+          <tr>
+            <td>Gemeinsamer 30-Zellen-RMSE zu MiD</td>
+            <td *ngFor="let e of entries">
+              {{ e.kpis?.demand?.modeDistanceJointRmseToMid2017 ?? '–' }}
+            </td>
+            <td class="mid-col" *ngIf="mid">0</td>
+          </tr>
+        </ng-container>
+
         <tr class="group"><td [attr.colspan]="entries.length + 2">Logistik</td></tr>
         <tr>
           <td>Pakete</td>
