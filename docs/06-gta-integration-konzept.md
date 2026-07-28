@@ -492,6 +492,20 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   −0,20 gegen diese gemeinsame Zielmatrix, dann drei Seeds und Realrouting.
   Das Studio visualisiert alle 30 Zellen als Simulation/MiD-Paare; der
   Szenario-Vergleich zeigt den gemeinsamen RMSE.
+- **🔬 Modus-Distanz-Kalibrierung (2026-07-28): Zwei-Hebel-Mechanik bestätigt,
+  Promotions-Gate verfehlt.** Das präregistrierte `b_tt_put`-Raster
+  −0,08/−0,10/−0,12 verschob ÖV ab 20 km streng monoton auf
+  71,03/23,16/3,50 %, verbesserte den Joint-RMSE aber höchstens
+  0,054671→0,054109. Ein Zeitkoeffizient trifft Niveau und Schräge nicht
+  gleichzeitig. Eine separat präregistrierte Kombination
+  `b_tt_put=-0,11`, `asc_put=-1,22` erreichte **9,34 % ÖV gesamt** (MiD 10 %)
+  und **17,60 % ÖV ab 20 km** (MiD 17,61 %); Modal-RMSE
+  0,105742→0,085375, Joint-RMSE 0,054671→0,053002, Wege/Distanzbänder stabil.
+  **Keine Beförderung:** Der unveränderte Gate Joint-RMSE <0,05 und
+  Verbesserung ≥0,004 scheitert; die fehlende Distanzmarginale (hier 0 %
+  statt 21 % unter 1 km) ist nicht über Modusparameter heilbar. Kein
+  Produktparameter geändert. Nächster Schritt: drei Seeds + Realrouting +
+  gemeinsame Distanzmarginale; Legacy-ÖV-Zugang/-Abgang separat korrigieren.
 - **✅ Globale Stichprobengröße zonenzahlfest (2026-07-28):** Der erste Großraumlauf wurde
   verworfen, weil `PopulationGenerator` bei 40.000 × 5 % zonenweise 2.015 Personen (9 Zonen)
   beziehungsweise **2.516** (576 Zonen) erzeugte. Größter-Rest-Verteilung und Begrenzung des

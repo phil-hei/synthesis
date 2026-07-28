@@ -295,6 +295,32 @@ realem Routing bestehen.
 Das Studio zeigt die vollständige 6×5-Matrix als Simulation/MiD-Paare; der
 Szenario-Vergleich stellt den gemeinsamen RMSE laufübergreifend gegenüber.
 
+## Modus-Distanz-Kalibrierung (2026-07-28) — Mechanik bestätigt, Beförderung gescheitert
+
+Ein präregistriertes Raster auf demselben Großraum-Export variierte
+ausschließlich `b_tt_put`: `-0,08/-0,10/-0,12`. Der ÖV-Anteil ab 20 km reagierte
+streng monoton (**71,03/23,16/3,50 %**), der gemeinsame RMSE verbesserte sich
+aber höchstens **0,054671→0,054109**. Kein Punkt bestand den vorab fixierten
+Gate `<0,05` und mindestens `0,004` Verbesserung. Ein einzelner
+Reisezeitkoeffizient kann die globale ÖV-Höhe und ihre Distanzschräge nicht
+gleichzeitig treffen.
+
+Die daraufhin separat präregistrierte Zwei-Hebel-Sonde trennte beide Effekte:
+`b_tt_put=-0,11` steuert die Distanzschräge, `asc_put=-1,22` das Niveau.
+Auf demselben Export ergaben sich **9,34 % ÖV gesamt** (MiD 10 %) und
+**17,60 % ÖV ab 20 km** (MiD 17,61 %). Modal-RMSE verbesserte sich
+**0,105742→0,085375**, der 30-Zellen-RMSE **0,054671→0,053002**;
+Wegezahl (+0,37 %) und Distanzbänder (<0,1 Prozentpunkte Abweichung) blieben
+stabil. Alle Mechanik-Gates bestanden.
+
+**Keine Beförderung:** Der unveränderte Joint-Gate `<0,05` und die geforderte
+Verbesserung um mindestens 0,004 scheitern. Hauptrestfehler ist jetzt die
+Distanzmarginale selbst (im Großraum-Spike 0 % statt MiD 21 % unter 1 km),
+die Moduswahlparameter nicht erzeugen können. Die gefundenen Werte werden
+nicht in den Produktcode übernommen. Nächster Pflichtschritt: gemeinsamer
+Drei-Seed-Vergleich mit echtem Routing und korrigierter Distanzmarginale;
+ÖV-Zugang/Abgang im Legacy-Helper bleibt ein separater Modellierungsfehler.
+
 ## KIT actiTopp statt Template-Aktivitätenpläne (2026-06-12) — erfolgreich
 
 Die Wochenpläne kommen jetzt aus dem **kalibrierten KIT-Modell actiTopp** (actitoppNG, Kotlin),

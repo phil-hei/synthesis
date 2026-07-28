@@ -220,6 +220,19 @@ scheitert dennoch in allen Seeds, weil ≥20-km-Wege mit 0,29–0,43 % statt 13 
 `calibrateDistance` bleibt opt-in. Nächster Schritt: langes Ende über größeren Raum und/oder
 gravitationskonsistente externe Ziele, danach Multi-Band-Hebel.
 
+**🔬 Modus×Distanz-Kalibrierung 2026-07-28: Mechanik bestanden, Beförderung
+gescheitert.** Auf demselben Großraum-Export reagierte ÖV ab 20 km streng monoton auf
+`b_tt_put=-0,08/-0,10/-0,12` (71,03/23,16/3,50 %); ein Koeffizient konnte globales
+ÖV-Niveau und Distanzschräge nicht zugleich treffen. Die präregistrierte Zwei-Hebel-
+Kombination `b_tt_put=-0,11`, `asc_put=-1,22` traf beide Ziele nahezu:
+ÖV gesamt 9,34 % (MiD 10 %), ÖV ab 20 km 17,60 % (MiD 17,61 %),
+Modal-RMSE 0,105742→0,085375, Joint-RMSE 0,054671→0,053002. Wegezahl und
+Distanzbänder blieben stabil. Der Promotions-Gate Joint-RMSE <0,05 und Verbesserung
+≥0,004 scheitert dennoch, weil die Distanzmarginale selbst falsch bleibt (0 % statt
+21 % unter 1 km). **Regel:** `b_tt_put` (Schräge) nie allein kalibrieren; mit `asc_put`
+(Niveau) komponieren, aber keine Werte vor Drei-Seed-/Realrouting-/Distanzmarginal-
+Validierung übernehmen.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.
@@ -251,7 +264,7 @@ Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `M
 | Frage „wurde X schon probiert?" | synthesis-failure-archaeology |
 | Prozess-/Evidenzfragen | synthesis-research-methodology |
 
-## Provenienz & Wartung (Stand: 2026-07-27)
+## Provenienz & Wartung (Stand: 2026-07-28)
 
 Verifiziert am 2026-07-10: Parameterdateien + Inhalte (ls/cat oben), `destinationChoice:`-
 Verdrahtung (grep in SimulationRunner.java Z. 106–114), Baseline-Messung (distance_profile.py,
