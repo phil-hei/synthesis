@@ -272,6 +272,27 @@ Mitfahrer tragen zusammen nur 76 von 2.270 Fernwegen. Dieser starke Modus-Effekt
 muss vor einer Produktbeförderung erklärt und über mehrere Seeds mit realem
 Routing validiert werden.
 
+**Modus-Distanz-Ursache isoliert**: Im aktiven Rastatt-MNL ist der
+Reisezeitkoeffizient für ÖV mit `b_tt_put=-0,05` nur ein Viertel so stark wie
+für Pkw-Fahrer (`b_tt_car_d=-0,20`). Eine präregistrierte Ein-Faktor-Sonde auf
+dem identischen Großraum-Export setzte nur `b_tt_put` auf `-0,20`. Die
+Distanzverteilung blieb praktisch gleich (Ø **5,51→5,54 km**), aber der
+ÖV-Anteil brach insgesamt **21,8→0,4 %** und ab 20 km **96,7→0,0 %** ein;
+Pkw-Fahrer und Mitfahrer übernahmen dort 100 %. Der Koeffizient ist damit als
+dominanter Hebel bewiesen, `-0,20` zugleich als Überkorrektur verworfen.
+
+Getrennte Modal- und Distanz-RMSEs können diese Fehlallokation verdecken.
+`simulation/kpis.json` enthält deshalb zusätzlich den bedingten
+`modalSplitByDistanceBand` und den gemeinsamen 30-Zellen-
+`modeDistanceJointRmseToMid2017`. Referenz ist die amtliche
+[MiD-2017-Tabelle A W10.5](https://www.mobilitaet-in-deutschland.de/archive/pdf/MiD2017_Tabellenband_Deutschland.pdf);
+die veröffentlichten Distanzklassen wurden ohne Interpolation auf dieselben
+sechs Bänder aggregiert. Für Wege ab 20 km erwartet MiD beispielsweise
+**61,1 % Pkw-Fahrer, 18,9 % Mitfahrer und 17,6 % ÖV**, nicht 96,7 % ÖV.
+Der nächste Kalibrierlauf muss `b_tt_put` daher zwischen `-0,05` und `-0,20`
+gegen diese gemeinsame Zielmatrix suchen und anschließend über drei Seeds mit
+realem Routing bestehen.
+
 ## KIT actiTopp statt Template-Aktivitätenpläne (2026-06-12) — erfolgreich
 
 Die Wochenpläne kommen jetzt aus dem **kalibrierten KIT-Modell actiTopp** (actitoppNG, Kotlin),

@@ -478,6 +478,18 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   höchstens 0,05) bleibt deutlich verfehlt, und 96,7 % der Wege über 20 km fallen auf den ÖV.
   Nächster Hebel: modusspezifische Distanzsensitivität/Mehrband-Kalibrierung, danach
   Drei-Seed- und Realrouting-Validierung.
+- **🔬 ÖV-Reisezeit-Elastizität isoliert + gemeinsames Ziel verankert (2026-07-28):**
+  Ein Ein-Faktor-Spike auf demselben Großraum-Export änderte ausschließlich
+  `b_tt_put` von −0,05 auf den Pkw-Wert −0,20. Die Distanzverteilung blieb stabil
+  (Ø 5,51→5,54 km), der ÖV-Anteil fiel jedoch insgesamt 21,8→0,4 % und ab 20 km
+  96,7→0,0 %; die langen Wege wechselten vollständig zu Pkw-Fahrer/Mitfahrer.
+  Damit ist der MNL-Zeitkoeffizient als Ursache bestätigt, −0,20 aber als
+  Überkorrektur verworfen. Weil getrennte Randverteilungs-RMSEs diesen Fehler
+  verdecken, schreibt `kpis.json` nun `modalSplitByDistanceBand` und den
+  30-Zellen-`modeDistanceJointRmseToMid2017`. Ziel ist MiD 2017 Tabelle A W10.5,
+  auf die vorhandenen sechs Distanzbänder aggregiert; ab 20 km: 61,1 % Pkw-Fahrer,
+  18,9 % Mitfahrer, 17,6 % ÖV. Nächster Versuch: `b_tt_put` zwischen −0,05 und
+  −0,20 gegen diese gemeinsame Zielmatrix, dann drei Seeds und Realrouting.
 - **✅ Globale Stichprobengröße zonenzahlfest (2026-07-28):** Der erste Großraumlauf wurde
   verworfen, weil `PopulationGenerator` bei 40.000 × 5 % zonenweise 2.015 Personen (9 Zonen)
   beziehungsweise **2.516** (576 Zonen) erzeugte. Größter-Rest-Verteilung und Begrenzung des

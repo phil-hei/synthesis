@@ -69,11 +69,13 @@ public class SimulationResultIngestor {
         final Set<String> persons = new HashSet<>();
         final Map<String, Long> modeCounts = new LinkedHashMap<>();
         final long[] distanceBandCounts = new long[Mid2017.DISTANCE_BANDS.size()];
+        final Map<String, long[]> modeDistanceCounts = new LinkedHashMap<>();
     }
 
     private Demand readDemand(Path file) throws IOException {
         Demand demand = new Demand();
         Map<String, Double> tripDistances = new HashMap<>();
+        Map<String, String> tripModes = new HashMap<>();
         Set<String> startedTrips = new HashSet<>();
         forEachRow(file, (header, cells) -> {
             String personOid = cells[header.get("personOid")];
@@ -84,13 +86,20 @@ public class SimulationResultIngestor {
             // eine Zeile je Weg-Etappe; legId 0 = Wegbeginn
             if ("0".equals(cells[header.get("legId")]) && startedTrips.add(tripKey)) {
                 demand.trips++;
-                demand.modeCounts.merge(modeName(cells[header.get("tripMode")]), 1L, Long::sum);
+                String mode = modeName(cells[header.get("tripMode")]);
+                tripModes.put(tripKey, mode);
+                demand.modeCounts.merge(mode, 1L, Long::sum);
             }
         });
         for (String tripKey : startedTrips) {
             double distanceKm = tripDistances.getOrDefault(tripKey, 0.0);
             demand.totalKm += distanceKm;
-            demand.distanceBandCounts[distanceBandIndex(distanceKm)]++;
+            int bandIndex = distanceBandIndex(distanceKm);
+            demand.distanceBandCounts[bandIndex]++;
+            demand.modeDistanceCounts
+                    .computeIfAbsent(tripModes.get(tripKey),
+                            ignored -> new long[Mid2017.DISTANCE_BANDS.size()])
+                    [bandIndex]++;
         }
         return demand;
     }
@@ -207,6 +216,13 @@ public class SimulationResultIngestor {
         ObjectNode split = demandNode.putObject("modalSplit");
         demand.modeCounts.forEach((mode, count) ->
                 split.put(mode, round2(count / (double) Math.max(1, demand.trips))));
+        putModalSplitByDistanceBand(demandNode.putObject("modalSplitByDistanceBand"), demand);
+        if (demand.trips == 0) {
+            demandNode.putNull("modeDistanceJointRmseToMid2017");
+        } else {
+            demandNode.put("modeDistanceJointRmseToMid2017",
+                    round4(modeDistanceJointRmse(demand.modeDistanceCounts, demand.trips)));
+        }
 
         ObjectNode parcelsNode = kpis.putObject("parcels");
         parcelsNode.put("total", parcels);
@@ -225,6 +241,15 @@ public class SimulationResultIngestor {
         }
         mid.put("distanceBandsSource", Mid2017.DISTANCE_BANDS_SOURCE);
         mid.put("distanceBandsSourceUrl", Mid2017.DISTANCE_BANDS_SOURCE_URL);
+        ObjectNode midModeByDistance = mid.putObject("modalSplitByDistanceBand");
+        for (Mid2017.ModeDistanceBand band : Mid2017.MODAL_SPLIT_BY_DISTANCE_BAND) {
+            ObjectNode bandNode = midModeByDistance.putObject(band.key());
+            for (String mode : Mid2017.MODES) {
+                bandNode.put(mode, band.modalSplit().get(mode));
+            }
+        }
+        mid.put("modeDistanceSource", Mid2017.MODE_DISTANCE_SOURCE);
+        mid.put("modeDistanceSourceUrl", Mid2017.DISTANCE_BANDS_SOURCE_URL);
 
         mapper.writerWithDefaultPrettyPrinter().writeValue(out.toFile(), kpis);
     }
@@ -233,6 +258,19 @@ public class SimulationResultIngestor {
         for (int i = 0; i < Mid2017.DISTANCE_BANDS.size(); i++) {
             double share = trips == 0 ? 0 : counts[i] / (double) trips;
             node.put(Mid2017.DISTANCE_BANDS.get(i).key(), round4(share));
+        }
+    }
+
+    private static void putModalSplitByDistanceBand(ObjectNode node, Demand demand) {
+        for (int bandIndex = 0; bandIndex < Mid2017.DISTANCE_BANDS.size(); bandIndex++) {
+            ObjectNode bandNode =
+                    node.putObject(Mid2017.DISTANCE_BANDS.get(bandIndex).key());
+            long bandTrips = demand.distanceBandCounts[bandIndex];
+            for (String mode : Mid2017.MODES) {
+                long[] counts = demand.modeDistanceCounts.get(mode);
+                long count = counts == null ? 0 : counts[bandIndex];
+                bandNode.put(mode, bandTrips == 0 ? 0 : round4(count / (double) bandTrips));
+            }
         }
     }
 
@@ -266,6 +304,28 @@ public class SimulationResultIngestor {
             squaredError += difference * difference;
         }
         return Math.sqrt(squaredError / counts.length);
+    }
+
+    static double modeDistanceJointRmse(Map<String, long[]> counts, long trips) {
+        if (trips <= 0) {
+            throw new IllegalArgumentException("Mindestens ein Weg erwartet");
+        }
+        double squaredError = 0;
+        int cells = 0;
+        for (int bandIndex = 0; bandIndex < Mid2017.DISTANCE_BANDS.size(); bandIndex++) {
+            double targetBandShare = Mid2017.DISTANCE_BANDS.get(bandIndex).share();
+            Mid2017.ModeDistanceBand targetBand =
+                    Mid2017.MODAL_SPLIT_BY_DISTANCE_BAND.get(bandIndex);
+            for (String mode : Mid2017.MODES) {
+                long[] modeCounts = counts.get(mode);
+                double observed = modeCounts == null ? 0 : modeCounts[bandIndex] / (double) trips;
+                double target = targetBandShare * targetBand.modalSplit().get(mode);
+                double difference = observed - target;
+                squaredError += difference * difference;
+                cells++;
+            }
+        }
+        return Math.sqrt(squaredError / cells);
     }
 
     private void writeDepotStats(Path out, Map<String, DepotStats> depots) throws IOException {

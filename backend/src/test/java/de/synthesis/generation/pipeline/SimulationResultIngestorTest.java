@@ -57,10 +57,22 @@ class SimulationResultIngestorTest {
         assertThat(kpis.at("/demand/distanceBands/km1ToUnder2").asDouble()).isEqualTo(0.5);
         assertThat(kpis.at("/demand/distanceBands/km20AndMore").asDouble()).isEqualTo(0.5);
         assertThat(kpis.at("/demand/distanceBandRmseToMid2017").asDouble()).isEqualTo(0.2601);
+        assertThat(kpis.at("/demand/modalSplitByDistanceBand/km1ToUnder2/car").asDouble())
+                .isEqualTo(1.0);
+        assertThat(kpis.at("/demand/modalSplitByDistanceBand/km20AndMore/pedestrian").asDouble())
+                .isEqualTo(1.0);
+        assertThat(kpis.at("/demand/modeDistanceJointRmseToMid2017").asDouble())
+                .isEqualTo(0.131);
         assertThat(kpis.at("/mid2017/distanceBands/under1Km").asDouble()).isEqualTo(0.21);
         assertThat(kpis.at("/mid2017/distanceBands/km20AndMore").asDouble()).isEqualTo(0.13);
+        assertThat(kpis.at("/mid2017/modalSplitByDistanceBand/km20AndMore/car").asDouble())
+                .isEqualTo(0.611);
+        assertThat(kpis.at("/mid2017/modalSplitByDistanceBand/km20AndMore/publicTransport").asDouble())
+                .isEqualTo(0.1761);
         assertThat(kpis.at("/mid2017/distanceBandsSource").asText())
                 .contains("Tabelle A W12");
+        assertThat(kpis.at("/mid2017/modeDistanceSource").asText())
+                .contains("Tabelle A W10.5");
         assertThat(kpis.at("/mid2017/distanceBandsSourceUrl").asText())
                 .endsWith("MiD2017_Tabellenband_Deutschland.pdf");
     }

@@ -25,6 +25,9 @@ export const DISTANCE_BAND_ROWS: ReadonlyArray<{ key: keyof DistanceBands; label
   { key: 'km20AndMore', label: '≥ 20 km' }
 ];
 
+/** Bedingter Modal Split je Distanzband (MiD 2017 Tabelle A W10.5). */
+export type ModalSplitByDistanceBand = Partial<Record<keyof DistanceBands, ModalSplit>>;
+
 /** simulation/kpis.json – aggregierte logiTopp-Auswertung. */
 export interface SimKpis {
   demand?: {
@@ -34,6 +37,8 @@ export interface SimKpis {
     distanceBands?: DistanceBands;
     distanceBandRmseToMid2017?: number | null;
     modalSplit?: ModalSplit;
+    modalSplitByDistanceBand?: ModalSplitByDistanceBand;
+    modeDistanceJointRmseToMid2017?: number | null;
   };
   mid2017?: {
     tripsPerPersonDay?: number;
@@ -42,6 +47,9 @@ export interface SimKpis {
     distanceBandsSource?: string;
     distanceBandsSourceUrl?: string;
     modalSplit?: ModalSplit;
+    modalSplitByDistanceBand?: ModalSplitByDistanceBand;
+    modeDistanceSource?: string;
+    modeDistanceSourceUrl?: string;
   };
   parcels?: {
     total?: number;
