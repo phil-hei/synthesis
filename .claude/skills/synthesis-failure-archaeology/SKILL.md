@@ -318,13 +318,35 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Schräge (`b_tt_put`) und Niveau (`asc_put`) getrennt komponieren. Diese Regel ist
   seit 2026-07-28 im opt-in `ModeDistanceCalibrator` umgesetzt; trotzdem kein
   Default-Flip vor drei Seeds, Realrouting und gemeinsamer Distanzmarginal-
-  Kalibrierung. Der Legacy-Helper mit ÖV-Zugang/-Abgang `0.0` bleibt separat zu
-  korrigieren. Evidenz: `docs/05-validierung.md`, Abschnitt
+  Kalibrierung. `calibrateDistance` + `calibrateModeDistance` werden inzwischen
+  genau in dieser Reihenfolge ausgeführt und teilen den Zielwahl-Override.
+  Der Legacy-Helper mit ÖV-Zugang/-Abgang `0.0` bleibt separat zu korrigieren.
+  Evidenz: `docs/05-validierung.md`, Abschnitt
   „Modus-Distanz-Kalibrierung (2026-07-28)“.
 
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
+
+### E21 — `PUT_ACT`/`PUT_EGT` erreichen die Legacy-Moduswahl nicht — BLOCKIERT
+
+- **Symptom/Frage:** SyntheSis erzeugt ÖV-Zugangs- und Abgangsmatrizen mit je
+  sechs Minuten, im MNL-Nutzen steht `b_acc_put`; beeinflussen diese Werte die
+  Moduswahl?
+- **Befund:** Nein. Der externe `MultiNomialLogit1HelperOldImpl` liefert für
+  `getACCESS_TIME_PUBLICTRANSPORT(...)` und
+  `getEGRESS_TIME_PUBLICTRANSPORT(...)` hart `0.0`. Das dort verfügbare
+  `ImpedanceIfc` exponiert Reisezeit, Kosten und Distanz, aber keine separaten
+  Access-/Egress-Matrizen.
+- **Root Cause:** Die Matrizen werden exportiert, der verwendete externe
+  Legacy-Adapter bindet sie aber nicht an den Nutzen-Term an.
+- **Verworfener Scheinfix:** Nicht `PUT_ACT + PUT_EGT` auf `PUT_TTC` addieren.
+  Das vermischt Zugangs-/Abgangszeit mit In-Vehicle-Zeit und umgeht den
+  vorgesehenen Koeffizienten `b_acc_put`.
+- **Status/Regel:** Hauptrepo unverändert lassen. Erst den externen
+  Adaptervertrag explizit erweitern und danach in einem A/B-Lauf belegen, dass
+  `PUT_ACT`/`PUT_EGT` die Moduswahl erwartungsgemäß verändern. Evidenz:
+  `docs/05-validierung.md`, Abschnitt „ÖV-Zugang und -Abgang (2026-07-28)“.
 
 ### E16 — Die 8 Phase-0-Formatbefunde (2026-06-10) — ENTSCHIEDEN
 

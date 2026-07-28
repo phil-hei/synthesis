@@ -555,7 +555,13 @@ public class GenerationService {
 
     // --- Stufe 11: Simulation logiTopp (Achse B) ----------------------------------------------
 
-    /** logiTopp-Wochensimulation, optional mit iterativer Modal-Split-Kalibrierung (Phase 1). */
+    /** Ergebnis der Zielwahl-Kalibrierung; der Parameterpfad kann in weitere Läufe eingehen. */
+    private record DistanceCalibrationOutcome(
+            Path parametersDir,
+            SimulationResultIngestor.Summary summary) {
+    }
+
+    /** logiTopp-Wochensimulation, optional mit sequenziell kombinierbaren Kalibrierungen. */
     private void stageSimulation(PipelineContext ctx) throws Exception {
         Scenario scenario = ctx.scenario;
         GenerationJob job = ctx.job;
@@ -578,9 +584,17 @@ public class GenerationService {
         SimulationResultIngestor.Summary summary;
         if (scenario.population.calibrateModeDistance) {
             // Phase 1c: ÖV-Niveau (asc_put) und Fernweg-Schräge (b_tt_put) getrennt kalibrieren.
-            if (scenario.population.calibrateDistance || scenario.population.calibrateModeChoice) {
-                job.log("Hinweis: Modus-Distanz-Kalibrierung hat Vorrang vor den anderen "
-                        + "Kalibrierungsflags");
+            Path destinationChoiceOverride = null;
+            if (scenario.population.calibrateDistance) {
+                job.log("Kombinierte Kalibrierung: zuerst Distanzmarginale, danach ÖV-Niveau "
+                        + "und ÖV-Distanzschräge");
+                DistanceCalibrationOutcome distance = runDistanceCalibration(
+                        scenario, job, artifacts, runner);
+                destinationChoiceOverride = distance.parametersDir();
+            }
+            if (scenario.population.calibrateModeChoice) {
+                job.log("Hinweis: Modus-Distanz-Kalibrierung ersetzt die reine "
+                        + "Modal-Split-Kalibrierung");
             }
             Path baseMnl = runner.projectDir().resolve(
                     "config/shared/parameters/mode_choice_main_parameters-multi-nomial-logit.txt");
@@ -606,8 +620,10 @@ public class GenerationService {
                     targetOverall * 100,
                     targetLong * 100,
                     properties.getSimulation().getCalibrationIterations()));
+            Path calibratedDestinationChoice = destinationChoiceOverride;
             ModeDistanceCalibrator.Result cal = calibrator.calibrate(mnl -> {
-                SimulationRunner.Result run = runner.run(scenario, artifacts, job::log, mnl);
+                SimulationRunner.Result run = runner.run(
+                        scenario, artifacts, job::log, mnl, calibratedDestinationChoice);
                 last[0] = new SimulationResultIngestor(mapper)
                         .ingest(run.resultsDir(), artifacts, run.durationSeconds());
                 return SimulationResultIngestor.readModeDistanceMetrics(
@@ -635,31 +651,7 @@ public class GenerationService {
                     Math.round(cal.finalBttPut() * 10_000) / 10_000.0);
             summary = last[0];
         } else if (scenario.population.calibrateDistance) {
-            // Phase 1b: Distanz-Kalibrierung der Zielwahl (b_intrazonal) gegen Ziel-<1km-Anteil
-            Path baseParams = runner.projectDir().resolve("config/shared/parameters");
-            Path dcDir = artifacts.resolve("simulation").resolve("dc-calibrated");
-            SimulationResultIngestor.Summary[] last = {null};
-            double targetNear = properties.getSimulation().getDistanceCalibrationTargetNearShare();
-            DistanceCalibrator calibrator = new DistanceCalibrator(baseParams, dcDir, targetNear,
-                    properties.getSimulation().getCalibrationIterations(),
-                    properties.getSimulation().getDistanceCalibrationTolerance());
-            job.log(String.format("Distanz-Kalibrierung: Ziel <1km-Anteil %.0f%% (max. %d Iterationen)…",
-                    targetNear * 100, properties.getSimulation().getCalibrationIterations()));
-            DistanceCalibrator.Result cal = calibrator.calibrate(dc -> {
-                SimulationRunner.Result run = runner.run(scenario, artifacts, job::log, null, dc);
-                last[0] = new SimulationResultIngestor(mapper)
-                        .ingest(run.resultsDir(), artifacts, run.durationSeconds());
-                return readNearDistanceShare(run.resultsDir());
-            });
-            cal.log().forEach(job::log);
-            job.log(String.format(
-                    "Distanz-Kalibrierung beendet: %d Iterationen, <1km %.1f%% → %.1f%% (Ziel %.0f%%)",
-                    cal.iterations(), cal.startNearShare() * 100, cal.finalNearShare() * 100,
-                    targetNear * 100));
-            job.summary.put("distanceCalibrationIterations", cal.iterations());
-            job.summary.put("distanceCalibrationNearShare",
-                    Math.round(cal.finalNearShare() * 1000) / 1000.0);
-            summary = last[0];
+            summary = runDistanceCalibration(scenario, job, artifacts, runner).summary();
         } else if (scenario.population.calibrateModeChoice) {
             // Phase 1: iterative ASC-Kalibrierung gegen MiD-Modal-Split (mehrere Sim-Läufe)
             Path baseMnl = runner.projectDir().resolve(
@@ -699,6 +691,49 @@ public class GenerationService {
         job.summary.put("simulatedParcels", summary.parcels());
         job.summary.put("deliveredParcels", summary.delivered());
         job.summary.put("simulatedTours", summary.tours());
+    }
+
+    /**
+     * Kalibriert die Zielwahl auf den Nahdistanz-Anteil und liefert den exakt simulierten
+     * Parameterstand zurück. Derselbe Stand kann anschließend mit einer MNL-Kalibrierung
+     * kombiniert werden; so arbeiten beide Regler auf derselben Distanzmarginale.
+     */
+    private DistanceCalibrationOutcome runDistanceCalibration(
+            Scenario scenario,
+            GenerationJob job,
+            Path artifacts,
+            SimulationRunner runner) throws Exception {
+        Path baseParams = runner.projectDir().resolve("config/shared/parameters");
+        Path dcDir = artifacts.resolve("simulation").resolve("dc-calibrated");
+        SimulationResultIngestor.Summary[] last = {null};
+        double targetNear = properties.getSimulation().getDistanceCalibrationTargetNearShare();
+        DistanceCalibrator calibrator = new DistanceCalibrator(
+                baseParams,
+                dcDir,
+                targetNear,
+                properties.getSimulation().getCalibrationIterations(),
+                properties.getSimulation().getDistanceCalibrationTolerance());
+        job.log(String.format(
+                "Distanz-Kalibrierung: Ziel <1km-Anteil %.0f%% (max. %d Iterationen)…",
+                targetNear * 100,
+                properties.getSimulation().getCalibrationIterations()));
+        DistanceCalibrator.Result cal = calibrator.calibrate(dc -> {
+            SimulationRunner.Result run = runner.run(scenario, artifacts, job::log, null, dc);
+            last[0] = new SimulationResultIngestor(mapper)
+                    .ingest(run.resultsDir(), artifacts, run.durationSeconds());
+            return readNearDistanceShare(run.resultsDir());
+        });
+        cal.log().forEach(job::log);
+        job.log(String.format(
+                "Distanz-Kalibrierung beendet: %d Iterationen, <1km %.1f%% → %.1f%% (Ziel %.0f%%)",
+                cal.iterations(),
+                cal.startNearShare() * 100,
+                cal.finalNearShare() * 100,
+                targetNear * 100));
+        job.summary.put("distanceCalibrationIterations", cal.iterations());
+        job.summary.put("distanceCalibrationNearShare",
+                Math.round(cal.finalNearShare() * 1000) / 1000.0);
+        return new DistanceCalibrationOutcome(cal.calibratedDir(), last[0]);
     }
 
     // --- Stufe 12: SUMO (Achse B) ------------------------------------------------------------
@@ -826,7 +861,10 @@ public class GenerationService {
         try {
             SumoRunner runner = new SumoRunner(properties.getSumo());
             SimulationRunner simRunner = new SimulationRunner(properties.getSimulation());
-            Path calibrated = artifacts.resolve("simulation").resolve("mode_choice_calibrated.txt");
+            Path simulationDir = artifacts.resolve("simulation");
+            Path modeChoiceOverride = modeChoiceCalibrationOverride(scenario, simulationDir);
+            Path destinationChoiceOverride =
+                    destinationChoiceCalibrationOverride(scenario, simulationDir);
             Path demandResult = artifacts.resolve("simulation").resolve("results")
                     .resolve("demandsimulationResult.csv");
             Path plannedTours = artifacts.resolve("simulation").resolve("results")
@@ -877,9 +915,12 @@ public class GenerationService {
                                 .resolve("CAR_TTC.mtx"),
                         ctx.zones, scaled);
                 job.log("logiTopp entscheidet neu auf gedämpften Stauzeiten (Iteration " + iteration + ")…");
-                SimulationRunner.Result run = Files.exists(calibrated)
-                        ? simRunner.run(scenario, artifacts, job::log, calibrated)
-                        : simRunner.run(scenario, artifacts, job::log);
+                SimulationRunner.Result run = simRunner.run(
+                        scenario,
+                        artifacts,
+                        job::log,
+                        modeChoiceOverride,
+                        destinationChoiceOverride);
                 new SimulationResultIngestor(mapper)
                         .ingest(run.resultsDir(), artifacts, run.durationSeconds());
                 // SUMO auf der neuen Nachfrage – liefert die Faktoren der nächsten Iteration
@@ -914,6 +955,30 @@ public class GenerationService {
             job.stage("Netz-Feedback").message = String.valueOf(e);
             job.log("Netz-Feedback fehlgeschlagen: " + e);
         }
+    }
+
+    /**
+     * Wählt nur ein im aktuellen Szenario aktiviertes MNL-Kalibrierartefakt. So kann ein
+     * liegengebliebener Stand aus einem früheren Lauf nicht unbemerkt reaktiviert werden.
+     */
+    static Path modeChoiceCalibrationOverride(Scenario scenario, Path simulationDir) {
+        Path modeDistance = simulationDir.resolve("mode_distance_calibrated.txt");
+        if (scenario.population.calibrateModeDistance && Files.exists(modeDistance)) {
+            return modeDistance;
+        }
+        Path modeChoice = simulationDir.resolve("mode_choice_calibrated.txt");
+        if (scenario.population.calibrateModeChoice && Files.exists(modeChoice)) {
+            return modeChoice;
+        }
+        return null;
+    }
+
+    /** Wie {@link #modeChoiceCalibrationOverride}, aber für den Zielwahl-Parameterstand. */
+    static Path destinationChoiceCalibrationOverride(Scenario scenario, Path simulationDir) {
+        Path destinationChoice = simulationDir.resolve("dc-calibrated");
+        return scenario.population.calibrateDistance && Files.isDirectory(destinationChoice)
+                ? destinationChoice
+                : null;
     }
 
     // --- Stufe 14: LLM-Moduswahl (GTA 3c) ------------------------------------------------------

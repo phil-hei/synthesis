@@ -325,10 +325,32 @@ Drei-Seed-Vergleich mit echtem Routing und korrigierter Distanzmarginale;
 `ModeDistanceCalibrator` hinter `population.calibrateModeDistance=false`
 verfügbar, ohne die gefundenen Werte `-0,11/-1,22` zu übernehmen. Der Regler
 schätzt die nötigen Änderungen aus jedem Lauf und führt `asc_put` (Niveau) und
-`b_tt_put` (Distanzschräge) getrennt. Das ist eine Implementierung des positiven
-Mechanismusbelegs, keine nachträgliche Beförderung des gescheiterten
-30-Zellen-Gates; drei Seeds, Realrouting und korrigierte Distanzmarginale bleiben
-Pflicht vor einem Default-Flip.
+`b_tt_put` (Distanzschräge) getrennt. Bei gleichzeitigem
+`calibrateDistance=true` wird zuerst `b_intrazonal` kalibriert; alle folgenden
+Modus-Distanz-Läufe verwenden sowohl dieses Zielwahl-Verzeichnis als auch die
+jeweils aktuelle MNL-Datei. `SimulationRunnerTest` belegt die gemeinsame
+Run-Config-Verdrahtung. Eine anschließend aktivierte Netzfeedback-Schleife führt
+beide Overrides flag-gesteuert weiter; deaktivierte Flags können dadurch keine
+alten Kalibrierartefakte desselben Szenarios reaktivieren. Das ist eine
+Implementierung des positiven Mechanismusbelegs, keine nachträgliche Beförderung
+des gescheiterten 30-Zellen-Gates; der kombinierte automatische Lauf über drei
+Seeds mit Realrouting bleibt Pflicht vor einem Default-Flip.
+
+### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
+
+SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
+Der tatsächlich verwendete externe Legacy-Helper
+`MultiNomialLogit1HelperOldImpl` liefert für
+`getACCESS_TIME_PUBLICTRANSPORT(...)` und
+`getEGRESS_TIME_PUBLICTRANSPORT(...)` jedoch hart `0.0`; auch das dort verfügbare
+`ImpedanceIfc` bietet keinen Zugriff auf separate Zugangs-/Abgangsmatrizen.
+Damit erreichen die erzeugten Werte den Nutzen-Term `b_acc_put` derzeit nicht.
+
+**Konsequenz:** Kein scheinbarer Fix durch Addition auf `PUT_TTC`: Das würde
+Zugang/Abgang fachlich mit der fahrzeuggebundenen Reisezeit vermischen und den
+existierenden Parametervertrag umgehen. Eine belastbare Korrektur benötigt eine
+Erweiterung beziehungsweise einen Adapter im externen Legacy-Projekt und danach
+einen echten A/B-Lauf. Bis dahin ist dies eine bekannte Modellgrenze.
 
 ## KIT actiTopp statt Template-Aktivitätenpläne (2026-06-12) — erfolgreich
 

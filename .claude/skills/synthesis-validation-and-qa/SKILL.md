@@ -46,9 +46,9 @@ Zusatzregeln:
 
 ## 2. Test-Inventar (Stand 2026-07-28)
 
-Alle 24 Testklassen liegen unter `backend/src/test/java/de/synthesis/`. Frischer
-Suite-Lauf: `cd backend && mvn -o test` → 63 Tests, 0 Fehler, 6
-umgebungsabhängige Skips, 1:02 min. `PtIntegrationTest` bleibt ohne
+Alle 25 Testklassen liegen unter `backend/src/test/java/de/synthesis/`. Frischer
+Suite-Lauf: `cd backend && mvn -o test` → 67 Tests, 0 Fehler, 6
+umgebungsabhängige Skips, 1:14 min. `PtIntegrationTest` bleibt ohne
 `SYNTHESIS_TRANSIT_VENV` geskippt; der vollständige Lauf ist historisch mit
 ~23 min überliefert. Die Tabelle hebt die externen, integrativen und für
 fachliche Invarianten wichtigsten Klassen hervor.
@@ -60,6 +60,8 @@ fachliche Invarianten wichtigsten Klassen hervor.
 | `generation/pipeline/PopulationGeneratorTest.java` | Globale Stichprobeninvariante über 576 Zonen mit KIT-Haushalten: 5 % von 40.000 ergeben exakt 2.000 Personen in Ergebnis und CSV; verhindert zonenzahlabhängige Rundungs-/Haushaltsüberschreitung | keine | gebündeltes `kit-population-sample.csv` |
 | `generation/pipeline/ModeChoiceCalibratorTest.java` | ASC-Kalibrierung gegen Fake-Sim (Softmax über die ASCs): RMSE sinkt und erreicht ≤0,02 in ≤10 Iterationen; Anker `asc_car_d` und `b_time` bleiben unverändert; Kommentarzeilen der MNL-Datei erhalten. Clamp-Test: ΔASC je Iteration auf ±1,5 begrenzt. **Clamp-Semantik:** die geschriebene Datei hält den Stand VOR dem letzten Update, daher Assert `(iterations-1) * 1.5` | keine | keine (MNL-Fixture inline als String) |
 | `generation/pipeline/ModeDistanceCalibratorTest.java` | Zwei-Hebel-Kalibrierung konvergiert gleichzeitig auf ÖV gesamt und ÖV ab 20 km; `asc_put`-/`b_tt_put`-Schritte sind getrennt geklemmt, Fremdparameter/Kommentare bleiben erhalten, der persistierte Stand entspricht dem letzten Simulationslauf. Zusätzlich: mehrteilige Wegdistanzen werden vor der Bandzuordnung summiert | keine | keine (MNL- und Demand-Fixtures inline) |
+| `generation/pipeline/SimulationRunnerTest.java` | Run-Config verwendet Projekt-Defaults ohne Overrides, lenkt MNL oder alle fünf Zielwahlparameter getrennt um und kann beide Overrides in einem kombinierten Lauf gleichzeitig setzen | keine | keine (Temp-Verzeichnisse) |
+| `generation/GenerationServiceCalibrationTest.java` | Netzfeedback übernimmt die per Szenario-Flag aktive Modus-/Modus-Distanz- und Zielwahl-Kalibrierung; `calibrateModeDistance` gewinnt bei widersprüchlichen Alt-Flags, deaktivierte Flags reaktivieren keine alten Artefakte | keine | keine (Temp-Verzeichnisse) |
 | `generation/pipeline/ShapefileWriterTest.java` | Liest das geschriebene ESRI-Shapefile binär zurück: file code 9994, Version 1000, shape type 5 (Polygon), Bbox, Record-Struktur (Header BE / Inhalt LE), geschlossener 5-Punkte-Ring, `.shx`-Offsets, dBase-Feld exakt `districtID` mit Werten `SYN-001`/`SYN-002`, `.prj` enthält `WGS_1984` — das Format, das der MobileCity-/Takomat-Import erwartet | keine | keine |
 | `generation/pipeline/GtfsCropperTest.java` | Bbox-Zuschnitt am echten KVV-Feed auf Rastatt: Halte/Trips/Routen > 0, Ergebnis < 1/20 der Feed-Größe, `shapes.txt` verworfen, **referenzielle Integrität** (jede trip_id/stop_id aus `stop_times.txt` existiert in `trips.txt`/`stops.txt`). Zweiter Test: Zeitfenster 6–10 Uhr reduziert die Trip-Zahl echt | `Files.exists(validation/kvv-gtfs.zip)` | `validation/kvv-gtfs.zip` |
 | `generation/pipeline/GtfsSourceTest.java` | GTFS-Quellenauflösung **ohne Netz**: Raw-Cache wird mit `kvv.zip` vorbelegt → `resolve()` liefert `source()=="fetch"`, `feedName()=="kvv"`, zugeschnittener Feed geschrieben und < 1/20 der Rohgröße. Zweiter Test: Region ohne Feed-Abdeckung (Nordsee) und ohne Upload → `null` (ÖV wird übersprungen) — läuft komplett fixture-frei | Test 1: `Files.exists(validation/kvv-gtfs.zip)`; Test 2: keins | `validation/kvv-gtfs.zip` (nur Test 1) |
@@ -72,7 +74,7 @@ fachliche Invarianten wichtigsten Klassen hervor.
 Verifizierte Kommandos:
 
 ```bash
-cd backend && mvn -o test                       # 63 Tests, 6 umgebungsabhängige Skips (2026-07-28)
+cd backend && mvn -o test                       # 67 Tests, 6 umgebungsabhängige Skips (2026-07-28)
 mvn -o test -Dtest=SumoRunnerTest               # nur SUMO-Kette
 SUMO_HOME=… SYNTHESIS_TRANSIT_VENV=validation/transit-venv/bin/python \
   mvn -o test -Dtest=PtIntegrationTest          # voller ÖV-Test (~23 min überliefert)
@@ -125,13 +127,13 @@ Schwellen werden VOR dem Lauf festgelegt**, nie nachträglich ans Ergebnis angep
   `ModeChoiceCalibratorTest`); ~0,07 erreicht gilt in der echten Simulation als gut.
 - **Netz-Feedback:** Konvergenz bei Δ < 0,01 (MSA-Δ über Relationen, vgl. `FeedbackMathTest`).
 - **Plausibilitätsfenster trips/Person/Tag:** ~2,8–3,5, Referenz MiD 3,1.
-- **Merge-Gate:** Suite 60/60 grün (`cd backend && mvn -o test`) plus
+- **Merge-Gate:** aktuelle Suite vollständig grün (`cd backend && mvn -o test`) plus
   `cd frontend && npx ng build` bei Frontend-Änderungen (Details → `synthesis-change-control`).
 - **OD-Stau-Faktoren:** in [1,3] (hart im `SumoRunnerTest` asserted).
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-07-28.** Ground Truth: Suite mit 23 Testklassen und 60 Tests frisch
+- **Stand: 2026-07-28.** Ground Truth: Suite mit 25 Testklassen und 67 Tests frisch
   ausgeführt (0 Fehler, 6 Skips); Fixture-Größen historisch per `ls` verifiziert
   (kvv-gtfs.zip 121 613 482 Bytes
   = 121 MB dezimal / 116 MiB, vom 2026-07-07 — andere Skills nennen dieselbe Datei
@@ -140,7 +142,7 @@ Schwellen werden VOR dem Lauf festgelegt**, nie nachträglich ans Ergebnis angep
   Skill-Erstellung nachgemessen.
 - **Wartungspflicht:** Bei neuem Test → Tabelle in §2 ergänzen (Gates + Fixtures + Laufzeit).
   Bei neuem/entferntem Fixture → §4. Bei geänderter Schwelle → §5 mit Datum. Die
-  Testanzahl (60) und Skip-Semantik nach jeder Suite-Änderung gegen `mvn -o test` prüfen.
+  Testanzahl (67) und Skip-Semantik nach jeder Suite-Änderung gegen `mvn -o test` prüfen.
 - **Volatil:** kvv-gtfs.zip-Größe/Datum, Laufzeiten (hardwareabhängig), mobitopp-rastatt-Outputs.
 - Geschwister-Skills: `synthesis-change-control`, `synthesis-diagnostics-and-tooling`,
   `synthesis-research-methodology`, `synthesis-build-and-env`, `synthesis-debugging-playbook`.

@@ -54,9 +54,10 @@ Details: [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md
 
 Für logiTopp stehen experimentelle, standardmäßig deaktivierte Kalibrierungen bereit.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
-Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Die Mechanik ist belegt, aber noch nicht
-über drei Seeds mit Realrouting promotionsfähig; Details und Grenzen stehen in
-[docs/06](docs/06-gta-integration-konzept.md).
+Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
+Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist
+belegt, aber noch nicht über drei Seeds mit Realrouting promotionsfähig; Details und Grenzen
+stehen in [docs/06](docs/06-gta-integration-konzept.md).
 
 ## Dokumentation
 

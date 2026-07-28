@@ -156,15 +156,14 @@
           Modal-Split kalibrieren (langsam)
         </label>
         <label class="checkbox" *ngIf="hasTarget('logitopp')"
-               title="Distanz-Kalibrierung der Zielwahl (experimentell): passt b_intrazonal iterativ an, bis der Anteil der Wege unter 1 km den Zielwert trifft. Löst die Nahdistanz-Überkonzentration; kann keine Fernwege in einem kleinen Gebiet erzeugen (mehrere Simulationsläufe).">
-          <input type="checkbox" [(ngModel)]="scenario.population.calibrateDistance"
-                 [disabled]="scenario.population.calibrateModeDistance">
+               title="Distanz-Kalibrierung der Zielwahl (experimentell): passt b_intrazonal iterativ an, bis der Anteil der Wege unter 1 km den Zielwert trifft. Mit „ÖV nach Distanz“ kombinierbar; sie läuft dann zuerst. Kann keine Fernwege in einem kleinen Gebiet erzeugen (mehrere Simulationsläufe).">
+          <input type="checkbox" [(ngModel)]="scenario.population.calibrateDistance">
           Distanz-Verteilung kalibrieren (experimentell, langsam)
         </label>
         <label class="checkbox" *ngIf="hasTarget('logitopp')"
-               title="Experimentell: kalibriert das globale ÖV-Niveau über asc_put und den ÖV-Anstieg bei Wegen ab 20 km getrennt über b_tt_put gegen MiD 2017. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe.">
+               title="Experimentell: kalibriert das globale ÖV-Niveau über asc_put und den ÖV-Anstieg bei Wegen ab 20 km getrennt über b_tt_put gegen MiD 2017. Mit der Distanz-Verteilung kombinierbar und läuft dann auf deren korrigierten Zielwahlparametern. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe.">
           <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeDistance"
-                 [disabled]="scenario.population.calibrateModeChoice || scenario.population.calibrateDistance">
+                 [disabled]="scenario.population.calibrateModeChoice">
           ÖV nach Distanz kalibrieren (experimentell, langsam)
         </label>
         <div class="calib-target"

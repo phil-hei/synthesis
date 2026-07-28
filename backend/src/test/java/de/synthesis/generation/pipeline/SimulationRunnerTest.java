@@ -3,6 +3,7 @@ package de.synthesis.generation.pipeline;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.scenario.Scenario;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,8 +18,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SimulationRunnerTest {
 
+    @TempDir
+    Path tempDir;
+
     private Path[] prepare() throws Exception {
-        Path tmp = Files.createTempDirectory("simrun-test");
+        Path tmp = tempDir;
         Path artifacts = tmp.resolve("artifacts");
         Path simDir = artifacts.resolve("simulation");
         Path resultsDir = simDir.resolve("results");
@@ -87,5 +91,25 @@ class SimulationRunnerTest {
         assertTrue(yaml.contains(
                 "base: config/shared/parameters/destination_choice_utility_calculation_parameters.txt"),
                 "Moduswahl-Override lässt die Zielwahl-Standarddateien unberührt");
+    }
+
+    @Test
+    void modeChoiceAndDestinationChoiceOverridesCanBeComposed() throws Exception {
+        Path[] p = prepare();
+        Path mnl = p[0].resolve("mode_distance_calibrated.txt");
+        Path dcDir = p[0].resolve("dc-calibrated");
+        SimulationRunner runner = new SimulationRunner(new SynthesisProperties.Simulation());
+        Path config = runner.writeRunConfig(scenario(), p[1], p[2], p[3], mnl, dcDir);
+        String yaml = Files.readString(config);
+
+        String absDc = dcDir.toAbsolutePath().toString();
+        assertTrue(yaml.contains("MNL: " + mnl.toAbsolutePath()),
+                "Der kombinierte Lauf verwendet die kalibrierte MNL-Datei");
+        assertTrue(yaml.contains(
+                        "base: " + absDc + "/destination_choice_utility_calculation_parameters.txt"),
+                "Der kombinierte Lauf verwendet zugleich die kalibrierte Zielwahl-Basis");
+        assertTrue(yaml.contains(
+                        "shopping: " + absDc + "/destination_choice_parameters_SHOPPING.txt"),
+                "Der kombinierte Lauf lenkt auch die zweckspezifischen Zielwahlparameter um");
     }
 }

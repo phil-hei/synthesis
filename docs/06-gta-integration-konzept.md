@@ -389,8 +389,9 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   validiert den neuen Zielwert 0,21 nicht.
 - *Weiterhin offen (Grenze, nicht Kalibrier-Ziel):* der absolute Ø (~2,9 km) — dafür braucht es ein
   größeres Untersuchungsgebiet bzw. gravitationskonsistente externe Zonen. Optional: Multi-Band-Ziel
-  (zusätzliche Hebel `b_0_1`/`b_1_2`); Komposition mit der Modal-Split-Kalibrierung (heute
-  gegenseitig ausschließend, `calibrateDistance` hat Vorrang).
+  (zusätzliche Hebel `b_0_1`/`b_1_2`). Die Distanz-Kalibrierung lässt sich inzwischen
+  sequenziell mit der Zwei-Hebel-Modus-Distanz-Kalibrierung kombinieren; die reine
+  Modal-Split-Kalibrierung bleibt eine alternative MNL-Schleife.
 - **🔬 Gebietsgröße getestet (Option B, 2026-07-12) — These bestätigt, neue Grenze entdeckt:**
   zwei kontrollierte **Offline**-Läufe (identisch, je 4000 Personen, Template-Verhalten, seed 42,
   `useRealRouting=false` → kein Overpass), nur die Fläche unterschiedlich: klein ~10 km (108 Zonen)
@@ -515,16 +516,28 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   ±0,04 geklemmt. Ziel sind der konfigurierbare globale ÖV-Anteil
   (`calibrationTarget.publicTransport`, Default 10 %) und die MiD-Zelle ÖV ab
   20 km (17,61 %). Weniger als 30 Fernwege brechen mit einer verständlichen
-  Fehlermeldung ab, statt Rauschen zu kalibrieren. Der Regler hat innerhalb der
-  bestehenden Stufe „Simulation (logiTopp)" Vorrang vor den älteren, weiterhin
-  getrennten Kalibrierungsflags; die Studio-Checkboxen verhindern die
-  Mehrfachauswahl.
+  Fehlermeldung ab, statt Rauschen zu kalibrieren. Mit
+  `population.calibrateDistance=true` läuft zuerst die
+  `b_intrazonal`-Kalibrierung; der Zwei-Hebel-Regler verwendet anschließend deren
+  Zielwahlparameter zusammen mit seiner aktuellen MNL-Datei. Nur die reine
+  `calibrateModeChoice`-Schleife wird weiterhin ersetzt. Das Studio erlaubt genau
+  diese fachlich definierte Kombination. Eine nachfolgende Netzfeedback-Schleife
+  behält beide aktiven Overrides bei und wählt sie über die Szenario-Flags statt
+  nur anhand eventuell veralteter Artefakte.
   **Verifiziert:** `ModeDistanceCalibratorTest` belegt Konvergenz beider Ziele,
   getrennte Clamps, unveränderte Fremdparameter und Wegketten-Aggregation vor der
-  Distanzbandzuordnung; gezielter Backend-Lauf 9/9 grün. Der externe Großraum-Spike
-  belegt die Hebelmechanik (9,34 % gesamt / 17,60 % ab 20 km), aber noch nicht die
-  automatische Schleife über drei Seeds mit Realrouting. Daher kein Default-Flip
-  und keine Aussage, dass der 30-Zellen-Promotions-Gate bereits erfüllt sei.
+  Distanzbandzuordnung; `SimulationRunnerTest` belegt beide Overrides in derselben
+  Run-Config. Der externe Großraum-Spike belegt die Hebelmechanik (9,34 % gesamt /
+  17,60 % ab 20 km), aber noch nicht die kombinierte automatische Schleife über
+  drei Seeds mit Realrouting. Daher kein Default-Flip und keine Aussage, dass der
+  30-Zellen-Promotions-Gate bereits erfüllt sei.
+- **⛔ Legacy-ÖV-Zugang/-Abgang nicht angeschlossen (2026-07-28):**
+  SyntheSis schreibt `PUT_ACT`/`PUT_EGT` mit je sechs Minuten, der externe
+  `MultiNomialLogit1HelperOldImpl` gibt Zugang und Abgang jedoch hart als `0.0`
+  zurück; `ImpedanceIfc` stellt dafür keine separate Matrix-API bereit. Ein
+  Aufschlag auf `PUT_TTC` wäre keine äquivalente Reparatur. Benötigt wird ein
+  expliziter Adapter beziehungsweise eine Erweiterung des externen
+  Legacy-Vertrags mit anschließendem A/B-Lauf.
 - **✅ Globale Stichprobengröße zonenzahlfest (2026-07-28):** Der erste Großraumlauf wurde
   verworfen, weil `PopulationGenerator` bei 40.000 × 5 % zonenweise 2.015 Personen (9 Zonen)
   beziehungsweise **2.516** (576 Zonen) erzeugte. Größter-Rest-Verteilung und Begrenzung des

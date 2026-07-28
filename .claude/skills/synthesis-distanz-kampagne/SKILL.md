@@ -190,9 +190,12 @@ Erledigt (`backend/.../pipeline/DistanceCalibrator.java`, Muster `ModeChoiceCali
   Drei-Seed-Wiederholung vom 2026-07-28 validiert den amtlichen Default 0,21:
   0,1515→0,1949 / 0,1605→0,2022 / 0,1552→0,1970, jeweils nach drei Iterationen.
 
-*Offen für später:* Multi-Band-Ziel (Hebel `b_0_1`/`b_1_2` ergänzen); Komposition mit der
-Modal-Split-Kalibrierung (heute gegenseitig ausschließend, `calibrateDistance` hat Vorrang); und
-die absolute Ø-Decke bleibt ein Gebietsgrößen-Problem (Kampagnen-Option B).
+*Offen für später:* Multi-Band-Ziel (Hebel `b_0_1`/`b_1_2` ergänzen) und die
+absolute Ø-Decke als Gebietsgrößen-Problem (Kampagnen-Option B). Die Komposition
+mit `calibrateModeDistance` ist umgesetzt: zuerst Zielwahl (`b_intrazonal`),
+danach ÖV-Niveau/-Schräge (`asc_put`/`b_tt_put`) auf demselben
+Zielwahl-Override. Der kombinierte Drei-Seed-Lauf mit Realrouting bleibt offen;
+die reine `calibrateModeChoice`-Schleife ist weiterhin eine Alternative.
 
 ### Phase 4 — Joint-Validierung & Beförderung
 
