@@ -699,8 +699,10 @@ public class SimulationResultIngestor {
                     parseDouble(cells[header.get("toX")]), parseDouble(cells[header.get("toY")]));
             tour.distance += parseDouble(cells[header.get("distance")]);
             tour.stops++;
-            tour.deliveries += parseLong(cells[header.get("deliveries")]);
-            tour.pickups += parseLong(cells[header.get("pickups")]);
+            // logiTopp schreibt hier kommaseparierte Paket-IDs je Stopp, keine
+            // numerischen Mengen. "22,23" bedeutet daher zwei Pakete, nicht 0 oder 22.
+            tour.deliveries += countCsvIds(cells[header.get("deliveries")]);
+            tour.pickups += countCsvIds(cells[header.get("pickups")]);
             tour.lastStopNo = stopNo;
             tour.lastVehicle = vehicle;
         });
@@ -755,6 +757,16 @@ public class SimulationResultIngestor {
 
     private static long parseLong(String value) {
         return Math.round(parseDouble(value));
+    }
+
+    private static long countCsvIds(String value) {
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+        return java.util.Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(id -> !id.isEmpty())
+                .count();
     }
 
     private static double round2(double value) {

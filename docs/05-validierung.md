@@ -107,6 +107,9 @@ Zustellereignisse**, Laufzeit 75 s. Ergebnisdateien unter
 | L9 | `planned-tours.csv` enthält kein abschließendes Leg vom letzten Stopp zurück zum Depot. **Behoben:** `SumoRunner` ergänzt pro normaler Tour genau ein Abschluss-Leg und vermeidet Duplikate bei `isReturning=true` oder bereits erreichtem Depot. |
 | L10 | Paketparameter konnten früher in `parcel-demand-config.yaml` stehen, ohne vom Harness gelesen zu werden. **Behoben:** Paket- und Harness-Vertrag werden explizit geprüft; alter oder driftender Code schlägt vor dem Lauf bzw. vor dem Publizieren fehl. |
 | L11 | `vehicle_events.csv.collected` ist an `stop`-Zeilen der kumulative Fahrzeugbestand und würde beim Summieren mehrfach zählen; erst `event=unload` protokolliert jede eingesammelte Retoure genau einmal. **Behoben:** Die Ingestion summiert `to_pickup`/`success_pickup` nur an Stopps, `collected`/`returning` nur beim Depot-Unload und gleicht Pickup-Erfolg gegen eindeutige `IsPickup=true`-Paket-IDs ab. |
+| L12 | `destinationShares` war im erzeugten YAML versehentlich neben statt unter `parcelOrders` eingerückt; der echte Harness brach deshalb mit `Missing parcel demand key` ab. **Behoben:** Generator und Vertragstest prüfen den verschachtelten Block. |
+| L13 | `planned-tours.csv.deliveries` und `.pickups` enthalten kommaseparierte Paket-IDs pro Stopp, keine numerischen Mengen. Ein numerischer Parser erzeugte dadurch falsche Tour-KPIs. **Behoben:** Die Ingestion zählt IDs; synthetischer und echter Fixture-Test sichern 65 Zustellungen/67 Pickups. |
+| L14 | `Map.of(...)` lieferte für Zielanteile zwischen getrennten JVM-Prozessen keine garantierte Iterationsreihenfolge. Gleiche Zufallszahlen wurden dadurch unterschiedlichen Zieltypen zugeordnet. **Behoben:** Der Harness-Vertrag baut `LinkedHashMap` in der festen Reihenfolge HOME, WORK, PACKSTATION; zwei Prozessläufe sind in allen fachlichen Rohartefakten byte-identisch. |
 
 ## Retouren-Pickup-Spike (2026-07-29) — mechanisch bewiesen, Integration damals offen
 
@@ -178,6 +181,45 @@ blieb unverändert und gitignoriert.
 
 **Entscheidung nach Schritt 4:** technisches Go für den abschließenden Akzeptanzlauf und die
 Beförderungsentscheidung. Bis dahin bleiben Feature und Quote standardmäßig aus.
+
+### Retouren-E2E-Akzeptanz (2026-07-29) — Schritt 5 erfolgreich
+
+Zwei Szenarien mit 100 Personen, Seed `4242`, identischer Region, Paketnachfrage,
+Zustellzielanteilen, GraphHopper-Routing sowie den Zielmodellen logiTopp und SUMO wurden
+vollständig ausgeführt. Der einzige fachliche Unterschied war
+`returns.enabled=false` gegenüber `enabled=true`, Quote `1.0`, Abholung HOME `1.0`.
+Beide externen logiTopp-Prozesse und beide SUMO-Läufe endeten mit Exit 0.
+
+| Kennwert | Baseline | Retouren | Differenz |
+|---|---:|---:|---:|
+| Personenwege | 2.137 | 2.137 | 0 |
+| Zustellaufträge / zugestellt | 86 / 86 | 86 / 86 | 0 / 0 |
+| Kundenretouren / geplant / eingesammelt | 0 / 0 / 0 | 86 / 86 / 86 | +86 / +86 / +86 |
+| Zustell-Rückläufer | 0 | 0 | 0 |
+| logiTopp-Touren | 72 | 124 | +52 |
+| Lieferverkehr-Legs in SUMO (Tag 0) | 23 | 47 | +24 |
+| SUMO-Fahrzeuge | 65 | 86 | +21 |
+| CO₂ gesamt | 48,04 kg | 59,06 kg | +11,02 kg |
+| CO₂ Lieferverkehr | 10,19 kg | 21,19 kg | +11,00 kg |
+
+Die normalisierten Zustellaufträge waren zwischen A und B identisch; die Retouren erweitern
+also die Nachfrage, statt Zustellungen zu ersetzen. `tours.geojson` aggregierte exakt
+86/0 beziehungsweise 86/86 Zustellungen/Pickups. Zwei Wiederholungen des Retouren-Szenarios
+erzeugten byte-identische `parcel-orders-private.csv`, `parcel-states.csv`,
+`planned-tours.csv`, `tours.geojson` und `kpis.json`; die SUMO-Kennzahlen waren bis auf die
+gemessene Laufzeit ebenfalls identisch. Ein zusätzlicher Paarlauf in getrennten JVM-Prozessen
+bestätigte byte-identische Nachfrage-, Flotten-, Paket-, Tour- und Fahrzeugereignisdateien.
+
+Die Browser-Abnahme gegen genau diese Szenarien bestätigte Studio und Vergleich einschließlich
+Richtungstrennung, A/B-Kennzahlen und SUMO-Emissionen; die Browser-Konsole enthielt weder Fehler
+noch Warnungen. Die gitignorierten Laufbelege liegen unter
+`validation/returns-acceptance-2026-07-29/`.
+
+**Beförderungsentscheidung:** technisches Go für den experimentellen MVP. Kein Produktiv-Default
+und keine Prognoseaussage: `returns.enabled=false` sowie Quote `0.0` bleiben bestehen, bis eine
+dokumentierte Datengrundlage die Retourenquote und Rücklaufzeiten kalibriert. Packstation-Abgabe,
+kausaler Lebenszyklus, Segmentierung und Händler-Senken sind eigenständige Ausbaustufen mit den
+in `docs/06`, G.7 festgelegten Evidenz-Gates.
 
 ## Legacy-Adapter: eigene Artefakte → logiTopp (2026-06-11) — erfolgreich
 

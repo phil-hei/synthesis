@@ -57,8 +57,9 @@ als zusätzliche Abholaufträge bei `HOME` oder `WORK` aktiviert werden. Das Fea
 standardmäßig aus; die Retourenquote ist eine explizite Szenarioannahme und kein kalibrierter
 Branchenwert. Studio und Vergleich trennen Zustellungen, Zustell-Rückläufer und eingesammelte
 Kundenretouren; Laufzeit-Postconditions verhindern still ignorierte oder widersprüchliche
-Pickup-Ergebnisse. Bis zur abschließenden Beförderungsentscheidung bleibt dies bewusst kein
-Produktiv-Default. Details und Akzeptanzgrenzen:
+Pickup-Ergebnisse. Der vollständige A/B-Lauf über logiTopp und SUMO ist technisch abgenommen;
+das Feature bleibt dennoch bewusst kein Produktiv-Default, solange die Quote nicht empirisch
+kalibriert ist. Details, Messwerte und Ausbau-Gates:
 [docs/06, Abschnitt G](docs/06-gta-integration-konzept.md).
 
 Für logiTopp stehen experimentelle, standardmäßig deaktivierte Kalibrierungen bereit.

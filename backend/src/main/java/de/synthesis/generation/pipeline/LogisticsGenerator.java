@@ -185,10 +185,10 @@ public class LogisticsGenerator {
                         stdDev: %s
                         min: 0
                         max: %d
-                    destinationShares:
-                      HOME: %s
-                      WORK: %s
-                      PACKSTATION: %s
+                      destinationShares:
+                        HOME: %s
+                        WORK: %s
+                        PACKSTATION: %s
                     deliveryDates:
                       from: MONDAY
                       to: SATURDAY

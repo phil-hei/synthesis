@@ -12,6 +12,8 @@ Enthalten sind:
 - `parcel-demand-config.yaml` wird mit dem Vertrag
   `synthesis-parcel-demand-v1` gelesen und validiert.
 - Zustellmenge und Zielanteile kommen aus dieser Datei statt aus Hardcodings.
+- Zielanteile behalten eine feste Reihenfolge, damit identische Seeds auch
+  über getrennte JVM-Prozesse identische Paketziele erzeugen.
 - Optional aktivierte Retouren werden deterministisch zusätzlich zur
   Zustellnachfrage erzeugt.
 - Pickups werden nach tatsächlichem Standort gruppiert.
@@ -23,8 +25,8 @@ Enthalten sind:
 
 Voraussetzung sind die bereits für SyntheSis modernisierten lokalen Projekte
 unter `validation/mobitopp-rastatt` und `validation/logitopp`. Der Installer
-prüft die SHA-256-Hashes der Patchdateien sowie der vier berührten Dateien vor
-und nach dem Patch. Bei Drift bricht er ab, bevor er publiziert.
+prüft die SHA-256-Hashes der Patchdateien sowie ausgewählter Integrationsdateien
+vor und nach dem Patch. Bei Drift bricht er ab, bevor er publiziert.
 
 ```sh
 sh legacy/logitopp-returns-v1/apply.sh

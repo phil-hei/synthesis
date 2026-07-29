@@ -140,9 +140,11 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 - **Emissionsvergleich als Kern-Use-Case:** CO₂ je Fahrzeugtyp (HBEFA, inkl. Bus) macht
   Logistik-/Verkehrs-Szenarien wie „Lastenrad- statt Lkw-Flotte" oder „mehr ÖV-Nutzung" direkt im
   Szenario-Vergleich quantifizierbar.
-- **Retouren bleiben kontrolliert experimentell:** Kundenretouren, Zustell-Rückläufer und
-  Abholerfolg werden aus den logiTopp-Rohdaten getrennt, per Laufzeit-Postcondition geprüft und
-  in Studio/Vergleich dargestellt; Default und unkalibrierte Quote bleiben aus.
+- **Retouren sind technisch abgenommen und bleiben kontrolliert experimentell:** Der
+  seed-identische A/B-E2E über logiTopp und SUMO hält Zustellungen konstant, erzeugt
+  reproduzierbare Pickups und weist zusätzliche Verkehrs-/CO₂-Wirkung im Vergleich aus.
+  Kundenretouren, Zustell-Rückläufer und Abholerfolg bleiben getrennt; Default und
+  unkalibrierte Quote bleiben aus.
 - **SUMO ist jetzt echt multimodal:** PKW, Rad, Fuß, Lieferverkehr und optional ÖV/Bus (GTFS,
   intermodal) laufen in einer Simulation. **Ehrlicher Technik-Befund:** Schienen-ÖV (Tram/Rail)
   scheitert an einer SUMO-Eigenheit – `duarouter` snappt Fußgänger-Koordinaten auf die nächstgelegene

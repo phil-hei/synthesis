@@ -185,6 +185,16 @@ class SimulationResultIngestorTest {
         assertThat(kpis.at("/logistics/customerReturns/collected").asLong())
                 .isEqualTo(67);
         assertThat(kpis.at("/logistics/deliveries/failedReturning").asLong()).isZero();
+
+        JsonNode tours = mapper.readTree(artifacts.resolve("simulation/tours.geojson").toFile());
+        long plannedDeliveries = 0;
+        long plannedPickups = 0;
+        for (JsonNode feature : tours.path("features")) {
+            plannedDeliveries += feature.at("/properties/deliveries").asLong();
+            plannedPickups += feature.at("/properties/pickups").asLong();
+        }
+        assertThat(plannedDeliveries).isEqualTo(65);
+        assertThat(plannedPickups).isEqualTo(67);
     }
 
     private Fixture writeDirectionalFixture(Path tempDir) throws Exception {
@@ -235,8 +245,8 @@ class SimulationResultIngestorTest {
                 """);
         Files.writeString(results.resolve("planned-tours.csv"), """
                 tourId;stopNo;vehicleTag;fromDepot;vehicleType;fromX;fromY;toX;toY;distance;deliveries;pickups
-                10;1;TRUCK_1;Depot 1;TRUCK;8.0;48.0;8.1;48.1;1000;2;1
-                20;1;TRUCK_1;Depot 1;TRUCK;8.0;48.0;8.2;48.2;2000;1;1
+                10;1;TRUCK_1;Depot 1;TRUCK;8.0;48.0;8.1;48.1;1000;d1,d2;p1
+                20;1;TRUCK_1;Depot 1;TRUCK;8.0;48.0;8.2;48.2;2000;d3;p2
                 """);
         Files.writeString(zoneRepository.resolve("zones.geojson"), """
                 {

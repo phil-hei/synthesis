@@ -31,9 +31,12 @@ class LogisticsGeneratorTest {
                 .contains("mean: 1.2500")
                 .contains("stdDev: 0.3500")
                 .contains("max: 7")
-                .contains("HOME: 0.7000")
-                .contains("WORK: 0.2000")
-                .contains("PACKSTATION: 0.1000")
+                .contains("""
+                          destinationShares:
+                            HOME: 0.7000
+                            WORK: 0.2000
+                            PACKSTATION: 0.1000
+                        """)
                 .contains("returns:\n  enabled: false")
                 .contains("model: exogenous-share")
                 .contains("shareOfPrivateOrders: 0.0000")

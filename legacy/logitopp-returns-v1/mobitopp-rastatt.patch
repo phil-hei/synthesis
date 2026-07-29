@@ -95,17 +95,17 @@ index 0000000..a73431a
 +		double stdDev = decimal(values, "parcelOrders.perPersonPerWeek.stdDev");
 +		int min = integer(values, "parcelOrders.perPersonPerWeek.min");
 +		int max = integer(values, "parcelOrders.perPersonPerWeek.max");
-+		Map<ParcelDestinationType, Double> deliveryShares = Map.of(
-+				ParcelDestinationType.HOME, decimal(values, "parcelOrders.destinationShares.HOME"),
-+				ParcelDestinationType.WORK, decimal(values, "parcelOrders.destinationShares.WORK"),
-+				ParcelDestinationType.PACK_STATION,
++		Map<ParcelDestinationType, Double> deliveryShares = new LinkedHashMap<>();
++		deliveryShares.put(ParcelDestinationType.HOME, decimal(values, "parcelOrders.destinationShares.HOME"));
++		deliveryShares.put(ParcelDestinationType.WORK, decimal(values, "parcelOrders.destinationShares.WORK"));
++		deliveryShares.put(ParcelDestinationType.PACK_STATION,
 +				decimal(values, "parcelOrders.destinationShares.PACKSTATION"));
 +
 +		boolean returnsEnabled = bool(values, "returns.enabled");
 +		double returnShare = decimal(values, "returns.shareOfPrivateOrders");
-+		Map<ParcelDestinationType, Double> pickupShares = Map.of(
-+				ParcelDestinationType.HOME, decimal(values, "returns.pickupShares.HOME"),
-+				ParcelDestinationType.WORK, decimal(values, "returns.pickupShares.WORK"));
++		Map<ParcelDestinationType, Double> pickupShares = new LinkedHashMap<>();
++		pickupShares.put(ParcelDestinationType.HOME, decimal(values, "returns.pickupShares.HOME"));
++		pickupShares.put(ParcelDestinationType.WORK, decimal(values, "returns.pickupShares.WORK"));
 +
 +		validate(mean, stdDev, min, max, deliveryShares, returnsEnabled, returnShare,
 +				pickupShares);

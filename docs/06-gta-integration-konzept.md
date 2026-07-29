@@ -70,7 +70,7 @@ Distanz, Modus-Konstanten) aus Befragungsdaten **geschätzt** wurden. Das Lauf-P
 Harness nutzen, rechnet unsere Simulation mit Rastatts Werten („Rastatt-Geschmack" bei Modal-Split/
 Weglänge). Änderbar nur durch **Neu-Kalibrierung** dieser Parameter (siehe D).
 
-### A.7 Retouren-Status — technische Kette vorbereitet, Produkt-MVP offen (2026-07-29)
+### A.7 Retouren-Status — experimenteller MVP technisch abgenommen (2026-07-29)
 
 - **Der experimentelle Szenariopfad kann Kundenretouren erzeugen.** Szenario-API und Frontend
   exponieren Quote sowie `HOME`-/`WORK`-Abholanteile nur für das Zielmodell logiTopp. Der
@@ -86,7 +86,10 @@ Weglänge). Änderbar nur durch **Neu-Kalibrierung** dieser Parameter (siehe D).
   Packstation.
 - **Die Mechanik ist Ende-zu-Ende belegt.** Ein realer Vertragslauf erzeugte 101 Zustellungen
   plus 101 Retouren; 67 Pickups wurden innerhalb des Wochenhorizonts erfolgreich ausgeführt.
-  Ein kalibriertes Endkunden-Retourenmodell liefert logiTopp weiterhin nicht fertig mit.
+  Der finale seed-identische A/B-Lauf hielt 86 Zustellungen konstant und ergänzte
+  86 geplante und eingesammelte Pickups; SUMO wies deren zusätzliche Verkehrs- und
+  Emissionswirkung aus. Ein kalibriertes Endkunden-Retourenmodell liefert logiTopp weiterhin
+  nicht fertig mit, deshalb bleibt der Default aus.
 
 ---
 
@@ -879,7 +882,7 @@ und INSPIRE-Zell-IDs als MobileCity-`districtId` statt `SYN-NNN`.
 
 ---
 
-## G. Konzept: Retourenlogistik mit logiTopp — 🚧 IN UMSETZUNG (2026-07-29)
+## G. Konzept: Retourenlogistik mit logiTopp — ✅ MVP TECHNISCH ABGENOMMEN (2026-07-29)
 
 ### G.1 Ziel und fachliche Abgrenzung
 
@@ -1087,6 +1090,24 @@ Ziehregel. Die vollständige Offline-Backend-Suite lief mit **86 Tests, 0 Fehler
 Browserprüfung bestätigte die Richtungstrennung in Studio und Szenariovergleich sowie die
 horizontal nutzbare Depot-Tabelle; keine Konsolenfehler.
 
+**Implementierungsnachweis Schritt 5 (✅ vollständiger A/B-E2E, 2026-07-29):**
+Zwei ansonsten identische Szenarien mit 100 Personen und Seed `4242` liefen über die reale
+Pipeline einschließlich externem logiTopp und SUMO mit Exit 0. Die Baseline erzeugte
+**86 Zustellungen / 86 zugestellt, 0 Kundenretouren und 72 Touren**; das Retourenszenario
+erzeugte weiterhin **86 Zustellungen / 86 zugestellt** plus **86 Kundenretouren /
+86 geplant / 86 eingesammelt** und 124 Touren. Der Personenverkehr blieb mit 2.137 Wegen
+identisch. In SUMO stieg der Lieferverkehr von **23 auf 47 Legs**, das gesamte CO₂ von
+**48,04 auf 59,06 kg** und das Lieferverkehrs-CO₂ von **10,19 auf 21,19 kg**.
+
+Der Lauf deckte drei Integrationsfehler auf und schloss sie: `destinationShares` steht nun
+korrekt unter `parcelOrders`; Tourwerte zählen kommaseparierte Paket-IDs statt sie numerisch zu
+parsen; Zielanteile behalten im Harness über eine `LinkedHashMap` eine feste Reihenfolge.
+Danach waren zwei getrennte Prozessläufe in allen fachlichen logiTopp-Rohartefakten
+byte-identisch. Zwei Wiederholungen des Retourenszenarios erzeugten außerdem identische
+Retouren-IDs, Touren, `kpis.json` und – abgesehen von der Laufzeit – SUMO-Kennzahlen.
+Studio und Vergleich zeigten genau diese A/B-Werte richtungsgetrennt; die Browser-Konsole
+enthielt weder Fehler noch Warnungen.
+
 Akzeptanzkriterien für die Implementierung:
 
 - **Baseline-Invariante:** Bei `enabled=false` bleiben Paketanzahl, Richtungen und fachliche KPIs
@@ -1124,6 +1145,20 @@ die beobachteten Zustell-, Pickup- und `collected`-Zahlen werden dokumentiert.
 5. **Kalibrierung:** beobachtete Abholmengen, Retourenquote und Rücklaufzeiten als Referenzen;
    bis dahin bleiben Ergebnisse ausdrücklich Szenario- und keine Prognosewerte.
 
+Diese Punkte werden nicht gesammelt in den technisch abgenommenen MVP gezogen. Ihre nächsten
+Evidenz-Gates sind:
+
+| Ausbau | Nächster belastbarer Schritt | Voraussetzung für Implementierungs-Go |
+|---|---|---|
+| Packstation-Rückgabe | Ereignis- und Wegekonzept für Kundendrop-off plus konsolidierte KEP-Abholung präregistrieren | Personenweg und Paketbestand dürfen nicht als `PICK_UP_PARCEL` umetikettiert werden |
+| Kausaler Lebenszyklus | Zustandsübergabe über mehr als eine Simulationswoche als kleinen Spike beweisen | stabile `sourceParcelId` und reproduzierbare Rücksendeverzögerung |
+| Segmentierung | erste dokumentierte Quotenmatrix mit Stichprobengröße/Quelle beschaffen | belastbare Warengruppen- oder Haushaltstypdaten |
+| Händler-/Senkenmodell | Zielknoten und Transportketten fachlich festlegen | Quelle für Händler-, Konsolidierungs- oder Wiederaufbereitungsziele |
+| Kalibrierung | beobachtete Abholmengen und Rücklaufzeiten als Referenzdatensatz definieren | vorab festgelegte Fehlermaße und Holdout-Prüfung |
+
+Bis diese Voraussetzungen erfüllt sind, ist ein Ausbau-No-Go eine bewusste
+Modellierungsentscheidung, kein technischer Restfehler des MVP.
+
 ### G.8 Umsetzungsschnitt
 
 Empfohlene Reihenfolge:
@@ -1138,10 +1173,10 @@ Empfohlene Reihenfolge:
    unkalibrierte Vorgabequote.
 4. **✅ Ingestion/KPIs/UI (2026-07-29):** versionierter Richtungsvertrag, Laufzeit-
    Postconditions, additive Depot-/Dichte-/Tourwerte sowie Darstellung in Studio und Vergleich.
-5. **E2E-Verifikation und Beförderungsentscheidung:** erst danach über einen fachlich
-   begründeten Default oder weitere Rückgabekanäle entscheiden.
+5. **✅ E2E-Verifikation und Beförderungsentscheidung (2026-07-29):** seed-identischer
+   Baseline-/Retourenlauf über logiTopp und SUMO, Wiederholungsnachweis sowie Browser-Abnahme;
+   technisches Go für den experimentellen MVP, Default bleibt aus.
 
-**Go/No-Go nach Schritt 4: technisches Go für Schritt 5.** Externe Rohdaten werden nun
-richtungssicher geprüft und ohne Kilometer-/CO₂-Scheinallokation vergleichbar dargestellt.
-Ein Produkt-Go ist weiterhin unzulässig, bis der abschließende Akzeptanzlauf die aktuelle
-Gesamtkette aus Szenario, Ingestion, Studio/Vergleich und SUMO mit Exit 0 bestätigt.
+**Go/No-Go nach Schritt 5:** technisches Go für den experimentellen MVP; Produktiv-Default und
+Prognoseeinsatz bleiben No-Go, weil eine empirisch kalibrierte Quote und Rücklaufzeit fehlen.
+Die Ausbaustufen aus G.7 beginnen jeweils erst nach ihrem eigenen Evidenz-Gate.
