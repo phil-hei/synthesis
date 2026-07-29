@@ -61,6 +61,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E18 | logiTopp-Befunde L1–L6 | Legacy-Formate | ENTSCHIEDEN |
 | E19 | "SynthesisApplication 2.class"-Falle | Infrastruktur | ENTSCHIEDEN |
 | E20 | `b_tt_put` allein als Modus-Distanz-Kalibrierung | Kalibrierung | ENTSCHIEDEN |
+| E22 | `<1 km`-Kalibrierung bei grober Zonierung | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -324,6 +325,31 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Evidenz: `docs/05-validierung.md`, Abschnitt
   „Modus-Distanz-Kalibrierung (2026-07-28)“.
 
+### E22 — `<1 km`-Kalibrierung bei grober Zonierung — ENTSCHIEDEN
+
+- **Symptom/Frage:** Kann der kombinierte Distanz-/ÖV-Regler in einem
+  55×55-km-Großraum mit 2,3-km-Zellen die amtlichen 21 % Wege unter 1 km
+  herstellen?
+- **Befund:** Nein. Im Realrouting-A/B vom 2026-07-29 blieb `<1 km` trotz
+  acht Iterationen und `b_intrazonal`-Delta 0→14 bei 0,0 %. 81,54 % der
+  kalibrierten Wege landeten stattdessen im Band 1–<2 km;
+  Distanzband-RMSE 0,1343→0,3072, Joint-RMSE 0,0438→0,0857.
+  A/B hatten byte-identische `CAR_DIS`-/Zeitmatrizen, ein Routing-Fallback
+  ist ausgeschlossen.
+- **Root Cause:** Die zellgrößen-skalierte Matrix repräsentiert jede
+  intrazonale Pkw-Beziehung dort mit genau
+  `0,5214 × 2,3 km × 1,35 = 1,62 km`. `b_intrazonal` ändert nur die
+  Zielhäufigkeit, nicht die Matrixdistanz. Der Hebel ist für das
+  `<1 km`-Band deshalb strukturell nicht beobachtbar.
+- **Verworfener Scheinfix:** Nicht Clamp oder Iterationszahl erhöhen. Das
+  verstärkt ausschließlich die Fehlkonzentration im 1–<2-km-Band.
+- **Status/Regel:** `GenerationService` prüft vor dem Graphaufbau den kleinsten
+  intrazonalen Pkw-Matrixwert und lehnt `calibrateDistance=true` bei
+  `>=1 km` mit konkreter Auflösungsmeldung ab. Für neue Versuche feinere
+  Zonen wählen oder Distanzrepräsentation/Zielgröße separat herleiten und
+  präregistrieren. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Gemeinsame Kalibrierung mit Realrouting (2026-07-29)“.
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
@@ -472,7 +498,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-07-28.** Verfasst beim Ausscheiden des Principal Engineers und um E20 ergänzt.
+- **Stand: 2026-07-29.** Verfasst beim Ausscheiden des Principal Engineers und um E20/E22 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch

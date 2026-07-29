@@ -333,8 +333,39 @@ Run-Config-Verdrahtung. Eine anschließend aktivierte Netzfeedback-Schleife füh
 beide Overrides flag-gesteuert weiter; deaktivierte Flags können dadurch keine
 alten Kalibrierartefakte desselben Szenarios reaktivieren. Das ist eine
 Implementierung des positiven Mechanismusbelegs, keine nachträgliche Beförderung
-des gescheiterten 30-Zellen-Gates; der kombinierte automatische Lauf über drei
-Seeds mit Realrouting bleibt Pflicht vor einem Default-Flip.
+des gescheiterten 30-Zellen-Gates. Der damals nächste Pflichtlauf mit drei
+Seeds und Realrouting wurde am 2026-07-29 begonnen und über sein Stop-Gate
+beendet (folgender Abschnitt).
+
+## Gemeinsame Kalibrierung mit Realrouting (2026-07-29) — strukturell gescheitert
+
+Der präregistrierte Drei-Seed-Vergleich wurde nach dem Paar A42/B42 über das
+vorab definierte Stop-Gate beendet. Beide Läufe verwendeten 576 Zonen,
+2.000 Personen, actiTopp, logiTopp und denselben lokalen OSM-Abzug; die
+SHA-256-Summen von `CAR_DIS`, `CAR_TTC` und `PUT_TTC` sind A/B-identisch.
+GraphHopper lief in beiden Fällen ohne Stufen-Fallback.
+
+**Befund:** Bei 2.300-m-Zellen liegt der einzige intrazonale Pkw-Matrixwert
+auf **1,62 km** (`0,5214 × 2,3 km × 1,35`). Der Zielwahlhebel
+`b_intrazonal` verändert nur die Zahl intrazonaler Ziele, nicht diesen Wert.
+Deshalb blieb der kalibrierte `<1 km`-Anteil über alle acht Iterationen
+**0,0→0,0 %**, obwohl der Parameter-Delta von **0→14** stieg. B konzentrierte
+stattdessen **81,54 %** der Wege im Band 1–<2 km. Gegen A verschlechterten
+sich Ø-Weglänge **8,57→5,05 km**, Distanzband-RMSE
+**0,1343→0,3072**, globaler Modal-RMSE **0,0800→0,1176** und
+30-Zellen-RMSE **0,0438→0,0857**. Der nachgelagerte Zwei-Hebel-Regler traf
+seine direkten Ziele annähernd (ÖV gesamt **9,28 %**, ÖV ab 20 km
+**18,89 %**), kann die zerstörte Distanzmarginale aber nicht reparieren.
+Wege/Person/Tag blieben plausibel (**3,23→3,24**), die Wegezahl stabil
+(**+0,13 %**).
+
+**Konsequenz:** Die Seeds 43/44 wurden regelkonform nicht gestartet und beide
+Flags bleiben `default=false`. Vor dem GraphHopper-Aufbau prüft die Pipeline
+nun den tatsächlich repräsentierten intrazonalen Pkw-Wert. Liegt dessen
+Minimum bei `>=1 km`, schlägt `calibrateDistance=true` mit einer konkreten
+Auflösungsmeldung fehl, statt acht wirkungslose logiTopp-Läufe auszuführen.
+Eine neue Kampagne benötigt feinere Zonen oder eine separat hergeleitete
+Distanzrepräsentation/Zielgröße.
 
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 

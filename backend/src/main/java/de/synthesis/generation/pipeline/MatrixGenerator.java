@@ -88,7 +88,14 @@ public class MatrixGenerator {
 
                 // Auto: Routing, sonst Luftlinie x Umwegfaktor
                 double[] car = route(impedance, from, to, TravelMode.CAR);
-                double carKm = car != null ? car[0] / 1000 : beelineKm * CAR_DETOUR;
+                double carKm;
+                if (car != null) {
+                    carKm = car[0] / 1000;
+                } else if (from.index == to.index) {
+                    carKm = intrazonalCarDistanceKm(from);
+                } else {
+                    carKm = beelineKm * CAR_DETOUR;
+                }
                 double carMin = car != null ? car[1] : carKm / CAR_SPEED_KMH * 60 + 3;
 
                 double[] bike = route(impedance, from, to, TravelMode.BIKE);
@@ -137,6 +144,15 @@ public class MatrixGenerator {
         writeTimeConfig(matrixDir.resolve("time-matrix-configuration.yaml"));
         writeCostConfig(matrixDir.resolve("cost-matrix-configuration.yaml"));
         return files.keySet().stream().toList();
+    }
+
+    /**
+     * Der in {@code CAR_DIS} repräsentierte intrazonale Pkw-Wert. Die
+     * Distanz-Kalibrierung kann ihren {@code b_intrazonal}-Hebel nur gegen ein
+     * {@code <1 km}-Ziel verwenden, wenn dieser Wert selbst im Zielband liegt.
+     */
+    public static double intrazonalCarDistanceKm(Zone zone) {
+        return INTRAZONAL_BEELINE_FACTOR * Math.sqrt(zone.areaKm2) * CAR_DETOUR;
     }
 
     private static double[] route(Impedance impedance, Zone from, Zone to, TravelMode mode) {

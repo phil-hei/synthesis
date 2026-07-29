@@ -265,6 +265,8 @@ public class GenerationService {
                 job.summary.put("cellSizeMeters", res);
                 job.summary.put("zoningMode", "inspire");
                 job.log(result.size() + " Zonen erzeugt (INSPIRE/EPSG:3035, " + res + " m Raster)");
+                requireObservableDistanceCalibration(
+                        scenario, result, logitoppSimulationAvailable());
                 return result;
             }
             job.log("Region außerhalb des EPSG:3035-Gültigkeitsbereichs (Europa) – "
@@ -281,7 +283,13 @@ public class GenerationService {
         job.summary.put("cellSizeMeters", Math.round(effective));
         job.summary.put("zoningMode", "grid");
         job.log(result.size() + " Zonen erzeugt (" + Math.round(effective) + " m Raster)");
+        requireObservableDistanceCalibration(scenario, result, logitoppSimulationAvailable());
         return result;
+    }
+
+    private boolean logitoppSimulationAvailable() {
+        return properties.getSimulation().isEnabled()
+                && new SimulationRunner(properties.getSimulation()).isAvailable();
     }
 
     // --- Stufe 2: OSM-Daten -------------------------------------------------------
@@ -503,6 +511,34 @@ public class GenerationService {
                     // Graph-Aufräumen ist Best-Effort
                 }
             }
+        }
+    }
+
+    /**
+     * Verhindert eine strukturell wirkungslose Distanz-Kalibrierung: {@code b_intrazonal}
+     * verändert nur die Zahl intrazonaler Ziele. Liegt deren einziger Matrixwert bereits
+     * oberhalb des {@code <1 km}-Zielbands, kann keine Iteration dieses Band beobachten.
+     */
+    static void requireObservableDistanceCalibration(
+            Scenario scenario, List<Zone> zones, boolean logitoppSimulationAvailable) {
+        if (!scenario.population.calibrateDistance
+                || !scenario.targets().contains("logitopp")
+                || !logitoppSimulationAvailable) {
+            return;
+        }
+        double minimumIntrazonalCarKm = zones.stream()
+                .filter(zone -> !zone.external)
+                .mapToDouble(MatrixGenerator::intrazonalCarDistanceKm)
+                .min()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Distanz-Kalibrierung benötigt mindestens eine interne Zone"));
+        if (minimumIntrazonalCarKm >= 1.0) {
+            throw new IllegalArgumentException(String.format(Locale.ROOT,
+                    "Distanz-Kalibrierung nicht beobachtbar: kleinste intrazonale "
+                            + "Pkw-Distanz %.2f km; b_intrazonal kann das Zielband <1 km "
+                            + "bei dieser Zonierung nicht beeinflussen. Zellgröße verkleinern "
+                            + "oder calibrateDistance deaktivieren.",
+                    minimumIntrazonalCarKm));
         }
     }
 

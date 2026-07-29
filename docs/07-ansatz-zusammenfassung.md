@@ -125,7 +125,10 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 - **Modus-Distanz-Mechanik getrennt steuerbar:** Der Großraum-Beleg traf mit
   zwei Hebeln 9,34 % ÖV gesamt und 17,60 % ab 20 km (MiD: 10/17,61 %).
   Der opt-in-Regler setzt diese Trennung ohne fest verdrahtete Versuchswerte um;
-  der gemeinsame 30-Zellen-Gate bleibt wegen der falschen Distanzmarginale offen.
+  die gemeinsame Realrouting-Kampagne scheiterte aber an der zonalen
+  Distanzauflösung: 2,3-km-Zellen bilden intrazonal 1,62 km ab und können das
+  `<1 km`-Ziel nicht beobachten. Solche Konfigurationen werden nun vor dem
+  Graphaufbau abgelehnt; beide Flags bleiben opt-in.
 - **Ehrlicher KI-Befund:** rohe LLM-Moduswahl hat einen **Bias zu aktiven Modi** (zu viel Rad),
   weil ihr die kalibrierten Modus-Konstanten fehlen – sie ist eine interessante, aber
   kalibrierbedürftige Alternativlinse.

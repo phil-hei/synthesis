@@ -56,8 +56,11 @@ Für logiTopp stehen experimentelle, standardmäßig deaktivierte Kalibrierungen
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist
-belegt, aber noch nicht über drei Seeds mit Realrouting promotionsfähig; Details und Grenzen
-stehen in [docs/06](docs/06-gta-integration-konzept.md).
+belegt, die gemeinsame Realrouting-Kampagne scheiterte jedoch an der groben zonalen
+Distanzauflösung. Kann eine Zonierung das kalibrierte `<1 km`-Band intrazonal nicht
+repräsentieren, bricht das Backend nun vor dem teuren Graphaufbau mit einer konkreten
+Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
+[docs/06](docs/06-gta-integration-konzept.md).
 
 ## Dokumentation
 

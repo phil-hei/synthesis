@@ -528,9 +528,31 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   getrennte Clamps, unveränderte Fremdparameter und Wegketten-Aggregation vor der
   Distanzbandzuordnung; `SimulationRunnerTest` belegt beide Overrides in derselben
   Run-Config. Der externe Großraum-Spike belegt die Hebelmechanik (9,34 % gesamt /
-  17,60 % ab 20 km), aber noch nicht die kombinierte automatische Schleife über
-  drei Seeds mit Realrouting. Daher kein Default-Flip und keine Aussage, dass der
-  30-Zellen-Promotions-Gate bereits erfüllt sei.
+  17,60 % ab 20 km). Die damals noch offene automatische Schleife über drei
+  Seeds mit Realrouting wurde am 2026-07-29 begonnen und über ihr Stop-Gate
+  beendet (nächster Eintrag); daher weiterhin kein Default-Flip.
+- **❌ Gemeinsame Drei-Seed-/Realrouting-Kampagne gestoppt (2026-07-29) —
+  ehrlicher Modellierungsbefund:** Das präregistrierte Stop-Gate griff nach
+  A42/B42. Bei 2,3-km-Zellen repräsentiert `CAR_DIS` intrazonal genau
+  **1,62 km**; `b_intrazonal` kann daher das kalibrierte `<1 km`-Band nicht
+  beeinflussen. Acht Iterationen änderten den Anteil trotz Parameter-Delta
+  **0→14** nicht (**0,0→0,0 %**) und verschoben stattdessen **81,54 %** der
+  Wege ins Band 1–<2 km. Distanzband-RMSE verschlechterte sich
+  **0,1343→0,3072**, Joint-RMSE **0,0438→0,0857**. Der ÖV-Regler traf zwar
+  9,28 % gesamt und 18,89 % ab 20 km, kann diese Distanzmarginale aber nicht
+  heilen. A/B nutzten byte-identische GraphHopper-Matrizen; Routing-Fallback
+  ist als Ursache ausgeschlossen. Seeds 43/44 wurden nicht gestartet.
+  **Fix:** `GenerationService` lehnt `calibrateDistance=true` jetzt vor dem
+  teuren Graphaufbau mit der gemessenen Mindestdistanz ab, wenn kein
+  intrazonaler Pkw-Wert im Zielband liegt. `GenerationServiceCalibrationTest`
+  belegt Ablehnung bei 2,3-km- und Zulassung bei 1-km-Zellen. Beide
+  Kalibrierflags bleiben opt-in; ein neuer Promotionslauf braucht feinere
+  Zonierung oder eine methodisch neu präregistrierte Distanzrepräsentation.
+  **Verifiziert:** REST-Prüflauf scheitert bereits in der Zonierungsstufe nach
+  4 ms mit der gemessenen Mindestdistanz; OSM, actiTopp und GraphHopper bleiben
+  unberührt. Ein MobileCity-only-Gegenlauf mit demselben historischen Flag
+  endet weiterhin `DONE`. Backend-Suite 69 Tests grün (6 erwartete Skips),
+  Angular-Strict-AOT-Build grün.
 - **⛔ Legacy-ÖV-Zugang/-Abgang nicht angeschlossen (2026-07-28):**
   SyntheSis schreibt `PUT_ACT`/`PUT_EGT` mit je sechs Minuten, der externe
   `MultiNomialLogit1HelperOldImpl` gibt Zugang und Abgang jedoch hart als `0.0`

@@ -194,8 +194,12 @@ Erledigt (`backend/.../pipeline/DistanceCalibrator.java`, Muster `ModeChoiceCali
 absolute Ø-Decke als Gebietsgrößen-Problem (Kampagnen-Option B). Die Komposition
 mit `calibrateModeDistance` ist umgesetzt: zuerst Zielwahl (`b_intrazonal`),
 danach ÖV-Niveau/-Schräge (`asc_put`/`b_tt_put`) auf demselben
-Zielwahl-Override. Der kombinierte Drei-Seed-Lauf mit Realrouting bleibt offen;
-die reine `calibrateModeChoice`-Schleife ist weiterhin eine Alternative.
+Zielwahl-Override. Der kombinierte Realrouting-Lauf vom 2026-07-29 wurde nach
+Seed 42 gestoppt: Bei 2,3-km-Zellen liegt der intrazonale Pkw-Matrixwert mit
+1,62 km außerhalb des `<1 km`-Zielbands, der Regler ist dort nicht
+identifizierbar. Solche Konfigurationen werden inzwischen vor dem Graphaufbau
+abgelehnt. Die reine `calibrateModeChoice`-Schleife ist weiterhin eine
+Alternative.
 
 ### Phase 4 — Joint-Validierung & Beförderung
 
@@ -236,6 +240,19 @@ Distanzbänder blieben stabil. Der Promotions-Gate Joint-RMSE <0,05 und Verbesse
 (Niveau) komponieren, aber keine Werte vor Drei-Seed-/Realrouting-/Distanzmarginal-
 Validierung übernehmen.
 
+**❌ Gemeinsame Realrouting-Kampagne 2026-07-29 nach Seed 42 gestoppt.**
+A/B verwendeten byte-identische GraphHopper-Matrizen, aber bei 2,3-km-Zellen
+bildet `CAR_DIS` intrazonal 1,62 km ab. Acht `b_intrazonal`-Iterationen mit
+Delta 0→14 ließen `<1 km` bei 0,0 %, während 1–<2 km auf 81,54 % stieg.
+Distanzband-RMSE verschlechterte sich 0,1343→0,3072, Joint-RMSE
+0,0438→0,0857. Der Modus-Distanz-Regler traf seine direkten ÖV-Ziele
+(9,28 % gesamt, 18,89 % ab 20 km), konnte die Distanzmarginale aber nicht
+heilen. **Regel:** Vor jeder Kampagne prüfen, ob der intrazonale Pkw-Matrixwert
+im kalibrierten Band liegt. Der Produktcode erzwingt dies nun fail-fast; bei
+`>=1 km` Zellgröße verkleinern oder die Distanzrepräsentation/Zielgröße
+methodisch neu präregistrieren. Seeds 43/44 nicht nachholen, solange diese
+Voraussetzung fehlt.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.
@@ -267,18 +284,19 @@ Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `M
 | Frage „wurde X schon probiert?" | synthesis-failure-archaeology |
 | Prozess-/Evidenzfragen | synthesis-research-methodology |
 
-## Provenienz & Wartung (Stand: 2026-07-28)
+## Provenienz & Wartung (Stand: 2026-07-29)
 
 Verifiziert am 2026-07-10: Parameterdateien + Inhalte (ls/cat oben), `destinationChoice:`-
 Verdrahtung (grep in SimulationRunner.java Z. 106–114), Baseline-Messung (distance_profile.py,
 70 188 Trips). Überliefert: Externe-Zonen-Befunde (docs/06, 2026-06-12), Kalibrier-Blaupause-
 Kennwerte (docs/06, 2026-06-21). MiD-Distanzziel: Tabellenband Deutschland, Tabelle A W12;
 Drei-Seed-Gates und Zielwert-Korrektur: docs/05–06 (2026-07-27/28).
+Realrouting-Stop-Gate und Auflösungsgrenze: docs/05–06 (2026-07-29).
 
 Re-Verifikation:
 ```bash
 ls validation/mobitopp-rastatt/config/shared/parameters/ | grep -i dest
 grep -n "destinationChoice" backend/src/main/java/de/synthesis/generation/pipeline/SimulationRunner.java
-grep -n "calibrateDistance" backend/src/main/java/de/synthesis/scenario/Scenario.java  # leer = Phase 3 noch offen
+grep -n "calibrateDistance" backend/src/main/java/de/synthesis/scenario/Scenario.java  # Erwartung: Feld default=false
 python3 .claude/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv
 ```
