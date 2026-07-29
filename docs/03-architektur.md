@@ -76,7 +76,7 @@ Jede Stufe: deklarierte Inputs/Outputs, idempotent, Seed-gesteuert reproduzierba
 | 5 Pendler | Zonen + BA/Gravitationsmodell | `commuters.csv` |
 | 6 Matrizen | Zonen + OSM/GTFS-Routing | `*_TTC/COST/DIS.mtx.bz2`, Matrix-YAMLs |
 | 7 Long-Term | 3–6 + Survey-Template | `person/household/activity/car/fixedDestination.csv` |
-| 8 Short-Term + logiTopp | 7 + Matrizen + Logistik-Parameter | Wege-/Touren-CSVs, Paket-Events |
+| 8 Short-Term + logiTopp | 7 + Matrizen + Logistik-Parameter | Wege-/Touren-CSVs, Zustell-, Abhol- und Paketstatus-Events |
 | 9 Export | 8 + Adapterwahl | GeoJSON-Layer, KPI-JSON, MobileCity-Paket, … |
 
 ## Szenario-Schema (Generik-Achse 2)
@@ -99,12 +99,24 @@ scenario:
   logistics:
     parcelDemand: { meanPerPersonWeek: 0.75, stdDev: 0.5, max: 10 }
     destinationShares: { home: 0.8, work: 0.1, packstation: 0.1 }
+    returns:                       # geplant; Details und Stufenplan in docs/06, Abschnitt G
+      enabled: false              # experimentell und rückwärtskompatibel
+      model: exogenous-share      # MVP: unabhängige Rücksende-Nachfrage, kein Paket-Lebenszyklus
+      shareOfPrivateOrders: 0.0   # explizite Szenarioannahme; kein unkalibrierter Produktiv-Default
+      pickupShares: { home: 1.0, work: 0.0 }
     depots:                        # auf Karte gesetzt oder provider: osm | random
       - { location: [8.4, 49.0], employees: 25, share: 0.6, fleet: cargo-bike }
     services: [{ name: DHL, share: 0.45 }, …]
   simulation: { days: 7, engine: legacy-logitopp | mobitopp-ng }
   exports: [geojson, mobilecity]
 ```
+
+Die geplante Retourenlogistik erweitert die bestehenden Stufen „Logistik",
+„Short-Term + logiTopp" und „Export"; sie benötigt **keine zusätzliche Pipeline-Stufe**.
+Kundenretouren werden als logiTopp-Abholaufträge (`IsPickup=true`) modelliert und in Ergebnissen
+strikt von nicht zustellbaren Paketen im Status `RETURNING` getrennt. Das vollständige
+Fach-, Daten-, KPI- und Validierungskonzept steht in `docs/06-gta-integration-konzept.md`,
+Abschnitt G.
 
 ## Frontend (Angular, wie simudrive)
 
@@ -115,7 +127,8 @@ scenario:
 3. **Ausführen & beobachten:** Pipeline-Graph mit Stufenstatus, Logs, Laufzeit; Wiederaufnahme
    ab fehlgeschlagener Stufe (Artefakt-Cache).
 4. **Ergebnisse:** Choroplethen (Wege je Zone, Paketdichte), Depot-Einzugsgebiete, Touren auf der
-   Karte, KPI-Kacheln (Wege/Tag, Modal Split, Pakete, Tourlängen, Stopps/Tour), Downloads je Artefakt.
+   Karte, KPI-Kacheln (Wege/Tag, Modal Split, Zustellpakete, Kundenretouren, fehlgeschlagene
+   Zustellungen, Tourlängen, Stopps/Tour), Downloads je Artefakt.
 
 ## MobileCity-Integration (Export-Adapter)
 

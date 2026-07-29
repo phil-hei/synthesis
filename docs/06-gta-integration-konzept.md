@@ -3,7 +3,8 @@
 Grundlage: Lämmer, Colley, Ebel (2026), *GTA: Generative Traffic Agents for Simulating
 Realistic Mobility Behavior*, CHI '26 (Open Source: github.com/ciao-group/Generative-Traffic-Agents).
 Dieses Dokument beschreibt (A) den aktuellen Integrationsstand von SyntheSis und (B) ein
-gestuftes Konzept, wie sich der GTA-Ansatz ergänzend einbetten ließe.
+gestuftes Konzept, wie sich der GTA-Ansatz ergänzend einbetten ließe. Abschnitt G hält das
+geplante Konzept für Kundenretouren als logiTopp-Abholaufträge fest.
 
 ---
 
@@ -68,6 +69,23 @@ Distanz, Modus-Konstanten) aus Befragungsdaten **geschätzt** wurden. Das Lauf-P
 `mobitopp-rastatt` liefert geschätzte Parameter für die **Region Rastatt** mit; weil wir es als
 Harness nutzen, rechnet unsere Simulation mit Rastatts Werten („Rastatt-Geschmack" bei Modal-Split/
 Weglänge). Änderbar nur durch **Neu-Kalibrierung** dieser Parameter (siehe D).
+
+### A.7 Retouren-Status — noch nicht integriert (2026-07-29)
+
+- **Kundenretouren fehlen aktuell.** Der Lauf-Harness setzt private Pakete mit
+  `ParcelDemandModelBuilder.allAsDelivery()` vollständig auf Zustellrichtung; die vorhandenen
+  Szenario- und Exportparameter beschreiben nur Bestellmenge, Zustellorte und Zustelltage.
+  Zwei aktuelle Prüfläufe enthielten zusammen 6.594 Paketstatuszeilen, ausnahmslos
+  `IsPickup=false`.
+- **`RETURNING` ist keine Kundenretoure.** Der logiTopp-Status bezeichnet ein Paket, das nach
+  einem fehlgeschlagenen Zustellversuch zum Verteilzentrum zurückkehrt. Ebenso ist
+  `PICK_UP_PARCEL` die Abholung einer eingehenden Sendung durch den Empfänger an einer
+  Packstation.
+- **Die technische Grundlage ist vorhanden.** Die lokale logiTopp-Version unterstützt
+  Abholaufträge (`customPickupOrDeliverySelection`, `allAsPickup`), Pickup-Touren sowie
+  Ergebnisfelder wie `to_pickup`, `success_pickup` und `collected`. Darauf baut das geplante
+  Konzept in Abschnitt G auf; ein kalibriertes Endkunden-Retourenmodell liefert logiTopp jedoch
+  nicht fertig mit.
 
 ---
 
@@ -857,3 +875,203 @@ MobileCity-Tabelle) und **Maßnahmen-Evidenz-Export** (Konzept: Szenario-Deltas 
 Grundlage für ME-Wirkungs-Scores — vor Umsetzung mit Takomat/KIT abstimmen). Aus der
 INSPIRE-Schiene weiter offen: Zensus-Direktzuordnung (Rasterzelle→INSPIRE-Zone ohne Re-Gridding)
 und INSPIRE-Zell-IDs als MobileCity-`districtId` statt `SYN-NNN`.
+
+---
+
+## G. Konzept: Retourenlogistik mit logiTopp — 📝 GEPLANT (2026-07-29)
+
+### G.1 Ziel und fachliche Abgrenzung
+
+SyntheSis soll zusätzlich zur Vorwärtslogistik die **Rücksendung eines Pakets vom privaten
+Empfänger in Richtung Verteilzentrum** abbilden. Im ersten Schritt ist eine Retoure ein
+eigenständiger Abholauftrag in derselben Simulationswoche; sie ist noch nicht kausal mit einer
+konkreten vorherigen Bestellung verknüpft.
+
+Die Ergebnisbegriffe bleiben strikt getrennt:
+
+| Begriff | Bedeutung | logiTopp-Abbildung |
+|---|---|---|
+| **Zustellung** | Paket vom Verteilzentrum zum Empfänger | `IsPickup=false` |
+| **Kundenretoure** | Rücksendung vom Empfänger zum Verteilzentrum | `IsPickup=true` |
+| **Zustell-Rückläufer** | Zustellung scheitert und das unveränderte Paket fährt zurück zum Depot | Paketstatus `RETURNING` |
+| **Packstationsabholung** | Empfänger holt eine eingehende Sendung an der Packstation ab | Personenaktivität `PICK_UP_PARCEL`; keine Retoure |
+
+Diese Trennung ist eine harte Invariante: Weder `RETURNING` noch `PICK_UP_PARCEL` dürfen in
+Retouren-KPIs gezählt oder in der UI als „Retoure" bezeichnet werden.
+
+### G.2 Empfohlener MVP
+
+Der MVP modelliert Retouren als **exogene, szenariogesteuerte zusätzliche Abholnachfrage**:
+
+1. Das bestehende Zustellmodell erzeugt zunächst unverändert `N` private Zustellaufträge. Aus
+   dieser Zahl wird mit `shareOfPrivateOrders` deterministisch ein zusätzliches Retourenvolumen
+   `R` gezogen; die Gesamtmenge ist `N + R`. Aktivierte Retouren dürfen die Zahl der
+   Zustellaufträge nicht reduzieren.
+2. Für jede gezogene Retoure erzeugt der private Paket-Demand-Builder einen Auftrag mit
+   `IsPickup=true`. Abholquelle ist im MVP `HOME` oder `WORK`; Ziel ist das gewählte
+   Verteilzentrum.
+3. logiTopp plant Zustellungen und Abholungen gemeinsam auf Touren. Dadurch entstehen die
+   zusätzlichen Stopps und Fahrzeugbewegungen endogen aus der Tourenplanung.
+4. Die Ergebnis-Ingestion wertet Paketstatus und Vehicle-Events richtungsgetrennt aus.
+
+**Bewusste Einschränkung:** `shareOfPrivateOrders` ist im MVP eine Szenarioannahme, keine
+behauptete empirische Rücksendequote. SyntheSis kennt derzeit weder Warengruppe noch Händler,
+Retourengrund oder ein konkretes Ursprungspaket. Ein voreingestellter Branchenwert würde eine
+nicht vorhandene Kalibrierung vortäuschen; deshalb bleiben Feature und Quote standardmäßig aus.
+
+### G.3 Szenario- und Konfigurationsvertrag
+
+Zielstruktur im Szenario:
+
+```yaml
+logistics:
+  returns:
+    enabled: false
+    model: exogenous-share
+    shareOfPrivateOrders: 0.0
+    pickupShares:
+      home: 1.0
+      work: 0.0
+```
+
+Regeln:
+
+- `enabled=false` und `shareOfPrivateOrders=0.0` sind die rückwärtskompatiblen Defaults.
+- Bei aktiviertem Feature gilt `0 < shareOfPrivateOrders <= 1`.
+- `pickupShares.home + pickupShares.work = 1`; negative oder nicht-endliche Werte werden bereits
+  von der Szenario-API mit HTTP 400 abgelehnt.
+- Jede Ziehung hängt deterministisch an `Scenario.population.seed`; kein ungesetzter
+  Zufallszahlengenerator.
+- `PACKSTATION` ist im MVP **kein Retourenkanal**, weil eine Abgabe durch den Kunden einen
+  zusätzlichen Personenweg und eine konsolidierte Abholung an der Station erfordert.
+
+Das Frontend zeigt den Block nur bei Zielmodell `logitopp` und kennzeichnet ihn als
+experimentell. Nach Aktivierung werden Quote sowie Abholortanteile editierbar; ein Hilfetext
+erklärt die Abgrenzung zu fehlgeschlagenen Zustellungen.
+
+### G.4 Technische Integration
+
+Die Erweiterung bleibt innerhalb der bestehenden Architektur und erzeugt keine 15. Pipeline-Stufe:
+
+| Bestehender Ort | Änderung |
+|---|---|
+| `Scenario.Logistics` + Frontend-Modell | verschachtelte Retourenkonfiguration und Validierung ergänzen |
+| `LogisticsGenerator` | `parcel-demand-config.yaml` um Richtung/Retourenparameter erweitern |
+| `SimulationRunner` | Pfad bzw. Werte in `run-config.yaml` an den externen Lauf-Harness übergeben |
+| `mobitopp-rastatt`-Harness | Paketparameter aus der Run-Config lesen; das unveränderte Delivery-Modell und ein zusätzliches Pickup-Modell hinter dem von `DemandSimulatorDelivery` erwarteten privaten Demand-Modell zusammensetzen |
+| logiTopp | vorhandene Pickup-Requests, Reverse Chains und gemeinsame Tourenplanung nutzen |
+| Ergebnis-Ingestion | `IsPickup`, `to_pickup`, `success_pickup` und `collected` richtungsgetrennt aggregieren |
+| SUMO-Adapter | Abholstopps aus `planned-tours.csv` als Teil der realen Zustelltour übernehmen; keine separate „Retourenfahrt" erfinden |
+
+**Vorbedingung:** Die heute erzeugte `parcel-demand-config.yaml` wird vom Lauf-Harness noch nicht
+gelesen; dort sind Paketmenge, Zielanteile und `allAsDelivery()` hart codiert. Die erste
+Implementierungsstufe muss daher die **gesamte Konfigurationskette**
+`scenario.json → parcel-demand-config.yaml/run-config.yaml → mobitopp-rastatt → logiTopp`
+wirksam und durch einen Test beobachtbar machen. Andernfalls wäre eine Retourenquote nur ein
+wirkungsloser UI-Parameter.
+
+Die Run-Config erhält dafür eine explizite Vertragsversion. Nach einem Lauf mit aktivierten
+Retouren prüft die Ingestion als Laufzeit-Postcondition, ob die erwartete Zahl eindeutiger
+`IsPickup=true`-Paket-IDs vorhanden ist; eine alte Harness-Version darf das neue Feld nicht
+unbemerkt ignorieren, sondern lässt die Simulationsstufe sichtbar fehlschlagen.
+
+Die Prozessgrenze zum GPL-lizenzierten Legacy-Stack bleibt bestehen. Weil
+`validation/mobitopp-rastatt` gitignored ist, braucht die produktive Umsetzung außerdem einen
+versionierten Patch-/Build-Vertrag oder das ohnehin geplante feste Lauf-Image; eine nur lokal
+geänderte Harness-Kopie ist kein auslieferbares Feature.
+
+### G.5 Artefakte und KPIs
+
+`kpis.json` erhält einen versionierten, additiven Block:
+
+```json
+{
+  "logistics": {
+    "deliveries": { "generated": 0, "delivered": 0, "failedReturning": 0 },
+    "customerReturns": {
+      "generated": 0,
+      "plannedPickups": 0,
+      "collected": 0,
+      "collectionRate": 0.0
+    }
+  }
+}
+```
+
+Weitere Ergebnisanforderungen:
+
+- `parcel-states.csv` bleibt Rohbeleg; eindeutige Paket-IDs mit `IsPickup=true` werden gezählt,
+  nicht die mehrfachen Zustandszeilen.
+- `vehicle-events` liefert geplante und erfolgreiche Abholungen pro Stopp.
+- `tours.geojson` kennzeichnet Stopps additiv mit `deliveries`, `pickups` und
+  `failedDeliveries`; bestehende Konsumenten bleiben kompatibel.
+- Das Studio zeigt **Kundenretouren**, **Abholerfolg** und **Zustell-Rückläufer** getrennt.
+- Zusätzliche Fahrzeugkilometer oder CO₂ werden zunächst nur als
+  **Szenario-Differenz Basis→Retoure** berichtet. Eine direkte Zuordnung gemeinsamer
+  Tourkilometer zu einzelnen Retouren wäre ohne Allokationsregel Scheingenauigkeit.
+
+### G.6 Beweis- und Akzeptanzplan
+
+Vor Produktivcode ist ein kleiner Ende-zu-Ende-Spike über die vollständige externe Kette Pflicht:
+
+1. Minimales Szenario mit `returns.enabled=true` und bewusst hoher Quote.
+2. Echter logiTopp-Lauf erzeugt mindestens einen Paketstatus mit `IsPickup=true`.
+3. Mindestens ein Tour-Event weist `to_pickup > 0` und `success_pickup > 0` aus.
+4. Das abgeholte Paket erreicht den Depot-/`collected`-Pfad; kein Zustell-Rückläufer wird als
+   Kundenretoure gezählt.
+5. `planned-tours.csv` und der SUMO-Import werden darauf geprüft, dass der Abholstopp in der
+   gefahrenen Tour erhalten bleibt.
+
+Akzeptanzkriterien für die Implementierung:
+
+- **Baseline-Invariante:** Bei `enabled=false` bleiben Paketanzahl, Richtungen und fachliche KPIs
+  für denselben Seed unverändert; `IsPickup` bleibt vollständig `false`.
+- **Determinismus:** Zwei Läufe mit identischem Szenario und Seed erzeugen dieselben
+  Retouren-Paket-IDs und Kennzahlen.
+- **Mengentreue:** Die erzeugte Retourenzahl entspricht der dokumentierten Rundungs-/Ziehregel
+  für `shareOfPrivateOrders`; die ursprüngliche Zahl der Zustellaufträge bleibt dabei erhalten.
+- **Semantische Trennung:** Tests decken `customerReturns`, `failedReturning` und
+  Packstationsabholung als drei verschiedene Fälle ab.
+- **API-Validierung:** Ungültige Quoten und Abholortanteile ergeben HTTP 400; aktivierte
+  Retouren mit inkompatiblem Harness schlagen sichtbar fehl und werden nie still als reine
+  Zustellung simuliert.
+- **Gates:** Backend-Testsuite, Angular-AOT-Build und ein echter kleiner logiTopp-E2E-Lauf sind
+  grün; die Verifikation wird mit Datum und konkreten Zählwerten in diesem Abschnitt ergänzt.
+
+Konfigurations-, Validierungs-, Aggregations- und Determinismustests laufen offline in der
+Standardsuite. Der externe logiTopp-E2E-Test darf nach dem bestehenden Fixture-/`assumeTrue`-
+Muster umgebungsabhängig überspringen; ein Skip gilt aber ausdrücklich **nicht** als
+Ende-zu-Ende-Beleg. Vor der Beförderung muss der Test tatsächlich mit Exit 0 gelaufen sein und
+die beobachteten Zustell-, Pickup- und `collected`-Zahlen werden dokumentiert.
+
+### G.7 Ausbau nach dem MVP
+
+1. **Packstation als Rückgabekanal:** eigene Semantik `DROP_OFF_RETURN`, Personenweg zur
+   Packstation und konsolidierter Pickup durch den KEP-Dienst; nicht durch Umbenennen von
+   `PICK_UP_PARCEL`.
+2. **Kausaler Lebenszyklus:** `sourceParcelId`, Zustellerhalt → Rücksendeentscheidung →
+   Verzögerungsverteilung; dafür sind mehrwöchige Läufe oder Zustandsübergabe zwischen Läufen
+   erforderlich.
+3. **Segmentiertes Retourenmodell:** Quoten nach Warengruppe, Haushaltstyp, Zustellkanal und
+   Dienstleister – erst nach verfügbarer und dokumentierter Datengrundlage.
+4. **Händler-/Senkenmodell:** Rückführung nicht nur zum Depot, sondern zu Händler,
+   Konsolidierungszentrum oder Wiederaufbereitung.
+5. **Kalibrierung:** beobachtete Abholmengen, Retourenquote und Rücklaufzeiten als Referenzen;
+   bis dahin bleiben Ergebnisse ausdrücklich Szenario- und keine Prognosewerte.
+
+### G.8 Umsetzungsschnitt
+
+Empfohlene Reihenfolge:
+
+1. **Spike:** Pickup-Mechanik inklusive Reverse Chain, Ergebnisdateien und SUMO-Tour beweisen.
+2. **Konfigurationskette:** bestehende Paketparameter und Retourenwerte im Harness wirksam
+   machen; Harness-Version/Patch reproduzierbar fixieren.
+3. **MVP hinter `returns.enabled=false`:** Backend, Frontend, logiTopp-Auswahl und Tests.
+4. **Ingestion/KPIs/UI:** Richtungen trennen und Basis-vs.-Retouren-Vergleich ergänzen.
+5. **E2E-Verifikation und Beförderungsentscheidung:** erst danach über einen fachlich
+   begründeten Default oder weitere Rückgabekanäle entscheiden.
+
+**Go/No-Go nach Schritt 1:** Wenn logiTopp Abholaufträge zwar erzeugt, aber nicht über eine
+vollständige Reverse Chain bis zum Depot transportiert oder die Pickup-Stopps im exportierten
+Tourpfad verliert, wird nicht mit KPI-Heuristiken kaschiert. Dann bleibt das Feature aus und der
+konkrete Blocker wird als negativer Befund dokumentiert.
