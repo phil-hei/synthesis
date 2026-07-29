@@ -962,7 +962,7 @@ Die Erweiterung bleibt innerhalb der bestehenden Architektur und erzeugt keine 1
 | `SimulationRunner` | Pfad bzw. Werte in `run-config.yaml` an den externen Lauf-Harness übergeben | ✅ Pfad + Harness-Vertrag |
 | `mobitopp-rastatt`-Harness | Paketparameter aus der Run-Config lesen; Delivery- und zusätzliches Pickup-Modell zusammensetzen | ✅ versionierter Patch |
 | logiTopp | private Pickups nach tatsächlicher Position clustern und über `DistributionCenter.requestPickup(...)` registrieren | ✅ versionierter Patch |
-| Ergebnis-Ingestion | `IsPickup`, `to_pickup`, `success_pickup` und `collected` richtungsgetrennt aggregieren | offen (Schritt 4) |
+| Ergebnis-Ingestion | `IsPickup`, `to_pickup`, `success_pickup` und `collected` richtungsgetrennt aggregieren | ✅ KPI-Vertrag + Postconditions |
 | SUMO-Adapter | Abholstopps übernehmen und das abschließende Leg zurück zum Depot ergänzen | ✅ geschlossen, ohne Doppel-Leg |
 
 Die Konfigurationskette
@@ -972,10 +972,13 @@ ausgeschalteten Default normalisiert. Die API lehnt unbekannte Modelle, nicht en
 außerhalb `[0,1]` liegende Quoten, Abholanteile ungleich 1 sowie aktivierte Retouren ohne
 Zielmodell logiTopp mit HTTP 400 ab.
 
-Die Run-Config enthält dafür eine explizite Vertragsversion. Nach einem Lauf mit aktivierten
-Retouren prüft die Ingestion als Laufzeit-Postcondition, ob die erwartete Zahl eindeutiger
-`IsPickup=true`-Paket-IDs vorhanden ist; eine alte Harness-Version darf das neue Feld nicht
-unbemerkt ignorieren, sondern lässt die Simulationsstufe sichtbar fehlschlagen.
+Die Run-Config enthält dafür eine explizite Vertragsversion. Nach einem Lauf prüft die Ingestion
+als Laufzeit-Postcondition eindeutige und richtungskonsistente Paket-IDs. Bei aktivierten
+Retouren muss die Pickup-Zahl je Empfänger innerhalb der durch `floor`/`ceil` definierten
+stochastischen Rundungsbandbreite liegen; erfolgreiche Stop-Pickups, Depot-Unloads und
+eindeutige dort angekommene Pickup-Pakete müssen übereinstimmen. Bei deaktivierten Retouren
+darf kein Pickup-Ergebnis entstehen. Eine alte Harness-Version wird bereits am Vertragsmarker
+abgewiesen und kann das neue Feld nicht unbemerkt ignorieren.
 
 Die Prozessgrenze zum GPL-lizenzierten Legacy-Stack bleibt bestehen. Weil
 `validation/mobitopp-rastatt` gitignored ist, liegt der reproduzierbare Patch-/Build-Vertrag
@@ -990,7 +993,13 @@ Ein festes Lauf-Image kann später denselben Vertrag konsumieren.
 ```json
 {
   "logistics": {
-    "deliveries": { "generated": 0, "delivered": 0, "failedReturning": 0 },
+    "contract": "synthesis-logistics-kpis-v1",
+    "deliveries": {
+      "generated": 0,
+      "delivered": 0,
+      "failedReturning": 0,
+      "deliveryRate": 0.0
+    },
     "customerReturns": {
       "generated": 0,
       "plannedPickups": 0,
@@ -1005,10 +1014,12 @@ Weitere Ergebnisanforderungen:
 
 - `parcel-states.csv` bleibt Rohbeleg; eindeutige Paket-IDs mit `IsPickup=true` werden gezählt,
   nicht die mehrfachen Zustandszeilen.
-- `vehicle-events` liefert geplante und erfolgreiche Abholungen pro Stopp.
-- `tours.geojson` kennzeichnet Stopps additiv mit `deliveries`, `pickups` und
+- `vehicle_events.csv` liefert geplante und erfolgreiche Abholungen pro Stopp; `collected` und
+  `returning` werden nur bei `event=unload` gezählt, weil sie an Stopps kumulativ sind.
+- Tour-Features in `tours.geojson` aggregieren additiv `deliveries`, `pickups` und
   `failedDeliveries`; bestehende Konsumenten bleiben kompatibel.
-- Das Studio zeigt **Kundenretouren**, **Abholerfolg** und **Zustell-Rückläufer** getrennt.
+- Studio und Szenariovergleich zeigen **Kundenretouren**, **Abholerfolg** und
+  **Zustell-Rückläufer** getrennt; alte `kpis.json` fallen auf die bisherigen Paketzeilen zurück.
 - Zusätzliche Fahrzeugkilometer oder CO₂ werden zunächst nur als
   **Szenario-Differenz Basis→Retoure** berichtet. Eine direkte Zuordnung gemeinsamer
   Tourkilometer zu einzelnen Retouren wäre ohne Allokationsregel Scheingenauigkeit.
@@ -1066,6 +1077,16 @@ Retouren sind zunächst aus, die Detailfelder erscheinen erst nach Aktivierung, 
 logiTopp blendet den Block aus und setzt `enabled` zurück; es gab keine Konsolenfehler. Der
 echte externe Prozessbeleg bleibt der unter Schritt 2 dokumentierte Mischlauf.
 
+**Implementierungsnachweis Schritt 4 (✅ Ingestion/KPIs/UI, 2026-07-29):**
+`SimulationResultIngestorTest` lief mit sechs Tests einschließlich der read-only Auswertung des
+echten Schritt-2-Mischlaufs: **101 Zustellaufträge / 65 zugestellt, 101 Kundenretouren /
+67 geplant und eingesammelt, 0 Zustell-Rückläufer**. Separate Negativtests beweisen
+Fail-fast bei Pickups trotz deaktivierter Retouren sowie bei Verletzung der Empfänger-genauen
+Ziehregel. Die vollständige Offline-Backend-Suite lief mit **86 Tests, 0 Fehlern und
+6 umgebungsabhängigen Skips**, der Angular-AOT-Build erzeugte 2,17 MB. Eine isoliert geseedete
+Browserprüfung bestätigte die Richtungstrennung in Studio und Szenariovergleich sowie die
+horizontal nutzbare Depot-Tabelle; keine Konsolenfehler.
+
 Akzeptanzkriterien für die Implementierung:
 
 - **Baseline-Invariante:** Bei `enabled=false` bleiben Paketanzahl, Richtungen und fachliche KPIs
@@ -1115,11 +1136,12 @@ Empfohlene Reihenfolge:
 3. **✅ MVP hinter `returns.enabled=false` (2026-07-29):** verschachtelter Backend-/JSON-Vertrag,
    HTTP-400-Validierung, logiTopp-gegateter Studio-Block und YAML-Durchstich; keine
    unkalibrierte Vorgabequote.
-4. **Ingestion/KPIs/UI:** Richtungen trennen und Basis-vs.-Retouren-Vergleich ergänzen.
+4. **✅ Ingestion/KPIs/UI (2026-07-29):** versionierter Richtungsvertrag, Laufzeit-
+   Postconditions, additive Depot-/Dichte-/Tourwerte sowie Darstellung in Studio und Vergleich.
 5. **E2E-Verifikation und Beförderungsentscheidung:** erst danach über einen fachlich
    begründeten Default oder weitere Rückgabekanäle entscheiden.
 
-**Go/No-Go nach Schritt 3: technisches Go für Schritt 4.** Nutzer können den bewiesenen
-Pickup-Pfad nun bewusst und validiert konfigurieren; der Default bleibt aus. Ein Produkt-Go ist
-weiterhin unzulässig, weil richtungsgetrennte KPIs, Laufzeit-Postconditions und der
-Basis-vs.-Retouren-Vergleich erst in Schritten 4–5 folgen.
+**Go/No-Go nach Schritt 4: technisches Go für Schritt 5.** Externe Rohdaten werden nun
+richtungssicher geprüft und ohne Kilometer-/CO₂-Scheinallokation vergleichbar dargestellt.
+Ein Produkt-Go ist weiterhin unzulässig, bis der abschließende Akzeptanzlauf die aktuelle
+Gesamtkette aus Szenario, Ingestion, Studio/Vergleich und SUMO mit Exit 0 bestätigt.

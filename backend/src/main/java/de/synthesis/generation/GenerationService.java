@@ -661,7 +661,8 @@ public class GenerationService {
                 SimulationRunner.Result run = runner.run(
                         scenario, artifacts, job::log, mnl, calibratedDestinationChoice);
                 last[0] = new SimulationResultIngestor(mapper)
-                        .ingest(run.resultsDir(), artifacts, run.durationSeconds());
+                        .ingest(run.resultsDir(), artifacts, run.durationSeconds(),
+                                scenario.logistics.returns);
                 return SimulationResultIngestor.readModeDistanceMetrics(
                         run.resultsDir().resolve("demandsimulationResult.csv"));
             });
@@ -705,7 +706,8 @@ public class GenerationService {
             ModeChoiceCalibrator.Result cal = calibrator.calibrate(mnl -> {
                 SimulationRunner.Result run = runner.run(scenario, artifacts, job::log, mnl);
                 last[0] = new SimulationResultIngestor(mapper)
-                        .ingest(run.resultsDir(), artifacts, run.durationSeconds());
+                        .ingest(run.resultsDir(), artifacts, run.durationSeconds(),
+                                scenario.logistics.returns);
                 return readModalSplit(artifacts.resolve("simulation").resolve("kpis.json"));
             });
             cal.log().forEach(job::log);
@@ -718,14 +720,21 @@ public class GenerationService {
             SimulationRunner.Result run = runner.run(scenario, artifacts, job::log);
             job.log("Simulation beendet nach " + run.durationSeconds() + " s, werte Ergebnisse aus…");
             summary = new SimulationResultIngestor(mapper)
-                    .ingest(run.resultsDir(), artifacts, run.durationSeconds());
+                    .ingest(run.resultsDir(), artifacts, run.durationSeconds(),
+                            scenario.logistics.returns);
         }
-        job.log(summary.trips() + " Wege, " + summary.parcels() + " Pakete ("
-                + summary.delivered() + " zugestellt), " + summary.tours()
-                + " Touren – KPIs unter simulation/");
+        job.log(summary.trips() + " Wege, " + summary.deliveries() + " Zustellaufträge ("
+                + summary.deliveredDeliveries() + " zugestellt), "
+                + summary.customerReturns() + " Kundenretouren ("
+                + summary.collectedReturns() + " eingesammelt), "
+                + summary.tours() + " Touren – KPIs unter simulation/");
         job.summary.put("simulatedTrips", summary.trips());
         job.summary.put("simulatedParcels", summary.parcels());
         job.summary.put("deliveredParcels", summary.delivered());
+        job.summary.put("simulatedDeliveries", summary.deliveries());
+        job.summary.put("deliveredDeliveries", summary.deliveredDeliveries());
+        job.summary.put("simulatedCustomerReturns", summary.customerReturns());
+        job.summary.put("collectedCustomerReturns", summary.collectedReturns());
         job.summary.put("simulatedTours", summary.tours());
     }
 
@@ -756,7 +765,8 @@ public class GenerationService {
         DistanceCalibrator.Result cal = calibrator.calibrate(dc -> {
             SimulationRunner.Result run = runner.run(scenario, artifacts, job::log, null, dc);
             last[0] = new SimulationResultIngestor(mapper)
-                    .ingest(run.resultsDir(), artifacts, run.durationSeconds());
+                    .ingest(run.resultsDir(), artifacts, run.durationSeconds(),
+                            scenario.logistics.returns);
             return readNearDistanceShare(run.resultsDir());
         });
         cal.log().forEach(job::log);
@@ -958,7 +968,8 @@ public class GenerationService {
                         modeChoiceOverride,
                         destinationChoiceOverride);
                 new SimulationResultIngestor(mapper)
-                        .ingest(run.resultsDir(), artifacts, run.durationSeconds());
+                        .ingest(run.resultsDir(), artifacts, run.durationSeconds(),
+                                scenario.logistics.returns);
                 // SUMO auf der neuen Nachfrage – liefert die Faktoren der nächsten Iteration
                 // und hält CO₂/Netzlast-Artefakte konsistent zur finalen Nachfrage
                 String osmXml = roadNetworkOsm(ctx);

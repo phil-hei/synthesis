@@ -397,11 +397,31 @@
           <td>Ø Weglänge</td>
           <td>{{ simKpis.demand?.avgTripKm }} km
             <span class="mid">MiD {{ simKpis.mid2017?.avgTripKm }} km</span></td></tr>
-        <tr><td>Pakete</td><td>{{ simKpis.parcels?.total | number:'1.0-0' }}</td></tr>
-        <tr title="In der Modellwoche zugestellte Pakete (spät bestellte Pakete bleiben offen)">
-          <td>davon zugestellt</td>
-          <td>{{ simKpis.parcels?.delivered | number:'1.0-0' }}
-            ({{ (simKpis.parcels?.deliveryRate ?? 0) * 100 | number:'1.0-0' }} %)</td></tr>
+        <ng-container *ngIf="simKpis.logistics as logistics; else legacyParcelKpis">
+          <tr><td>Zustellaufträge</td>
+            <td>{{ logistics.deliveries.generated | number:'1.0-0' }}</td></tr>
+          <tr title="In der Modellwoche erfolgreich zugestellte Pakete">
+            <td>davon zugestellt</td>
+            <td>{{ logistics.deliveries.delivered | number:'1.0-0' }}
+              ({{ logistics.deliveries.deliveryRate * 100 | number:'1.0-0' }} %)</td></tr>
+          <tr title="Eindeutige Zustellpakete, die nach mindestens einem fehlgeschlagenen Zustellversuch zum Depot zurückliefen">
+            <td>Zustell-Rückläufer</td>
+            <td>{{ logistics.deliveries.failedReturning | number:'1.0-0' }}</td></tr>
+          <tr><td>Kundenretouren</td>
+            <td>{{ logistics.customerReturns.generated | number:'1.0-0' }}</td></tr>
+          <tr title="Innerhalb der Modellwoche geplante Abholungen und tatsächlich zum Depot zurückgebrachte Kundenretouren">
+            <td>Abholungen</td>
+            <td>{{ logistics.customerReturns.plannedPickups | number:'1.0-0' }} geplant /
+              {{ logistics.customerReturns.collected | number:'1.0-0' }} eingesammelt
+              ({{ logistics.customerReturns.collectionRate * 100 | number:'1.0-0' }} %)</td></tr>
+        </ng-container>
+        <ng-template #legacyParcelKpis>
+          <tr><td>Pakete</td><td>{{ simKpis.parcels?.total | number:'1.0-0' }}</td></tr>
+          <tr title="In der Modellwoche zugestellte Pakete (älterer KPI-Vertrag ohne Richtungstrennung)">
+            <td>davon zugestellt</td>
+            <td>{{ simKpis.parcels?.delivered | number:'1.0-0' }}
+              ({{ (simKpis.parcels?.deliveryRate ?? 0) * 100 | number:'1.0-0' }} %)</td></tr>
+        </ng-template>
         <tr><td>Laufzeit</td><td>{{ simKpis.simulationSeconds }} s</td></tr>
       </table>
 
@@ -482,18 +502,26 @@
 
       <ng-container *ngIf="simDepots.length > 0">
         <h3>Depots</h3>
-        <table class="kpis depots">
-          <tr><th>Depot</th><th>Dienst</th><th>Flotte</th><th>Pakete</th><th>Touren</th><th>km</th></tr>
-          <tr *ngFor="let depot of simDepots">
-            <td>{{ depot.name }}</td>
-            <td>{{ depot.cepsp }}</td>
-            <td>{{ depot.vehicles }} × {{ depot.vehicleType === 'BIKE' ? 'Rad' : 'Lkw' }}</td>
-            <td title="{{ depot.parcelsAssigned }} zugewiesen / {{ depot.delivered }} zugestellt">
-              {{ depot.parcelsAssigned | number:'1.0-0' }}</td>
-            <td>{{ depot.tours | number:'1.0-0' }}</td>
-            <td>{{ depot.distanceKm | number:'1.0-0' }}</td>
-          </tr>
-        </table>
+        <div class="table-scroll">
+          <table class="kpis depots">
+            <tr><th>Depot</th><th>Dienst</th><th>Flotte</th><th>Zustellung</th><th>Retoure</th><th>Touren</th><th>km</th></tr>
+            <tr *ngFor="let depot of simDepots">
+              <td>{{ depot.name }}</td>
+              <td>{{ depot.cepsp }}</td>
+              <td>{{ depot.vehicles }} × {{ depot.vehicleType === 'BIKE' ? 'Rad' : 'Lkw' }}</td>
+              <td title="{{ depot.delivered }} zugestellt / {{ depot.deliveriesAssigned ?? depot.parcelsAssigned }} erzeugt; {{ depot.failedReturning ?? 0 }} Zustell-Rückläufer">
+                {{ depot.delivered | number:'1.0-0' }} /
+                {{ depot.deliveriesAssigned ?? depot.parcelsAssigned | number:'1.0-0' }}</td>
+              <td title="{{ depot.pickupsPlanned ?? 0 }} Abholungen geplant">
+                {{ depot.customerReturnsAssigned != null
+                  ? ((depot.pickupsCollected ?? 0 | number:'1.0-0') + ' / '
+                    + (depot.customerReturnsAssigned | number:'1.0-0'))
+                  : '–' }}</td>
+              <td>{{ depot.tours | number:'1.0-0' }}</td>
+              <td>{{ depot.distanceKm | number:'1.0-0' }}</td>
+            </tr>
+          </table>
+        </div>
       </ng-container>
     </section>
 

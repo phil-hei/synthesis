@@ -28,6 +28,40 @@ export const DISTANCE_BAND_ROWS: ReadonlyArray<{ key: keyof DistanceBands; label
 /** Bedingter Modal Split je Distanzband (MiD 2017 Tabelle A W10.5). */
 export type ModalSplitByDistanceBand = Partial<Record<keyof DistanceBands, ModalSplit>>;
 
+/** Richtungsgetrennte Paket-KPIs aus synthesis-logistics-kpis-v1. */
+export interface LogisticsKpis {
+  contract: 'synthesis-logistics-kpis-v1';
+  deliveries: {
+    generated: number;
+    delivered: number;
+    failedReturning: number;
+    deliveryRate: number;
+  };
+  customerReturns: {
+    generated: number;
+    plannedPickups: number;
+    collected: number;
+    collectionRate: number;
+  };
+}
+
+/** simulation/depot-stats.json – Flotte und richtungsgetrennte Logistik je Depot. */
+export interface DepotStats {
+  name: string;
+  cepsp: string;
+  vehicleType: string;
+  vehicles: number;
+  parcelsAssigned: number;
+  deliveriesAssigned?: number;
+  customerReturnsAssigned?: number;
+  delivered: number;
+  pickupsPlanned?: number;
+  pickupsCollected?: number;
+  failedReturning?: number;
+  tours: number;
+  distanceKm: number;
+}
+
 /** simulation/kpis.json – aggregierte logiTopp-Auswertung. */
 export interface SimKpis {
   demand?: {
@@ -56,6 +90,8 @@ export interface SimKpis {
     delivered?: number;
     deliveryRate?: number;
   };
+  /** Seit synthesis-logistics-kpis-v1; bei älteren Läufen nicht vorhanden. */
+  logistics?: LogisticsKpis;
   simulationSeconds?: number;
 }
 

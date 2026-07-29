@@ -55,8 +55,11 @@ Details: [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md
 Im Logistik-Block können bei gewähltem Zielmodell logiTopp **Kundenretouren experimentell**
 als zusätzliche Abholaufträge bei `HOME` oder `WORK` aktiviert werden. Das Feature ist
 standardmäßig aus; die Retourenquote ist eine explizite Szenarioannahme und kein kalibrierter
-Branchenwert. Eine richtungsgetrennte Ergebnisanzeige folgt noch, daher ist dies noch kein
-Produktiv-Default. Details und Akzeptanzgrenzen: [docs/06, Abschnitt G](docs/06-gta-integration-konzept.md).
+Branchenwert. Studio und Vergleich trennen Zustellungen, Zustell-Rückläufer und eingesammelte
+Kundenretouren; Laufzeit-Postconditions verhindern still ignorierte oder widersprüchliche
+Pickup-Ergebnisse. Bis zur abschließenden Beförderungsentscheidung bleibt dies bewusst kein
+Produktiv-Default. Details und Akzeptanzgrenzen:
+[docs/06, Abschnitt G](docs/06-gta-integration-konzept.md).
 
 Für logiTopp stehen experimentelle, standardmäßig deaktivierte Kalibrierungen bereit.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der

@@ -5,6 +5,7 @@ import * as L from 'leaflet';
 import { ApiService } from '../../core/services/api.service';
 import { ArtifactInfo, Depot, GenerationJob, Scenario, UploadSummary } from '../../core/models/scenario.model';
 import {
+  DepotStats,
   DISTANCE_BAND_ROWS,
   GtaPersonas,
   LlmModeChoiceResult,
@@ -40,7 +41,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   llmModeChoice: LlmModeChoiceResult | null = null;
   gtaPersonas: GtaPersonas | null = null;
   mobileCity: any = null;
-  simDepots: any[] = [];
+  simDepots: DepotStats[] = [];
   showParcelLayer = false;
   showTourLayer = false;
   showCongestionLayer = false;
@@ -556,7 +557,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.api.artifactJson<SimKpis>(id, 'simulation/kpis.json')
       .subscribe({ next: kpis => this.simKpis = kpis, error: () => this.simKpis = null });
-    this.api.artifactJson<any[]>(id, 'simulation/depot-stats.json')
+    this.api.artifactJson<DepotStats[]>(id, 'simulation/depot-stats.json')
       .subscribe({ next: depots => this.simDepots = depots, error: () => this.simDepots = [] });
     this.api.artifactJson(id, 'simulation/parcel-density.geojson')
       .subscribe({ next: geo => this.parcelDensity = geo, error: () => this.parcelDensity = null });

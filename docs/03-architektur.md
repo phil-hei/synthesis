@@ -125,8 +125,10 @@ passendem Marker; fehlende oder abweichende Versionen schlagen sichtbar fehl. De
 GPL-Patch-/Build-Vertrag liegt unter `legacy/logitopp-returns-v1/` und publiziert logiTopp unter
 einer eindeutigen Maven-Version. Der SUMO-Adapter schließt jede normale logiTopp-Tour vom letzten
 Stopp zurück zum ersten Depot, sofern kein explizites Rückkehr-Leg vorhanden ist. Szenario-API
-und Frontend spiegeln den Vertrag mit `enabled=false` als rückwärtskompatiblem Default; die
-richtungsgetrennte KPI-Ingestion bleibt der folgende Ausbauschritt.
+und Frontend spiegeln den Vertrag mit `enabled=false` als rückwärtskompatiblem Default.
+`SimulationResultIngestor` schreibt den additiven Vertrag
+`synthesis-logistics-kpis-v1`, trennt Zustellung, Zustell-Rückläufer und Kundenretoure und
+verifiziert Richtung, Ziehregel sowie Pickup→Depot-Unload vor der Ergebnisfreigabe.
 
 ## Frontend (Angular, wie simudrive)
 

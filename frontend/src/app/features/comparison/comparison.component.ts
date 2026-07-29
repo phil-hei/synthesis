@@ -87,6 +87,11 @@ export class ComparisonComponent implements OnInit {
       e.kpis?.demand?.modeDistanceJointRmseToMid2017 != null);
   }
 
+  /** Richtungszeilen nur zeigen, wenn mindestens ein Lauf den neuen KPI-Vertrag enthält. */
+  get hasLogisticsKpis(): boolean {
+    return this.entries.some(e => !!e.kpis?.logistics);
+  }
+
   /** SUMO-Zeilen nur zeigen, wenn mindestens ein Szenario einen SUMO-Lauf hat. */
   get hasSumo(): boolean {
     return this.entries.some(e => !!e.sumo);
@@ -98,5 +103,17 @@ export class ComparisonComponent implements OnInit {
 
   pct1(value: number | null | undefined): string {
     return value == null ? '–' : (value * 100).toFixed(1).replace('.', ',') + ' %';
+  }
+
+  deliveryGenerated(entry: any): number | null {
+    return entry.kpis?.logistics?.deliveries?.generated
+      ?? entry.kpis?.parcels?.total
+      ?? null;
+  }
+
+  deliveryRate(entry: any): number | null {
+    return entry.kpis?.logistics?.deliveries?.deliveryRate
+      ?? entry.kpis?.parcels?.deliveryRate
+      ?? null;
   }
 }

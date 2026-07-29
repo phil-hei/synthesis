@@ -82,9 +82,10 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   `fixedDestination` (CSV) + Visum-Matrizen (`.mtx.bz2`)
 - **logiTopp/Logistik:** `legacy/`, `distribution-centers`, `cepsp-shares`,
   versionierte Paket-/Retourennachfrage (`returns.enabled=false` als Default)
-- **Ergebnisse:** `kpis.json` (Wege/Person·Tag, Ø Weglänge, Modal-Split sowie sechs
-  Distanzbänder inkl. RMSE vs. MiD; im Studio und Szenariovergleich sichtbar),
-  `tours.geojson`, `parcel-density.geojson`, `demandsimulationResult.csv`
+- **Ergebnisse:** `kpis.json` (Wege/Person·Tag, Ø Weglänge, Modal-Split, sechs
+  Distanzbänder inkl. RMSE vs. MiD sowie richtungsgetrennte Zustell-/Retouren-KPIs nach
+  `synthesis-logistics-kpis-v1`; im Studio und Szenariovergleich sichtbar),
+  `depot-stats.json`, `tours.geojson`, `parcel-density.geojson`, `demandsimulationResult.csv`
 - **SUMO:** `sumo/statistics.xml`, `summary.json` (Fahrzeuge nach PKW/Rad/Fuß/Lieferverkehr/ÖV,
   CO₂ je Fahrzeugtyp inkl. Bus), `congestion.geojson` (Netzlast)
 - **KI:** `llm-mode-choice.json`, `gta-personas.json` (Begründungen + Was-wäre-wenn)
@@ -139,6 +140,9 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 - **Emissionsvergleich als Kern-Use-Case:** CO₂ je Fahrzeugtyp (HBEFA, inkl. Bus) macht
   Logistik-/Verkehrs-Szenarien wie „Lastenrad- statt Lkw-Flotte" oder „mehr ÖV-Nutzung" direkt im
   Szenario-Vergleich quantifizierbar.
+- **Retouren bleiben kontrolliert experimentell:** Kundenretouren, Zustell-Rückläufer und
+  Abholerfolg werden aus den logiTopp-Rohdaten getrennt, per Laufzeit-Postcondition geprüft und
+  in Studio/Vergleich dargestellt; Default und unkalibrierte Quote bleiben aus.
 - **SUMO ist jetzt echt multimodal:** PKW, Rad, Fuß, Lieferverkehr und optional ÖV/Bus (GTFS,
   intermodal) laufen in einer Simulation. **Ehrlicher Technik-Befund:** Schienen-ÖV (Tram/Rail)
   scheitert an einer SUMO-Eigenheit – `duarouter` snappt Fußgänger-Koordinaten auf die nächstgelegene

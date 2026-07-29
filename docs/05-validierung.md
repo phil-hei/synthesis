@@ -106,6 +106,7 @@ Zustellereignisse**, Laufzeit 75 s. Ergebnisdateien unter
 | L8 | `ParcelBuilder.get()` legt private Pickups im normalen Depotbestand ab, während die Tourplanung geplante Pickups aus `pickupRequests` entfernt. Mit mehreren räumlichen Touren wird dasselbe Paket dadurch erneut geplant (`ONDELIVERY`). **Behoben:** Depot-Pickups werden im versionierten logiTopp-Patch über `requestPickup(...)` registriert. |
 | L9 | `planned-tours.csv` enthält kein abschließendes Leg vom letzten Stopp zurück zum Depot. **Behoben:** `SumoRunner` ergänzt pro normaler Tour genau ein Abschluss-Leg und vermeidet Duplikate bei `isReturning=true` oder bereits erreichtem Depot. |
 | L10 | Paketparameter konnten früher in `parcel-demand-config.yaml` stehen, ohne vom Harness gelesen zu werden. **Behoben:** Paket- und Harness-Vertrag werden explizit geprüft; alter oder driftender Code schlägt vor dem Lauf bzw. vor dem Publizieren fehl. |
+| L11 | `vehicle_events.csv.collected` ist an `stop`-Zeilen der kumulative Fahrzeugbestand und würde beim Summieren mehrfach zählen; erst `event=unload` protokolliert jede eingesammelte Retoure genau einmal. **Behoben:** Die Ingestion summiert `to_pickup`/`success_pickup` nur an Stopps, `collected`/`returning` nur beim Depot-Unload und gleicht Pickup-Erfolg gegen eindeutige `IsPickup=true`-Paket-IDs ab. |
 
 ## Retouren-Pickup-Spike (2026-07-29) — mechanisch bewiesen, Integration damals offen
 
@@ -158,6 +159,25 @@ nicht nur durch einen Parser-Test, sondern an der echten externen Kette geschlos
 **Entscheidung nach Schritt 2:** technisches Go für den MVP hinter einem standardmäßig
 deaktivierten Szenario-Flag. Noch kein Produkt-Go: Szenario-API/Frontend, richtungsgetrennte
 Ingestion/KPIs und die vollständigen Akzeptanzläufe sind die nächsten Schritte.
+
+### Richtungsgetrennte Retouren-KPIs (2026-07-29) — Schritt 4 erfolgreich
+
+`SimulationResultIngestor` zählt Paket-IDs aus `parcel-states.csv` eindeutig nach `IsPickup`,
+trennt Zustellerfolg und `RETURNING` von Kundenretouren und verdichtet Stopps sowie
+Depot-Unloads nach der in L11 belegten Semantik. Der additive Vertrag
+`synthesis-logistics-kpis-v1` wird in `kpis.json`, `depot-stats.json`,
+`parcel-density.geojson` und `tours.geojson` gespiegelt. Vor dem Schreiben der Artefakte prüft
+die Laufzeit-Postcondition die Empfänger-genaue Rundungsbandbreite der Retourenziehung,
+Richtungskonsistenz sowie `success_pickup = collected =` eindeutige, beim Depot angekommene
+Pickup-Pakete.
+
+Der read-only Regressionslauf gegen den echten Schritt-2-Mischlauf ergab erneut
+**101 Zustellaufträge / 65 zugestellt, 101 Kundenretouren / 67 geplant und eingesammelt,
+0 Zustell-Rückläufer**. Damit ist die Ingestion gegen externe Rohdaten belegt; `validation/`
+blieb unverändert und gitignoriert.
+
+**Entscheidung nach Schritt 4:** technisches Go für den abschließenden Akzeptanzlauf und die
+Beförderungsentscheidung. Bis dahin bleiben Feature und Quote standardmäßig aus.
 
 ## Legacy-Adapter: eigene Artefakte → logiTopp (2026-06-11) — erfolgreich
 

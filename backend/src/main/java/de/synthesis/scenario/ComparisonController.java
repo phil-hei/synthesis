@@ -49,6 +49,8 @@ public class ComparisonController {
         params.put("samplingFraction", scenario.population.samplingFraction);
         params.put("useRealRouting", scenario.population.useRealRouting);
         params.put("parcelsPerPersonWeek", scenario.logistics.parcelsPerPersonWeek);
+        params.put("returnsEnabled", scenario.logistics.returns.enabled);
+        params.put("returnShare", scenario.logistics.returns.shareOfPrivateOrders);
         params.put("depots", scenario.logistics.depots.size());
 
         Path simulation = repository.artifactsDir(scenario.id).resolve("simulation");

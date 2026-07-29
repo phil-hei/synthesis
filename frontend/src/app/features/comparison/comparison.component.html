@@ -49,6 +49,13 @@
           <td *ngIf="mid"></td>
         </tr>
         <tr>
+          <td>Kundenretouren</td>
+          <td *ngFor="let e of entries">
+            {{ e.params.returnsEnabled ? pct(e.params.returnShare) : 'aus' }}
+          </td>
+          <td *ngIf="mid"></td>
+        </tr>
+        <tr>
           <td>Depots</td>
           <td *ngFor="let e of entries">{{ e.params.depots }}</td>
           <td *ngIf="mid"></td>
@@ -107,15 +114,47 @@
 
         <tr class="group"><td [attr.colspan]="entries.length + 2">Logistik</td></tr>
         <tr>
-          <td>Pakete</td>
-          <td *ngFor="let e of entries">{{ e.kpis?.parcels?.total != null ? (e.kpis.parcels.total | number:'1.0-0') : '–' }}</td>
+          <td>Zustellaufträge</td>
+          <td *ngFor="let e of entries">{{ deliveryGenerated(e) != null
+            ? (deliveryGenerated(e) | number:'1.0-0') : '–' }}</td>
           <td *ngIf="mid"></td>
         </tr>
         <tr>
           <td>Zustellquote</td>
-          <td *ngFor="let e of entries">{{ pct(e.kpis?.parcels?.deliveryRate) }}</td>
+          <td *ngFor="let e of entries">{{ pct(deliveryRate(e)) }}</td>
           <td *ngIf="mid"></td>
         </tr>
+        <ng-container *ngIf="hasLogisticsKpis">
+          <tr>
+            <td>Zustell-Rückläufer</td>
+            <td *ngFor="let e of entries">{{ e.kpis?.logistics?.deliveries?.failedReturning != null
+              ? (e.kpis.logistics.deliveries.failedReturning | number:'1.0-0') : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+          <tr>
+            <td>Kundenretouren</td>
+            <td *ngFor="let e of entries">{{ e.kpis?.logistics?.customerReturns?.generated != null
+              ? (e.kpis.logistics.customerReturns.generated | number:'1.0-0') : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+          <tr>
+            <td>Abholungen geplant</td>
+            <td *ngFor="let e of entries">{{ e.kpis?.logistics?.customerReturns?.plannedPickups != null
+              ? (e.kpis.logistics.customerReturns.plannedPickups | number:'1.0-0') : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+          <tr>
+            <td>Retouren eingesammelt</td>
+            <td *ngFor="let e of entries">{{ e.kpis?.logistics?.customerReturns?.collected != null
+              ? (e.kpis.logistics.customerReturns.collected | number:'1.0-0') : '–' }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+          <tr>
+            <td>Abholquote</td>
+            <td *ngFor="let e of entries">{{ pct(e.kpis?.logistics?.customerReturns?.collectionRate) }}</td>
+            <td *ngIf="mid"></td>
+          </tr>
+        </ng-container>
 
         <ng-container *ngIf="hasSumo">
           <tr class="group"><td [attr.colspan]="entries.length + 2">Verkehr &amp; Emissionen (SUMO)</td></tr>
