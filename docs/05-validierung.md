@@ -101,6 +101,37 @@ Zustellereignisse**, Laufzeit 75 s. Ergebnisdateien unter
 | L4 | Zustellfahrzeuge routen über `StandardMode.TRUCK` → im `DynamicTypeMapping` auf die Pkw-Reisezeitmatrix mappen (`mapping.add(StandardMode.TRUCK, TravelTimeMatrixType.car)`). |
 | L5 | Speicher: 100 % Population (104k Agenten, 109k Pakete) sprengt 8–12 GB Heap in der Tourplanung; 10 %-Fraktion läuft problemlos. Für unsere Pipeline: `samplingFraction` klein halten oder Heap dimensionieren. |
 | L6 | Depots/CEPSP lassen sich programmatisch ODER per `DistributionCenterParser` (CSV) anlegen — unser `distribution-centers.csv` sollte auf dessen Spaltenschema ausgerichtet werden (Folgeaufgabe). |
+| L7 | Der unveränderte `AgentDeliveryClustering` gruppiert private Pickups über deren Producer. Da dies immer das Depot ist, kollabieren 13–20 Zielzonen eines Tages fast vollständig zu einem falschen Stopp. Pickups müssen nach tatsächlicher Zone/Position gruppiert werden. |
+| L8 | `ParcelBuilder.get()` legt private Pickups im normalen Depotbestand ab, während die Tourplanung geplante Pickups aus `pickupRequests` entfernt. Mit mehreren räumlichen Touren wird dasselbe Paket dadurch erneut geplant (`ONDELIVERY`). Pickup-Aufträge mit Depot als Producer müssen über `requestPickup(...)` registriert werden. |
+| L9 | Der SUMO-Adapter übernimmt Pickup-Stopps aus `planned-tours.csv`, die Datei enthält jedoch kein abschließendes Leg vom letzten Stopp zurück zum Depot. Ohne Export-Erweiterung unterschätzt SUMO die vollständige Rückfahrleistung und deren Emissionen. |
+
+## Retouren-Pickup-Spike (2026-07-29) — mechanisch bewiesen, Integration offen
+
+Der präregistrierte Spike nutzte eine bestehende 2.000-Personen-Population mit
+`samplingFraction=0.05` und reiner Pickup-Nachfrage. Der erste Lauf endete zwar mit Exit 0 und
+101 eingesammelten Paketen, war wegen L7 aber räumlich ungültig. Die tatsächliche
+Positionsclusterung deckte anschließend L8 als zweite unabhängige Ursache auf.
+
+Mit beiden Korrekturen lief die externe Wochensimulation erfolgreich: **101 eindeutige
+`IsPickup=true`-Pakete, 87 geplante und eingesammelte Pickups, 82 Pickup-Stoppereignisse,
+`to_pickup=87`, `success_pickup=87`, `collected=87`, keine doppelt geplante Paket-ID und kein
+Positionsfehler**. Die übrigen 14 Aufträge blieben im endlichen Wochen-/Kapazitätshorizont offen;
+sie sind keine fehlgeschlagenen Zustellungen. `returning=0` bestätigt die Trennung von
+Kundenretouren und Zustell-Rückläufern.
+
+Ein echter Pickup-Stopp aus diesem Lauf wurde anschließend vom bestehenden SUMO-Adapter
+eingelesen und gegen einen Ausschnitt des tatsächlich verwendeten OSM-Netzes geroutet:
+**ein Lkw-Leg, 6,81 km, 430 s, 1,61 kg CO₂, 66 befahrene Kanten; Test Exit 0**. Damit ist der
+Abholstopp im Verkehrsmodell nachgewiesen, nicht jedoch das fehlende Abschluss-Leg zurück zum
+Depot (L9).
+
+**Entscheidung:** bedingtes Go für die Pickup-Mechanik, noch kein Produkt-Go. Die
+Positionsclusterung und Pickup-Registrierung gehören zwingend in einen versionierten
+Legacy-Patch-/Build-Vertrag; der SUMO-Export muss die Tour bis zum Depot schließen. Die
+gitignorierten Belege liegen unter `validation/returns-spike-2026-07-29/`. Die 64
+logiTopp-Legacy-Tests konnten wegen ihres JUnit-4-Imports im auf JUnit 5 modernisierten Build
+nicht kompiliert werden; der Hauptcode wurde erfolgreich gebaut und publiziert, dieser
+Test-Skip zählt aber nicht als Evidenz.
 
 ## Legacy-Adapter: eigene Artefakte → logiTopp (2026-06-11) — erfolgreich
 

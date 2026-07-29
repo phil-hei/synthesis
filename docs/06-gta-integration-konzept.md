@@ -959,9 +959,9 @@ Die Erweiterung bleibt innerhalb der bestehenden Architektur und erzeugt keine 1
 | `LogisticsGenerator` | `parcel-demand-config.yaml` um Richtung/Retourenparameter erweitern |
 | `SimulationRunner` | Pfad bzw. Werte in `run-config.yaml` an den externen Lauf-Harness übergeben |
 | `mobitopp-rastatt`-Harness | Paketparameter aus der Run-Config lesen; das unveränderte Delivery-Modell und ein zusätzliches Pickup-Modell hinter dem von `DemandSimulatorDelivery` erwarteten privaten Demand-Modell zusammensetzen |
-| logiTopp | vorhandene Pickup-Requests, Reverse Chains und gemeinsame Tourenplanung nutzen |
+| logiTopp | Pickup-Requests und gemeinsame Tourenplanung nutzen; private Pickups nach tatsächlicher Position clustern und über `DistributionCenter.requestPickup(...)` registrieren |
 | Ergebnis-Ingestion | `IsPickup`, `to_pickup`, `success_pickup` und `collected` richtungsgetrennt aggregieren |
-| SUMO-Adapter | Abholstopps aus `planned-tours.csv` als Teil der realen Zustelltour übernehmen; keine separate „Retourenfahrt" erfinden |
+| SUMO-Adapter | Abholstopps aus `planned-tours.csv` als Teil der realen Tour übernehmen und das abschließende Leg zurück zum Depot ergänzen; keine separate Parallelfahrt erfinden |
 
 **Vorbedingung:** Die heute erzeugte `parcel-demand-config.yaml` wird vom Lauf-Harness noch nicht
 gelesen; dort sind Paketmenge, Zielanteile und `allAsDelivery()` hart codiert. Die erste
@@ -1022,6 +1022,23 @@ Vor Produktivcode ist ein kleiner Ende-zu-Ende-Spike über die vollständige ext
 5. `planned-tours.csv` und der SUMO-Import werden darauf geprüft, dass der Abholstopp in der
    gefahrenen Tour erhalten bleibt.
 
+**Spike-Ergebnis (✅ Mechanik bedingt bewiesen, 2026-07-29):** Der unveränderte Stack erzeugte
+101 Pickups und sammelte sie scheinbar ein, gruppierte aber 13–20 verschiedene Zielzonen eines
+Tages fast vollständig am ersten Stopp. Nach Clusterung über tatsächliche Zone/Position trat eine
+zweite Ursache offen zutage: Pickups lagen im normalen Depotbestand und wurden auf räumlich
+getrennten Touren doppelt geplant. Mit Positionsclusterung und Registrierung über
+`requestPickup(...)` endete der echte externe Lauf mit Exit 0: **101 Pickups, davon 87 innerhalb
+des Wochenhorizonts geplant und eingesammelt, `to_pickup=87`, `success_pickup=87`,
+`collected=87`, keine Doppelplanung und kein Positionsfehler**. Die übrigen 14 blieben offen;
+`returning=0`.
+
+Ein realer Pickup-Stopp wurde anschließend in SUMO geroutet (**ein Lkw-Leg, 6,81 km, 430 s,
+1,61 kg CO₂; Test Exit 0**). Der Beweis deckte zugleich eine Exportgrenze auf:
+`planned-tours.csv` enthält kein abschließendes Leg vom letzten Stopp zurück zum Depot. Der
+interne logiTopp-Pfad erreicht `collected`, SUMO bildet die vollständige Rückfahrt und ihre
+Emissionen derzeit aber nicht ab. Die reproduzierbaren lokalen Belege liegen unter
+`validation/returns-spike-2026-07-29/`.
+
 Akzeptanzkriterien für die Implementierung:
 
 - **Baseline-Invariante:** Bei `enabled=false` bleiben Paketanzahl, Richtungen und fachliche KPIs
@@ -1063,15 +1080,18 @@ die beobachteten Zustell-, Pickup- und `collected`-Zahlen werden dokumentiert.
 
 Empfohlene Reihenfolge:
 
-1. **Spike:** Pickup-Mechanik inklusive Reverse Chain, Ergebnisdateien und SUMO-Tour beweisen.
+1. **✅ Spike (2026-07-29):** Pickup-Mechanik, Ergebnisdateien und Pickup-Stopp in SUMO bewiesen;
+   zwei notwendige logiTopp-Korrekturen und das fehlende SUMO-Abschluss-Leg identifiziert.
 2. **Konfigurationskette:** bestehende Paketparameter und Retourenwerte im Harness wirksam
-   machen; Harness-Version/Patch reproduzierbar fixieren.
+   machen; Harness-Version/Patch einschließlich Positionsclusterung, `requestPickup(...)` und
+   geschlossenem Tour-Export reproduzierbar fixieren.
 3. **MVP hinter `returns.enabled=false`:** Backend, Frontend, logiTopp-Auswahl und Tests.
 4. **Ingestion/KPIs/UI:** Richtungen trennen und Basis-vs.-Retouren-Vergleich ergänzen.
 5. **E2E-Verifikation und Beförderungsentscheidung:** erst danach über einen fachlich
    begründeten Default oder weitere Rückgabekanäle entscheiden.
 
-**Go/No-Go nach Schritt 1:** Wenn logiTopp Abholaufträge zwar erzeugt, aber nicht über eine
-vollständige Reverse Chain bis zum Depot transportiert oder die Pickup-Stopps im exportierten
-Tourpfad verliert, wird nicht mit KPI-Heuristiken kaschiert. Dann bleibt das Feature aus und der
-konkrete Blocker wird als negativer Befund dokumentiert.
+**Go/No-Go nach Schritt 1: bedingtes Go.** logiTopp transportiert korrigierte Pickups bis zum
+`collected`-Pfad, und SUMO behält den Pickup-Stopp. Der unveränderte Legacy-Stack ist wegen
+falscher Clusterung und Bestandsregistrierung jedoch kein zulässiger Produktionspfad; außerdem
+fehlt SUMO das letzte Leg zum Depot. Das Feature bleibt daher aus, bis diese drei Punkte als
+versionierter Integrationsvertrag umgesetzt und durch die Akzeptanzkriterien belegt sind.
