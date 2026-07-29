@@ -4,8 +4,10 @@ import de.synthesis.SynthesisProperties;
 import de.synthesis.scenario.Scenario;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -16,6 +18,10 @@ import java.util.function.Consumer;
  * auf und legt Log + Ergebnisse unter artifacts/simulation/ ab.
  */
 public class SimulationRunner {
+
+    static final String HARNESS_CONTRACT = "synthesis-logitopp-returns-v1";
+    private static final Path HARNESS_CONTRACT_FILE =
+            Path.of("config/synthesis/harness-contract.properties");
 
     public record Result(Path resultsDir, long durationSeconds) {
     }
@@ -58,6 +64,7 @@ public class SimulationRunner {
      */
     public Result run(Scenario scenario, Path artifacts, Consumer<String> log, Path modeChoiceMnl,
                       Path destinationChoiceDir) throws IOException, InterruptedException {
+        verifyHarnessContract();
         Path simulationDir = artifacts.resolve("simulation");
         Path resultsDir = simulationDir.resolve("results");
         Files.createDirectories(resultsDir);
@@ -149,6 +156,8 @@ public class SimulationRunner {
                   individualWalkTransportSystemCode: FUSS
                   ptWalkTransportSystemCode: F
                 experimental:
+                  harnessContract: %s
+                  parcelDemandConfig: %s/logistics/parcel-demand-config.yaml
                   distributionCenters: %s/logistics/distribution-centers.csv
                   cepspShares: %s/logistics/cepsp-shares.csv
                   writeMatrices: false
@@ -168,6 +177,7 @@ public class SimulationRunner {
                 "1.0",
                 resultsDir.toAbsolutePath(),
                 scenario.population.seed,
+                HARNESS_CONTRACT, artifacts.toAbsolutePath(),
                 legacy, legacy);
         Path config = simulationDir.resolve("run-config.yaml");
         Files.writeString(config, yaml);
@@ -179,6 +189,27 @@ public class SimulationRunner {
         return destinationChoiceDir != null
                 ? destinationChoiceDir.resolve(filename).toAbsolutePath().toString()
                 : "config/shared/parameters/" + filename;
+    }
+
+    /**
+     * Verhindert, dass eine neue Run-Config von einem alten oder nur lokal
+     * geratenen Harness still ignoriert wird.
+     */
+    void verifyHarnessContract() throws IOException {
+        Path marker = projectDir.resolve(HARNESS_CONTRACT_FILE);
+        if (!Files.exists(marker)) {
+            throw new IOException("Legacy-Harness-Vertrag fehlt: " + marker
+                    + " (legacy/logitopp-returns-v1/apply.sh ausführen)");
+        }
+        Properties properties = new Properties();
+        try (InputStream in = Files.newInputStream(marker)) {
+            properties.load(in);
+        }
+        String actual = properties.getProperty("contractVersion", "");
+        if (!HARNESS_CONTRACT.equals(actual)) {
+            throw new IOException("Inkompatibler Legacy-Harness-Vertrag: erwartet "
+                    + HARNESS_CONTRACT + ", gefunden " + (actual.isBlank() ? "(leer)" : actual));
+        }
     }
 
     /** Volles Gradle-Log wird zweistellig groß (MB); im Erfolgsfall reicht das Ende. */

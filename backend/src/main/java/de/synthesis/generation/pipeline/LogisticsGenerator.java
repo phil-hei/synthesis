@@ -20,6 +20,8 @@ import java.util.Random;
  */
 public class LogisticsGenerator {
 
+    static final String PARCEL_DEMAND_CONTRACT = "synthesis-parcel-demand-v1";
+
     public record Result(int depotCount, int packstationCount) {
     }
 
@@ -171,10 +173,11 @@ public class LogisticsGenerator {
         }
     }
 
-    private void writeParcelDemandConfig(Path file, Scenario.Logistics logistics) throws IOException {
+    static void writeParcelDemandConfig(Path file, Scenario.Logistics logistics) throws IOException {
         try (Writer w = Files.newBufferedWriter(file)) {
             w.write("""
                     # Paketnachfrage-Parameter für logiTopp (NumberOfParcelsSelector / ParcelDestinationSelector)
+                    contractVersion: %s
                     parcelOrders:
                       perPersonPerWeek:
                         distribution: normal
@@ -190,7 +193,14 @@ public class LogisticsGenerator {
                       from: MONDAY
                       to: SATURDAY
                       precision: day
+                    returns:
+                      enabled: false
+                      shareOfPrivateOrders: 0.0
+                      pickupShares:
+                        HOME: 1.0
+                        WORK: 0.0
                     """.formatted(
+                    PARCEL_DEMAND_CONTRACT,
                     format(logistics.parcelsPerPersonWeek), format(logistics.parcelStdDev),
                     logistics.maxParcelsPerPerson,
                     format(logistics.shareHome), format(logistics.shareWork),

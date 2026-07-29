@@ -14,10 +14,10 @@ geplante Konzept für Kundenretouren als logiTopp-Abholaufträge fest.
 
 | Komponente | Herkunft | Integrationsart | Läuft je Szenario? |
 |---|---|---|---|
-| **logiTopp** (Zustell-/Paketsimulation) | `kit-ifv/logitopp` geklont, modernisiert, als `logitopp:0.0-SNAPSHOT` nach mavenLocal publiziert | echte Klassen (DemandSimulatorDelivery, DistributionCenterParser, DepotOperations …) | **Ja** (Pipeline-Stufe „Simulation") |
+| **logiTopp** (Zustell-/Paketsimulation) | `kit-ifv/logitopp` geklont, modernisiert, Retouren-Patchvertrag als `logitopp:0.0-synthesis-returns-v1` nach mavenLocal publiziert | echte Klassen (DemandSimulatorDelivery, DistributionCenterParser, DepotOperations …) | **Ja** (Pipeline-Stufe „Simulation") |
 | **mobiTopp legacy** (Simulationskern) | `edu.kit.ifv.mobitopp:mobitopp:0.3.580` (Maven Central, KIT-Release) | Bibliothek, auf der logiTopp läuft; enthält Modus-/Zielwahl (Rastatt-kalibriert) | **Ja** |
 | **actiTopp** (Aktivitätenplanung) | `kit-ifv/actitoppNG` geklont, gebaut, `actitoppNG:1.0.0` (+ `kotlin-units`, `discrete-choice`) | eigener Kotlin-Runner `runSynthesis` (DefaultPlanGeneration / AllChoiceModels) | **Ja** (Stufe „Aktivitätenpläne") |
-| **mobitopp-rastatt** | `kit-ifv/mobitopp-rastatt` geklont, modernisiert | Lauf-Harness; wir haben `buildDelivery()` ergänzt | **Ja** (führt logiTopp aus) |
+| **mobitopp-rastatt** | `kit-ifv/mobitopp-rastatt` geklont, modernisiert | Lauf-Harness; `buildDelivery()` plus Vertrag `synthesis-logitopp-returns-v1` | **Ja** (führt logiTopp aus) |
 | **populationsynthesis** (IPU) | `kit-ifv/populationsynthesis` geklont, gebaut, Marne-Beispiel ausgeführt | IPU lief **offline** → Output als gebündelte `kit-population-sample.csv` | **Nein** – nur Output wiederverwendet |
 | **mobiTopp main** (Kotlin-Rewrite) | `kit-ifv/mobitopp` geklont, gebaut | einmalige Phase-0-Formatvalidierung | **Nein** – nicht im Laufzeitpfad |
 
@@ -70,22 +70,22 @@ Distanz, Modus-Konstanten) aus Befragungsdaten **geschätzt** wurden. Das Lauf-P
 Harness nutzen, rechnet unsere Simulation mit Rastatts Werten („Rastatt-Geschmack" bei Modal-Split/
 Weglänge). Änderbar nur durch **Neu-Kalibrierung** dieser Parameter (siehe D).
 
-### A.7 Retouren-Status — noch nicht integriert (2026-07-29)
+### A.7 Retouren-Status — technische Kette vorbereitet, Produkt-MVP offen (2026-07-29)
 
-- **Kundenretouren fehlen aktuell.** Der Lauf-Harness setzt private Pakete mit
-  `ParcelDemandModelBuilder.allAsDelivery()` vollständig auf Zustellrichtung; die vorhandenen
-  Szenario- und Exportparameter beschreiben nur Bestellmenge, Zustellorte und Zustelltage.
-  Zwei aktuelle Prüfläufe enthielten zusammen 6.594 Paketstatuszeilen, ausnahmslos
-  `IsPickup=false`.
+- **Der heutige Produktpfad erzeugt noch keine Kundenretouren.** Szenario-API und Frontend
+  exponieren das Retourenmodell noch nicht; die generierte Konfiguration verwendet deshalb den
+  sicheren Default `returns.enabled=false`.
+- **Die externe Konfigurationskette ist implementiert.** Der Vertrag
+  `synthesis-logitopp-returns-v1` liest Paketparameter und optional zusätzliche
+  `IsPickup=true`-Aufträge aus `synthesis-parcel-demand-v1`, clustert sie am tatsächlichen Ort
+  und registriert sie über den Pickup-Bestand. Ein alter Harness schlägt sichtbar fehl.
 - **`RETURNING` ist keine Kundenretoure.** Der logiTopp-Status bezeichnet ein Paket, das nach
   einem fehlgeschlagenen Zustellversuch zum Verteilzentrum zurückkehrt. Ebenso ist
   `PICK_UP_PARCEL` die Abholung einer eingehenden Sendung durch den Empfänger an einer
   Packstation.
-- **Die technische Grundlage ist vorhanden.** Die lokale logiTopp-Version unterstützt
-  Abholaufträge (`customPickupOrDeliverySelection`, `allAsPickup`), Pickup-Touren sowie
-  Ergebnisfelder wie `to_pickup`, `success_pickup` und `collected`. Darauf baut das geplante
-  Konzept in Abschnitt G auf; ein kalibriertes Endkunden-Retourenmodell liefert logiTopp jedoch
-  nicht fertig mit.
+- **Die Mechanik ist Ende-zu-Ende belegt.** Ein realer Vertragslauf erzeugte 101 Zustellungen
+  plus 101 Retouren; 67 Pickups wurden innerhalb des Wochenhorizonts erfolgreich ausgeführt.
+  Ein kalibriertes Endkunden-Retourenmodell liefert logiTopp weiterhin nicht fertig mit.
 
 ---
 
@@ -878,7 +878,7 @@ und INSPIRE-Zell-IDs als MobileCity-`districtId` statt `SYN-NNN`.
 
 ---
 
-## G. Konzept: Retourenlogistik mit logiTopp — 📝 GEPLANT (2026-07-29)
+## G. Konzept: Retourenlogistik mit logiTopp — 🚧 IN UMSETZUNG (2026-07-29)
 
 ### G.1 Ziel und fachliche Abgrenzung
 
@@ -938,47 +938,46 @@ Regeln:
 
 - `enabled=false` und `shareOfPrivateOrders=0.0` sind die rückwärtskompatiblen Defaults.
 - Bei aktiviertem Feature gilt `0 < shareOfPrivateOrders <= 1`.
-- `pickupShares.home + pickupShares.work = 1`; negative oder nicht-endliche Werte werden bereits
-  von der Szenario-API mit HTTP 400 abgelehnt.
+- `pickupShares.home + pickupShares.work = 1`; negative oder nicht-endliche Werte müssen von
+  der Szenario-API mit HTTP 400 abgelehnt werden.
 - Jede Ziehung hängt deterministisch an `Scenario.population.seed`; kein ungesetzter
   Zufallszahlengenerator.
 - `PACKSTATION` ist im MVP **kein Retourenkanal**, weil eine Abgabe durch den Kunden einen
   zusätzlichen Personenweg und eine konsolidierte Abholung an der Station erfordert.
 
-Das Frontend zeigt den Block nur bei Zielmodell `logitopp` und kennzeichnet ihn als
-experimentell. Nach Aktivierung werden Quote sowie Abholortanteile editierbar; ein Hilfetext
-erklärt die Abgrenzung zu fehlgeschlagenen Zustellungen.
+Das Frontend soll den Block nur bei Zielmodell `logitopp` zeigen und ihn als
+experimentell kennzeichnen. Nach Aktivierung werden Quote sowie Abholortanteile editierbar;
+ein Hilfetext erklärt die Abgrenzung zu fehlgeschlagenen Zustellungen.
 
 ### G.4 Technische Integration
 
 Die Erweiterung bleibt innerhalb der bestehenden Architektur und erzeugt keine 15. Pipeline-Stufe:
 
-| Bestehender Ort | Änderung |
-|---|---|
-| `Scenario.Logistics` + Frontend-Modell | verschachtelte Retourenkonfiguration und Validierung ergänzen |
-| `LogisticsGenerator` | `parcel-demand-config.yaml` um Richtung/Retourenparameter erweitern |
-| `SimulationRunner` | Pfad bzw. Werte in `run-config.yaml` an den externen Lauf-Harness übergeben |
-| `mobitopp-rastatt`-Harness | Paketparameter aus der Run-Config lesen; das unveränderte Delivery-Modell und ein zusätzliches Pickup-Modell hinter dem von `DemandSimulatorDelivery` erwarteten privaten Demand-Modell zusammensetzen |
-| logiTopp | Pickup-Requests und gemeinsame Tourenplanung nutzen; private Pickups nach tatsächlicher Position clustern und über `DistributionCenter.requestPickup(...)` registrieren |
-| Ergebnis-Ingestion | `IsPickup`, `to_pickup`, `success_pickup` und `collected` richtungsgetrennt aggregieren |
-| SUMO-Adapter | Abholstopps aus `planned-tours.csv` als Teil der realen Tour übernehmen und das abschließende Leg zurück zum Depot ergänzen; keine separate Parallelfahrt erfinden |
+| Bestehender Ort | Änderung | Stand |
+|---|---|---|
+| `Scenario.Logistics` + Frontend-Modell | verschachtelte Retourenkonfiguration und Validierung ergänzen | offen (Schritt 3) |
+| `LogisticsGenerator` | `parcel-demand-config.yaml` um Richtung/Retourenparameter erweitern | ✅ Vertrag + sicherer Off-Default |
+| `SimulationRunner` | Pfad bzw. Werte in `run-config.yaml` an den externen Lauf-Harness übergeben | ✅ Pfad + Harness-Vertrag |
+| `mobitopp-rastatt`-Harness | Paketparameter aus der Run-Config lesen; Delivery- und zusätzliches Pickup-Modell zusammensetzen | ✅ versionierter Patch |
+| logiTopp | private Pickups nach tatsächlicher Position clustern und über `DistributionCenter.requestPickup(...)` registrieren | ✅ versionierter Patch |
+| Ergebnis-Ingestion | `IsPickup`, `to_pickup`, `success_pickup` und `collected` richtungsgetrennt aggregieren | offen (Schritt 4) |
+| SUMO-Adapter | Abholstopps übernehmen und das abschließende Leg zurück zum Depot ergänzen | ✅ geschlossen, ohne Doppel-Leg |
 
-**Vorbedingung:** Die heute erzeugte `parcel-demand-config.yaml` wird vom Lauf-Harness noch nicht
-gelesen; dort sind Paketmenge, Zielanteile und `allAsDelivery()` hart codiert. Die erste
-Implementierungsstufe muss daher die **gesamte Konfigurationskette**
-`scenario.json → parcel-demand-config.yaml/run-config.yaml → mobitopp-rastatt → logiTopp`
-wirksam und durch einen Test beobachtbar machen. Andernfalls wäre eine Retourenquote nur ein
-wirkungsloser UI-Parameter.
+Die vormals offene Vorbedingung ist erfüllt: Die Konfigurationskette
+`parcel-demand-config.yaml/run-config.yaml → mobitopp-rastatt → logiTopp` ist wirksam und im
+echten Lauf beobachtet. `scenario.json` bleibt bis Schritt 3 absichtlich bei
+`returns.enabled=false`; es existiert noch kein wirkungsloser UI-Parameter.
 
-Die Run-Config erhält dafür eine explizite Vertragsversion. Nach einem Lauf mit aktivierten
+Die Run-Config enthält dafür eine explizite Vertragsversion. Nach einem Lauf mit aktivierten
 Retouren prüft die Ingestion als Laufzeit-Postcondition, ob die erwartete Zahl eindeutiger
 `IsPickup=true`-Paket-IDs vorhanden ist; eine alte Harness-Version darf das neue Feld nicht
 unbemerkt ignorieren, sondern lässt die Simulationsstufe sichtbar fehlschlagen.
 
 Die Prozessgrenze zum GPL-lizenzierten Legacy-Stack bleibt bestehen. Weil
-`validation/mobitopp-rastatt` gitignored ist, braucht die produktive Umsetzung außerdem einen
-versionierten Patch-/Build-Vertrag oder das ohnehin geplante feste Lauf-Image; eine nur lokal
-geänderte Harness-Kopie ist kein auslieferbares Feature.
+`validation/mobitopp-rastatt` gitignored ist, liegt der reproduzierbare Patch-/Build-Vertrag
+unter `legacy/logitopp-returns-v1/`. Er prüft Upstream-, Patch-, Vorher- und Nachher-Hashes,
+publiziert eine eindeutige Maven-Version und hinterlegt den vom Backend geprüften Harness-Marker.
+Ein festes Lauf-Image kann später denselben Vertrag konsumieren.
 
 ### G.5 Artefakte und KPIs
 
@@ -1012,7 +1011,8 @@ Weitere Ergebnisanforderungen:
 
 ### G.6 Beweis- und Akzeptanzplan
 
-Vor Produktivcode ist ein kleiner Ende-zu-Ende-Spike über die vollständige externe Kette Pflicht:
+Vor der Produktfreigabe ist ein kleiner Ende-zu-Ende-Spike über die vollständige externe Kette
+Pflicht:
 
 1. Minimales Szenario mit `returns.enabled=true` und bewusst hoher Quote.
 2. Echter logiTopp-Lauf erzeugt mindestens einen Paketstatus mit `IsPickup=true`.
@@ -1022,7 +1022,7 @@ Vor Produktivcode ist ein kleiner Ende-zu-Ende-Spike über die vollständige ext
 5. `planned-tours.csv` und der SUMO-Import werden darauf geprüft, dass der Abholstopp in der
    gefahrenen Tour erhalten bleibt.
 
-**Spike-Ergebnis (✅ Mechanik bedingt bewiesen, 2026-07-29):** Der unveränderte Stack erzeugte
+**Spike-Ergebnis Schritt 1 (✅ Mechanik bedingt bewiesen, 2026-07-29):** Der unveränderte Stack erzeugte
 101 Pickups und sammelte sie scheinbar ein, gruppierte aber 13–20 verschiedene Zielzonen eines
 Tages fast vollständig am ersten Stopp. Nach Clusterung über tatsächliche Zone/Position trat eine
 zweite Ursache offen zutage: Pickups lagen im normalen Depotbestand und wurden auf räumlich
@@ -1035,9 +1035,20 @@ des Wochenhorizonts geplant und eingesammelt, `to_pickup=87`, `success_pickup=87
 Ein realer Pickup-Stopp wurde anschließend in SUMO geroutet (**ein Lkw-Leg, 6,81 km, 430 s,
 1,61 kg CO₂; Test Exit 0**). Der Beweis deckte zugleich eine Exportgrenze auf:
 `planned-tours.csv` enthält kein abschließendes Leg vom letzten Stopp zurück zum Depot. Der
-interne logiTopp-Pfad erreicht `collected`, SUMO bildet die vollständige Rückfahrt und ihre
-Emissionen derzeit aber nicht ab. Die reproduzierbaren lokalen Belege liegen unter
+interne logiTopp-Pfad erreichte `collected`, SUMO bildete die vollständige Rückfahrt und ihre
+Emissionen in diesem historischen Spike aber noch nicht ab. Die reproduzierbaren lokalen Belege liegen unter
 `validation/returns-spike-2026-07-29/`.
+
+**Implementierungsnachweis Schritt 2 (✅ Konfigurationskette, 2026-07-29):** Der
+Patch-/Build-Vertrag `synthesis-logitopp-returns-v1` wurde installiert, erneut idempotent
+ausgeführt und der Harness kompiliert. Ein echter Mischlauf mit
+`shareOfPrivateOrders=1.0` erzeugte **101 Zustellungen plus 101 Retouren** für 96 Agenten.
+**65 Zustellungen und 67 Pickups** wurden innerhalb des Wochenhorizonts geplant und erfolgreich
+ausgeführt; alle 67 Pickup-IDs waren eindeutig und lagen an der Paket-Zielkoordinate. Beim
+Depot-Unload wurden 67 eingesammelte Pakete gezählt, `returning=0`. Anschließend routete SUMO
+den realen Pickup als Hin- und Abschluss-Leg: **2 Lkw-Fahrzeuge, 3,03 kg CO₂, Test Exit 0**.
+Damit sind Positionsclusterung, Pickup-Bestand und geschlossene Tour an der echten
+Prozesskette nachgewiesen.
 
 Akzeptanzkriterien für die Implementierung:
 
@@ -1082,16 +1093,16 @@ Empfohlene Reihenfolge:
 
 1. **✅ Spike (2026-07-29):** Pickup-Mechanik, Ergebnisdateien und Pickup-Stopp in SUMO bewiesen;
    zwei notwendige logiTopp-Korrekturen und das fehlende SUMO-Abschluss-Leg identifiziert.
-2. **Konfigurationskette:** bestehende Paketparameter und Retourenwerte im Harness wirksam
-   machen; Harness-Version/Patch einschließlich Positionsclusterung, `requestPickup(...)` und
-   geschlossenem Tour-Export reproduzierbar fixieren.
+2. **✅ Konfigurationskette (2026-07-29):** Paketparameter und Retourenwerte im Harness wirksam;
+   versionierter, hashgeprüfter Patchvertrag einschließlich Positionsclusterung,
+   `requestPickup(...)`, Fail-fast-Marker und geschlossenem SUMO-Tourexport.
 3. **MVP hinter `returns.enabled=false`:** Backend, Frontend, logiTopp-Auswahl und Tests.
 4. **Ingestion/KPIs/UI:** Richtungen trennen und Basis-vs.-Retouren-Vergleich ergänzen.
 5. **E2E-Verifikation und Beförderungsentscheidung:** erst danach über einen fachlich
    begründeten Default oder weitere Rückgabekanäle entscheiden.
 
-**Go/No-Go nach Schritt 1: bedingtes Go.** logiTopp transportiert korrigierte Pickups bis zum
-`collected`-Pfad, und SUMO behält den Pickup-Stopp. Der unveränderte Legacy-Stack ist wegen
-falscher Clusterung und Bestandsregistrierung jedoch kein zulässiger Produktionspfad; außerdem
-fehlt SUMO das letzte Leg zum Depot. Das Feature bleibt daher aus, bis diese drei Punkte als
-versionierter Integrationsvertrag umgesetzt und durch die Akzeptanzkriterien belegt sind.
+**Go/No-Go nach Schritt 2: technisches Go für Schritt 3.** Die drei Spike-Blocker sind im
+versionierten Integrationsvertrag behoben und am echten Lauf belegt. Das Nutzerfeature bleibt
+dennoch aus: Szenario-API und Frontend können Retouren noch nicht aktivieren, und die
+richtungsgetrennten KPIs/Postconditions fehlen. Ein Produkt-Go ist erst nach Schritten 3–5
+zulässig.

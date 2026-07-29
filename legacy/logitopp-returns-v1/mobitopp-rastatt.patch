@@ -1,0 +1,387 @@
+diff --git a/build.gradle b/build.gradle
+index a5bb8c0..a9cf722 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -22,7 +22,7 @@ dependencies {
+     implementation 'net.sf.opencsv:opencsv:2.3'
+     implementation 'org.slf4j:slf4j-api:1.7.36'
+     runtimeOnly 'org.slf4j:slf4j-simple:1.7.36'
+-    implementation 'edu.kit.ifv.mobitopp:logitopp:0.0-SNAPSHOT'
++    implementation 'edu.kit.ifv.mobitopp:logitopp:0.0-synthesis-returns-v1'
+ }
+ 
+ tasks.register('runLongTerm', JavaExec) {
+diff --git a/config/synthesis/harness-contract.properties b/config/synthesis/harness-contract.properties
+new file mode 100644
+index 0000000..05b0087
+--- /dev/null
++++ b/config/synthesis/harness-contract.properties
+@@ -0,0 +1,3 @@
++contractVersion=synthesis-logitopp-returns-v1
++parcelDemandContractVersion=synthesis-parcel-demand-v1
++logitoppVersion=0.0-synthesis-returns-v1
+diff --git a/src/main/java/edu/kit/ifv/mobitopp/simulation/ParcelLocationClustering.java b/src/main/java/edu/kit/ifv/mobitopp/simulation/ParcelLocationClustering.java
+new file mode 100644
+index 0000000..5a0eaad
+--- /dev/null
++++ b/src/main/java/edu/kit/ifv/mobitopp/simulation/ParcelLocationClustering.java
+@@ -0,0 +1,25 @@
++package edu.kit.ifv.mobitopp.simulation;
++
++import java.util.List;
++
++import edu.kit.ifv.mobitopp.simulation.parcels.IParcel;
++import edu.kit.ifv.mobitopp.simulation.parcels.clustering.DeliveryClusteringStrategy;
++
++/**
++ * Gruppiert Pickup- und Zustellpakete nach dem tatsächlichen Tourstopp.
++ * AgentDeliveryClustering gruppiert Pickups nach Producer; bei privaten
++ * Pickups ist das für alle Aufträge dasselbe Depot.
++ */
++public class ParcelLocationClustering implements DeliveryClusteringStrategy {
++
++	@Override
++	public boolean canBeGrouped(IParcel first, IParcel second) {
++		return first.getZone().equals(second.getZone())
++				&& first.getLocation().equals(second.getLocation());
++	}
++
++	@Override
++	public ZoneAndLocation getStopLocation(List<IParcel> parcels) {
++		return parcels.get(0).getZoneAndLocation();
++	}
++}
+diff --git a/src/main/java/edu/kit/ifv/mobitopp/simulation/SynthesisParcelDemandConfig.java b/src/main/java/edu/kit/ifv/mobitopp/simulation/SynthesisParcelDemandConfig.java
+new file mode 100644
+index 0000000..a73431a
+--- /dev/null
++++ b/src/main/java/edu/kit/ifv/mobitopp/simulation/SynthesisParcelDemandConfig.java
+@@ -0,0 +1,164 @@
++package edu.kit.ifv.mobitopp.simulation;
++
++import java.io.File;
++import java.io.IOException;
++import java.nio.file.Files;
++import java.util.ArrayDeque;
++import java.util.Deque;
++import java.util.LinkedHashMap;
++import java.util.Map;
++
++import edu.kit.ifv.mobitopp.simulation.parcels.ParcelDestinationType;
++
++public record SynthesisParcelDemandConfig(
++		double deliveryMean,
++		double deliveryStdDev,
++		int deliveryMin,
++		int deliveryMax,
++		Map<ParcelDestinationType, Double> deliveryShares,
++		boolean returnsEnabled,
++		double returnShare,
++		Map<ParcelDestinationType, Double> pickupShares) {
++
++	public static final String HARNESS_CONTRACT = "synthesis-logitopp-returns-v1";
++	public static final String DEMAND_CONTRACT = "synthesis-parcel-demand-v1";
++
++	public static SynthesisParcelDemandConfig load(File file, String harnessContract)
++			throws IOException {
++		if (!HARNESS_CONTRACT.equals(harnessContract)) {
++			throw new IllegalArgumentException("Incompatible harness contract: "
++					+ harnessContract + ", expected " + HARNESS_CONTRACT);
++		}
++		Map<String, String> values = flatten(file);
++		requireContract(values);
++
++		double mean = decimal(values, "parcelOrders.perPersonPerWeek.mean");
++		double stdDev = decimal(values, "parcelOrders.perPersonPerWeek.stdDev");
++		int min = integer(values, "parcelOrders.perPersonPerWeek.min");
++		int max = integer(values, "parcelOrders.perPersonPerWeek.max");
++		Map<ParcelDestinationType, Double> deliveryShares = Map.of(
++				ParcelDestinationType.HOME, decimal(values, "parcelOrders.destinationShares.HOME"),
++				ParcelDestinationType.WORK, decimal(values, "parcelOrders.destinationShares.WORK"),
++				ParcelDestinationType.PACK_STATION,
++				decimal(values, "parcelOrders.destinationShares.PACKSTATION"));
++
++		boolean returnsEnabled = bool(values, "returns.enabled");
++		double returnShare = decimal(values, "returns.shareOfPrivateOrders");
++		Map<ParcelDestinationType, Double> pickupShares = Map.of(
++				ParcelDestinationType.HOME, decimal(values, "returns.pickupShares.HOME"),
++				ParcelDestinationType.WORK, decimal(values, "returns.pickupShares.WORK"));
++
++		validate(mean, stdDev, min, max, deliveryShares, returnsEnabled, returnShare,
++				pickupShares);
++		return new SynthesisParcelDemandConfig(mean, stdDev, min, max,
++				deliveryShares, returnsEnabled, returnShare, pickupShares);
++	}
++
++	private static Map<String, String> flatten(File file) throws IOException {
++		Map<String, String> values = new LinkedHashMap<>();
++		Deque<Section> sections = new ArrayDeque<>();
++		for (String raw : Files.readAllLines(file.toPath())) {
++			if (raw.isBlank() || raw.stripLeading().startsWith("#")) {
++				continue;
++			}
++			String withoutComment = raw.replaceFirst("\\s+#.*$", "");
++			if (withoutComment.isBlank()) {
++				continue;
++			}
++			int indent = withoutComment.indexOf(withoutComment.stripLeading());
++			String line = withoutComment.trim();
++			int colon = line.indexOf(':');
++			if (colon < 1) {
++				throw new IllegalArgumentException("Invalid parcel demand line: " + raw);
++			}
++			while (!sections.isEmpty() && indent <= sections.peekLast().indent()) {
++				sections.removeLast();
++			}
++			String key = line.substring(0, colon).trim();
++			String value = line.substring(colon + 1).trim();
++			if (value.isEmpty()) {
++				sections.addLast(new Section(indent, key));
++			} else {
++				StringBuilder path = new StringBuilder();
++				for (Section section : sections) {
++					path.append(section.key()).append('.');
++				}
++				values.put(path + key, unquote(value));
++			}
++		}
++		return values;
++	}
++
++	private static void requireContract(Map<String, String> values) {
++		String actual = required(values, "contractVersion");
++		if (!DEMAND_CONTRACT.equals(actual)) {
++			throw new IllegalArgumentException("Incompatible parcel demand contract: "
++					+ actual + ", expected " + DEMAND_CONTRACT);
++		}
++	}
++
++	private static void validate(double mean, double stdDev, int min, int max,
++			Map<ParcelDestinationType, Double> deliveryShares,
++			boolean returnsEnabled, double returnShare,
++			Map<ParcelDestinationType, Double> pickupShares) {
++		if (!Double.isFinite(mean) || mean < 0 || !Double.isFinite(stdDev) || stdDev < 0
++				|| min < 0 || max < min) {
++			throw new IllegalArgumentException("Invalid parcel quantity parameters");
++		}
++		requireShares("delivery", deliveryShares);
++		requireShares("pickup", pickupShares);
++		if (!Double.isFinite(returnShare) || returnShare < 0 || returnShare > 1
++				|| (returnsEnabled && returnShare <= 0)) {
++			throw new IllegalArgumentException("Invalid return share: " + returnShare);
++		}
++	}
++
++	private static void requireShares(String label,
++			Map<ParcelDestinationType, Double> shares) {
++		double sum = 0;
++		for (double share : shares.values()) {
++			if (!Double.isFinite(share) || share < 0) {
++				throw new IllegalArgumentException("Invalid " + label + " share: " + share);
++			}
++			sum += share;
++		}
++		if (Math.abs(sum - 1.0) > 1e-6) {
++			throw new IllegalArgumentException(label + " shares must sum to 1.0, got " + sum);
++		}
++	}
++
++	private static String required(Map<String, String> values, String key) {
++		String value = values.get(key);
++		if (value == null || value.isBlank()) {
++			throw new IllegalArgumentException("Missing parcel demand key: " + key);
++		}
++		return value;
++	}
++
++	private static double decimal(Map<String, String> values, String key) {
++		return Double.parseDouble(required(values, key));
++	}
++
++	private static int integer(Map<String, String> values, String key) {
++		return Integer.parseInt(required(values, key));
++	}
++
++	private static boolean bool(Map<String, String> values, String key) {
++		String value = required(values, key);
++		if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
++			throw new IllegalArgumentException("Invalid boolean for " + key + ": " + value);
++		}
++		return Boolean.parseBoolean(value);
++	}
++
++	private static String unquote(String value) {
++		if (value.length() >= 2 && ((value.startsWith("\"") && value.endsWith("\""))
++				|| (value.startsWith("'") && value.endsWith("'")))) {
++			return value.substring(1, value.length() - 1);
++		}
++		return value;
++	}
++
++	private record Section(int indent, String key) {
++	}
++}
+diff --git a/src/main/java/edu/kit/ifv/mobitopp/simulation/SynthesisParcelDemandModels.java b/src/main/java/edu/kit/ifv/mobitopp/simulation/SynthesisParcelDemandModels.java
+new file mode 100644
+index 0000000..fa6b584
+--- /dev/null
++++ b/src/main/java/edu/kit/ifv/mobitopp/simulation/SynthesisParcelDemandModels.java
+@@ -0,0 +1,103 @@
++package edu.kit.ifv.mobitopp.simulation;
++
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++
++import edu.kit.ifv.mobitopp.simulation.demand.ParcelDemandModel;
++import edu.kit.ifv.mobitopp.simulation.demand.PrivateParcelDemandModelBuilder;
++import edu.kit.ifv.mobitopp.simulation.distribution.CEPServiceProvider;
++import edu.kit.ifv.mobitopp.simulation.parcels.PrivateParcelBuilder;
++import edu.kit.ifv.mobitopp.simulation.person.PickUpParcelPerson;
++
++public final class SynthesisParcelDemandModels {
++
++	private SynthesisParcelDemandModels() {
++	}
++
++	public static ParcelDemandModel<PickUpParcelPerson, PrivateParcelBuilder> build(
++			SynthesisParcelDemandConfig config,
++			Map<CEPServiceProvider, Double> providerShares,
++			DeliveryResults results) {
++		ParcelDemandModel<PickUpParcelPerson, PrivateParcelBuilder> deliveries =
++				deliveryModel(config, providerShares, results);
++		if (!config.returnsEnabled()) {
++			return deliveries;
++		}
++
++		Map<Integer, Integer> quantities = new ConcurrentHashMap<>();
++		PrivateParcelDemandModelBuilder pickupBuilder =
++				PrivateParcelDemandModelBuilder.forPrivateParcels(results);
++		pickupBuilder.useNumberSelector((recipient, randomNumber) ->
++				quantities.getOrDefault(recipient.getOid(), 0));
++		pickupBuilder.allAsPickup();
++		ParcelDemandModel<PickUpParcelPerson, PrivateParcelBuilder> pickups =
++				pickupBuilder
++						.shareBasedParcelDestinationSelection(config.pickupShares(), false)
++						.shareBasedCepspSelection(providerShares, false)
++						.distributionCenterSelectionInCepspByFleetsize(false)
++						.useDistributionCenterAsProducer()
++						.useAgentAsConsumer()
++						.equalParcelSizeSelection(false)
++						.selectVolumeBasedOnShipmentSize(false)
++						.randomArrivalDaySelectionExcludeSunday(false)
++						.build();
++
++		return new ParcelDemandModel<>() {
++			@Override
++			public Collection<PrivateParcelBuilder> createParcelDemand(
++					PickUpParcelPerson recipient) {
++				Collection<PrivateParcelBuilder> deliveryParcels =
++						deliveries.createParcelDemand(recipient);
++				Collection<PrivateParcelBuilder> combined = new ArrayList<>(deliveryParcels);
++				int pickupCount = pickupCount(
++						deliveryParcels.size(), config.returnShare(), recipient.getNextRandom());
++				if (pickupCount == 0) {
++					return combined;
++				}
++				quantities.put(recipient.getOid(), pickupCount);
++				try {
++					combined.addAll(pickups.createParcelDemand(recipient));
++				} finally {
++					quantities.remove(recipient.getOid());
++				}
++				return combined;
++			}
++
++			@Override
++			public void printStatistics(String label) {
++				deliveries.printStatistics(label + " delivery");
++				pickups.printStatistics(label + " pickup");
++			}
++		};
++	}
++
++	private static ParcelDemandModel<PickUpParcelPerson, PrivateParcelBuilder> deliveryModel(
++			SynthesisParcelDemandConfig config,
++			Map<CEPServiceProvider, Double> providerShares,
++			DeliveryResults results) {
++		PrivateParcelDemandModelBuilder builder =
++				PrivateParcelDemandModelBuilder.forPrivateParcels(results);
++		builder.useNormalDistributionNumberSelector(
++				config.deliveryMean(), config.deliveryStdDev(),
++				config.deliveryMin(), config.deliveryMax());
++		builder.allAsDelivery();
++		return builder
++				.shareBasedParcelDestinationSelection(config.deliveryShares(), false)
++				.shareBasedCepspSelection(providerShares, false)
++				.distributionCenterSelectionInCepspByFleetsize(false)
++				.useDistributionCenterAsProducer()
++				.useAgentAsConsumer()
++				.equalParcelSizeSelection(false)
++				.selectVolumeBasedOnShipmentSize(false)
++				.randomArrivalDaySelectionExcludeSunday(false)
++				.build();
++	}
++
++	static int pickupCount(int deliveries, double share, double randomNumber) {
++		double expected = deliveries * share;
++		int base = (int) Math.floor(expected);
++		return base + (randomNumber < expected - base ? 1 : 0);
++	}
++}
+diff --git a/src/main/java/edu/kit/ifv/mobitopp/simulation/SimulatorBuilder.java b/src/main/java/edu/kit/ifv/mobitopp/simulation/SimulatorBuilder.java
+index c6e170f..b76bd65 100644
+--- a/src/main/java/edu/kit/ifv/mobitopp/simulation/SimulatorBuilder.java
++++ b/src/main/java/edu/kit/ifv/mobitopp/simulation/SimulatorBuilder.java
+@@ -307,7 +307,7 @@ public class SimulatorBuilder {
+ 					new edu.kit.ifv.mobitopp.simulation.distribution.DepotOperations(
+ 					new edu.kit.ifv.mobitopp.simulation.distribution.tours.planning.TspBasedDeliveryTourStrategy(
+ 							impedance(),
+-							new edu.kit.ifv.mobitopp.simulation.parcels.clustering.AgentDeliveryClustering(),
++							new ParcelLocationClustering(),
+ 							new edu.kit.ifv.mobitopp.simulation.distribution.tours.DummyDurationModel()),
+ 					new edu.kit.ifv.mobitopp.simulation.distribution.policies.ParcelPolicyProvider(),
+ 					depot,
+@@ -335,27 +335,21 @@ public class SimulatorBuilder {
+ 				};
+ 
+-		// Wie defaultPrivateParcelModel, aber ohne PACKSTATION-Ziele: die Rastatt-
+-		// Population hat keine PICK_UP_PARCEL-fixedDestinations (die müssten in der
+-		// Synthese gesetzt werden, vgl. fixedDestination-logitopp.csv unserer Pipeline)
+-		edu.kit.ifv.mobitopp.simulation.demand.PrivateParcelDemandModelBuilder parcelModelBuilder =
+-				edu.kit.ifv.mobitopp.simulation.demand.PrivateParcelDemandModelBuilder
+-						.forPrivateParcels(deliveryResults);
+-		parcelModelBuilder.useNormalDistributionNumberSelector(0.65, 0.5, 1, 10);
+-		parcelModelBuilder.allAsDelivery();
++		if (!context().experimentalParameters().hasValue("parcelDemandConfig")
++				|| !context().experimentalParameters().hasValue("harnessContract")) {
++			throw new IllegalArgumentException(
++					"SyntheSis parcelDemandConfig/harnessContract missing");
++		}
++		SynthesisParcelDemandConfig parcelConfig;
++		try {
++			parcelConfig = SynthesisParcelDemandConfig.load(
++					context().experimentalParameters().valueAsFile("parcelDemandConfig"),
++					context().experimentalParameters().value("harnessContract"));
++		} catch (java.io.IOException e) {
++			throw new IllegalArgumentException("Cannot read SyntheSis parcel demand config", e);
++		}
+ 		edu.kit.ifv.mobitopp.simulation.demand.ParcelDemandModel<
+ 				edu.kit.ifv.mobitopp.simulation.person.PickUpParcelPerson,
+ 				edu.kit.ifv.mobitopp.simulation.parcels.PrivateParcelBuilder> privateParcelModel =
+-				parcelModelBuilder
+-						.shareBasedParcelDestinationSelection(java.util.Map.of(
+-								edu.kit.ifv.mobitopp.simulation.parcels.ParcelDestinationType.HOME, 0.85,
+-								edu.kit.ifv.mobitopp.simulation.parcels.ParcelDestinationType.WORK, 0.15), false)
+-						.shareBasedCepspSelection(shares, false)
+-						.distributionCenterSelectionInCepspByFleetsize(false)
+-						.useDistributionCenterAsProducer()
+-						.useAgentAsConsumer()
+-						.equalParcelSizeSelection(false)
+-						.selectVolumeBasedOnShipmentSize(false)
+-						.randomArrivalDaySelectionExcludeSunday(false)
+-						.build();
++				SynthesisParcelDemandModels.build(parcelConfig, shares, deliveryResults);
+ 
+ 		System.out.println("Initializing logiTopp delivery simulator...");

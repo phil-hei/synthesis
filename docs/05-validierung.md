@@ -64,8 +64,9 @@ Toolchain: JDK 25 (jvmToolchain(25)), Gradle 9.5 (Wrapper). Tutorial-Läufe:
 - **`mobitopp:0.3.580` liegt auf Maven Central** → Legacy-Kern muss nicht gebaut werden.
 - logitopp-Original-Build (Gradle 6.3/Java 12/jcenter) läuft auf aktuellen Toolchains nicht;
   unser Klon enthält ein **modernisiertes `build.gradle`** (Gradle 9, JDK-25-Toolchain,
-  Lombok 1.18.46, `implementation`-Syntax, Publishing entschlackt) → baut und ist als
-  `edu.kit.ifv.mobitopp:logitopp:0.0-SNAPSHOT` in mavenLocal publiziert.
+  Lombok 1.18.46, `implementation`-Syntax, Publishing entschlackt). Historisch wurde
+  `0.0-SNAPSHOT` publiziert; der Retouren-Vertrag verwendet heute die eindeutige Version
+  `edu.kit.ifv.mobitopp:logitopp:0.0-synthesis-returns-v1`.
 - Referenz-Long-Term-Output bestätigt: Das echte mobiTopp schreibt `fixeddestination.csv`
   (lowercase) und akzeptiert beide Varianten über die Default-Pfad-Auflösung.
 
@@ -101,11 +102,12 @@ Zustellereignisse**, Laufzeit 75 s. Ergebnisdateien unter
 | L4 | Zustellfahrzeuge routen über `StandardMode.TRUCK` → im `DynamicTypeMapping` auf die Pkw-Reisezeitmatrix mappen (`mapping.add(StandardMode.TRUCK, TravelTimeMatrixType.car)`). |
 | L5 | Speicher: 100 % Population (104k Agenten, 109k Pakete) sprengt 8–12 GB Heap in der Tourplanung; 10 %-Fraktion läuft problemlos. Für unsere Pipeline: `samplingFraction` klein halten oder Heap dimensionieren. |
 | L6 | Depots/CEPSP lassen sich programmatisch ODER per `DistributionCenterParser` (CSV) anlegen — unser `distribution-centers.csv` sollte auf dessen Spaltenschema ausgerichtet werden (Folgeaufgabe). |
-| L7 | Der unveränderte `AgentDeliveryClustering` gruppiert private Pickups über deren Producer. Da dies immer das Depot ist, kollabieren 13–20 Zielzonen eines Tages fast vollständig zu einem falschen Stopp. Pickups müssen nach tatsächlicher Zone/Position gruppiert werden. |
-| L8 | `ParcelBuilder.get()` legt private Pickups im normalen Depotbestand ab, während die Tourplanung geplante Pickups aus `pickupRequests` entfernt. Mit mehreren räumlichen Touren wird dasselbe Paket dadurch erneut geplant (`ONDELIVERY`). Pickup-Aufträge mit Depot als Producer müssen über `requestPickup(...)` registriert werden. |
-| L9 | Der SUMO-Adapter übernimmt Pickup-Stopps aus `planned-tours.csv`, die Datei enthält jedoch kein abschließendes Leg vom letzten Stopp zurück zum Depot. Ohne Export-Erweiterung unterschätzt SUMO die vollständige Rückfahrleistung und deren Emissionen. |
+| L7 | Der unveränderte `AgentDeliveryClustering` gruppiert private Pickups über deren Producer. Da dies immer das Depot ist, kollabieren 13–20 Zielzonen eines Tages fast vollständig zu einem falschen Stopp. **Behoben:** Der Vertrag `synthesis-logitopp-returns-v1` gruppiert nach tatsächlicher Zone/Position. |
+| L8 | `ParcelBuilder.get()` legt private Pickups im normalen Depotbestand ab, während die Tourplanung geplante Pickups aus `pickupRequests` entfernt. Mit mehreren räumlichen Touren wird dasselbe Paket dadurch erneut geplant (`ONDELIVERY`). **Behoben:** Depot-Pickups werden im versionierten logiTopp-Patch über `requestPickup(...)` registriert. |
+| L9 | `planned-tours.csv` enthält kein abschließendes Leg vom letzten Stopp zurück zum Depot. **Behoben:** `SumoRunner` ergänzt pro normaler Tour genau ein Abschluss-Leg und vermeidet Duplikate bei `isReturning=true` oder bereits erreichtem Depot. |
+| L10 | Paketparameter konnten früher in `parcel-demand-config.yaml` stehen, ohne vom Harness gelesen zu werden. **Behoben:** Paket- und Harness-Vertrag werden explizit geprüft; alter oder driftender Code schlägt vor dem Lauf bzw. vor dem Publizieren fehl. |
 
-## Retouren-Pickup-Spike (2026-07-29) — mechanisch bewiesen, Integration offen
+## Retouren-Pickup-Spike (2026-07-29) — mechanisch bewiesen, Integration damals offen
 
 Der präregistrierte Spike nutzte eine bestehende 2.000-Personen-Population mit
 `samplingFraction=0.05` und reiner Pickup-Nachfrage. Der erste Lauf endete zwar mit Exit 0 und
@@ -125,13 +127,37 @@ eingelesen und gegen einen Ausschnitt des tatsächlich verwendeten OSM-Netzes ge
 Abholstopp im Verkehrsmodell nachgewiesen, nicht jedoch das fehlende Abschluss-Leg zurück zum
 Depot (L9).
 
-**Entscheidung:** bedingtes Go für die Pickup-Mechanik, noch kein Produkt-Go. Die
-Positionsclusterung und Pickup-Registrierung gehören zwingend in einen versionierten
-Legacy-Patch-/Build-Vertrag; der SUMO-Export muss die Tour bis zum Depot schließen. Die
+**Entscheidung nach dem Spike:** bedingtes Go für die Pickup-Mechanik, noch kein Produkt-Go. Die
 gitignorierten Belege liegen unter `validation/returns-spike-2026-07-29/`. Die 64
 logiTopp-Legacy-Tests konnten wegen ihres JUnit-4-Imports im auf JUnit 5 modernisierten Build
 nicht kompiliert werden; der Hauptcode wurde erfolgreich gebaut und publiziert, dieser
 Test-Skip zählt aber nicht als Evidenz.
+
+### Retouren-Konfigurationskette (2026-07-29) — Schritt 2 erfolgreich
+
+Der versionierte Vertrag `synthesis-logitopp-returns-v1` behebt L7–L10 reproduzierbar.
+`LogisticsGenerator` schreibt `synthesis-parcel-demand-v1` mit sicheren
+`returns.enabled=false`-Defaults; `SimulationRunner` übergibt Datei und Vertragskennung und
+verweigert alte Harness-Versionen. Der Installer unter `legacy/logitopp-returns-v1/` prüft
+Patch-, Vorher- und Nachher-Hashes, wendet die zwei GPL-Patches an und publiziert die eindeutige
+Maven-Version `0.0-synthesis-returns-v1`. Der idempotente Installationspfad und der
+Harness-Klassenbau liefen mit Exit 0.
+
+Ein echter externer Mischlauf mit bewusst aktivierter Retourenquote `1.0` lief mit Exit 0:
+**101 Zustellpakete plus 101 Kundenretouren** für 96 Agenten. Innerhalb des endlichen
+Wochen-/Kapazitätshorizonts wurden **65 Zustellungen und 67 Pickups** geplant und erfolgreich
+ausgeführt. Alle 67 geplanten Pickup-IDs waren eindeutig, alle lagen am in den Paketbestellungen
+ausgewiesenen Ziel, und die 67 beim Stopp erfolgreichen Pickups wurden beim Depot-Unload wieder
+gezählt. `returning=0` bestätigt weiterhin die semantische Trennung. Die offenen 36
+Zustellungen und 34 Retouren blieben `UNDEFINED`; sie sind keine fehlgeschlagenen Zustellungen.
+
+Der reale SUMO-Korridortest routete denselben Pickup anschließend als **Hinweg plus
+Depot-Rückfahrt**: 2 Lkw-Legs/Fahrzeuge, zusammen **3,03 kg CO₂**, Test Exit 0. Damit ist L9
+nicht nur durch einen Parser-Test, sondern an der echten externen Kette geschlossen.
+
+**Entscheidung nach Schritt 2:** technisches Go für den MVP hinter einem standardmäßig
+deaktivierten Szenario-Flag. Noch kein Produkt-Go: Szenario-API/Frontend, richtungsgetrennte
+Ingestion/KPIs und die vollständigen Akzeptanzläufe sind die nächsten Schritte.
 
 ## Legacy-Adapter: eigene Artefakte → logiTopp (2026-06-11) — erfolgreich
 

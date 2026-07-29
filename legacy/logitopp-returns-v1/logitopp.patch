@@ -1,0 +1,30 @@
+diff --git a/build.gradle b/build.gradle
+index 5df630e..f909f3e 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -8,7 +8,7 @@ plugins {
+ }
+ 
+ group = 'edu.kit.ifv.mobitopp'
+-version = '0.0-SNAPSHOT'
++version = '0.0-synthesis-returns-v1'
+ 
+ java {
+     toolchain {
+diff --git a/src/main/java/edu/kit/ifv/mobitopp/simulation/parcels/ParcelBuilder.java b/src/main/java/edu/kit/ifv/mobitopp/simulation/parcels/ParcelBuilder.java
+index f1ad693..83d2131 100644
+--- a/src/main/java/edu/kit/ifv/mobitopp/simulation/parcels/ParcelBuilder.java
++++ b/src/main/java/edu/kit/ifv/mobitopp/simulation/parcels/ParcelBuilder.java
+@@ -45,7 +45,11 @@ public abstract class ParcelBuilder<P extends ParcelAgent> {
+ 	public IParcel get() {
+ 		if (parcel == null) {
+ 			parcel = doBuild();
+-			parcel.getProducer().addParcel(parcel);
++			if (parcel.isPickUp() && parcel.getProducer() instanceof DistributionCenter center) {
++				center.requestPickup(parcel);
++			} else {
++				parcel.getProducer().addParcel(parcel);
++			}
+ 		}
+ 		
+ 		return parcel;

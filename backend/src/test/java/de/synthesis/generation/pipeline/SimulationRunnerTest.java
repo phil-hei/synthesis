@@ -8,6 +8,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -55,6 +57,11 @@ class SimulationRunnerTest {
                 "Ohne Override zeigt die MNL-Moduswahl auf die Projekt-Standarddatei");
         assertTrue(yaml.contains("fractionOfPopulation: 1.0"),
                 "Die bereits gesampelte Export-Population darf in logiTopp nicht erneut reduziert werden");
+        assertTrue(yaml.contains("harnessContract: " + SimulationRunner.HARNESS_CONTRACT),
+                "Die Run-Config fordert den versionierten Harness-Vertrag explizit an");
+        assertTrue(yaml.contains("parcelDemandConfig: "
+                        + p[1].toAbsolutePath() + "/logistics/parcel-demand-config.yaml"),
+                "Die wirksame Paketkonfiguration wird an den Legacy-Harness übergeben");
     }
 
     @Test
@@ -111,5 +118,25 @@ class SimulationRunnerTest {
         assertTrue(yaml.contains(
                         "shopping: " + absDc + "/destination_choice_parameters_SHOPPING.txt"),
                 "Der kombinierte Lauf lenkt auch die zweckspezifischen Zielwahlparameter um");
+    }
+
+    @Test
+    void harnessContractFailsFastOnMissingOrWrongVersion() throws Exception {
+        Path project = tempDir.resolve("legacy-project");
+        Files.createDirectories(project.resolve("config/synthesis"));
+        SynthesisProperties.Simulation config = new SynthesisProperties.Simulation();
+        config.setProjectDir(project.toString());
+        SimulationRunner runner = new SimulationRunner(config);
+
+        assertThrows(java.io.IOException.class, runner::verifyHarnessContract,
+                "Ein fehlender Marker darf nicht als kompatibler Harness gelten");
+
+        Path marker = project.resolve("config/synthesis/harness-contract.properties");
+        Files.writeString(marker, "contractVersion=old-contract\n");
+        assertThrows(java.io.IOException.class, runner::verifyHarnessContract,
+                "Eine unbekannte Vertragsversion muss sichtbar fehlschlagen");
+
+        Files.writeString(marker, "contractVersion=" + SimulationRunner.HARNESS_CONTRACT + "\n");
+        assertDoesNotThrow(runner::verifyHarnessContract);
     }
 }

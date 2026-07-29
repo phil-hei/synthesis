@@ -431,8 +431,13 @@ public class SumoRunner {
         return co2;
     }
 
-    private record Trip(int departSec, String type, String fromLon, String fromLat,
-                        String toLon, String toLat) {
+    record Trip(int departSec, String type, String fromLon, String fromLat,
+                String toLon, String toLat) {
+    }
+
+    private record TourClosure(String type, String depotLon, String depotLat,
+                               String lastLon, String lastLat, int departMinute,
+                               boolean returning) {
     }
 
     /** demandsimulationResult.csv → PKW-Trips des Tages (Typ "pkw"). */
@@ -570,17 +575,25 @@ public class SumoRunner {
      * (fromX/Y → toX/Y) mit Fahrzeugtyp (logiTopp-Codes: 1=BIKE→Lastenrad,
      * sonst Lkw; TRAM wird verworfen). Abfahrt ≈ Ankunft (plannedTimeSimMin)
      * minus Fahrzeit (tripDur), beides in Sim-Minuten der Modellwoche.
+     *
+     * <p>logiTopp berücksichtigt die Rückfahrt intern, schreibt sie aber nicht als
+     * letzte Zeile. Pro normaler Tour wird deshalb aus erstem Depot und letztem
+     * Stopp ein explizites Abschluss-Leg ergänzt. Bereits als {@code isReturning}
+     * markierte Touren und Touren, die am Depot enden, werden nicht doppelt geschlossen.</p>
      */
-    private List<Trip> readDeliveryLegs(Path plannedTours) throws IOException {
+    List<Trip> readDeliveryLegs(Path plannedTours) throws IOException {
         int dayStart = day * 1440;
         int dayEnd = (day + 1) * 1440;
         List<Trip> legs = new ArrayList<>();
+        Map<String, TourClosure> closures = new java.util.LinkedHashMap<>();
         try (BufferedReader reader = Files.newBufferedReader(plannedTours, StandardCharsets.UTF_8)) {
             String headerLine = reader.readLine();
             if (headerLine == null) {
                 return legs;
             }
             List<String> header = List.of(headerLine.split(";", -1));
+            int tourId = header.indexOf("tourId");
+            int returning = header.indexOf("isReturning");
             int vehicleType = header.indexOf("vehicleType");
             int fromX = header.indexOf("fromX");
             int fromY = header.indexOf("fromY");
@@ -588,16 +601,21 @@ public class SumoRunner {
             int toY = header.indexOf("toY");
             int planned = header.indexOf("plannedTimeSimMin");
             int tripDur = header.indexOf("tripDur");
-            if (vehicleType < 0 || fromX < 0 || toX < 0 || planned < 0) {
+            int deliveryDur = header.indexOf("deliveryDur");
+            if (tourId < 0 || vehicleType < 0 || fromX < 0 || fromY < 0
+                    || toX < 0 || toY < 0 || planned < 0) {
                 return legs; // unbekanntes Format – Lieferverkehr überspringen
             }
+            int lastRequiredColumn = java.util.stream.IntStream.of(
+                    tourId, vehicleType, fromX, fromY, toX, toY, planned)
+                    .max().orElse(-1);
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.isBlank()) {
                     continue;
                 }
                 String[] c = line.split(";", -1);
-                if (c.length <= Math.max(planned, Math.max(toY, tripDur))
+                if (c.length <= lastRequiredColumn
                         || c[fromX].isBlank() || c[toX].isBlank()) {
                     continue;
                 }
@@ -610,15 +628,47 @@ public class SumoRunner {
                     continue;
                 }
                 double arrival = Double.parseDouble(c[planned]);
-                double travel = tripDur >= 0 && !c[tripDur].isBlank() ? Double.parseDouble(c[tripDur]) : 0;
-                int begin = (int) Math.max(dayStart, arrival - travel);
+                double travel = tripDur >= 0 && tripDur < c.length && !c[tripDur].isBlank()
+                        ? Double.parseDouble(c[tripDur]) : 0;
+                int begin = (int) (arrival - travel);
                 if (begin < dayStart || begin >= dayEnd) {
                     continue;
                 }
                 legs.add(new Trip((begin - dayStart) * 60, type, c[fromX], c[fromY], c[toX], c[toY]));
+                int service = deliveryDur >= 0 && deliveryDur < c.length && !c[deliveryDur].isBlank()
+                        ? (int) Double.parseDouble(c[deliveryDur]) : 0;
+                TourClosure previous = closures.get(c[tourId]);
+                closures.put(c[tourId], new TourClosure(
+                        type,
+                        previous == null ? c[fromX] : previous.depotLon(),
+                        previous == null ? c[fromY] : previous.depotLat(),
+                        c[toX], c[toY], (int) arrival + service,
+                        (previous != null && previous.returning())
+                                || (returning >= 0 && returning < c.length
+                                && Boolean.parseBoolean(c[returning]))));
             }
         }
+        for (TourClosure closure : closures.values()) {
+            if (closure.returning() || closure.departMinute() < dayStart
+                    || closure.departMinute() >= dayEnd
+                    || sameCoordinate(closure.depotLon(), closure.depotLat(),
+                    closure.lastLon(), closure.lastLat())) {
+                continue;
+            }
+            legs.add(new Trip((closure.departMinute() - dayStart) * 60, closure.type(),
+                    closure.lastLon(), closure.lastLat(), closure.depotLon(), closure.depotLat()));
+        }
         return legs;
+    }
+
+    private static boolean sameCoordinate(String firstLon, String firstLat,
+                                          String secondLon, String secondLat) {
+        try {
+            return Math.abs(Double.parseDouble(firstLon) - Double.parseDouble(secondLon)) < 1e-9
+                    && Math.abs(Double.parseDouble(firstLat) - Double.parseDouble(secondLat)) < 1e-9;
+        } catch (NumberFormatException e) {
+            return firstLon.equals(secondLon) && firstLat.equals(secondLat);
+        }
     }
 
     /** Alle Trips (nach Abfahrt sortiert) mit Fahrzeugtypen als trips.xml schreiben. */

@@ -118,6 +118,15 @@ strikt von nicht zustellbaren Paketen im Status `RETURNING` getrennt. Das vollst
 Fach-, Daten-, KPI- und Validierungskonzept steht in `docs/06-gta-integration-konzept.md`,
 Abschnitt G.
 
+Die externe Prozessgrenze ist seit 2026-07-29 durch zwei gekoppelte Verträge abgesichert:
+SyntheSis schreibt `synthesis-parcel-demand-v1` in die Paketkonfiguration und fordert in der
+Run-Config `synthesis-logitopp-returns-v1` an. `SimulationRunner` startet nur einen Harness mit
+passendem Marker; fehlende oder abweichende Versionen schlagen sichtbar fehl. Der reproduzierbare
+GPL-Patch-/Build-Vertrag liegt unter `legacy/logitopp-returns-v1/` und publiziert logiTopp unter
+einer eindeutigen Maven-Version. Der SUMO-Adapter schließt jede normale logiTopp-Tour vom letzten
+Stopp zurück zum ersten Depot, sofern kein explizites Rückkehr-Leg vorhanden ist. Szenario-API,
+Frontend und richtungsgetrennte KPI-Ingestion bleiben davon unabhängige folgende Ausbauschritte.
+
 ## Frontend (Angular, wie simudrive)
 
 1. **Region wählen:** Leaflet + Zeichenwerkzeuge (BBox/Polygon) + Nominatim-Gemeindesuche;
