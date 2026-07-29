@@ -139,9 +139,41 @@ public class ScenarioController {
                 .anyMatch(target -> target == null || !TARGET_MODELS.contains(target))) {
             throw badRequest("Unbekanntes Zielmodell");
         }
+        validateReturns(scenario);
         double samplingFraction = scenario.population.samplingFraction;
         if (!Double.isFinite(samplingFraction) || samplingFraction <= 0 || samplingFraction > 1) {
             throw badRequest("Stichprobenanteil muss größer 0 und höchstens 1 sein");
+        }
+    }
+
+    private void validateReturns(Scenario scenario) {
+        Scenario.ReturnDemand returns = scenario.logistics.returns;
+        if (returns == null) {
+            throw badRequest("Retourenparameter fehlen");
+        }
+        if (!"exogenous-share".equals(returns.model)) {
+            throw badRequest("Unbekanntes Retourenmodell");
+        }
+        double share = returns.shareOfPrivateOrders;
+        if (!Double.isFinite(share) || share < 0 || share > 1) {
+            throw badRequest("Retourenquote muss zwischen 0 und 1 liegen");
+        }
+        if (returns.enabled && share <= 0) {
+            throw badRequest("Aktivierte Retouren benötigen eine Quote größer 0");
+        }
+        Scenario.PickupShares pickupShares = returns.pickupShares;
+        if (pickupShares == null) {
+            throw badRequest("Retouren-Abholortanteile fehlen");
+        }
+        if (!Double.isFinite(pickupShares.home) || !Double.isFinite(pickupShares.work)
+                || pickupShares.home < 0 || pickupShares.work < 0) {
+            throw badRequest("Retouren-Abholortanteile müssen endlich und nicht negativ sein");
+        }
+        if (Math.abs(pickupShares.home + pickupShares.work - 1.0) > 1e-6) {
+            throw badRequest("Retouren-Abholortanteile müssen zusammen 1 ergeben");
+        }
+        if (returns.enabled && !scenario.targets().contains("logitopp")) {
+            throw badRequest("Aktivierte Retouren benötigen das Zielmodell logiTopp");
         }
     }
 

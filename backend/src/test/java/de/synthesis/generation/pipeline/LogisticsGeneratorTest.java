@@ -35,6 +35,26 @@ class LogisticsGeneratorTest {
                 .contains("WORK: 0.2000")
                 .contains("PACKSTATION: 0.1000")
                 .contains("returns:\n  enabled: false")
-                .contains("shareOfPrivateOrders: 0.0");
+                .contains("model: exogenous-share")
+                .contains("shareOfPrivateOrders: 0.0000")
+                .contains("pickupShares:\n    HOME: 1.0000\n    WORK: 0.0000");
+    }
+
+    @Test
+    void writesEnabledReturnDemandFromScenario(@TempDir Path tempDir) throws Exception {
+        Scenario.Logistics logistics = new Scenario.Logistics();
+        logistics.returns.enabled = true;
+        logistics.returns.shareOfPrivateOrders = 0.35;
+        logistics.returns.pickupShares.home = 0.75;
+        logistics.returns.pickupShares.work = 0.25;
+
+        Path config = tempDir.resolve("parcel-demand-config.yaml");
+        LogisticsGenerator.writeParcelDemandConfig(config, logistics);
+
+        assertThat(Files.readString(config))
+                .contains("returns:\n  enabled: true")
+                .contains("model: exogenous-share")
+                .contains("shareOfPrivateOrders: 0.3500")
+                .contains("pickupShares:\n    HOME: 0.7500\n    WORK: 0.2500");
     }
 }

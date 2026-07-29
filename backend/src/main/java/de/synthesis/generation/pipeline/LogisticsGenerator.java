@@ -194,17 +194,22 @@ public class LogisticsGenerator {
                       to: SATURDAY
                       precision: day
                     returns:
-                      enabled: false
-                      shareOfPrivateOrders: 0.0
+                      enabled: %s
+                      model: %s
+                      shareOfPrivateOrders: %s
                       pickupShares:
-                        HOME: 1.0
-                        WORK: 0.0
+                        HOME: %s
+                        WORK: %s
                     """.formatted(
                     PARCEL_DEMAND_CONTRACT,
                     format(logistics.parcelsPerPersonWeek), format(logistics.parcelStdDev),
                     logistics.maxParcelsPerPerson,
                     format(logistics.shareHome), format(logistics.shareWork),
-                    format(logistics.sharePackstation)));
+                    format(logistics.sharePackstation),
+                    logistics.returns.enabled, logistics.returns.model,
+                    format(logistics.returns.shareOfPrivateOrders),
+                    format(logistics.returns.pickupShares.home),
+                    format(logistics.returns.pickupShares.work)));
         }
     }
 

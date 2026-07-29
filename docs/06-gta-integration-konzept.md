@@ -72,9 +72,10 @@ Weglänge). Änderbar nur durch **Neu-Kalibrierung** dieser Parameter (siehe D).
 
 ### A.7 Retouren-Status — technische Kette vorbereitet, Produkt-MVP offen (2026-07-29)
 
-- **Der heutige Produktpfad erzeugt noch keine Kundenretouren.** Szenario-API und Frontend
-  exponieren das Retourenmodell noch nicht; die generierte Konfiguration verwendet deshalb den
-  sicheren Default `returns.enabled=false`.
+- **Der experimentelle Szenariopfad kann Kundenretouren erzeugen.** Szenario-API und Frontend
+  exponieren Quote sowie `HOME`-/`WORK`-Abholanteile nur für das Zielmodell logiTopp. Der
+  rückwärtskompatible Default bleibt `returns.enabled=false`; es gibt keine vorausgefüllte
+  Branchenquote.
 - **Die externe Konfigurationskette ist implementiert.** Der Vertrag
   `synthesis-logitopp-returns-v1` liest Paketparameter und optional zusätzliche
   `IsPickup=true`-Aufträge aus `synthesis-parcel-demand-v1`, clustert sie am tatsächlichen Ort
@@ -945,9 +946,10 @@ Regeln:
 - `PACKSTATION` ist im MVP **kein Retourenkanal**, weil eine Abgabe durch den Kunden einen
   zusätzlichen Personenweg und eine konsolidierte Abholung an der Station erfordert.
 
-Das Frontend soll den Block nur bei Zielmodell `logitopp` zeigen und ihn als
-experimentell kennzeichnen. Nach Aktivierung werden Quote sowie Abholortanteile editierbar;
-ein Hilfetext erklärt die Abgrenzung zu fehlgeschlagenen Zustellungen.
+Das Frontend zeigt den Block nur bei Zielmodell `logitopp` und kennzeichnet ihn als
+experimentell. Nach Aktivierung sind Quote sowie Abholortanteile editierbar; ein Hilfetext
+erklärt die Abgrenzung zu fehlgeschlagenen Zustellungen. Wird logiTopp abgewählt, deaktiviert
+das Studio die Retourenoption, damit kein wirkungsloser Zustand gespeichert wird.
 
 ### G.4 Technische Integration
 
@@ -955,7 +957,7 @@ Die Erweiterung bleibt innerhalb der bestehenden Architektur und erzeugt keine 1
 
 | Bestehender Ort | Änderung | Stand |
 |---|---|---|
-| `Scenario.Logistics` + Frontend-Modell | verschachtelte Retourenkonfiguration und Validierung ergänzen | offen (Schritt 3) |
+| `Scenario.Logistics` + Frontend-Modell | verschachtelte Retourenkonfiguration und Validierung ergänzen | ✅ API + Studio, Default aus |
 | `LogisticsGenerator` | `parcel-demand-config.yaml` um Richtung/Retourenparameter erweitern | ✅ Vertrag + sicherer Off-Default |
 | `SimulationRunner` | Pfad bzw. Werte in `run-config.yaml` an den externen Lauf-Harness übergeben | ✅ Pfad + Harness-Vertrag |
 | `mobitopp-rastatt`-Harness | Paketparameter aus der Run-Config lesen; Delivery- und zusätzliches Pickup-Modell zusammensetzen | ✅ versionierter Patch |
@@ -963,10 +965,12 @@ Die Erweiterung bleibt innerhalb der bestehenden Architektur und erzeugt keine 1
 | Ergebnis-Ingestion | `IsPickup`, `to_pickup`, `success_pickup` und `collected` richtungsgetrennt aggregieren | offen (Schritt 4) |
 | SUMO-Adapter | Abholstopps übernehmen und das abschließende Leg zurück zum Depot ergänzen | ✅ geschlossen, ohne Doppel-Leg |
 
-Die vormals offene Vorbedingung ist erfüllt: Die Konfigurationskette
-`parcel-demand-config.yaml/run-config.yaml → mobitopp-rastatt → logiTopp` ist wirksam und im
-echten Lauf beobachtet. `scenario.json` bleibt bis Schritt 3 absichtlich bei
-`returns.enabled=false`; es existiert noch kein wirkungsloser UI-Parameter.
+Die Konfigurationskette
+`scenario.json → parcel-demand-config.yaml/run-config.yaml → mobitopp-rastatt → logiTopp`
+ist damit vollständig wirksam. Alte Szenarien ohne `returns`-Block werden beim Lesen auf den
+ausgeschalteten Default normalisiert. Die API lehnt unbekannte Modelle, nicht endliche oder
+außerhalb `[0,1]` liegende Quoten, Abholanteile ungleich 1 sowie aktivierte Retouren ohne
+Zielmodell logiTopp mit HTTP 400 ab.
 
 Die Run-Config enthält dafür eine explizite Vertragsversion. Nach einem Lauf mit aktivierten
 Retouren prüft die Ingestion als Laufzeit-Postcondition, ob die erwartete Zahl eindeutiger
@@ -1050,6 +1054,18 @@ den realen Pickup als Hin- und Abschluss-Leg: **2 Lkw-Fahrzeuge, 3,03 kg CO₂, 
 Damit sind Positionsclusterung, Pickup-Bestand und geschlossene Tour an der echten
 Prozesskette nachgewiesen.
 
+**Implementierungsnachweis Schritt 3 (✅ MVP-Konfiguration, 2026-07-29):** Der verschachtelte
+Szenariovertrag wird mit `enabled=false`, Quote `0.0` und HOME/WORK `1.0/0.0` sicher
+initialisiert; alte Szenarien ohne `returns`-Block behalten diese Defaults. Controller-Tests
+belegen HTTP 400 für ungültige Modelle, Quoten, Abholortanteile und aktivierte Retouren ohne
+logiTopp. Generator-Tests belegen den Durchstich von `Scenario.Logistics` bis
+`parcel-demand-config.yaml`; die weitere externe Kette ist durch Schritt 2 belegt. Die
+Offline-Backend-Suite lief mit **82 Tests, 0 Fehlern und 6 umgebungsabhängigen Skips**, der
+Angular-AOT-Build war grün. Die Browserprüfung bestätigte:
+Retouren sind zunächst aus, die Detailfelder erscheinen erst nach Aktivierung, das Abwählen von
+logiTopp blendet den Block aus und setzt `enabled` zurück; es gab keine Konsolenfehler. Der
+echte externe Prozessbeleg bleibt der unter Schritt 2 dokumentierte Mischlauf.
+
 Akzeptanzkriterien für die Implementierung:
 
 - **Baseline-Invariante:** Bei `enabled=false` bleiben Paketanzahl, Richtungen und fachliche KPIs
@@ -1096,13 +1112,14 @@ Empfohlene Reihenfolge:
 2. **✅ Konfigurationskette (2026-07-29):** Paketparameter und Retourenwerte im Harness wirksam;
    versionierter, hashgeprüfter Patchvertrag einschließlich Positionsclusterung,
    `requestPickup(...)`, Fail-fast-Marker und geschlossenem SUMO-Tourexport.
-3. **MVP hinter `returns.enabled=false`:** Backend, Frontend, logiTopp-Auswahl und Tests.
+3. **✅ MVP hinter `returns.enabled=false` (2026-07-29):** verschachtelter Backend-/JSON-Vertrag,
+   HTTP-400-Validierung, logiTopp-gegateter Studio-Block und YAML-Durchstich; keine
+   unkalibrierte Vorgabequote.
 4. **Ingestion/KPIs/UI:** Richtungen trennen und Basis-vs.-Retouren-Vergleich ergänzen.
 5. **E2E-Verifikation und Beförderungsentscheidung:** erst danach über einen fachlich
    begründeten Default oder weitere Rückgabekanäle entscheiden.
 
-**Go/No-Go nach Schritt 2: technisches Go für Schritt 3.** Die drei Spike-Blocker sind im
-versionierten Integrationsvertrag behoben und am echten Lauf belegt. Das Nutzerfeature bleibt
-dennoch aus: Szenario-API und Frontend können Retouren noch nicht aktivieren, und die
-richtungsgetrennten KPIs/Postconditions fehlen. Ein Produkt-Go ist erst nach Schritten 3–5
-zulässig.
+**Go/No-Go nach Schritt 3: technisches Go für Schritt 4.** Nutzer können den bewiesenen
+Pickup-Pfad nun bewusst und validiert konfigurieren; der Default bleibt aus. Ein Produkt-Go ist
+weiterhin unzulässig, weil richtungsgetrennte KPIs, Laufzeit-Postconditions und der
+Basis-vs.-Retouren-Vergleich erst in Schritten 4–5 folgen.

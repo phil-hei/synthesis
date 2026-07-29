@@ -32,11 +32,11 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | 4 | Bevölkerungssynthese | Personen/Haushalte (KIT-Sample oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv` |
 | 5 | **Aktivitätenpläne (Achse A)** | Wochenpläne je Person aus `actiTopp` \| `GTA-LLM` \| `Template` | `activity.csv` |
 | 6 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
-| 7 | Logistik | Depots, Packstationen, Paketnachfrage-Parameter | `distribution-centers.csv`, `cepsp-shares.csv` |
+| 7 | Logistik | Depots, Packstationen, Paketnachfrage sowie optionale Kundenretouren als Pickup-Nachfrage | `distribution-centers.csv`, `cepsp-shares.csv`, `parcel-demand-config.yaml` |
 | 8 | Legacy-Export | Umwandlung in das logiTopp-Legacy-Format | `legacy/…` |
 | 9 | **MobileCity-Export (B)** | District-aggregierte Config-Tabellen | `mobilecity/` (5 CSV + `summary.json`) |
 | 10 | Manifest | Lauf-Metadaten | `manifest.json` |
-| 11 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete (+ optional Kalibrierungsschleife) | `demandsimulationResult.csv`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
+| 11 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete, experimentell inkl. Kundenretouren als Abholaufträge (+ optional Kalibrierungsschleife) | `demandsimulationResult.csv`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
 | 12 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-, Rad- und Fuß-Trips** der Nachfrage + **Zustelltouren** (Lkw/Lastenrad) + optional **ÖV/Bus** (GTFS → `gtfs2pt.py`, intermodal); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp inkl. Bus) | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte) |
 | 13 | **Netz-Feedback (optional)** | Gleichgewichts-Schleife: Stau-Faktoren je Zonenrelation (1–3), **MSA-gedämpft** in die Pkw-Matrix → logiTopp entscheidet neu → SUMO erneut – bis Konvergenz (Δ<0,01, max. 3 Iterationen) | aktualisierte `CAR_TTC`-Matrizen + neue `kpis.json`/SUMO-Artefakte |
 | 14 | **LLM-Moduswahl (A, GTA 3c)** | LLM wählt Modus je Distanzband auf simulierten Trips | `simulation/llm-mode-choice.json` |
@@ -80,7 +80,8 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 ## 5. Wichtigste Artefakt-Gruppen
 - **mobiTopp-Inputs:** `zones`, `attractivities`, `person`, `household`, `activity`, `car`,
   `fixedDestination` (CSV) + Visum-Matrizen (`.mtx.bz2`)
-- **logiTopp/Logistik:** `legacy/`, `distribution-centers`, `cepsp-shares`
+- **logiTopp/Logistik:** `legacy/`, `distribution-centers`, `cepsp-shares`,
+  versionierte Paket-/Retourennachfrage (`returns.enabled=false` als Default)
 - **Ergebnisse:** `kpis.json` (Wege/Person·Tag, Ø Weglänge, Modal-Split sowie sechs
   Distanzbänder inkl. RMSE vs. MiD; im Studio und Szenariovergleich sichtbar),
   `tours.geojson`, `parcel-density.geojson`, `demandsimulationResult.csv`

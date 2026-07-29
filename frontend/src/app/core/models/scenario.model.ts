@@ -19,6 +19,19 @@ export interface DeliveryService {
   share: number;
 }
 
+export interface ReturnDemand {
+  /** Experimenteller MVP; standardmäßig aus. */
+  enabled: boolean;
+  /** Exogene Zusatznachfrage ohne Verknüpfung zu einem Ursprungspaket. */
+  model: 'exogenous-share';
+  /** Zusätzliche Pickups relativ zu den privaten Zustellaufträgen. */
+  shareOfPrivateOrders: number;
+  pickupShares: {
+    home: number;
+    work: number;
+  };
+}
+
 export interface RegionEstimate {
   estimatedPopulation: number;
   source: 'osm-places' | 'none' | 'unavailable';
@@ -71,6 +84,7 @@ export interface Scenario {
     shareHome: number;
     shareWork: number;
     sharePackstation: number;
+    returns: ReturnDemand;
     depots: Depot[];
     services: DeliveryService[];
   };

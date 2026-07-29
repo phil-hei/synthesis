@@ -251,6 +251,9 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     const i = targets.indexOf(target);
     if (i >= 0) {
       targets.splice(i, 1);
+      if (target === 'logitopp') {
+        this.scenario.logistics.returns.enabled = false;
+      }
     } else {
       targets.push(target);
     }

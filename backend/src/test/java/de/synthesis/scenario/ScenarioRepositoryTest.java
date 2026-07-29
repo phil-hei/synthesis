@@ -81,6 +81,23 @@ class ScenarioRepositoryTest {
         assertEquals("gta", scenario.population.behaviorSourceEffective());
     }
 
+    @Test
+    void missingReturnConfigUsesBackwardCompatibleDisabledDefault() throws Exception {
+        Scenario scenario = new ObjectMapper().readValue("""
+                {
+                  "logistics": {
+                    "parcelsPerPersonWeek": 0.9
+                  }
+                }
+                """, Scenario.class);
+
+        assertFalse(scenario.logistics.returns.enabled);
+        assertEquals("exogenous-share", scenario.logistics.returns.model);
+        assertEquals(0.0, scenario.logistics.returns.shareOfPrivateOrders);
+        assertEquals(1.0, scenario.logistics.returns.pickupShares.home);
+        assertEquals(0.0, scenario.logistics.returns.pickupShares.work);
+    }
+
     private static void deleteRecursively(Path dir) throws Exception {
         try (var paths = Files.walk(dir)) {
             paths.sorted(java.util.Comparator.reverseOrder()).forEach(path -> {

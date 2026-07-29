@@ -99,7 +99,7 @@ scenario:
   logistics:
     parcelDemand: { meanPerPersonWeek: 0.75, stdDev: 0.5, max: 10 }
     destinationShares: { home: 0.8, work: 0.1, packstation: 0.1 }
-    returns:                       # geplant; Details und Stufenplan in docs/06, Abschnitt G
+    returns:                       # experimentell; Details und Stufenplan in docs/06, Abschnitt G
       enabled: false              # experimentell und rückwärtskompatibel
       model: exogenous-share      # MVP: unabhängige Rücksende-Nachfrage, kein Paket-Lebenszyklus
       shareOfPrivateOrders: 0.0   # explizite Szenarioannahme; kein unkalibrierter Produktiv-Default
@@ -111,7 +111,7 @@ scenario:
   exports: [geojson, mobilecity]
 ```
 
-Die geplante Retourenlogistik erweitert die bestehenden Stufen „Logistik",
+Die experimentelle Retourenlogistik erweitert die bestehenden Stufen „Logistik",
 „Short-Term + logiTopp" und „Export"; sie benötigt **keine zusätzliche Pipeline-Stufe**.
 Kundenretouren werden als logiTopp-Abholaufträge (`IsPickup=true`) modelliert und in Ergebnissen
 strikt von nicht zustellbaren Paketen im Status `RETURNING` getrennt. Das vollständige
@@ -124,8 +124,9 @@ Run-Config `synthesis-logitopp-returns-v1` an. `SimulationRunner` startet nur ei
 passendem Marker; fehlende oder abweichende Versionen schlagen sichtbar fehl. Der reproduzierbare
 GPL-Patch-/Build-Vertrag liegt unter `legacy/logitopp-returns-v1/` und publiziert logiTopp unter
 einer eindeutigen Maven-Version. Der SUMO-Adapter schließt jede normale logiTopp-Tour vom letzten
-Stopp zurück zum ersten Depot, sofern kein explizites Rückkehr-Leg vorhanden ist. Szenario-API,
-Frontend und richtungsgetrennte KPI-Ingestion bleiben davon unabhängige folgende Ausbauschritte.
+Stopp zurück zum ersten Depot, sofern kein explizites Rückkehr-Leg vorhanden ist. Szenario-API
+und Frontend spiegeln den Vertrag mit `enabled=false` als rückwärtskompatiblem Default; die
+richtungsgetrennte KPI-Ingestion bleibt der folgende Ausbauschritt.
 
 ## Frontend (Angular, wie simudrive)
 

@@ -233,6 +233,44 @@
           </label>
         </div>
 
+        <div class="returns-config" *ngIf="hasTarget('logitopp')">
+          <label class="checkbox"
+                 title="Experimentell: erzeugt zusätzliche private Abholaufträge in logiTopp. Die Quote ist eine Szenarioannahme und kein kalibrierter Branchenwert.">
+            <input type="checkbox" [(ngModel)]="scenario.logistics.returns.enabled">
+            Kundenretouren als Abholaufträge (experimentell)
+          </label>
+          <p class="hint">
+            Eine Kundenretoure ist ein zusätzlicher Pickup beim Empfänger. Sie ist nicht mit
+            einem Ursprungspaket verknüpft und nicht mit dem Status RETURNING nach einem
+            fehlgeschlagenen Zustellversuch gleichzusetzen.
+          </p>
+          <ng-container *ngIf="scenario.logistics.returns.enabled">
+            <label title="Zusätzliche Retouren relativ zur Zahl der privaten Zustellaufträge. Muss bei aktivierten Retouren größer 0 und höchstens 1 sein.">
+              Retourenquote auf private Zustellaufträge
+              <input type="number"
+                     [(ngModel)]="scenario.logistics.returns.shareOfPrivateOrders"
+                     min="0.01" max="1" step="0.05">
+            </label>
+            <div class="shares"
+                 title="Anteile der Abholorte für Kundenretouren; HOME und WORK müssen zusammen 1 ergeben">
+              <label>Abholung HOME
+                <input type="number"
+                       [(ngModel)]="scenario.logistics.returns.pickupShares.home"
+                       min="0" max="1" step="0.05">
+              </label>
+              <label>WORK
+                <input type="number"
+                       [(ngModel)]="scenario.logistics.returns.pickupShares.work"
+                       min="0" max="1" step="0.05">
+              </label>
+            </div>
+            <p class="hint">
+              HOME + WORK müssen zusammen 1 ergeben. Packstationen sind im MVP noch kein
+              Retourenkanal.
+            </p>
+          </ng-container>
+        </div>
+
         <div class="block-head">
           <h3>Depots ({{ scenario.logistics.depots.length }})</h3>
           <button [class.toggled]="depotMode" (click)="toggleDepotMode()"

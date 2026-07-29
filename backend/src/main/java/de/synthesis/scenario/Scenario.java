@@ -159,6 +159,8 @@ public class Scenario {
         public double shareHome = 0.8;
         public double shareWork = 0.1;
         public double sharePackstation = 0.1;
+        /** Experimentelle Kundenretouren als zusätzliche logiTopp-Abholnachfrage. */
+        public ReturnDemand returns = new ReturnDemand();
         public List<Depot> depots = new ArrayList<>();
         public List<DeliveryService> services = defaultServices();
 
@@ -171,6 +173,22 @@ public class Scenario {
             services.add(new DeliveryService("UPS", 0.10));
             return services;
         }
+    }
+
+    public static class ReturnDemand {
+        /** Default aus: bestehende Szenarien erzeugen ausschließlich Zustellaufträge. */
+        public boolean enabled = false;
+        /** MVP-Modell: exogene Quote auf die unverändert erzeugten privaten Zustellaufträge. */
+        public String model = "exogenous-share";
+        /** Zusätzliche Pickup-Aufträge relativ zur Zahl der privaten Zustellaufträge. */
+        public double shareOfPrivateOrders = 0.0;
+        /** Abholorte im MVP; Packstationen sind bewusst noch kein Retourenkanal. */
+        public PickupShares pickupShares = new PickupShares();
+    }
+
+    public static class PickupShares {
+        public double home = 1.0;
+        public double work = 0.0;
     }
 
     public static class Depot {
