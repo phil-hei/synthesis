@@ -38,10 +38,14 @@ Für reproduzierbares Routing kann jedes gespeicherte Szenario ein eigenes **OSM
 hochladen. Der Upload wird als OSM-Dokument mit `highway`-Wegen geprüft, muss die gewählte Region
 vollständig abdecken und gewinnt vor globaler Server-Datei und Overpass; Quelle und SHA-256-Kürzel
 stehen im Lauf-Manifest. Zusätzlich kann eine normalisierte **Pendler-OD-Matrix**
-(`homeLat;homeLon;workLat;workLon;commuters`) Arbeitsziele verankern. Externe Relationen verschieben
-die acht Außenanker auf pendlergewichtete reale Arbeitsortkoordinaten. Direkter BA-/GENESIS-Import
-und PBF-Unterstützung bleiben getrennte nächste Adapter; ohne Uploads gelten unverändert die
-Overpass-/Luftlinien- und Gravitations-Fallbacks.
+(`homeLat;homeLon;workLat;workLon;commuters`) oder direkt ein amtlicher BA-CSV-Export
+**„Auspendler Gemeinden“** Arbeitsziele verankern. BA-Gemeindeschlüssel werden über die
+BKG-VG250-Gemeindepunkte aufgelöst. Weil der BA-Export nur Auspendler enthält, steuert er bedingt
+die Ziele bereits gewählter Außenbeziehungen, nicht deren Anteil; die unbehandelte WORK-
+Gravitationsverteilung wird deshalb vor der Ankerbewegung fixiert. Externe Relationen verschieben
+die acht Außenanker auf pendlergewichtete reale Arbeitsortkoordinaten. PBF-Unterstützung bleibt
+ein getrennter nächster Adapter; ohne Uploads gelten unverändert die Overpass-/Luftlinien- und
+Gravitations-Fallbacks.
 
 **Zwei-Achsen-Modell** (im Studio unter „Modellierung" wählbar): _Achse A – Verhaltensquelle_
 (actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, inkl. Was-wäre-wenn-Szenarien) ×

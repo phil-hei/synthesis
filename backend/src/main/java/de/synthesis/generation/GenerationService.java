@@ -376,7 +376,8 @@ public class GenerationService {
             ctx.populationSource = "density-estimate";
             job.log("Einwohner über Dichteannahme geschätzt: " + ctx.totalPersons);
         }
-        ctx.populationGenerator = new PopulationGenerator(ctx.zones, ctx.random);
+        ctx.populationGenerator = new PopulationGenerator(
+                ctx.zones, ctx.random, scenario.population.seed);
         int[] poiCounts = countPoisPerZone(ctx.zones, ctx.pois);
         double[] weights = uploadWeights != null
                 ? uploadWeights
@@ -406,6 +407,7 @@ public class GenerationService {
                     "%d externe Zielzonen (~%.0f km Radius) für Außenbeziehungen ergänzt",
                     external.size(), ExternalZones.radiusKm()));
         }
+        ctx.populationGenerator.freezeWorkGravity();
         prepareCommuterMapping(ctx);
         Path zoneDir = ctx.artifacts.resolve("zone-repository");
         CsvArtifacts.writeZonesCsv(zoneDir.resolve("zones.csv"), ctx.zones);
@@ -437,10 +439,12 @@ public class GenerationService {
             ctx.populationGenerator.useCommuterMapping(mapping);
             CommuterMatrix.writeMapped(ctx.artifacts.resolve("population/commuters.csv"),
                     mapping, ctx.zones);
-            ctx.commuterSource = "upload-coordinate-od";
+            ctx.commuterSource = CommuterMatrix.source(file);
             ctx.job.summary.put("commuterSource", ctx.commuterSource);
             ctx.job.summary.put("commuterHomeZones", mapping.homeZones());
             ctx.job.summary.put("commuterRelations", mapping.mappedRows());
+            ctx.job.summary.put("commuterExternalConditionalHomes",
+                    mapping.externalCumulativeByHome().size());
             ctx.job.summary.put("externalCommuters", Math.round(mapping.externalCommuters()));
             ctx.job.log(String.format(Locale.ROOT,
                     "Pendler-Upload: %d/%d Relationen auf %d Wohnzonen verankert (%.0f externe Pendler)",

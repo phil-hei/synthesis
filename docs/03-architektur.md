@@ -73,7 +73,7 @@ Jede Stufe: deklarierte Inputs/Outputs, idempotent, Seed-gesteuert reproduzierba
 | 2 Zonierung | Region, Modus, Auflösung | `zones.geojson`, `zones.csv`, `zone-to-community.csv`, `districts.gpkg`+`districts.xlsx` (MC) |
 | 3 Strukturdaten | Zonen + Zensus/Synthese | `SynthesisZoneTargets.csv` |
 | 4 Attraktivitäten | Zonen + OSM-POIs | `attractivities.csv` |
-| 5 Pendler | Zonen + normalisierte Koordinaten-OD (`homeLat/homeLon/workLat/workLon/commuters`) oder Gravitationsmodell | `population/commuters.csv` (gemappte Zonenrelationen) |
+| 5 Pendler | Zonen + normalisierte Koordinaten-OD oder amtlicher BA-Export `Auspendler Gemeinden` (AGS-Auflösung über BKG VG250); bedingte BA-Ziele verwenden die vor der Ankerbewegung fixierte WORK-Gravitationsverteilung; sonst Gravitationsmodell | `population/commuters.csv` (gemappte Zonenrelationen) |
 | 6 Matrizen | Zonen + OSM/GTFS-Routing | `*_TTC/COST/DIS.mtx.bz2`, Matrix-YAMLs |
 | 7 Long-Term | 3–6 + Survey-Template | `person/household/activity/car/fixedDestination.csv` |
 | 8 Short-Term + logiTopp | 7 + Matrizen + Logistik-Parameter | Raw-Wege-/Touren-CSVs, Zustell-, Abhol- und Paketstatus-Events; native Wege/Legs sowie 15-Minuten-Zonen-/OD-Profile unter `demand/` |

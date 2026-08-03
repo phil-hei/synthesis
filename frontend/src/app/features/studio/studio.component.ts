@@ -473,7 +473,10 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       next: summary => {
         this.commuterUpload = summary;
         this.commuterUploadBusy = false;
-        this.message = `Pendlermatrix übernommen (${summary.relations.toLocaleString('de-DE')} Relationen)`;
+        const coverage = summary.source === 'upload-ba-pendler-vg250'
+          ? `, ${(summary.coverage * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 })} % BA-Abdeckung`
+          : '';
+        this.message = `Pendlermatrix übernommen (${summary.relations.toLocaleString('de-DE')} Relationen${coverage})`;
       },
       error: err => {
         this.commuterUploadBusy = false;
@@ -518,7 +521,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       if (commuters) {
         this.commuterUpload = {
           name: commuters.name, relations: 0, totalCommuters: 0,
-          relationsWithHomeInRegion: 0
+          relationsWithHomeInRegion: 0, source: '', exportTotalCommuters: 0,
+          coverage: 0, skippedAggregateRows: 0, unresolvedMunicipalities: 0
         };
       }
     });

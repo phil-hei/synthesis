@@ -352,28 +352,53 @@ szenariogebundenen Datei. Die fokussierte Suite
 bestand mit 14/14 Tests. **Nicht behauptet:** PBF. Dafür ist weiterhin eine separat zu beweisende
 Konvertierungs-/GraphHopper-/SUMO-Kette nötig.
 
-### Pendler-OD als Arbeitszielanker (2026-08-03) — Mechanik bestanden, Distanz-Gate offen
+### Pendler-OD und direkter BA-Adapter (2026-08-03) — Mechanik und Acht-Anker-Gate bestanden
 
-Der optionale Upload `uploads/commuters.csv` verwendet den normalisierten Vertrag
-`homeLat;homeLon;workLat;workLon;commuters` (Semikolon/Tab/Komma; bei Semikolon auch
-Dezimalkomma). Beim Upload müssen mindestens eine positive Relation und ein Wohnort innerhalb der
-Szenarioregion vorhanden sein. Die Pipeline mappt Wohn- und interne Arbeitsorte auf Zonen und
-schreibt die aggregierte, laufbezogene Abbildung als `population/commuters.csv`.
+Der optionale Upload `uploads/commuters.csv` akzeptiert den normalisierten Vertrag
+`homeLat;homeLon;workLat;workLon;commuters[;homeScope]` (Semikolon/Tab/Komma; bei Semikolon auch
+Dezimalkomma) und direkt den amtlichen BA-CSV-Export `Auspendler Gemeinden`. Der BA-Adapter behält
+exakte achtstellige Gemeinde-Relationen, verwirft die wiederholten Hierarchiezeilen und löst AGS
+über den amtlichen BKG-WFS-Layer `vg250:vg250_pk` auf. Der reale Rastatt-Export (Berichtsmonat
+Juni 2025, Datenstand Januar 2026) enthält 79 räumlich auflösbare Relationen mit 12.650 von 13.720
+Auspendlern (92,201 %), 113 übersprungene Aggregatzeilen und null unaufgelöste Gemeinden.
 
-Für externe Arbeitsorte bleiben höchstens acht Außenanker erhalten; ihre Schwerpunkte werden aber
-von den starren 12 km auf die pendlergewichteten realen Zielkoordinaten je Richtung verschoben.
-Die WORK-Fixziele ziehen je abgedeckter Wohnzone aus der beobachteten OD-Verteilung; nicht
-abgedeckte Wohnzonen fallen auf das bestehende Gravitationsmodell zurück. Damit entsteht erstmals
-ein Datenhebel für Fernwege, ohne die widerlegte reine Attraktivitätsverstärkung eines starren
-Außenrings zu wiederholen.
+Der BA-Export enthält definitionsgemäß nur Beschäftigte, deren Wohn- und Arbeitsgemeinde
+verschieden sind. Ihn als vollständige WORK-Verteilung zu verwenden würde alle Arbeitswege nach
+außen zwingen. Deshalb schreibt der Adapter `homeScope=external`: Das bestehende Gravitationsmodell
+entscheidet weiterhin, **ob** eine Außenbeziehung entsteht; nur dann bestimmt die amtliche
+Auspendlerverteilung das Ziel. Die unbehandelte WORK-Gravitationsverteilung wird vor dem Verschieben
+der gemeinsamen Außenanker fixiert. Ein eigener stabiler Zufalls-Substream je Person und Zweck hält
+Demografie, Haushalte, Pkw und spätere Aktivitätszufälle in A/B-Versuchen konstant. Damit ist je
+Seed nicht nur die Population bytegleich, sondern auch die Zahl gewählter externer Arbeitsorte.
 
-Die fokussierte Suite `CommuterMatrixTest, UploadControllerTest, PopulationGeneratorTest,
-GenerationPipelineE2ETest` bestand mit 11/11 Tests; ein 75/25-Test erhält den externen Anteil in
-2.000 Ziehungen und setzt den externen Schwerpunkt exakt auf die beobachtete Arbeitsortkoordinate.
-Der Pipeline-E2E-Test belegt `dataQuality.commuters=upload-coordinate-od`. Das beweist Parser,
-Mapping, Fallback und Artefaktfluss, **nicht** die fachliche Kalibrierung: Ein direkter BA-CSV-Adapter,
-Gemeindeschlüssel-Geometrien, 13111-Arbeitsplatzrandsummen und der Drei-Seed-MiD-Distanz-Gate sind
-noch offen.
+Die fokussierte Suite einschließlich BA-Dialekt, BKG-CSV-Vertrag, bedingter Ziehung,
+Zufallsstrom-Isolation und echtem GraphHopper-Pipeline-E2E bestand mit 22/22 Tests. In jedem
+gewerteten A/B-Paar sind `household.csv`, `person.csv` und `car.csv` byte-identisch.
+
+Der vorregistrierte Drei-Seed-Versuch verwendete 2.500 Personen, actiTopp, logiTopp, dieselbe
+Rastatt-Bbox und dasselbe hochgeladene OSM-Netz (SHA-256
+`1de66fccfbcd79b03b879e2ab139795bb36607c3c7fefd42315f5d872e096ce9`). Alle sechs Jobs endeten
+`DONE`, ohne actiTopp-, Routing- oder logiTopp-Fallback. Ein technischer Pilot vor der Wertung
+wurde wegen eines gemeinsam verbrauchten Zufallsstroms verworfen. Ein zweiter Probelauf deckte auf,
+dass verschobene Anker die Wahrscheinlichkeit einer Außenbeziehung mitänderten, und wurde ebenfalls
+nicht gewertet. Erst nach der Fixierung der unbehandelten WORK-Gravitation wurde ohne Änderung der
+Schwellen in `data-v3` neu gestartet.
+
+| Seed | Haushalte A/B | externe WORK A/B | Ø km A→B | `≥20 km` A→B | Distanz-RMSE A→B | Modal-RMSE A→B | Wege/P/Tag A→B |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 42 | 1.249/1.249 | 443/443 | 3,84→4,62 | 0,40→3,30 % | 0,0999→0,1019 | 0,0681→0,0729 | 3,19→3,18 |
+| 43 | 1.213/1.213 | 407/407 | 3,76→4,60 | 0,39→3,12 % | 0,1048→0,1068 | 0,0714→0,0780 | 3,20→3,18 |
+| 44 | 1.267/1.267 | 438/438 | 3,72→4,50 | 0,42→2,97 % | 0,1001→0,1018 | 0,0700→0,0732 | 3,21→3,20 |
+
+**Entscheidung:** Der vorregistrierte Promotions-Gate ist bestanden. Die mittlere Weglänge steigt
+in jedem Seed und im Mittel um 0,80 km (3,77→4,57 km; Gate mindestens +0,5 km). Der Fernwegeanteil
+steigt im Mittel um 2,73 Prozentpunkte (0,40→3,13 %; Gate mindestens +1 Punkt). Wege/Person/Tag
+bleiben mit 3,18–3,20 im zulässigen Band 3,0–3,4; die mittlere Modal-RMSE steigt nur von 0,0698 auf
+0,0747 (Delta +0,0049; Gate höchstens +0,02). Auch die Distanzband-RMSE verändert sich nur von
+0,1016 auf 0,1035. Die acht gemeinsamen Richtungsanker werden daher als wirksamer, weiterhin
+unzureichender Distanzhebel befördert. Nächster Datenhebel sind Arbeitsplatz-Randsummen (13111)
+und danach die Validierung in weiteren Regionen; eine feinere Peripherie-/Korridorzonierung ist
+nicht mehr die unmittelbare Voraussetzung.
 
 **Effekt auf die Plausibilität** (gleiches Szenario, sonst identisch):
 

@@ -34,17 +34,33 @@ public class PopulationGenerator {
 
     private final List<Zone> zones;
     private final Random random;
+    private final long destinationSeed;
     private final Map<String, double[]> gravityCache = new HashMap<>();
     private CommuterMatrix.Mapping commuterMapping;
 
     public PopulationGenerator(List<Zone> zones, Random random) {
+        this(zones, random, 0L);
+    }
+
+    public PopulationGenerator(List<Zone> zones, Random random, long destinationSeed) {
         this.zones = zones;
         this.random = random;
+        this.destinationSeed = destinationSeed;
     }
 
     /** Uses observed commuter relations for WORK; uncovered home zones keep the gravity fallback. */
     public void useCommuterMapping(CommuterMatrix.Mapping mapping) {
         this.commuterMapping = mapping;
+    }
+
+    /**
+     * Captures the untreated WORK gravity distribution before commuter anchors
+     * move shared external-zone centroids. Conditional outbound mappings must
+     * change destinations, not the probability of choosing an external trip.
+     */
+    public void freezeWorkGravity() {
+        zones.stream().filter(zone -> !zone.external)
+                .forEach(zone -> gravityCumulative(zone.index, "Work"));
     }
 
     /**
@@ -130,8 +146,8 @@ public class PopulationGenerator {
                         // entscheidet selbst, wer arbeitet/lernt; fehlt das Fixziel, bricht die
                         // Legacy-Zielwahl mit "No destination available for WORK/EDUCATION" ab.
                         // Wird nur konsultiert, wenn die jeweilige Aktivität tatsächlich auftritt.
-                        int workZone = sampleWorkZone(zone.index);
-                        int eduZone = sampleEducationZone(zone.index, m.age());
+                        int workZone = sampleWorkZone(zone.index, personId);
+                        int eduZone = sampleEducationZone(zone.index, m.age(), personId);
                         PersonRef person = new PersonRef(personId, householdId, m.age(), employment,
                                 zone.index, workZone, eduZone);
                         members.add(person);
@@ -320,18 +336,31 @@ public class PopulationGenerator {
     }
 
     /** Gravity-model destination choice: attractivity / (1 + distance_km^2). */
-    private int sampleWorkZone(int homeIndex) {
-        if (commuterMapping != null) {
-            int observed = commuterMapping.sampleWorkZone(homeIndex, random);
+    private int sampleWorkZone(int homeIndex, long personId) {
+        Random destinationRandom = destinationRandom(personId, 0x574f524bL);
+        if (commuterMapping != null && commuterMapping.hasFullDistribution(homeIndex)) {
+            int observed = commuterMapping.sampleWorkZone(homeIndex, destinationRandom);
             if (observed >= 0) {
                 return observed;
             }
         }
-        return sampleGravityZone(homeIndex, "Work");
+        int gravity = sampleGravityZone(homeIndex, "Work", destinationRandom);
+        if (commuterMapping != null && zones.get(gravity).external
+                && commuterMapping.hasExternalDistribution(homeIndex)) {
+            int observed = commuterMapping.sampleExternalWorkZone(homeIndex, destinationRandom);
+            if (observed >= 0) {
+                return observed;
+            }
+        }
+        return gravity;
     }
 
-    private int sampleGravityZone(int homeIndex, String category) {
-        double[] cumulative = gravityCache.computeIfAbsent(homeIndex + ":" + category, key -> {
+    private int sampleGravityZone(int homeIndex, String category, Random destinationRandom) {
+        return sampleCumulative(gravityCumulative(homeIndex, category), destinationRandom);
+    }
+
+    private double[] gravityCumulative(int homeIndex, String category) {
+        return gravityCache.computeIfAbsent(homeIndex + ":" + category, key -> {
             Zone home = zones.get(homeIndex);
             double[] weights = new double[zones.size()];
             double sum = 0;
@@ -343,22 +372,34 @@ public class PopulationGenerator {
             }
             return weights;
         });
-        return sampleCumulative(cumulative);
     }
 
-    private int sampleEducationZone(int homeIndex, int age) {
+    private int sampleEducationZone(int homeIndex, int age, long personId) {
         String category = age < 11 ? "Education_Primary"
                 : age < 19 ? "Education_Secondary" : "Education_Tertiary";
-        return sampleGravityZone(homeIndex, category);
+        return sampleGravityZone(homeIndex, category,
+                destinationRandom(personId, 0x454455L));
     }
 
-    private int sampleCumulative(double[] cumulative) {
-        double roll = random.nextDouble() * cumulative[cumulative.length - 1];
+    private int sampleCumulative(double[] cumulative, Random destinationRandom) {
+        double roll = destinationRandom.nextDouble() * cumulative[cumulative.length - 1];
         for (int i = 0; i < cumulative.length; i++) {
             if (roll < cumulative[i]) {
                 return i;
             }
         }
         return cumulative.length - 1;
+    }
+
+    /**
+     * Stable per-person substream: destination alternatives may consume more
+     * draws without perturbing household composition, later persons or activity
+     * generation. This is required for controlled A/B destination experiments.
+     */
+    private Random destinationRandom(long personId, long purposeSalt) {
+        long value = destinationSeed ^ purposeSalt ^ (personId * 0x9E3779B97F4A7C15L);
+        value = (value ^ (value >>> 30)) * 0xBF58476D1CE4E5B9L;
+        value = (value ^ (value >>> 27)) * 0x94D049BB133111EBL;
+        return new Random(value ^ (value >>> 31));
     }
 }

@@ -107,14 +107,14 @@
           Außenbeziehungen (externe Zielzonen)
         </label>
         <div class="upload"
-             title="Normalisierte Pendler-OD-Matrix mit homeLat;homeLon;workLat;workLon;commuters. Arbeitsziele innerhalb der Region werden direkt zoniert; externe Arbeitsorte verschieben die acht Außenanker auf ihre pendlergewichteten realen Koordinaten. Für externe Relationen muss 'Außenbeziehungen' aktiv sein.">
+             title="Akzeptiert eine normalisierte Pendler-OD-Matrix oder einen amtlichen BA-Export 'Auspendler Gemeinden' für genau eine Wohnortgemeinde. BA-Gemeindeschlüssel werden über BKG VG250 aufgelöst. Weil der BA-Export nur Auspendler enthält, ersetzt er bedingt die Zielverteilung bereits gewählter Außenbeziehungen; die Außenpendlerquote selbst bleibt beim Gravitationsmodell. 'Außenbeziehungen' muss aktiv sein.">
           <ng-container *ngIf="!commuterUpload">
             <label class="upload-button" [class.disabled]="!scenario.id || commuterUploadBusy">
               {{ commuterUploadBusy ? 'Matrix wird geprüft…' : 'Pendlermatrix hochladen (CSV) ⓘ' }}
               <input type="file" accept=".csv,text/csv" (change)="onCommutersSelected($event)"
                      [disabled]="!scenario.id || commuterUploadBusy">
             </label>
-            <p class="hint">Schema: homeLat;homeLon;workLat;workLon;commuters</p>
+            <p class="hint">BA-Export: Auspendler Gemeinden · alternativ homeLat;homeLon;workLat;workLon;commuters</p>
           </ng-container>
           <div class="upload-info" *ngIf="commuterUpload">
             <span>

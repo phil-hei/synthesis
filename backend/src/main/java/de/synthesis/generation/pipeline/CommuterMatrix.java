@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -21,9 +22,26 @@ import java.util.regex.Pattern;
 public final class CommuterMatrix {
 
     public static final String NAME = "commuters.csv";
+    public static final String COORDINATE_SOURCE = "upload-coordinate-od";
+
+    public enum HomeScope {
+        POINT,
+        REGION,
+        /**
+         * Region-wide destination distribution conditioned on gravity having
+         * selected an external zone. Official BA "Auspendler Gemeinden" exports
+         * use this scope because they contain no within-municipality workers.
+         */
+        EXTERNAL
+    }
 
     public record Flow(double homeLat, double homeLon, double workLat, double workLon,
-                       double commuters) {
+                       double commuters, HomeScope homeScope) {
+
+        public Flow(double homeLat, double homeLon, double workLat, double workLon,
+                    double commuters) {
+            this(homeLat, homeLon, workLat, workLon, commuters, HomeScope.POINT);
+        }
     }
 
     public record ParseResult(List<Flow> flows, double totalCommuters) {
@@ -32,12 +50,40 @@ public final class CommuterMatrix {
     public record MappedFlow(int homeZoneIndex, int workZoneIndex, double commuters) {
     }
 
-    public record Mapping(Map<Integer, double[]> cumulativeByHome, List<MappedFlow> flows,
+    public record Mapping(Map<Integer, double[]> cumulativeByHome,
+                          Map<Integer, double[]> externalCumulativeByHome,
+                          List<MappedFlow> flows,
                           int inputRows, int mappedRows, int homeZones,
                           double mappedCommuters, double externalCommuters) {
 
         public int sampleWorkZone(int homeZoneIndex, Random random) {
             double[] cumulative = cumulativeByHome.get(homeZoneIndex);
+            if (cumulative == null || cumulative.length == 0
+                    || cumulative[cumulative.length - 1] <= 0) {
+                return -1;
+            }
+            double roll = random.nextDouble() * cumulative[cumulative.length - 1];
+            for (int i = 0; i < cumulative.length; i++) {
+                if (roll < cumulative[i]) {
+                    return i;
+                }
+            }
+            return cumulative.length - 1;
+        }
+
+        public int sampleExternalWorkZone(int homeZoneIndex, Random random) {
+            return sample(externalCumulativeByHome.get(homeZoneIndex), random);
+        }
+
+        public boolean hasFullDistribution(int homeZoneIndex) {
+            return cumulativeByHome.containsKey(homeZoneIndex);
+        }
+
+        public boolean hasExternalDistribution(int homeZoneIndex) {
+            return externalCumulativeByHome.containsKey(homeZoneIndex);
+        }
+
+        private static int sample(double[] cumulative, Random random) {
             if (cumulative == null || cumulative.length == 0
                     || cumulative[cumulative.length - 1] <= 0) {
                 return -1;
@@ -78,6 +124,7 @@ public final class CommuterMatrix {
             int workLat = column(columns, "worklat", "destinationlat", "arbeitsortlat");
             int workLon = column(columns, "worklon", "destinationlon", "arbeitsortlon");
             int commuters = column(columns, "commuters", "flow", "pendler");
+            int homeScope = optionalColumn(columns, "homescope", "wohnortbezug");
 
             String raw;
             while ((raw = reader.readLine()) != null) {
@@ -90,7 +137,8 @@ public final class CommuterMatrix {
                 try {
                     Flow flow = new Flow(number(values, homeLat, delimiter),
                             number(values, homeLon, delimiter), number(values, workLat, delimiter),
-                            number(values, workLon, delimiter), number(values, commuters, delimiter));
+                            number(values, workLon, delimiter), number(values, commuters, delimiter),
+                            scope(values, homeScope));
                     validate(flow);
                     flows.add(flow);
                     total += flow.commuters();
@@ -114,6 +162,7 @@ public final class CommuterMatrix {
      */
     public static Mapping map(ParseResult input, List<Zone> zones) {
         Map<Integer, double[]> weightsByHome = new HashMap<>();
+        Map<Integer, double[]> externalWeightsByHome = new HashMap<>();
         Map<Long, Double> aggregated = new LinkedHashMap<>();
         double[] externalLat = new double[zones.size()];
         double[] externalLon = new double[zones.size()];
@@ -121,10 +170,21 @@ public final class CommuterMatrix {
         int mappedRows = 0;
         double mappedCommuters = 0;
         double externalCommuters = 0;
+        List<Integer> internalHomes = zones.stream()
+                .filter(zone -> !zone.external)
+                .map(zone -> zone.index)
+                .toList();
 
         for (Flow flow : input.flows()) {
-            int home = GridZoning.zoneIndexOf(zones, flow.homeLat(), flow.homeLon());
-            if (home < 0 || zones.get(home).external) {
+            List<Integer> homes;
+            if (flow.homeScope() == HomeScope.REGION
+                    || flow.homeScope() == HomeScope.EXTERNAL) {
+                homes = internalHomes;
+            } else {
+                int home = GridZoning.zoneIndexOf(zones, flow.homeLat(), flow.homeLon());
+                homes = home < 0 || zones.get(home).external ? List.of() : List.of(home);
+            }
+            if (homes.isEmpty()) {
                 continue;
             }
             int work = GridZoning.zoneIndexOf(zones, flow.workLat(), flow.workLon());
@@ -135,10 +195,15 @@ public final class CommuterMatrix {
             if (work < 0) {
                 continue;
             }
-            weightsByHome.computeIfAbsent(home, ignored -> new double[zones.size()])[work]
-                    += flow.commuters();
-            long key = ((long) home << 32) | (work & 0xffffffffL);
-            aggregated.merge(key, flow.commuters(), Double::sum);
+            double commutersPerHome = flow.commuters() / homes.size();
+            Map<Integer, double[]> destinationWeights = flow.homeScope() == HomeScope.EXTERNAL
+                    ? externalWeightsByHome : weightsByHome;
+            for (int home : homes) {
+                destinationWeights.computeIfAbsent(home, ignored -> new double[zones.size()])[work]
+                        += commutersPerHome;
+                long key = ((long) home << 32) | (work & 0xffffffffL);
+                aggregated.merge(key, commutersPerHome, Double::sum);
+            }
             mappedRows++;
             mappedCommuters += flow.commuters();
             if (outside || zones.get(work).external) {
@@ -164,12 +229,49 @@ public final class CommuterMatrix {
         }
 
         weightsByHome.values().forEach(CommuterMatrix::toCumulative);
+        externalWeightsByHome.values().forEach(CommuterMatrix::toCumulative);
         List<MappedFlow> mapped = aggregated.entrySet().stream()
                 .map(entry -> new MappedFlow((int) (entry.getKey() >> 32),
                         (int) (long) entry.getKey(), entry.getValue()))
                 .toList();
-        return new Mapping(Map.copyOf(weightsByHome), mapped, input.flows().size(), mappedRows,
-                weightsByHome.size(), mappedCommuters, externalCommuters);
+        Set<Integer> mappedHomes = new java.util.HashSet<>(weightsByHome.keySet());
+        mappedHomes.addAll(externalWeightsByHome.keySet());
+        return new Mapping(Map.copyOf(weightsByHome), Map.copyOf(externalWeightsByHome), mapped,
+                input.flows().size(), mappedRows, mappedHomes.size(), mappedCommuters,
+                externalCommuters);
+    }
+
+    public static void writeNormalized(Path file, ParseResult input, String source) throws IOException {
+        Files.createDirectories(file.getParent());
+        try (Writer writer = Files.newBufferedWriter(file)) {
+            writer.write("# source=" + safeComment(source) + "\n");
+            writer.write("homeLat;homeLon;workLat;workLon;commuters;homeScope\n");
+            for (Flow flow : input.flows()) {
+                writer.write(String.format(Locale.ROOT, "%.7f;%.7f;%.7f;%.7f;%.3f;%s%n",
+                        flow.homeLat(), flow.homeLon(), flow.workLat(), flow.workLon(),
+                        flow.commuters(), flow.homeScope().name().toLowerCase(Locale.ROOT)));
+            }
+        }
+    }
+
+    public static String source(Path file) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(file)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                if (trimmed.isBlank()) {
+                    continue;
+                }
+                if (!trimmed.startsWith("#")) {
+                    break;
+                }
+                if (trimmed.startsWith("# source=")) {
+                    String source = trimmed.substring("# source=".length()).trim();
+                    return source.isBlank() ? COORDINATE_SOURCE : source;
+                }
+            }
+        }
+        return COORDINATE_SOURCE;
     }
 
     public static void writeMapped(Path file, Mapping mapping, List<Zone> zones) throws IOException {
@@ -242,6 +344,18 @@ public final class CommuterMatrix {
         throw new IllegalArgumentException("Pendlermatrix fehlt Spalte " + aliases[0]);
     }
 
+    private static int optionalColumn(String[] columns, String... aliases) {
+        for (int i = 0; i < columns.length; i++) {
+            String normalized = normalize(columns[i]);
+            for (String alias : aliases) {
+                if (normalized.equals(alias)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
     private static String normalize(String value) {
         return unquote(value).toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
     }
@@ -257,12 +371,31 @@ public final class CommuterMatrix {
         return Double.parseDouble(value);
     }
 
+    private static HomeScope scope(String[] values, int index) {
+        if (index < 0 || index >= values.length || unquote(values[index]).isBlank()) {
+            return HomeScope.POINT;
+        }
+        try {
+            return HomeScope.valueOf(unquote(values[index]).trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "homeScope muss point, region oder external sein", e);
+        }
+    }
+
     private static String unquote(String value) {
         String trimmed = value.trim();
         if (trimmed.length() >= 2 && trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
             return trimmed.substring(1, trimmed.length() - 1);
         }
         return trimmed;
+    }
+
+    private static String safeComment(String value) {
+        if (value == null || value.isBlank()) {
+            return COORDINATE_SOURCE;
+        }
+        return value.replace('\n', ' ').replace('\r', ' ').trim();
     }
 
     private static void validate(Flow flow) {

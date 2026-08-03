@@ -142,4 +142,9 @@ export interface CommuterUploadSummary {
   relations: number;
   totalCommuters: number;
   relationsWithHomeInRegion: number;
+  source: string;
+  exportTotalCommuters: number;
+  coverage: number;
+  skippedAggregateRows: number;
+  unresolvedMunicipalities: number;
 }

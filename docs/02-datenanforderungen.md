@@ -66,10 +66,17 @@ wie belastbar ein Szenario ist.
 
 - **Stufe öffentlich (DE):** Pendlerstatistik der Bundesagentur für Arbeit (Gemeindeebene, Open Data).
 - **Aktueller Importvertrag:** normalisierte CSV mit
-  `homeLat;homeLon;workLat;workLon;commuters`. Die Koordinaten machen den Vertrag unabhängig von
-  laufabhängigen Zonen-IDs; BA-Gemeindeschlüssel müssen vorerst über Gemeindezentroide angereichert
-  werden. Interne Ziele werden direkt zoniert, externe Ziele auf acht richtungsgetrennte,
-  pendlergewichtete Arbeitsortanker verdichtet.
+  `homeLat;homeLon;workLat;workLon;commuters` **oder** direkter CSV-Export
+  `Auspendler Gemeinden` aus der
+  [BA-Pendlerstatistik](https://statistik.arbeitsagentur.de/DE/Navigation/Statistiken/Interaktive-Statistiken/Pendler/Pendler-Nav.html).
+  Der Adapter erkennt den amtlichen Dialekt, behält ausschließlich achtstellige Gemeinde-
+  relationen und löst die Schlüssel über die
+  [BKG-VG250-Gemeindepunkte](https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-250-000-stand-01-01-vg250-01-01.html)
+  auf. Die normalisierten Koordinaten bleiben unabhängig von laufabhängigen Zonen-IDs.
+  Der BA-Auspendlerexport enthält keine innergemeindlichen Beschäftigten und ist daher eine
+  bedingte Zielverteilung für bereits vom Gravitationsmodell gewählte Außenbeziehungen. Externe
+  Ziele werden derzeit auf acht richtungsgetrennte, pendlergewichtete Arbeitsortanker verdichtet;
+  die unbehandelte WORK-Gravitationsverteilung wird vor deren Verschiebung fixiert.
 - **Stufe synthetisch:** Gravitationsmodell über Einwohner × Arbeitsplatz-Attraktivität × Distanzwiderstand.
 
 ### F. Reisezeit-/Kosten-/Distanzmatrizen — vollständig berechenbar
@@ -132,7 +139,7 @@ sagt, was die Pipeline heute damit macht.
 | **Eurostat Census Grid 2021** — GISCO, `ec.europa.eu/eurostat/web/gisco/geodata/grids` | Bevölkerung EU-weit (30 Länder), 1 km; GPKG/CSV/Parquet, EPSG:3035 | CC BY | ✅ Upload-Slot (Dialekt `GRD_ID`+`T`, seit 2026-07-17); passt verlustfrei auf die INSPIRE-Zonierung |
 | **gtfs.de / DELFI** — `download.gtfs.de` | GTFS deutschlandweit, täglich neu; Subsets de_full/de_nv/de_rv/de_fv; de_nv ~223 MB (Stand 2026-07) | CC BY 4.0 | ✅ Default-Registry-Eintrag `gtfs-de-nahverkehr` (nach Verbund-Feeds; über `max-feed-mb`-Default → Hinweis statt Auto-Download) |
 | **Regionalstatistik, Tabelle 13111** — `regionalstatistik.de` (GENESIS-API, Gratis-Account) | SvB am Arbeitsort je Gemeinde | dl-de/by-2-0 | ⏳ offen (P4): Arbeitsplatz-Randsummen für die Zielwahl |
-| **BA-Pendlerstatistik / Pendleratlas** — `statistik.arbeitsagentur.de` | Ein-/Auspendler-Verflechtungen je Gemeinde, jährlich; interaktive Statistik exportiert CSV | frei mit Quellenvermerk | 🟡 P4-Teil umgesetzt: koordinatenbasierter OD-Upload (`CommuterMatrix`) verankert interne/externe Arbeitsziele; offen bleiben direkter BA-Dialekt, Gemeindeschlüssel→Geometrie und 13111-Randsummen |
+| **BA-Pendlerstatistik / Pendleratlas** — `statistik.arbeitsagentur.de` | Ein-/Auspendler-Verflechtungen je Gemeinde, jährlich; interaktive Statistik exportiert CSV | frei mit Quellenvermerk | ✅ direkter BA-Dialekt + normalisierter OD-Upload; AGS→Punkt über amtliches BKG VG250; Auspendler als bedingte Außen-Zielverteilung. Offen: 13111-Randsummen und breitere Regionsvalidierung |
 | **MiD 2023** — `mobilitaet-in-deutschland.de` (Ergebnisbericht seit 2025-11-21) | Modal-Split (Fuß 26 %, Rad 11 %, ÖV 11 %), Wegelängen, RegioStaR-Auswertungen | Berichte frei; Mikrodaten nur lizenziert | ⏳ offen (P5): Kalibrieranker-Update (heute MiD 2017 — eigener Change-Control-Zyklus, verschiebt Kalibrierziele); Mikrodaten bleiben Provider-Slot (Ebene D) |
 | **BASt-Dauerzählstellen** — `bast.de` | 2 116 automatische Zählstellen (BAB + Bundesstraßen), Stundenwerte ab 2003 | offen | ⏳ offen (P5): SUMO-Validierung (edgeData vs. Zählwerte) |
 | **Transitous / european-transport-feeds** — `transitous.org`, `eu.data.public-transport.earth` | >1 800 GTFS-Feeds aus 55 Ländern; EU-NAP-Verzeichnis | je Feed | Registry-Quelle für Europa-Szenarien (manuell eintragen) |
@@ -157,6 +164,7 @@ sagt, was die Pipeline heute damit macht.
 2. **P2a ✅ (2026-07-17):** Eurostat-/INSPIRE-ID-Dialekt im `PopulationGridParser`.
 3. **P2b ⏳:** Zensus-Auto-Fetch (Download + Cache + Bbox-Filter) → Qualitätsstufe „öffentlich" ohne Upload.
 4. **P3 ⏳:** Zensus-Altersklassen/Haushaltsgrößen als echte Synthese-Randsummen (auch MobileCity `REGdistricts`).
-5. **P4 🟡 (2026-08-03):** Normalisierter Pendler-OD-Upload und Zielwahl-Anker umgesetzt;
-   offen: direkter BA-CSV-Adapter, Gemeindeschlüssel-Geometrie und Arbeitsplatz-Randsummen (13111).
+5. **P4 🟡 (2026-08-03):** Normalisierter Pendler-OD-Upload sowie direkter BA-CSV-Adapter mit
+   BKG-VG250-Auflösung umgesetzt. Drei kontrollierte Seeds befördern die acht Anker als wirksamen
+   Distanzhebel; offen bleiben Arbeitsplatz-Randsummen (13111) und eine breitere Regionsvalidierung.
 6. **P5 ⏳:** Zähldaten-Validierung (BASt/Dortmund) + MiD-2023-Anker-Update.

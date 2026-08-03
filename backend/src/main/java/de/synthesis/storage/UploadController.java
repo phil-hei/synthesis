@@ -1,6 +1,8 @@
 package de.synthesis.storage;
 
+import de.synthesis.generation.pipeline.BaCommuterAdapter;
 import de.synthesis.generation.pipeline.CommuterMatrix;
+import de.synthesis.generation.pipeline.MunicipalityCentroidSource;
 import de.synthesis.generation.pipeline.PopulationGridParser;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
 import de.synthesis.scenario.Scenario;
@@ -51,13 +53,18 @@ public class UploadController {
     }
 
     public record CommuterUploadSummary(String name, int relations, long totalCommuters,
-                                        int relationsWithHomeInRegion) {
+                                        int relationsWithHomeInRegion, String source,
+                                        long exportTotalCommuters, double coverage,
+                                        int skippedAggregateRows, int unresolvedMunicipalities) {
     }
 
     private final ScenarioRepository scenarios;
+    private final MunicipalityCentroidSource municipalityCentroids;
 
-    public UploadController(ScenarioRepository scenarios) {
+    public UploadController(ScenarioRepository scenarios,
+                            MunicipalityCentroidSource municipalityCentroids) {
         this.scenarios = scenarios;
+        this.municipalityCentroids = municipalityCentroids;
     }
 
     @PostMapping("/population-grid")
@@ -132,14 +139,43 @@ public class UploadController {
         if (file.isEmpty() || originalName == null
                 || !originalName.toLowerCase(Locale.ROOT).endsWith(".csv")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Bitte eine normalisierte Pendlermatrix als CSV hochladen");
+                    "Bitte eine normalisierte OD-Matrix oder einen BA-Auspendlerexport als CSV hochladen");
         }
         Path dir = scenarios.uploadsDir(id);
         Files.createDirectories(dir);
         Path temporary = Files.createTempFile(dir, "commuters-", ".csv");
+        Path normalized = null;
         try {
             file.transferTo(temporary.toAbsolutePath());
-            CommuterMatrix.ParseResult parsed = CommuterMatrix.parse(temporary);
+            CommuterMatrix.ParseResult parsed;
+            String source;
+            long exportTotal;
+            int aggregateRows;
+            int unresolved;
+            if (BaCommuterAdapter.isBaExport(temporary)) {
+                BaCommuterAdapter.Export export = BaCommuterAdapter.parse(temporary);
+                BaCommuterAdapter.Adapted adapted;
+                try {
+                    adapted = BaCommuterAdapter.adapt(export, municipalityCentroids.fetch());
+                } catch (IOException e) {
+                    throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                            "BKG-Gemeindepunkte konnten nicht geladen werden: " + e.getMessage(), e);
+                }
+                normalized = Files.createTempFile(dir, "commuters-normalized-", ".csv");
+                CommuterMatrix.writeNormalized(normalized, adapted.matrix(),
+                        BaCommuterAdapter.SOURCE);
+                parsed = adapted.matrix();
+                source = BaCommuterAdapter.SOURCE;
+                exportTotal = adapted.exportTotalCommuters();
+                aggregateRows = adapted.aggregateRows();
+                unresolved = adapted.unresolvedMunicipalities();
+            } else {
+                parsed = CommuterMatrix.parse(temporary);
+                source = CommuterMatrix.source(temporary);
+                exportTotal = Math.round(parsed.totalCommuters());
+                aggregateRows = 0;
+                unresolved = 0;
+            }
             int relevant = (int) parsed.flows().stream()
                     .filter(flow -> contains(scenario.region, flow.homeLat(), flow.homeLon()))
                     .count();
@@ -147,14 +183,31 @@ public class UploadController {
                 throw new IllegalArgumentException(
                         "Pendlermatrix enthält keinen Wohnort in der Szenarioregion");
             }
-            moveReplacing(temporary, dir.resolve(CommuterMatrix.NAME));
+            moveReplacing(normalized == null ? temporary : normalized,
+                    dir.resolve(CommuterMatrix.NAME));
+            Files.deleteIfExists(temporary);
+            long total = Math.round(parsed.totalCommuters());
             return new CommuterUploadSummary(CommuterMatrix.NAME, parsed.flows().size(),
-                    Math.round(parsed.totalCommuters()), relevant);
+                    total, relevant, source, exportTotal,
+                    exportTotal <= 0 ? 0 : (double) total / exportTotal,
+                    aggregateRows, unresolved);
         } catch (IllegalArgumentException e) {
             Files.deleteIfExists(temporary);
+            if (normalized != null) {
+                Files.deleteIfExists(normalized);
+            }
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (ResponseStatusException e) {
+            Files.deleteIfExists(temporary);
+            if (normalized != null) {
+                Files.deleteIfExists(normalized);
+            }
+            throw e;
         } catch (IOException | RuntimeException e) {
             Files.deleteIfExists(temporary);
+            if (normalized != null) {
+                Files.deleteIfExists(normalized);
+            }
             throw e;
         }
     }

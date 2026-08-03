@@ -66,4 +66,67 @@ class CommuterMatrixTest {
         assertTrue(externalDraws > 400 && externalDraws < 600,
                 "25-%-Relation muss in der Stichprobe sichtbar bleiben");
     }
+
+    @Test
+    void regionScopedBaDistributionCoversEveryInternalHomeZoneAndPreservesTotal() {
+        Scenario.Region region = new Scenario.Region();
+        region.minLat = 48.84;
+        region.minLon = 8.17;
+        region.maxLat = 48.88;
+        region.maxLon = 8.23;
+        List<Zone> zones = new ArrayList<>(GridZoning.generate(region, 4_000, 600));
+        int internalZones = zones.size();
+        zones.addAll(ExternalZones.create(zones));
+        CommuterMatrix.ParseResult input = new CommuterMatrix.ParseResult(List.of(
+                new CommuterMatrix.Flow(48.8577, 8.2025, 49.01, 8.40, 700,
+                        CommuterMatrix.HomeScope.REGION),
+                new CommuterMatrix.Flow(48.8577, 8.2025, 48.76, 8.24, 200,
+                        CommuterMatrix.HomeScope.REGION)), 900);
+
+        CommuterMatrix.Mapping mapping = CommuterMatrix.map(input, zones);
+
+        assertEquals(internalZones, mapping.homeZones());
+        assertEquals(2, mapping.mappedRows());
+        assertEquals(900, mapping.mappedCommuters(), 1e-9);
+        assertEquals(900, mapping.flows().stream()
+                .mapToDouble(CommuterMatrix.MappedFlow::commuters).sum(), 1e-6);
+    }
+
+    @Test
+    void externalScopeCreatesConditionalDistributionWithoutReplacingFullOd() {
+        Scenario.Region region = new Scenario.Region();
+        region.minLat = 48.84;
+        region.minLon = 8.17;
+        region.maxLat = 48.88;
+        region.maxLon = 8.23;
+        List<Zone> zones = new ArrayList<>(GridZoning.generate(region, 4_000, 600));
+        int internalZones = zones.size();
+        zones.addAll(ExternalZones.create(zones));
+        CommuterMatrix.ParseResult input = new CommuterMatrix.ParseResult(List.of(
+                new CommuterMatrix.Flow(48.8577, 8.2025, 49.01, 8.40, 700,
+                        CommuterMatrix.HomeScope.EXTERNAL)), 700);
+
+        CommuterMatrix.Mapping mapping = CommuterMatrix.map(input, zones);
+
+        assertEquals(internalZones, mapping.homeZones());
+        assertEquals(0, mapping.cumulativeByHome().size());
+        assertEquals(internalZones, mapping.externalCumulativeByHome().size());
+        assertTrue(mapping.hasExternalDistribution(0));
+        assertEquals(-1, mapping.sampleWorkZone(0, new Random(42)));
+        assertTrue(mapping.sampleExternalWorkZone(0, new Random(42)) >= 0);
+    }
+
+    @Test
+    void normalizedWriterPreservesSourceAndHomeScope(@TempDir Path tempDir) throws Exception {
+        Path file = tempDir.resolve("commuters.csv");
+        CommuterMatrix.ParseResult input = new CommuterMatrix.ParseResult(List.of(
+                new CommuterMatrix.Flow(48.85, 8.18, 49.01, 8.40, 100,
+                        CommuterMatrix.HomeScope.REGION)), 100);
+
+        CommuterMatrix.writeNormalized(file, input, BaCommuterAdapter.SOURCE);
+
+        assertEquals(BaCommuterAdapter.SOURCE, CommuterMatrix.source(file));
+        assertEquals(CommuterMatrix.HomeScope.REGION,
+                CommuterMatrix.parse(file).flows().getFirst().homeScope());
+    }
 }
