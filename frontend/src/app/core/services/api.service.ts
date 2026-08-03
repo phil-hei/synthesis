@@ -1,7 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ArtifactInfo, GenerationJob, Region, RegionEstimate, Scenario, UploadInfo, UploadSummary } from '../models/scenario.model';
+import {
+  ArtifactInfo, CommuterUploadSummary, GenerationJob, Region, RegionEstimate, RoadNetworkUploadSummary,
+  Scenario, UploadInfo, UploadSummary
+} from '../models/scenario.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -58,6 +61,28 @@ export class ApiService {
 
   deletePopulationGrid(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/scenarios/${id}/uploads/population-grid`);
+  }
+
+  uploadRoadNetwork(id: string, file: File): Observable<RoadNetworkUploadSummary> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<RoadNetworkUploadSummary>(
+      `${this.base}/scenarios/${id}/uploads/road-network`, form);
+  }
+
+  deleteRoadNetwork(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/scenarios/${id}/uploads/road-network`);
+  }
+
+  uploadCommuters(id: string, file: File): Observable<CommuterUploadSummary> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<CommuterUploadSummary>(
+      `${this.base}/scenarios/${id}/uploads/commuters`, form);
+  }
+
+  deleteCommuters(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/scenarios/${id}/uploads/commuters`);
   }
 
   generate(id: string): Observable<GenerationJob> {

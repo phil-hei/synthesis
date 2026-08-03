@@ -16,6 +16,8 @@ Rate-Limiting nach vielen Session-Abfragen) → Luftlinien-Matrizen; Routing sel
 verifiziert (56×56 in 7 s, Ø-Weglänge 3,05→3,65 km). **Empfehlung für den Produktivbetrieb**:
 self-hosted Overpass oder ein gebündelter GraphHopper-PBF-Extrakt statt des öffentlichen Overpass,
 da dessen schwere Netz-Abfrage unzuverlässig/rate-limitiert ist.
+Seit 2026-08-03 deckt der unten dokumentierte szenariogebundene OSM-XML-Upload den
+reproduzierbaren Offline-Betrieb ab; Auto-Clip/PBF bleiben die Produktiv-Automatisierung.
 
 ## Ergebnis (TL;DR)
 
@@ -328,6 +330,50 @@ Auto/Rad/Fuß und routet alle Zone-Centroid-Paare. `MatrixGenerator` nimmt einen
 `Impedance`-Provider; nicht routbare Relationen und der deaktivierte Fall fallen je Relation auf
 Luftlinie × Umwegfaktor zurück. Steuerung: Szenario-Flag `useRealRouting` (Default an,
 Frontend-Checkbox). 56×56-Routing für Rastatt in ~7 s.
+
+### Szenariogebundener Offline-Netzvertrag (2026-08-03) — Mechanik bestanden
+
+Der bewiesene lokale OSM-XML-Pfad ist nun als Nutzervertrag verfügbar:
+`POST /api/scenarios/{id}/uploads/road-network` speichert atomar
+`uploads/road-network.osm`. Ein Streaming-Inspector akzeptiert nur OSM-XML mit gültigen Nodes und
+mindestens einem `highway`-Way, deaktiviert DTD/externe XML-Ressourcen, prüft die vollständige
+Abdeckung der gespeicherten Szenarioregion und bildet SHA-256. Ein ungültiger Ersatz lässt die
+zuletzt akzeptierte Datei unangetastet.
+
+Die Quellenpriorität lautet **Szenario-Upload → globale `road-network-file`-Konfiguration →
+Overpass**. Routing und SUMO teilen weiterhin exakt einen In-Memory-Abruf je Lauf. Job-Summary und
+`manifest.json/dataQuality.roadNetwork` tragen die konkrete Provenienz
+`scenario-upload:road-network.osm@<hash12>`; das Frontend zeigt Upload und Löschung im Studio.
+
+Validierung am realen `validation/rastatt-test.osm` (23.846 Nodes, 7.241 Ways): vollständiger
+GraphHopper-8-Import, routbares Zonenpaar und kompletter Pipeline-E2E-Lauf mit der
+szenariogebundenen Datei. Die fokussierte Suite
+`RoadNetworkFileTest, UploadControllerTest, OverpassClientTest, GenerationPipelineE2ETest`
+bestand mit 14/14 Tests. **Nicht behauptet:** PBF. Dafür ist weiterhin eine separat zu beweisende
+Konvertierungs-/GraphHopper-/SUMO-Kette nötig.
+
+### Pendler-OD als Arbeitszielanker (2026-08-03) — Mechanik bestanden, Distanz-Gate offen
+
+Der optionale Upload `uploads/commuters.csv` verwendet den normalisierten Vertrag
+`homeLat;homeLon;workLat;workLon;commuters` (Semikolon/Tab/Komma; bei Semikolon auch
+Dezimalkomma). Beim Upload müssen mindestens eine positive Relation und ein Wohnort innerhalb der
+Szenarioregion vorhanden sein. Die Pipeline mappt Wohn- und interne Arbeitsorte auf Zonen und
+schreibt die aggregierte, laufbezogene Abbildung als `population/commuters.csv`.
+
+Für externe Arbeitsorte bleiben höchstens acht Außenanker erhalten; ihre Schwerpunkte werden aber
+von den starren 12 km auf die pendlergewichteten realen Zielkoordinaten je Richtung verschoben.
+Die WORK-Fixziele ziehen je abgedeckter Wohnzone aus der beobachteten OD-Verteilung; nicht
+abgedeckte Wohnzonen fallen auf das bestehende Gravitationsmodell zurück. Damit entsteht erstmals
+ein Datenhebel für Fernwege, ohne die widerlegte reine Attraktivitätsverstärkung eines starren
+Außenrings zu wiederholen.
+
+Die fokussierte Suite `CommuterMatrixTest, UploadControllerTest, PopulationGeneratorTest,
+GenerationPipelineE2ETest` bestand mit 11/11 Tests; ein 75/25-Test erhält den externen Anteil in
+2.000 Ziehungen und setzt den externen Schwerpunkt exakt auf die beobachtete Arbeitsortkoordinate.
+Der Pipeline-E2E-Test belegt `dataQuality.commuters=upload-coordinate-od`. Das beweist Parser,
+Mapping, Fallback und Artefaktfluss, **nicht** die fachliche Kalibrierung: Ein direkter BA-CSV-Adapter,
+Gemeindeschlüssel-Geometrien, 13111-Arbeitsplatzrandsummen und der Drei-Seed-MiD-Distanz-Gate sind
+noch offen.
 
 **Effekt auf die Plausibilität** (gleiches Szenario, sonst identisch):
 
@@ -723,8 +769,8 @@ Kalibrierung mit getrennten Hebeln sinnvoll.
 1. **MobileCity finalisieren** (Takomat): Parser-Anforderungen klären (Jahresspalten, NUTS3-IDs),
    alle vier Demand-Tabellen in die MobileCity Config Tool importieren/validieren, Messagepack-
    Konvertierung; ggf. Netz-/TEC-/MOD-Tabellen für einen vollständigen Study-Area-Import.
-2. **Routing-Zuverlässigkeit (Produktiv)**: öffentliches Overpass rate-limitet die schwere
-   Straßennetz-Abfrage → self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt.
+2. **Routing-Zuverlässigkeit (Produktiv)**: szenariogebundener, validierter OSM-XML-Upload ist
+   umgesetzt; offen bleiben Auto-Clip/Cache und eine vollständig bewiesene PBF-Kette.
 3. **populationsynthesis-Anbindung** entlang einer der beiden Pfade oben (Datenentscheidung nötig:
    Deutschland-Pfad mit Zensus-Tabellen vs. generischer Seed-Pfad).
 2. **Wahlmodell-Kalibrierung**: Distanz-Sensitivität der Zielwahl (Rastatt-kalibriert) deckelt

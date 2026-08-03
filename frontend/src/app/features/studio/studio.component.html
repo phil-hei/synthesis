@@ -79,10 +79,55 @@
           <input type="checkbox" [(ngModel)]="scenario.population.useRealRouting">
           Echtes Routing (GraphHopper statt Luftlinie)
         </label>
+        <div class="upload"
+             title="Szenariogebundenes OSM-XML-Straßennetz für reproduzierbares Offline-Routing. Die Datei muss die gewählte Region vollständig abdecken und highway-Wege enthalten. Sie hat Vorrang vor Server-Konfiguration und Overpass; PBF wird noch nicht unterstützt.">
+          <ng-container *ngIf="!roadNetworkUpload">
+            <label class="upload-button" [class.disabled]="!scenario.id || roadNetworkUploadBusy">
+              {{ roadNetworkUploadBusy ? 'Netz wird geprüft…' : 'OSM-Straßennetz hochladen (.osm/.xml) ⓘ' }}
+              <input type="file" accept=".osm,.xml,application/xml,text/xml"
+                     (change)="onRoadNetworkSelected($event)"
+                     [disabled]="!scenario.id || roadNetworkUploadBusy">
+            </label>
+            <p class="hint" *ngIf="!scenario.id">Zum Hochladen Szenario zuerst speichern.</p>
+          </ng-container>
+          <div class="upload-info" *ngIf="roadNetworkUpload">
+            <span>
+              🛣️ Lokales OSM-Netz aktiv
+              <ng-container *ngIf="roadNetworkUpload.highwayWays > 0">
+                – {{ roadNetworkUpload.highwayWays.toLocaleString() }} Straßen,
+                SHA-256 {{ roadNetworkUpload.sha256.slice(0, 12) }}…
+              </ng-container>
+            </span>
+            <button class="link danger" (click)="removeRoadNetwork()"
+                    title="Hochgeladenes Straßennetz entfernen">✕</button>
+          </div>
+        </div>
         <label class="checkbox" title="Externe Zielzonen rund um das Gebiet ergänzen, damit ein Teil der Wege das Untersuchungsgebiet verlässt (realistischere Weglängen). Ohne Einwohner, nur als Ziele.">
           <input type="checkbox" [(ngModel)]="scenario.population.externalTrips">
           Außenbeziehungen (externe Zielzonen)
         </label>
+        <div class="upload"
+             title="Normalisierte Pendler-OD-Matrix mit homeLat;homeLon;workLat;workLon;commuters. Arbeitsziele innerhalb der Region werden direkt zoniert; externe Arbeitsorte verschieben die acht Außenanker auf ihre pendlergewichteten realen Koordinaten. Für externe Relationen muss 'Außenbeziehungen' aktiv sein.">
+          <ng-container *ngIf="!commuterUpload">
+            <label class="upload-button" [class.disabled]="!scenario.id || commuterUploadBusy">
+              {{ commuterUploadBusy ? 'Matrix wird geprüft…' : 'Pendlermatrix hochladen (CSV) ⓘ' }}
+              <input type="file" accept=".csv,text/csv" (change)="onCommutersSelected($event)"
+                     [disabled]="!scenario.id || commuterUploadBusy">
+            </label>
+            <p class="hint">Schema: homeLat;homeLon;workLat;workLon;commuters</p>
+          </ng-container>
+          <div class="upload-info" *ngIf="commuterUpload">
+            <span>
+              🧭 Pendler-OD aktiv
+              <ng-container *ngIf="commuterUpload.relations > 0">
+                – {{ commuterUpload.relations.toLocaleString() }} Relationen,
+                {{ commuterUpload.totalCommuters.toLocaleString() }} Pendler
+              </ng-container>
+            </span>
+            <button class="link danger" (click)="removeCommuters()"
+                    title="Pendlermatrix entfernen">✕</button>
+          </div>
+        </div>
         <label class="checkbox" title="Haushalte aus einem KIT-synthetisierten Demografie-Sample ziehen (realistische Alters-/Geschlechts-/Haushaltsgrößen-Verteilung) statt aus Ad-hoc-Annahmen.">
           <input type="checkbox" [(ngModel)]="scenario.population.useKitPopulation">
           KIT-Demografie-Sample (Haushalte)

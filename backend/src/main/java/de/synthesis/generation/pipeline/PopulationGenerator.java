@@ -35,10 +35,16 @@ public class PopulationGenerator {
     private final List<Zone> zones;
     private final Random random;
     private final Map<String, double[]> gravityCache = new HashMap<>();
+    private CommuterMatrix.Mapping commuterMapping;
 
     public PopulationGenerator(List<Zone> zones, Random random) {
         this.zones = zones;
         this.random = random;
+    }
+
+    /** Uses observed commuter relations for WORK; uncovered home zones keep the gravity fallback. */
+    public void useCommuterMapping(CommuterMatrix.Mapping mapping) {
+        this.commuterMapping = mapping;
     }
 
     /**
@@ -124,7 +130,7 @@ public class PopulationGenerator {
                         // entscheidet selbst, wer arbeitet/lernt; fehlt das Fixziel, bricht die
                         // Legacy-Zielwahl mit "No destination available for WORK/EDUCATION" ab.
                         // Wird nur konsultiert, wenn die jeweilige Aktivität tatsächlich auftritt.
-                        int workZone = sampleGravityZone(zone.index, "Work");
+                        int workZone = sampleWorkZone(zone.index);
                         int eduZone = sampleEducationZone(zone.index, m.age());
                         PersonRef person = new PersonRef(personId, householdId, m.age(), employment,
                                 zone.index, workZone, eduZone);
@@ -314,6 +320,16 @@ public class PopulationGenerator {
     }
 
     /** Gravity-model destination choice: attractivity / (1 + distance_km^2). */
+    private int sampleWorkZone(int homeIndex) {
+        if (commuterMapping != null) {
+            int observed = commuterMapping.sampleWorkZone(homeIndex, random);
+            if (observed >= 0) {
+                return observed;
+            }
+        }
+        return sampleGravityZone(homeIndex, "Work");
+    }
+
     private int sampleGravityZone(int homeIndex, String category) {
         double[] cumulative = gravityCache.computeIfAbsent(homeIndex + ":" + category, key -> {
             Zone home = zones.get(homeIndex);
@@ -339,7 +355,7 @@ public class PopulationGenerator {
     private int sampleCumulative(double[] cumulative) {
         double roll = random.nextDouble() * cumulative[cumulative.length - 1];
         for (int i = 0; i < cumulative.length; i++) {
-            if (roll <= cumulative[i]) {
+            if (roll < cumulative[i]) {
                 return i;
             }
         }

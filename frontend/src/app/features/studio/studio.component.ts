@@ -3,7 +3,10 @@ import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 import { ApiService } from '../../core/services/api.service';
-import { ArtifactInfo, Depot, GenerationJob, Scenario, UploadSummary } from '../../core/models/scenario.model';
+import {
+  ArtifactInfo, CommuterUploadSummary, Depot, GenerationJob, RoadNetworkUploadSummary,
+  Scenario, UploadSummary
+} from '../../core/models/scenario.model';
 import {
   DepotStats,
   DISTANCE_BAND_ROWS,
@@ -35,6 +38,10 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   estimateInfo = '';
   upload: UploadSummary | null = null;
   uploadBusy = false;
+  roadNetworkUpload: RoadNetworkUploadSummary | null = null;
+  roadNetworkUploadBusy = false;
+  commuterUpload: CommuterUploadSummary | null = null;
+  commuterUploadBusy = false;
 
   simKpis: SimKpis | null = null;
   sumoSummary: SumoSummary | null = null;
@@ -100,6 +107,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       this.artifacts = [];
       this.estimateInfo = '';
       this.upload = null;
+      this.roadNetworkUpload = null;
+      this.commuterUpload = null;
       this.message = '';
       this.clearSimulation();
       this.drawRegion();
@@ -415,8 +424,78 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  onRoadNetworkSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.scenario?.id) {
+      if (!this.scenario?.id) {
+        this.message = 'Bitte Szenario zuerst speichern, dann Straßennetz hochladen';
+      }
+      return;
+    }
+    this.roadNetworkUploadBusy = true;
+    this.api.uploadRoadNetwork(this.scenario.id, file).subscribe({
+      next: summary => {
+        this.roadNetworkUpload = summary;
+        this.roadNetworkUploadBusy = false;
+        this.message = `OSM-Straßennetz übernommen (${summary.highwayWays.toLocaleString('de-DE')} Straßen)`;
+      },
+      error: err => {
+        this.roadNetworkUploadBusy = false;
+        this.message = 'Netz-Upload fehlgeschlagen: ' + (err.error?.message ?? err.message);
+      }
+    });
+  }
+
+  removeRoadNetwork(): void {
+    if (!this.scenario?.id) {
+      return;
+    }
+    this.api.deleteRoadNetwork(this.scenario.id).subscribe(() => {
+      this.roadNetworkUpload = null;
+      this.message = 'OSM-Straßennetz entfernt; Routing nutzt wieder Server-Konfiguration oder Overpass';
+    });
+  }
+
+  onCommutersSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.scenario?.id) {
+      if (!this.scenario?.id) {
+        this.message = 'Bitte Szenario zuerst speichern, dann Pendlermatrix hochladen';
+      }
+      return;
+    }
+    this.commuterUploadBusy = true;
+    this.api.uploadCommuters(this.scenario.id, file).subscribe({
+      next: summary => {
+        this.commuterUpload = summary;
+        this.commuterUploadBusy = false;
+        this.message = `Pendlermatrix übernommen (${summary.relations.toLocaleString('de-DE')} Relationen)`;
+      },
+      error: err => {
+        this.commuterUploadBusy = false;
+        this.message = 'Pendler-Upload fehlgeschlagen: ' + (err.error?.message ?? err.message);
+      }
+    });
+  }
+
+  removeCommuters(): void {
+    if (!this.scenario?.id) {
+      return;
+    }
+    this.api.deleteCommuters(this.scenario.id).subscribe(() => {
+      this.commuterUpload = null;
+      this.message = 'Pendlermatrix entfernt; Arbeitsziele nutzen wieder das Gravitationsmodell';
+    });
+  }
+
   private loadUploads(): void {
     this.upload = null;
+    this.roadNetworkUpload = null;
+    this.commuterUpload = null;
     if (!this.scenario?.id) {
       return;
     }
@@ -426,6 +505,20 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
         this.upload = {
           name: grid.name, format: 'hochgeladen', points: 0,
           totalPopulation: 0, skippedLines: 0
+        };
+      }
+      const network = list.find(u => u.name === 'road-network.osm');
+      if (network) {
+        this.roadNetworkUpload = {
+          name: network.name, nodes: 0, ways: 0, highwayWays: 0,
+          minLat: 0, minLon: 0, maxLat: 0, maxLon: 0, sha256: ''
+        };
+      }
+      const commuters = list.find(u => u.name === 'commuters.csv');
+      if (commuters) {
+        this.commuterUpload = {
+          name: commuters.name, relations: 0, totalCommuters: 0,
+          relationsWithHomeInRegion: 0
         };
       }
     });

@@ -112,9 +112,16 @@ public class OverpassClient {
      * @throws Exception on any network failure; callers fall back to beeline matrices.
      */
     public String fetchRoadNetworkOsm(Scenario.Region region) throws Exception {
-        String configuredFile = properties.getOverpass().getRoadNetworkFile();
-        if (configuredFile != null && !configuredFile.isBlank()) {
-            Path file = Path.of(configuredFile).toAbsolutePath().normalize();
+        return fetchRoadNetworkOsm(region, null);
+    }
+
+    /**
+     * Like {@link #fetchRoadNetworkOsm(Scenario.Region)}, but a scenario-owned
+     * extract takes precedence over the deployment-wide configured file.
+     */
+    public String fetchRoadNetworkOsm(Scenario.Region region, Path scenarioFile) throws Exception {
+        Path file = selectedRoadNetworkFile(scenarioFile);
+        if (file != null) {
             if (!Files.isRegularFile(file)) {
                 throw new IllegalStateException("Lokale OSM-Netzdatei nicht gefunden: " + file);
             }
@@ -128,11 +135,26 @@ public class OverpassClient {
 
     /** Menschenlesbare Quelle für Job-Protokolle und Diagnose. */
     public String roadNetworkSource() {
+        return roadNetworkSource(null);
+    }
+
+    public String roadNetworkSource(Path scenarioFile) {
+        Path selected = selectedRoadNetworkFile(scenarioFile);
+        if (selected != null) {
+            return "Datei " + selected;
+        }
+        return "Overpass";
+    }
+
+    private Path selectedRoadNetworkFile(Path scenarioFile) {
+        if (scenarioFile != null && Files.isRegularFile(scenarioFile)) {
+            return scenarioFile.toAbsolutePath().normalize();
+        }
         String configuredFile = properties.getOverpass().getRoadNetworkFile();
         if (configuredFile == null || configuredFile.isBlank()) {
-            return "Overpass";
+            return null;
         }
-        return "Datei " + Path.of(configuredFile).toAbsolutePath().normalize();
+        return Path.of(configuredFile).toAbsolutePath().normalize();
     }
 
     /** Overpass-Query für das routbare Straßennetz (eigenes {@code [timeout:…]}-Budget). */

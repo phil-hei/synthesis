@@ -11,6 +11,7 @@ import de.synthesis.generation.pipeline.GtaBehaviorRunner;
 import de.synthesis.generation.pipeline.ActivityGenerator;
 import de.synthesis.generation.pipeline.AttractivityCalculator;
 import de.synthesis.generation.pipeline.CsvArtifacts;
+import de.synthesis.generation.pipeline.CommuterMatrix;
 import de.synthesis.generation.pipeline.ExternalZones;
 import de.synthesis.generation.pipeline.FeedbackMath;
 import de.synthesis.generation.pipeline.GeoJson;
@@ -29,6 +30,7 @@ import de.synthesis.generation.pipeline.PopulationEstimator;
 import de.synthesis.generation.pipeline.PopulationGenerator;
 import de.synthesis.generation.pipeline.PopulationGridParser;
 import de.synthesis.generation.pipeline.RoutingEngine;
+import de.synthesis.generation.pipeline.RoadNetworkFile;
 import de.synthesis.generation.pipeline.SimulationResultIngestor;
 import de.synthesis.generation.pipeline.SimulationRunner;
 import de.synthesis.generation.pipeline.VisumMatrixWriter;
@@ -175,6 +177,10 @@ public class GenerationService {
         float[][] carTravelTimeMin;
         /** Tatsächlich verwendete Matrizenquelle für Manifest und Diagnose. */
         String matrixSource = "beeline-estimate";
+        /** Konkrete Netzprovenienz; bleibt "not-used", wenn kein Netz angefordert wurde. */
+        String roadNetworkSource = "not-used";
+        /** Arbeitszielquelle: beobachtete OD-Relationen oder synthetisches Gravitationsmodell. */
+        String commuterSource = "gravity-model";
 
         PipelineContext(Scenario scenario, GenerationJob job, Path artifacts) {
             this.scenario = scenario;
@@ -400,6 +406,7 @@ public class GenerationService {
                     "%d externe Zielzonen (~%.0f km Radius) für Außenbeziehungen ergänzt",
                     external.size(), ExternalZones.radiusKm()));
         }
+        prepareCommuterMapping(ctx);
         Path zoneDir = ctx.artifacts.resolve("zone-repository");
         CsvArtifacts.writeZonesCsv(zoneDir.resolve("zones.csv"), ctx.zones);
         CsvArtifacts.writeAttractivitiesCsv(zoneDir.resolve("attractivities.csv"), ctx.zones);
@@ -408,6 +415,41 @@ public class GenerationService {
                         GeoJson.zonesToFeatureCollection(mapper, ctx.zones)));
         job.log("zones.csv + attractivities.csv geschrieben ("
                 + (ctx.pois.isEmpty() ? "synthetisch" : "OSM-basiert") + ")");
+    }
+
+    /**
+     * Maps an optional coordinate-based commuter upload after external zones exist
+     * and before zones.csv/matrices are written. This lets observed external work
+     * coordinates move the synthetic ring anchors to their real weighted centroids.
+     */
+    private void prepareCommuterMapping(PipelineContext ctx) throws IOException {
+        Path file = scenarios.uploadsDir(ctx.scenario.id).resolve(CommuterMatrix.NAME);
+        if (!Files.isRegularFile(file)) {
+            return;
+        }
+        try {
+            CommuterMatrix.ParseResult parsed = CommuterMatrix.parse(file);
+            CommuterMatrix.Mapping mapping = CommuterMatrix.map(parsed, ctx.zones);
+            if (mapping.mappedRows() == 0) {
+                ctx.job.log("Pendler-Upload passt auf keine Wohnzone – Gravitationsmodell bleibt aktiv");
+                return;
+            }
+            ctx.populationGenerator.useCommuterMapping(mapping);
+            CommuterMatrix.writeMapped(ctx.artifacts.resolve("population/commuters.csv"),
+                    mapping, ctx.zones);
+            ctx.commuterSource = "upload-coordinate-od";
+            ctx.job.summary.put("commuterSource", ctx.commuterSource);
+            ctx.job.summary.put("commuterHomeZones", mapping.homeZones());
+            ctx.job.summary.put("commuterRelations", mapping.mappedRows());
+            ctx.job.summary.put("externalCommuters", Math.round(mapping.externalCommuters()));
+            ctx.job.log(String.format(Locale.ROOT,
+                    "Pendler-Upload: %d/%d Relationen auf %d Wohnzonen verankert (%.0f externe Pendler)",
+                    mapping.mappedRows(), mapping.inputRows(), mapping.homeZones(),
+                    mapping.externalCommuters()));
+        } catch (IllegalArgumentException e) {
+            ctx.job.log("Pendler-Upload ungültig (" + e.getMessage()
+                    + ") – Gravitationsmodell bleibt aktiv");
+        }
     }
 
     // --- Stufe 4: Bevölkerungssynthese ---------------------------------------------
@@ -588,7 +630,8 @@ public class GenerationService {
     private void stageManifest(PipelineContext ctx) throws IOException {
         writeManifest(ctx.artifacts, ctx.scenario, ctx.job, ctx.zones.size(), ctx.population,
                 ctx.logistics, !ctx.pois.isEmpty(), ctx.populationSource, ctx.totalPersons,
-                ctx.logisticsGenerator.sources(), ctx.distributionSource, ctx.matrixSource);
+                ctx.logisticsGenerator.sources(), ctx.distributionSource, ctx.matrixSource,
+                ctx.roadNetworkSource, ctx.commuterSource);
     }
 
     // --- Stufe 11: Simulation logiTopp (Achse B) ----------------------------------------------
@@ -1092,6 +1135,8 @@ public class GenerationService {
         job.summary.put("cars", ctx.population.carCount());
         job.summary.put("depots", ctx.logistics.depotCount());
         job.summary.put("osmDataUsed", !ctx.pois.isEmpty());
+        job.summary.put("roadNetworkSource", ctx.roadNetworkSource);
+        job.summary.put("commuterSource", ctx.commuterSource);
     }
 
     /**
@@ -1121,8 +1166,20 @@ public class GenerationService {
             ctx.job.log("OSM-Straßennetz aus diesem Lauf wiederverwendet");
             return cached;
         }
-        ctx.job.log("Lade OSM-Straßennetz (" + overpass.roadNetworkSource() + ")…");
-        String osmXml = overpass.fetchRoadNetworkOsm(ctx.scenario.region);
+        Path scenarioFile = scenarios.uploadsDir(ctx.scenario.id).resolve(RoadNetworkFile.NAME);
+        if (Files.isRegularFile(scenarioFile)) {
+            RoadNetworkFile.Inspection inspection =
+                    RoadNetworkFile.inspectForRegion(scenarioFile, ctx.scenario.region);
+            ctx.roadNetworkSource = "scenario-upload:" + RoadNetworkFile.NAME + "@"
+                    + inspection.sha256().substring(0, 12);
+        } else if (overpass.roadNetworkSource().equals("Overpass")) {
+            ctx.roadNetworkSource = "overpass-live";
+        } else {
+            ctx.roadNetworkSource = overpass.roadNetworkSource();
+        }
+        ctx.job.summary.put("roadNetworkSource", ctx.roadNetworkSource);
+        ctx.job.log("Lade OSM-Straßennetz (" + ctx.roadNetworkSource + ")…");
+        String osmXml = overpass.fetchRoadNetworkOsm(ctx.scenario.region, scenarioFile);
         ctx.roadNetwork.set(osmXml);
         return osmXml;
     }
@@ -1251,7 +1308,8 @@ public class GenerationService {
                                PopulationGenerator.Result population, LogisticsGenerator.Result logistics,
                                boolean osmUsed, String populationSource, int totalPersons,
                                LogisticsGenerator.Sources logisticsSources,
-                               String distributionSource, String matrixSource) throws IOException {
+                               String distributionSource, String matrixSource,
+                               String roadNetworkSource, String commuterSource) throws IOException {
         ObjectNode manifest = mapper.createObjectNode();
         manifest.put("scenarioId", scenario.id);
         manifest.put("scenarioName", scenario.name);
@@ -1274,6 +1332,8 @@ public class GenerationService {
         quality.put("populationStructure", scenario.population.useKitPopulation
                 ? "kit-population-sample" : "synthetic");
         quality.put("matrices", matrixSource);
+        quality.put("roadNetwork", roadNetworkSource);
+        quality.put("commuters", commuterSource);
         quality.put("depots", !scenario.logistics.depots.isEmpty() ? "user-defined"
                 : logisticsSources.depotsFromOsm() ? "osm-pois" : "auto-placed");
         quality.put("packstations", logisticsSources.packstationsFromOsm() ? "osm-pois" : "synthetic");

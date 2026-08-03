@@ -28,10 +28,10 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 |---|---|---|---|
 | 1 | Zonierung | Region-BBox → Gitter aus Verkehrszellen (Zellgröße, Auto-Anpassung an Zonenlimit) | `zones.csv` |
 | 2 | OSM-Daten (POIs) | Overpass: Shops/Amenities/… je Zelle (synthetischer Fallback) | (intern) |
-| 3 | Attraktivitäten | Ziel-Attraktivität je Zelle & Zweck (Arbeit/Bildung/Einkauf/Freizeit) | `attractivities.csv` |
+| 3 | Attraktivitäten + Pendleranker | Ziel-Attraktivität je Zelle; optional koordinatenbasierte Pendler-OD, externe Arbeitsortanker auf reale gewichtete Ziele verschoben | `attractivities.csv`, `population/commuters.csv` |
 | 4 | Bevölkerungssynthese | Personen/Haushalte (KIT-Sample oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv` |
 | 5 | **Aktivitätenpläne (Achse A)** | Wochenpläne je Person aus `actiTopp` \| `GTA-LLM` \| `Template` | `activity.csv` |
-| 6 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
+| 6 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle; Netzquelle Szenario-OSM-XML → Serverdatei → Overpass, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
 | 7 | Logistik | Depots, Packstationen, Paketnachfrage sowie optionale Kundenretouren als Pickup-Nachfrage | `distribution-centers.csv`, `cepsp-shares.csv`, `parcel-demand-config.yaml` |
 | 8 | Legacy-Export | Umwandlung in das logiTopp-Legacy-Format | `legacy/…` |
 | 9 | **MobileCity-Export (B)** | District-aggregierte Config-Tabellen | `mobilecity/` (5 CSV + `summary.json`) |

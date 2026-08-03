@@ -124,3 +124,22 @@ export interface UploadInfo {
   name: string;
   sizeBytes: number;
 }
+
+export interface RoadNetworkUploadSummary {
+  name: string;
+  nodes: number;
+  ways: number;
+  highwayWays: number;
+  minLat: number;
+  minLon: number;
+  maxLat: number;
+  maxLon: number;
+  sha256: string;
+}
+
+export interface CommuterUploadSummary {
+  name: string;
+  relations: number;
+  totalCommuters: number;
+  relationsWithHomeInRegion: number;
+}

@@ -34,6 +34,15 @@ reproduzierbar für KPI-Auswertung, Kalibrierung, SUMO und weitere Zielmodelle b
 Modus-, Ziel- und Routenentscheidungen sind Ergebnisse des Laufs; die Zeitstempel bleiben
 geplante Zeiten. Das ist bewusst ein SyntheSis-Vertrag und keine FleetPy-Dateischnittstelle.
 
+Für reproduzierbares Routing kann jedes gespeicherte Szenario ein eigenes **OSM-XML-Straßennetz**
+hochladen. Der Upload wird als OSM-Dokument mit `highway`-Wegen geprüft, muss die gewählte Region
+vollständig abdecken und gewinnt vor globaler Server-Datei und Overpass; Quelle und SHA-256-Kürzel
+stehen im Lauf-Manifest. Zusätzlich kann eine normalisierte **Pendler-OD-Matrix**
+(`homeLat;homeLon;workLat;workLon;commuters`) Arbeitsziele verankern. Externe Relationen verschieben
+die acht Außenanker auf pendlergewichtete reale Arbeitsortkoordinaten. Direkter BA-/GENESIS-Import
+und PBF-Unterstützung bleiben getrennte nächste Adapter; ohne Uploads gelten unverändert die
+Overpass-/Luftlinien- und Gravitations-Fallbacks.
+
 **Zwei-Achsen-Modell** (im Studio unter „Modellierung" wählbar): _Achse A – Verhaltensquelle_
 (actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, inkl. Was-wäre-wenn-Szenarien) ×
 _Achse B – Zielmodell_ (logiTopp · MobileCity-Export · **SUMO**, Mehrfachauswahl).
@@ -84,7 +93,7 @@ Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
 | Dokument | Inhalt |
 |---|---|
 | [docs/01-analyse.md](docs/01-analyse.md) | Analyse mobiTopp/logiTopp-Ökosystem, MobileCity-Pipeline, simudrive als Referenz |
-| [docs/02-datenanforderungen.md](docs/02-datenanforderungen.md) | Mindest-Eingabedaten, was automatisch ableitbar / synthetisch generierbar ist; verifizierte Bezugsquellen (Zensus/Eurostat/gtfs.de/Pendler, Stand 2026-07-17) |
+| [docs/02-datenanforderungen.md](docs/02-datenanforderungen.md) | Mindest-Eingabedaten, was automatisch ableitbar / synthetisch generierbar ist; verifizierte Bezugsquellen (Zensus/Eurostat/gtfs.de/Pendler, Stand 2026-08-03) |
 | [docs/03-architektur.md](docs/03-architektur.md) | Technische Zielarchitektur (generisch), Module, Pipeline-Stufen, Schnittstellen |
 | [docs/04-roadmap.md](docs/04-roadmap.md) | MVP-Schnitt, Phasenplan, offene Punkte & Risiken |
 | [docs/05-validierung.md](docs/05-validierung.md) | Phase-0-Validierung: Artefakte erfolgreich durch echten mobiTopp-Lauf, 8 Format-Befunde, Legacy-Stack-Build |

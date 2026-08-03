@@ -3,6 +3,8 @@ package de.synthesis.generation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.generation.pipeline.OverpassClient;
+import de.synthesis.generation.pipeline.CommuterMatrix;
+import de.synthesis.generation.pipeline.RoadNetworkFile;
 import de.synthesis.scenario.Scenario;
 import de.synthesis.scenario.ScenarioRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -65,6 +67,12 @@ class GenerationPipelineE2ETest {
         scenario.population.llmModeChoice = false;
         scenario.targetModels = new java.util.ArrayList<>(List.of("logitopp", "mobilecity"));
         scenario = repo.save(scenario);
+        Files.createDirectories(repo.uploadsDir(scenario.id));
+        Files.writeString(repo.uploadsDir(scenario.id).resolve(CommuterMatrix.NAME), """
+                homeLat;homeLon;workLat;workLon;commuters
+                48.86;8.20;48.865;8.21;75
+                48.86;8.20;49.20;8.20;25
+                """);
 
         GenerationJob job = service.start(scenario.id);
         long deadline = System.currentTimeMillis() + 6 * 60_000;
@@ -80,6 +88,7 @@ class GenerationPipelineE2ETest {
         for (String file : List.of(
                 "zone-repository/zones.csv", "zone-repository/attractivities.csv",
                 "population/person.csv", "population/household.csv", "population/activity.csv",
+                "population/commuters.csv",
                 "matrix/travel_times/CAR_TTC.mtx.bz2", "matrix/other/CAR_DIS.mtx.bz2",
                 "legacy/demand-data/person.csv", "legacy/matrices/matrix-configuration.yaml",
                 "mobilecity/REGdistricts.csv", "mobilecity/summary.json",
@@ -94,6 +103,8 @@ class GenerationPipelineE2ETest {
                 manifest.path("dataQuality").path("matrices").asText());
         assertEquals("kit-population-sample",
                 manifest.path("dataQuality").path("populationStructure").asText());
+        assertEquals("upload-coordinate-od",
+                manifest.path("dataQuality").path("commuters").asText());
 
         // Stufen-Status: nichts FAILED; SUMO/LLM sauber übersprungen (nicht gewählt)
         for (GenerationJob.StageInfo stage : job.stages) {
@@ -162,7 +173,6 @@ class GenerationPipelineE2ETest {
         Path dataDir = tempDirectory("e2e-routing-manifest");
         SynthesisProperties props = new SynthesisProperties();
         props.setDataDir(dataDir.toString());
-        props.getOverpass().setRoadNetworkFile(fixture.toString());
         props.getSimulation().setEnabled(false);
         ObjectMapper mapper = new ObjectMapper();
         ScenarioRepository repo = new ScenarioRepository(mapper, props);
@@ -184,6 +194,8 @@ class GenerationPipelineE2ETest {
         scenario.population.behaviorSource = "template";
         scenario.targetModels = new ArrayList<>(List.of("mobilecity"));
         scenario = repo.save(scenario);
+        Files.createDirectories(repo.uploadsDir(scenario.id));
+        Files.copy(fixture, repo.uploadsDir(scenario.id).resolve(RoadNetworkFile.NAME));
 
         GenerationJob job = service.start(scenario.id);
         long deadline = System.currentTimeMillis() + 6 * 60_000;
@@ -193,10 +205,14 @@ class GenerationPipelineE2ETest {
         }
         assertEquals(GenerationJob.State.DONE, job.state, "Routing-Pipeline muss durchlaufen");
         assertEquals("graphhopper-with-local-fallbacks", job.summary.get("matrixSource"));
+        assertTrue(job.summary.get("roadNetworkSource").toString()
+                .startsWith("scenario-upload:road-network.osm@"));
 
         var manifest = mapper.readTree(repo.artifactsDir(scenario.id).resolve("manifest.json").toFile());
         assertEquals("graphhopper-with-local-fallbacks",
                 manifest.path("dataQuality").path("matrices").asText());
+        assertTrue(manifest.path("dataQuality").path("roadNetwork").asText()
+                .startsWith("scenario-upload:road-network.osm@"));
         assertTrue(manifest.path("notes").toString().contains("GraphHopper"));
         assertTrue(!manifest.path("notes").toString().contains("Roadmap Phase 1"));
     }
