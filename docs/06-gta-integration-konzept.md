@@ -1257,3 +1257,26 @@ Mitfahrer werden weiterhin nicht als zusätzliche Fahrzeuge emittiert, weil die
 Fahrer-Mitfahrer-Verknüpfung im Raw-Vertrag fehlt. Diese fachliche Grenze ist nun sichtbar
 bilanziert statt still übersprungen. Die Bilanz endet bewusst vor dem Routing:
 Map-Matching-Drops durch `duarouter --ignore-errors` werden noch nicht separat ausgewiesen.
+
+## I. Amtliche Arbeitsplatz-Randwerte — ✅ UMGESETZT (2026-08-03)
+
+Der Regionalstatistik-Flat-File `13111-08-02-5-B` ergänzt den BA-Auspendleradapter um die
+fehlende Marginale. `WorkplaceMargins` liest UTF-8 und ISO-8859-1, akzeptiert ausschließlich
+Statistik `13111` sowie `ERW033`/`PEN092`, wählt den neuesten vollständigen Stichtag und
+aggregiert über die per BKG-VG250-Punkt in der Szenarioregion liegenden Gemeinden. Persistiert
+wird atomar der normalisierte Szenariovertrag `uploads/workplace-margins.csv`; die Live-API ist
+bewusst keine Laufzeitabhängigkeit.
+
+Im Modell entscheidet der Randwert `PEN092/ERW033` über innen/außen. Erst danach verteilt die
+externe BA-OD das Ziel. Getrennte, stabile Personen-Substreams verhindern Rückwirkungen auf
+Demografie und Haushaltszufälle. Ein Randwert ohne externe OD wird sichtbar nicht angewendet;
+ein fehlender Randwert erhält den bisherigen Gravitationspfad.
+
+Für Rastatt (30.06.2025: 13.723/22.971 = 59,7405 %) bestanden Parser-, Upload-, Zufallsstrom-
+und Pipeline-E2E-Tests sowie ein vorregistrierter Drei-Seed-Lauf. Die Außenanteile lagen bei
+59,64–60,44 %, Demografie/Pkw waren bytegleich. Gegen BA-only stieg Ø Weglänge 4,57→8,10 km,
+`≥20 km` 3,13→10,86 % und der Distanz-RMSE sank 0,1035→0,0829. Die Modal-RMSE stieg
+0,0747→0,0943; deshalb ist die Randwertintegration befördert, eine produktive Langweg-
+Moduskalibrierung und die Übertragung auf weitere Regionen jedoch noch offen.
+Die abschließenden Repository-Gates bestanden mit 117 Backend-Tests ohne Fehler sowie einem
+erfolgreichen Angular-Produktionsbuild.

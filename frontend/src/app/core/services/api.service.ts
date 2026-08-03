@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   ArtifactInfo, CommuterUploadSummary, GenerationJob, Region, RegionEstimate, RoadNetworkUploadSummary,
-  Scenario, UploadInfo, UploadSummary
+  Scenario, UploadInfo, UploadSummary, WorkplaceMarginUploadSummary
 } from '../models/scenario.model';
 
 @Injectable({ providedIn: 'root' })
@@ -83,6 +83,17 @@ export class ApiService {
 
   deleteCommuters(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/scenarios/${id}/uploads/commuters`);
+  }
+
+  uploadWorkplaceMargins(id: string, file: File): Observable<WorkplaceMarginUploadSummary> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<WorkplaceMarginUploadSummary>(
+      `${this.base}/scenarios/${id}/uploads/workplace-margins`, form);
+  }
+
+  deleteWorkplaceMargins(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/scenarios/${id}/uploads/workplace-margins`);
   }
 
   generate(id: string): Observable<GenerationJob> {

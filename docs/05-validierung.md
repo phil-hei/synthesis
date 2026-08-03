@@ -396,9 +396,47 @@ steigt im Mittel um 2,73 Prozentpunkte (0,40→3,13 %; Gate mindestens +1 Punkt)
 bleiben mit 3,18–3,20 im zulässigen Band 3,0–3,4; die mittlere Modal-RMSE steigt nur von 0,0698 auf
 0,0747 (Delta +0,0049; Gate höchstens +0,02). Auch die Distanzband-RMSE verändert sich nur von
 0,1016 auf 0,1035. Die acht gemeinsamen Richtungsanker werden daher als wirksamer, weiterhin
-unzureichender Distanzhebel befördert. Nächster Datenhebel sind Arbeitsplatz-Randsummen (13111)
-und danach die Validierung in weiteren Regionen; eine feinere Peripherie-/Korridorzonierung ist
-nicht mehr die unmittelbare Voraussetzung.
+unzureichender Distanzhebel befördert. Der unmittelbar folgende Datenhebel sind die unten
+geprüften Arbeitsplatz-Randsummen (13111); danach folgt die Validierung in weiteren Regionen.
+Eine feinere Peripherie-/Korridorzonierung ist nicht mehr die unmittelbare Voraussetzung.
+
+### Regionalstatistik-13111-Arbeitsplatz-Randwert (2026-08-03) — Drei-Seed-Gate bestanden
+
+Der zweite optionale Upload akzeptiert den unveränderten Flat-File-CSV-Export der amtlichen
+Tabelle `13111-08-02-5-B` (UTF-8 oder ISO-8859-1). Verwendet werden ausschließlich Statistik
+`13111`, Gemeindezeilen und die Messcodes `ERW033` (SvB am Wohnort) und `PEN092`
+(Auspendelnde). Je Gemeinde gewinnt der neueste vollständige Stichtag; BKG-VG250-Punkte wählen
+die Gemeinden in der Szenarioregion. Der normalisierte, szenariogebundene Vertrag liegt als
+`uploads/workplace-margins.csv` vor. Ein ungültiger Ersatz überschreibt keinen akzeptierten Wert.
+
+Die Modelltrennung ist hart: `PEN092/ERW033` entscheidet reproduzierbar, **ob** das WORK-Fixziel
+außen liegt; die BA-Relationen entscheiden bedingt, **wo** außen. Ohne externe Pendler-OD wird
+der Randwert protokolliert, aber nicht angewendet. Ohne Randwert bleibt der bisherige BA-only-
+Pfad unverändert. Rastatt weist am 30.06.2025 13.723 Auspendelnde bei 22.971 SvB am Wohnort auf,
+also 59,7405 %. Die BA-Gesamtsumme 13.720 weicht um drei Personen ab; die Randwertquelle bleibt
+deshalb eigenständig und wird nicht aus dem OD-Export rekonstruiert.
+
+Der vorregistrierte Vergleich verwendete als Kontrolle die akzeptierten BA-only-Läufe aus
+`data-v3` und generierte nur die Behandlung BA+13111 neu. Bbox, 2.500 Personen, Seeds,
+actiTopp, logiTopp und OSM-Hash
+`1de66fccfbcd79b03b879e2ab139795bb36607c3c7fefd42315f5d872e096ce9` blieben gleich.
+
+| Seed | externe WORK BA→+13111 | Ø km BA→+13111 | `≥20 km` BA→+13111 | Distanz-RMSE BA→+13111 | Modal-RMSE BA→+13111 | Wege/P/Tag BA→+13111 |
+|---|---:|---:|---:|---:|---:|---:|
+| 42 | 443→1.510 (60,40 %) | 4,62→8,00 | 3,30→10,71 % | 0,1019→0,0828 | 0,0729→0,0923 | 3,18→3,14 |
+| 43 | 407→1.491 (59,64 %) | 4,60→8,12 | 3,12→10,40 % | 0,1068→0,0852 | 0,0780→0,0954 | 3,18→3,14 |
+| 44 | 438→1.511 (60,44 %) | 4,50→8,18 | 2,97→11,47 % | 0,1018→0,0807 | 0,0732→0,0952 | 3,20→3,15 |
+
+Alle drei Jobs endeten `DONE`; die Ist-Außenquote liegt je Seed weniger als 0,8 Prozentpunkte
+vom Ziel entfernt. `household.csv`, `person.csv` und `car.csv` sind je Paar byte-identisch.
+Im Mittel steigt die Weglänge 4,57→8,10 km, der Fernwegeanteil 3,13→10,86 % und der
+Distanz-RMSE sinkt 0,1035→0,0829. Zugleich steigt die Modal-RMSE 0,0747→0,0943, vor allem wegen
+23–24 % ÖV. **Entscheidung:** Randwert befördert; Distanz bleibt unter MiD 12,5 km/13 % und die
+Langweg-Moduswahl braucht einen eigenen Kalibrierzyklus. Übertragbarkeit auf weitere Regionen
+ist noch nicht bewiesen.
+
+Gesamtgates nach Implementierung und Dokumentation: `mvn -o test` mit 117 Tests,
+0 Fehlern und 6 bewusst umgebungsabhängig geskippten Tests; `npx ng build` erfolgreich.
 
 **Effekt auf die Plausibilität** (gleiches Szenario, sonst identisch):
 

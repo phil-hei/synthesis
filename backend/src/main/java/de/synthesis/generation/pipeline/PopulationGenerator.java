@@ -26,7 +26,8 @@ public class PopulationGenerator {
                             int homeZoneIndex, int workZoneIndex, int eduZoneIndex) {
     }
 
-    public record Result(List<PersonRef> persons, int householdCount, int carCount) {
+    public record Result(List<PersonRef> persons, int householdCount, int carCount,
+                         int externalWorkDestinations) {
     }
 
     private static final double[] HOUSEHOLD_SIZE_SHARES = {0.42, 0.33, 0.12, 0.09, 0.04};
@@ -37,6 +38,7 @@ public class PopulationGenerator {
     private final long destinationSeed;
     private final Map<String, double[]> gravityCache = new HashMap<>();
     private CommuterMatrix.Mapping commuterMapping;
+    private Double externalWorkShare;
 
     public PopulationGenerator(List<Zone> zones, Random random) {
         this(zones, random, 0L);
@@ -51,6 +53,14 @@ public class PopulationGenerator {
     /** Uses observed commuter relations for WORK; uncovered home zones keep the gravity fallback. */
     public void useCommuterMapping(CommuterMatrix.Mapping mapping) {
         this.commuterMapping = mapping;
+    }
+
+    /** Applies an observed regional outbound marginal while OD relations choose the external target. */
+    public void useExternalWorkShare(double share) {
+        if (!Double.isFinite(share) || share < 0 || share > 1) {
+            throw new IllegalArgumentException("Außenarbeitsplatzanteil muss zwischen 0 und 1 liegen");
+        }
+        this.externalWorkShare = share;
     }
 
     /**
@@ -102,6 +112,7 @@ public class PopulationGenerator {
         long personId = 1;
         long carId = 1;
         int carCount = 0;
+        int externalWorkDestinations = 0;
 
         try (Writer households = Files.newBufferedWriter(populationDir.resolve("household.csv"));
              Writer personsCsv = Files.newBufferedWriter(populationDir.resolve("person.csv"));
@@ -147,6 +158,9 @@ public class PopulationGenerator {
                         // Legacy-Zielwahl mit "No destination available for WORK/EDUCATION" ab.
                         // Wird nur konsultiert, wenn die jeweilige Aktivität tatsächlich auftritt.
                         int workZone = sampleWorkZone(zone.index, personId);
+                        if (zones.get(workZone).external) {
+                            externalWorkDestinations++;
+                        }
                         int eduZone = sampleEducationZone(zone.index, m.age(), personId);
                         PersonRef person = new PersonRef(personId, householdId, m.age(), employment,
                                 zone.index, workZone, eduZone);
@@ -177,7 +191,8 @@ public class PopulationGenerator {
                 }
             }
         }
-        return new Result(persons, (int) (householdId - 1), carCount);
+        return new Result(persons, (int) (householdId - 1), carCount,
+                externalWorkDestinations);
     }
 
     /**
@@ -337,6 +352,20 @@ public class PopulationGenerator {
 
     /** Gravity-model destination choice: attractivity / (1 + distance_km^2). */
     private int sampleWorkZone(int homeIndex, long personId) {
+        if (externalWorkShare != null && commuterMapping != null
+                && commuterMapping.hasExternalDistribution(homeIndex)) {
+            Random decisionRandom = destinationRandom(personId, 0x574f524b5f4d4152L);
+            if (decisionRandom.nextDouble() < externalWorkShare) {
+                int observed = commuterMapping.sampleExternalWorkZone(homeIndex,
+                        destinationRandom(personId, 0x574f524b5f4f4454L));
+                if (observed >= 0) {
+                    return observed;
+                }
+            } else {
+                return sampleGravityZone(homeIndex, "Work",
+                        destinationRandom(personId, 0x574f524b5f494e54L), false);
+            }
+        }
         Random destinationRandom = destinationRandom(personId, 0x574f524bL);
         if (commuterMapping != null && commuterMapping.hasFullDistribution(homeIndex)) {
             int observed = commuterMapping.sampleWorkZone(homeIndex, destinationRandom);
@@ -356,15 +385,30 @@ public class PopulationGenerator {
     }
 
     private int sampleGravityZone(int homeIndex, String category, Random destinationRandom) {
-        return sampleCumulative(gravityCumulative(homeIndex, category), destinationRandom);
+        return sampleGravityZone(homeIndex, category, destinationRandom, null);
+    }
+
+    private int sampleGravityZone(int homeIndex, String category, Random destinationRandom,
+                                  Boolean externalOnly) {
+        return sampleCumulative(gravityCumulative(homeIndex, category, externalOnly),
+                destinationRandom);
     }
 
     private double[] gravityCumulative(int homeIndex, String category) {
-        return gravityCache.computeIfAbsent(homeIndex + ":" + category, key -> {
+        return gravityCumulative(homeIndex, category, null);
+    }
+
+    private double[] gravityCumulative(int homeIndex, String category, Boolean externalOnly) {
+        String scope = externalOnly == null ? "all" : externalOnly ? "external" : "internal";
+        return gravityCache.computeIfAbsent(homeIndex + ":" + category + ":" + scope, key -> {
             Zone home = zones.get(homeIndex);
             double[] weights = new double[zones.size()];
             double sum = 0;
             for (Zone candidate : zones) {
+                if (externalOnly != null && candidate.external != externalOnly) {
+                    weights[candidate.index] = sum;
+                    continue;
+                }
                 double distance = GridZoning.distanceKm(home, candidate);
                 double attractivity = candidate.attractivities.getOrDefault(category, 0.0) + 1;
                 sum += attractivity / (1 + distance * distance);

@@ -5,6 +5,7 @@ import de.synthesis.generation.pipeline.CommuterMatrix;
 import de.synthesis.generation.pipeline.MunicipalityCentroidSource;
 import de.synthesis.generation.pipeline.PopulationGridParser;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
+import de.synthesis.generation.pipeline.WorkplaceMargins;
 import de.synthesis.scenario.Scenario;
 import de.synthesis.scenario.ScenarioRepository;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -56,6 +58,12 @@ public class UploadController {
                                         int relationsWithHomeInRegion, String source,
                                         long exportTotalCommuters, double coverage,
                                         int skippedAggregateRows, int unresolvedMunicipalities) {
+    }
+
+    public record WorkplaceMarginUploadSummary(String name, String source, String date,
+                                               int municipalities, long residentWorkers,
+                                               long outboundWorkers, double externalShare,
+                                               int unresolvedMunicipalities) {
     }
 
     private final ScenarioRepository scenarios;
@@ -212,6 +220,64 @@ public class UploadController {
         }
     }
 
+    @PostMapping("/workplace-margins")
+    public WorkplaceMarginUploadSummary uploadWorkplaceMargins(@PathVariable String id,
+                                                               @RequestParam("file") MultipartFile file)
+            throws IOException {
+        Scenario scenario = scenarios.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Szenario nicht gefunden: " + id));
+        String originalName = file.getOriginalFilename();
+        if (file.isEmpty() || originalName == null
+                || !originalName.toLowerCase(Locale.ROOT).endsWith(".csv")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Bitte einen Flat-File-CSV-Export der Regionalstatistik-Tabelle 13111-08-02-5-B hochladen");
+        }
+        if (scenario.region == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Szenario hat keine Region für die Gemeindeauswahl");
+        }
+
+        Path dir = scenarios.uploadsDir(id);
+        Files.createDirectories(dir);
+        Path temporary = Files.createTempFile(dir, "workplace-margins-", ".csv");
+        Path normalized = Files.createTempFile(dir, "workplace-margins-normalized-", ".csv");
+        try {
+            file.transferTo(temporary.toAbsolutePath());
+            WorkplaceMargins.Export export = WorkplaceMargins.parseOfficial(temporary);
+            Map<String, MunicipalityCentroidSource.Point> points;
+            try {
+                points = municipalityCentroids.fetch();
+            } catch (IOException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                        "BKG-Gemeindepunkte konnten nicht geladen werden: " + e.getMessage(), e);
+            }
+            WorkplaceMargins.Margin margin = WorkplaceMargins.selectLatestForRegion(export,
+                    code -> {
+                        MunicipalityCentroidSource.Point point = points.get(code);
+                        return point != null && contains(scenario.region, point.lat(), point.lon());
+                    }, points::containsKey);
+            WorkplaceMargins.writeNormalized(normalized, margin);
+            moveReplacing(normalized, dir.resolve(WorkplaceMargins.NAME));
+            Files.deleteIfExists(temporary);
+            return new WorkplaceMarginUploadSummary(WorkplaceMargins.NAME,
+                    WorkplaceMargins.SOURCE, margin.date().toString(), margin.municipalities(),
+                    margin.residentWorkers(), margin.outboundWorkers(), margin.externalShare(),
+                    margin.unresolvedMunicipalities());
+        } catch (IllegalArgumentException e) {
+            Files.deleteIfExists(temporary);
+            Files.deleteIfExists(normalized);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (ResponseStatusException e) {
+            Files.deleteIfExists(temporary);
+            Files.deleteIfExists(normalized);
+            throw e;
+        } catch (IOException | RuntimeException e) {
+            Files.deleteIfExists(temporary);
+            Files.deleteIfExists(normalized);
+            throw e;
+        }
+    }
+
     @GetMapping
     public List<UploadInfo> list(@PathVariable String id) {
         Path dir = scenarios.uploadsDir(id);
@@ -248,6 +314,12 @@ public class UploadController {
     @DeleteMapping("/commuters")
     public ResponseEntity<Void> deleteCommuters(@PathVariable String id) throws IOException {
         Files.deleteIfExists(scenarios.uploadsDir(id).resolve(CommuterMatrix.NAME));
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/workplace-margins")
+    public ResponseEntity<Void> deleteWorkplaceMargins(@PathVariable String id) throws IOException {
+        Files.deleteIfExists(scenarios.uploadsDir(id).resolve(WorkplaceMargins.NAME));
         return ResponseEntity.noContent().build();
     }
 

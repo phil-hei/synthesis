@@ -53,7 +53,7 @@ Aus dem Tutorial (`MainLongTerm.kt`, `src/main/resources/`):
 |---|---|---|
 | `SurveyPopulation.csv` | **Mobilitätserhebung als Verhaltens-Template** (Haushalte/Personen/Wege, à la MiD/MOP) | nicht frei – kritischste Eingabe |
 | `SynthesisZoneTargets.csv` | Strukturdaten-Randsummen je Zone (Einwohner nach Alter/Geschlecht, Haushaltsgrößen, Erwerbstätige) | Zensus/Kommunalstatistik oder synthetisch |
-| `commuters-*.csv` | Pendlerverflechtungen | BA-Pendlerstatistik oder Gravitationsmodell |
+| `commuters-*.csv` | Pendlerverflechtungen und Außenquote | BA-Pendlerstatistik + Regionalstatistik 13111 oder Gravitationsmodell |
 | `zone-to-community.csv` | Zuordnung Zone → Gemeinde | Zonierung |
 | `economical-status-*.csv` | OECD-Einkommensklassifikation | statisch mitlieferbar |
 

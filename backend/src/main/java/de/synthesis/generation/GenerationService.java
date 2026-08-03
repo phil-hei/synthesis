@@ -34,6 +34,7 @@ import de.synthesis.generation.pipeline.RoadNetworkFile;
 import de.synthesis.generation.pipeline.SimulationResultIngestor;
 import de.synthesis.generation.pipeline.SimulationRunner;
 import de.synthesis.generation.pipeline.VisumMatrixWriter;
+import de.synthesis.generation.pipeline.WorkplaceMargins;
 import de.synthesis.generation.pipeline.LlmModeChoiceRunner;
 import de.synthesis.generation.pipeline.GtfsSource;
 import de.synthesis.generation.pipeline.SumoRunner;
@@ -181,6 +182,9 @@ public class GenerationService {
         String roadNetworkSource = "not-used";
         /** Arbeitszielquelle: beobachtete OD-Relationen oder synthetisches Gravitationsmodell. */
         String commuterSource = "gravity-model";
+        /** Regionaler Außenarbeitsplatz-Randwert; ohne Upload bleibt die Gravitation maßgeblich. */
+        String workplaceMarginSource = "not-provided";
+        boolean externalCommuterDistributionAvailable;
 
         PipelineContext(Scenario scenario, GenerationJob job, Path artifacts) {
             this.scenario = scenario;
@@ -409,6 +413,7 @@ public class GenerationService {
         }
         ctx.populationGenerator.freezeWorkGravity();
         prepareCommuterMapping(ctx);
+        prepareWorkplaceMargin(ctx);
         Path zoneDir = ctx.artifacts.resolve("zone-repository");
         CsvArtifacts.writeZonesCsv(zoneDir.resolve("zones.csv"), ctx.zones);
         CsvArtifacts.writeAttractivitiesCsv(zoneDir.resolve("attractivities.csv"), ctx.zones);
@@ -445,6 +450,8 @@ public class GenerationService {
             ctx.job.summary.put("commuterRelations", mapping.mappedRows());
             ctx.job.summary.put("commuterExternalConditionalHomes",
                     mapping.externalCumulativeByHome().size());
+            ctx.externalCommuterDistributionAvailable =
+                    !mapping.externalCumulativeByHome().isEmpty();
             ctx.job.summary.put("externalCommuters", Math.round(mapping.externalCommuters()));
             ctx.job.log(String.format(Locale.ROOT,
                     "Pendler-Upload: %d/%d Relationen auf %d Wohnzonen verankert (%.0f externe Pendler)",
@@ -456,6 +463,37 @@ public class GenerationService {
         }
     }
 
+    /** Couples the 13111 outbound marginal to a separately supplied external OD distribution. */
+    private void prepareWorkplaceMargin(PipelineContext ctx) throws IOException {
+        Path file = scenarios.uploadsDir(ctx.scenario.id).resolve(WorkplaceMargins.NAME);
+        if (!Files.isRegularFile(file)) {
+            return;
+        }
+        try {
+            WorkplaceMargins.Margin margin = WorkplaceMargins.readNormalized(file);
+            if (!ctx.externalCommuterDistributionAvailable) {
+                ctx.workplaceMarginSource = WorkplaceMargins.SOURCE + "-not-applied";
+                ctx.job.log("Arbeitsplatz-Randwert vorhanden, aber ohne externe Pendler-OD nicht angewendet");
+                return;
+            }
+            ctx.populationGenerator.useExternalWorkShare(margin.externalShare());
+            ctx.workplaceMarginSource = WorkplaceMargins.SOURCE;
+            ctx.job.summary.put("workplaceMarginSource", ctx.workplaceMarginSource);
+            ctx.job.summary.put("workplaceMarginDate", margin.date().toString());
+            ctx.job.summary.put("residentWorkers", margin.residentWorkers());
+            ctx.job.summary.put("outboundWorkers", margin.outboundWorkers());
+            ctx.job.summary.put("externalWorkShareTarget", margin.externalShare());
+            ctx.job.log(String.format(Locale.ROOT,
+                    "Arbeitsplatz-Randwert %s: %.2f %% externe WORK-Ziele (%d/%d)",
+                    margin.date(), margin.externalShare() * 100,
+                    margin.outboundWorkers(), margin.residentWorkers()));
+        } catch (IllegalArgumentException e) {
+            ctx.workplaceMarginSource = "invalid-upload";
+            ctx.job.log("Arbeitsplatz-Randwert ungültig (" + e.getMessage()
+                    + ") – bisherige Zielwahl bleibt aktiv");
+        }
+    }
+
     // --- Stufe 4: Bevölkerungssynthese ---------------------------------------------
 
     /** Personen/Haushalte/Pkw/feste Ziele. Befüllt ctx.population. */
@@ -464,6 +502,9 @@ public class GenerationService {
                 ctx.populationGenerator.generate(ctx.artifacts.resolve("population"), ctx.scenario);
         ctx.job.log(result.persons().size() + " Personen in " + result.householdCount()
                 + " Haushalten, " + result.carCount() + " Pkw");
+        ctx.job.summary.put("externalWorkDestinations", result.externalWorkDestinations());
+        ctx.job.summary.put("externalWorkShareActual", result.persons().isEmpty() ? 0
+                : (double) result.externalWorkDestinations() / result.persons().size());
         return result;
     }
 
@@ -635,7 +676,7 @@ public class GenerationService {
         writeManifest(ctx.artifacts, ctx.scenario, ctx.job, ctx.zones.size(), ctx.population,
                 ctx.logistics, !ctx.pois.isEmpty(), ctx.populationSource, ctx.totalPersons,
                 ctx.logisticsGenerator.sources(), ctx.distributionSource, ctx.matrixSource,
-                ctx.roadNetworkSource, ctx.commuterSource);
+                ctx.roadNetworkSource, ctx.commuterSource, ctx.workplaceMarginSource);
     }
 
     // --- Stufe 11: Simulation logiTopp (Achse B) ----------------------------------------------
@@ -1141,6 +1182,7 @@ public class GenerationService {
         job.summary.put("osmDataUsed", !ctx.pois.isEmpty());
         job.summary.put("roadNetworkSource", ctx.roadNetworkSource);
         job.summary.put("commuterSource", ctx.commuterSource);
+        job.summary.put("workplaceMarginSource", ctx.workplaceMarginSource);
     }
 
     /**
@@ -1313,7 +1355,8 @@ public class GenerationService {
                                boolean osmUsed, String populationSource, int totalPersons,
                                LogisticsGenerator.Sources logisticsSources,
                                String distributionSource, String matrixSource,
-                               String roadNetworkSource, String commuterSource) throws IOException {
+                               String roadNetworkSource, String commuterSource,
+                               String workplaceMarginSource) throws IOException {
         ObjectNode manifest = mapper.createObjectNode();
         manifest.put("scenarioId", scenario.id);
         manifest.put("scenarioName", scenario.name);
@@ -1338,6 +1381,7 @@ public class GenerationService {
         quality.put("matrices", matrixSource);
         quality.put("roadNetwork", roadNetworkSource);
         quality.put("commuters", commuterSource);
+        quality.put("workplaceMargins", workplaceMarginSource);
         quality.put("depots", !scenario.logistics.depots.isEmpty() ? "user-defined"
                 : logisticsSources.depotsFromOsm() ? "osm-pois" : "auto-placed");
         quality.put("packstations", logisticsSources.packstationsFromOsm() ? "osm-pois" : "synthetic");

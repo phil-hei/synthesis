@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.generation.pipeline.OverpassClient;
 import de.synthesis.generation.pipeline.CommuterMatrix;
+import de.synthesis.generation.pipeline.WorkplaceMargins;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
 import de.synthesis.scenario.Scenario;
 import de.synthesis.scenario.ScenarioRepository;
@@ -69,10 +70,12 @@ class GenerationPipelineE2ETest {
         scenario = repo.save(scenario);
         Files.createDirectories(repo.uploadsDir(scenario.id));
         Files.writeString(repo.uploadsDir(scenario.id).resolve(CommuterMatrix.NAME), """
-                homeLat;homeLon;workLat;workLon;commuters
-                48.86;8.20;48.865;8.21;75
-                48.86;8.20;49.20;8.20;25
+                homeLat;homeLon;workLat;workLon;commuters;homeScope
+                48.86;8.20;49.20;8.20;25;external
                 """);
+        WorkplaceMargins.writeNormalized(repo.uploadsDir(scenario.id).resolve(WorkplaceMargins.NAME),
+                new WorkplaceMargins.Margin(java.time.LocalDate.of(2025, 6, 30),
+                        1, 22_971, 13_723, 13_723.0 / 22_971.0, 0));
 
         GenerationJob job = service.start(scenario.id);
         long deadline = System.currentTimeMillis() + 6 * 60_000;
@@ -105,6 +108,10 @@ class GenerationPipelineE2ETest {
                 manifest.path("dataQuality").path("populationStructure").asText());
         assertEquals("upload-coordinate-od",
                 manifest.path("dataQuality").path("commuters").asText());
+        assertEquals(WorkplaceMargins.SOURCE,
+                manifest.path("dataQuality").path("workplaceMargins").asText());
+        assertEquals(13_723.0 / 22_971.0,
+                ((Number) job.summary.get("externalWorkShareActual")).doubleValue(), 0.10);
 
         // Stufen-Status: nichts FAILED; SUMO/LLM sauber übersprungen (nicht gewählt)
         for (GenerationJob.StageInfo stage : job.stages) {

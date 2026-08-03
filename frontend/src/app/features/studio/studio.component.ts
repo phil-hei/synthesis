@@ -5,7 +5,7 @@ import * as L from 'leaflet';
 import { ApiService } from '../../core/services/api.service';
 import {
   ArtifactInfo, CommuterUploadSummary, Depot, GenerationJob, RoadNetworkUploadSummary,
-  Scenario, UploadSummary
+  Scenario, UploadSummary, WorkplaceMarginUploadSummary
 } from '../../core/models/scenario.model';
 import {
   DepotStats,
@@ -42,6 +42,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   roadNetworkUploadBusy = false;
   commuterUpload: CommuterUploadSummary | null = null;
   commuterUploadBusy = false;
+  workplaceMarginUpload: WorkplaceMarginUploadSummary | null = null;
+  workplaceMarginUploadBusy = false;
 
   simKpis: SimKpis | null = null;
   sumoSummary: SumoSummary | null = null;
@@ -495,10 +497,46 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  onWorkplaceMarginsSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.scenario?.id) {
+      if (!this.scenario?.id) {
+        this.message = 'Bitte Szenario zuerst speichern, dann Arbeitsplatz-Randwert hochladen';
+      }
+      return;
+    }
+    this.workplaceMarginUploadBusy = true;
+    this.api.uploadWorkplaceMargins(this.scenario.id, file).subscribe({
+      next: summary => {
+        this.workplaceMarginUpload = summary;
+        this.workplaceMarginUploadBusy = false;
+        this.message = `Arbeitsplatz-Randwert übernommen (${(summary.externalShare * 100)
+          .toLocaleString('de-DE', { maximumFractionDigits: 2 })} % Auspendelnde)`;
+      },
+      error: err => {
+        this.workplaceMarginUploadBusy = false;
+        this.message = 'Randwert-Upload fehlgeschlagen: ' + (err.error?.message ?? err.message);
+      }
+    });
+  }
+
+  removeWorkplaceMargins(): void {
+    if (!this.scenario?.id) {
+      return;
+    }
+    this.api.deleteWorkplaceMargins(this.scenario.id).subscribe(() => {
+      this.workplaceMarginUpload = null;
+      this.message = 'Arbeitsplatz-Randwert entfernt; Außenquote nutzt wieder das Gravitationsmodell';
+    });
+  }
+
   private loadUploads(): void {
     this.upload = null;
     this.roadNetworkUpload = null;
     this.commuterUpload = null;
+    this.workplaceMarginUpload = null;
     if (!this.scenario?.id) {
       return;
     }
@@ -523,6 +561,14 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
           name: commuters.name, relations: 0, totalCommuters: 0,
           relationsWithHomeInRegion: 0, source: '', exportTotalCommuters: 0,
           coverage: 0, skippedAggregateRows: 0, unresolvedMunicipalities: 0
+        };
+      }
+      const workplaceMargins = list.find(u => u.name === 'workplace-margins.csv');
+      if (workplaceMargins) {
+        this.workplaceMarginUpload = {
+          name: workplaceMargins.name, source: '', date: '', municipalities: 0,
+          residentWorkers: 0, outboundWorkers: 0, externalShare: 0,
+          unresolvedMunicipalities: 0
         };
       }
     });

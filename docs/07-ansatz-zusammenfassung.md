@@ -134,7 +134,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   Gemeindeziele bedingt auf bereits gewählte Außenbeziehungen. In einem demografisch bytegleich
   gepaarten Drei-Seed-A/B mit exakt gleicher externer WORK-Häufigkeit steigt Ø Weglänge
   3,77→4,57 km; `≥20 km` steigt 0,40→3,13 %. Die acht Richtungsanker bestehen den Promotions-
-  Gate; nächster Datenhebel sind Arbeitsplatz-Randsummen (13111) und weitere Regionen.
+  Gate.
+- **Arbeitsplatz-Randwert 13111 integriert:** Der direkte Flat-File-Import setzt mit
+  `PEN092/ERW033` für Rastatt 59,74 % externe WORK-Ziele, während die BA-Relationen weiterhin
+  nur das Außenziel verteilen. Im bytegleich gepaarten Drei-Seed-Versuch steigt Ø Weglänge
+  4,57→8,10 km, `≥20 km` 3,13→10,86 % und der Distanz-RMSE sinkt 0,1035→0,0829. Die
+  Modal-RMSE steigt 0,0747→0,0943; weitere Regionen und eine Langweg-Moduskalibrierung bleiben offen.
 - **Modus-Distanz-Mechanik getrennt steuerbar:** Der Großraum-Beleg traf mit
   zwei Hebeln 9,34 % ÖV gesamt und 17,60 % ab 20 km (MiD: 10/17,61 %).
   Der opt-in-Regler setzt diese Trennung ohne fest verdrahtete Versuchswerte um;

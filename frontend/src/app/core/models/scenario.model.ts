@@ -148,3 +148,14 @@ export interface CommuterUploadSummary {
   skippedAggregateRows: number;
   unresolvedMunicipalities: number;
 }
+
+export interface WorkplaceMarginUploadSummary {
+  name: string;
+  source: string;
+  date: string;
+  municipalities: number;
+  residentWorkers: number;
+  outboundWorkers: number;
+  externalShare: number;
+  unresolvedMunicipalities: number;
+}

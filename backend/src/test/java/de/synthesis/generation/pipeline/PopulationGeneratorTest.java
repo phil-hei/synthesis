@@ -114,6 +114,42 @@ class PopulationGeneratorTest {
     }
 
     @Test
+    void workplaceMarginControlsExternalShareWithoutPerturbingDemographics(@TempDir Path dir)
+            throws IOException {
+        Scenario.Region region = new Scenario.Region();
+        region.minLat = 48.84;
+        region.minLon = 8.17;
+        region.maxLat = 48.88;
+        region.maxLon = 8.23;
+        List<Zone> controlZones = new ArrayList<>(GridZoning.generate(region, 2_000, 600));
+        List<Zone> treatmentZones = new ArrayList<>(GridZoning.generate(region, 2_000, 600));
+        controlZones.getFirst().population = 2_500;
+        treatmentZones.getFirst().population = 2_500;
+        controlZones.addAll(ExternalZones.create(controlZones));
+        treatmentZones.addAll(ExternalZones.create(treatmentZones));
+
+        PopulationGenerator control = new PopulationGenerator(controlZones, new Random(17), 17);
+        PopulationGenerator treatment = new PopulationGenerator(treatmentZones, new Random(17), 17);
+        Zone home = treatmentZones.getFirst();
+        treatment.useCommuterMapping(CommuterMatrix.map(new CommuterMatrix.ParseResult(List.of(
+                new CommuterMatrix.Flow(home.centroidLat, home.centroidLon, 49.01, 8.40, 100,
+                        CommuterMatrix.HomeScope.EXTERNAL)), 100), treatmentZones));
+        treatment.useExternalWorkShare(13_723.0 / 22_971.0);
+
+        PopulationGenerator.Result a = control.generate(dir.resolve("control"), new Scenario());
+        PopulationGenerator.Result b = treatment.generate(dir.resolve("treatment"), new Scenario());
+
+        double actualShare = (double) b.externalWorkDestinations() / b.persons().size();
+        assertEquals(13_723.0 / 22_971.0, actualShare, 0.02);
+        assertEquals(-1, java.nio.file.Files.mismatch(
+                dir.resolve("control/household.csv"), dir.resolve("treatment/household.csv")));
+        assertEquals(-1, java.nio.file.Files.mismatch(
+                dir.resolve("control/person.csv"), dir.resolve("treatment/person.csv")));
+        assertEquals(-1, java.nio.file.Files.mismatch(
+                dir.resolve("control/car.csv"), dir.resolve("treatment/car.csv")));
+    }
+
+    @Test
     void commuterAlternativeDoesNotPerturbPopulationRandomStream(@TempDir Path dir)
             throws IOException {
         Scenario.Region region = new Scenario.Region();

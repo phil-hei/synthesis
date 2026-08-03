@@ -107,7 +107,7 @@
           Außenbeziehungen (externe Zielzonen)
         </label>
         <div class="upload"
-             title="Akzeptiert eine normalisierte Pendler-OD-Matrix oder einen amtlichen BA-Export 'Auspendler Gemeinden' für genau eine Wohnortgemeinde. BA-Gemeindeschlüssel werden über BKG VG250 aufgelöst. Weil der BA-Export nur Auspendler enthält, ersetzt er bedingt die Zielverteilung bereits gewählter Außenbeziehungen; die Außenpendlerquote selbst bleibt beim Gravitationsmodell. 'Außenbeziehungen' muss aktiv sein.">
+             title="Akzeptiert eine normalisierte Pendler-OD-Matrix oder einen amtlichen BA-Export 'Auspendler Gemeinden'. BA-Gemeindeschlüssel werden über BKG VG250 aufgelöst. Der BA-Export verteilt die Außenziele; die Außenquote kommt optional aus dem Arbeitsplatz-Randwert darunter. 'Außenbeziehungen' muss aktiv sein.">
           <ng-container *ngIf="!commuterUpload">
             <label class="upload-button" [class.disabled]="!scenario.id || commuterUploadBusy">
               {{ commuterUploadBusy ? 'Matrix wird geprüft…' : 'Pendlermatrix hochladen (CSV) ⓘ' }}
@@ -126,6 +126,28 @@
             </span>
             <button class="link danger" (click)="removeCommuters()"
                     title="Pendlermatrix entfernen">✕</button>
+          </div>
+        </div>
+        <div class="upload"
+             title="Amtlicher Flat-File-CSV-Export der Regionalstatistik-Tabelle 13111-08-02-5-B. ERW033 (Beschäftigte am Wohnort) und PEN092 (Auspendelnde) bestimmen die Außenquote. Wirksam zusammen mit einer externen Pendler-OD und aktivierten Außenbeziehungen.">
+          <ng-container *ngIf="!workplaceMarginUpload">
+            <label class="upload-button" [class.disabled]="!scenario.id || workplaceMarginUploadBusy">
+              {{ workplaceMarginUploadBusy ? 'Randwert wird geprüft…' : 'Arbeitsplatz-Randwert 13111 hochladen (CSV) ⓘ' }}
+              <input type="file" accept=".csv,text/csv" (change)="onWorkplaceMarginsSelected($event)"
+                     [disabled]="!scenario.id || workplaceMarginUploadBusy">
+            </label>
+            <p class="hint">Regionalstatistik: Tabelle 13111-08-02-5-B · Download „Flat-File-CSV“</p>
+          </ng-container>
+          <div class="upload-info" *ngIf="workplaceMarginUpload">
+            <span>
+              📊 Arbeitsplatz-Randwert aktiv
+              <ng-container *ngIf="workplaceMarginUpload.residentWorkers > 0">
+                – {{ (workplaceMarginUpload.externalShare * 100).toLocaleString('de-DE', { maximumFractionDigits: 2 }) }} % außen,
+                Stichtag {{ workplaceMarginUpload.date }}
+              </ng-container>
+            </span>
+            <button class="link danger" (click)="removeWorkplaceMargins()"
+                    title="Arbeitsplatz-Randwert entfernen">✕</button>
           </div>
         </div>
         <label class="checkbox" title="Haushalte aus einem KIT-synthetisierten Demografie-Sample ziehen (realistische Alters-/Geschlechts-/Haushaltsgrößen-Verteilung) statt aus Ad-hoc-Annahmen.">

@@ -6,6 +6,7 @@ import de.synthesis.generation.pipeline.BaCommuterAdapter;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
 import de.synthesis.generation.pipeline.CommuterMatrix;
 import de.synthesis.generation.pipeline.MunicipalityCentroidSource;
+import de.synthesis.generation.pipeline.WorkplaceMargins;
 import de.synthesis.scenario.Scenario;
 import de.synthesis.scenario.ScenarioRepository;
 import org.junit.jupiter.api.Test;
@@ -117,6 +118,50 @@ class UploadControllerTest {
         assertEquals(BaCommuterAdapter.SOURCE, CommuterMatrix.source(stored));
         assertTrue(CommuterMatrix.parse(stored).flows().stream()
                 .allMatch(flow -> flow.homeScope() == CommuterMatrix.HomeScope.EXTERNAL));
+    }
+
+    @Test
+    void officialRegionalstatistikMarginIsSelectedForScenarioRegion(@TempDir Path tempDir)
+            throws Exception {
+        ScenarioRepository repository = repository(tempDir);
+        repository.save(scenario());
+        Map<String, MunicipalityCentroidSource.Point> points = Map.of(
+                "08216043", new MunicipalityCentroidSource.Point("08216043", 48.85, 8.18),
+                "08212000", new MunicipalityCentroidSource.Point("08212000", 49.01, 8.40));
+        UploadController controller = new UploadController(repository, () -> points);
+        String header = "statistics_code;statistics_label;time_code;time_label;time;1_variable_code;"
+                + "1_variable_label;1_variable_attribute_code;1_variable_attribute_label;value;"
+                + "value_unit;value_variable_code;value_variable_label\n";
+        String rows = "13111;Beschäftigte;STAG;Stichtag;2025-06-30;GEMEIN;Gemeinden;"
+                + "08216043;Rastatt, Stadt;22971;Anzahl;ERW033;Beschäftigte (Wohnort)\n"
+                + "13111;Beschäftigte;STAG;Stichtag;2025-06-30;GEMEIN;Gemeinden;"
+                + "08216043;Rastatt, Stadt;13723;Anzahl;PEN092;Auspendelnde\n"
+                + "13111;Beschäftigte;STAG;Stichtag;2025-06-30;GEMEIN;Gemeinden;"
+                + "08212000;Karlsruhe, Stadt;200000;Anzahl;ERW033;Beschäftigte (Wohnort)\n"
+                + "13111;Beschäftigte;STAG;Stichtag;2025-06-30;GEMEIN;Gemeinden;"
+                + "08212000;Karlsruhe, Stadt;50000;Anzahl;PEN092;Auspendelnde\n";
+        MockMultipartFile upload = new MockMultipartFile("file", "13111_flat.csv", "text/csv",
+                (header + rows).getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
+
+        UploadController.WorkplaceMarginUploadSummary summary =
+                controller.uploadWorkplaceMargins("test", upload);
+
+        assertEquals(WorkplaceMargins.SOURCE, summary.source());
+        assertEquals(1, summary.municipalities());
+        assertEquals(22_971, summary.residentWorkers());
+        assertEquals(13_723, summary.outboundWorkers());
+        assertEquals(13_723.0 / 22_971.0, summary.externalShare(), 1e-12);
+        Path stored = repository.uploadsDir("test").resolve(WorkplaceMargins.NAME);
+        assertEquals(summary.externalShare(),
+                WorkplaceMargins.readNormalized(stored).externalShare(), 1e-9);
+        String accepted = Files.readString(stored);
+        MockMultipartFile invalid = new MockMultipartFile("file", "wrong.csv", "text/csv",
+                (header + rows.replace("13111;", "99999;")).getBytes(
+                        java.nio.charset.StandardCharsets.ISO_8859_1));
+        assertThrows(ResponseStatusException.class,
+                () -> controller.uploadWorkplaceMargins("test", invalid));
+        assertEquals(accepted, Files.readString(stored),
+                "Ungültiger Ersatz darf den akzeptierten Randwert nicht überschreiben");
     }
 
     private static ScenarioRepository repository(Path tempDir) {

@@ -41,9 +41,10 @@ stehen im Lauf-Manifest. Zusätzlich kann eine normalisierte **Pendler-OD-Matrix
 (`homeLat;homeLon;workLat;workLon;commuters`) oder direkt ein amtlicher BA-CSV-Export
 **„Auspendler Gemeinden“** Arbeitsziele verankern. BA-Gemeindeschlüssel werden über die
 BKG-VG250-Gemeindepunkte aufgelöst. Weil der BA-Export nur Auspendler enthält, steuert er bedingt
-die Ziele bereits gewählter Außenbeziehungen, nicht deren Anteil; die unbehandelte WORK-
-Gravitationsverteilung wird deshalb vor der Ankerbewegung fixiert. Externe Relationen verschieben
-die acht Außenanker auf pendlergewichtete reale Arbeitsortkoordinaten. PBF-Unterstützung bleibt
+die Ziele bereits gewählter Außenbeziehungen. Optional setzt ein amtlicher Flat-File-CSV-Export
+der Regionalstatistik-Tabelle **13111-08-02-5-B** über `PEN092 / ERW033` zusätzlich deren Anteil;
+ohne diesen zweiten Upload bleibt die unbehandelte WORK-Gravitation maßgeblich. Externe Relationen
+verschieben die acht Außenanker auf pendlergewichtete reale Arbeitsortkoordinaten. PBF-Unterstützung bleibt
 ein getrennter nächster Adapter; ohne Uploads gelten unverändert die Overpass-/Luftlinien- und
 Gravitations-Fallbacks.
 
