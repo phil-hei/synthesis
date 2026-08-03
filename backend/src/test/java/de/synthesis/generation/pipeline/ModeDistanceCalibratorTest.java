@@ -85,11 +85,11 @@ class ModeDistanceCalibratorTest {
     void rawMetricsAggregateLegDistancesBeforeChoosingTheBand() throws Exception {
         Path csv = Files.createTempFile("mode-distance-demand", ".csv");
         Files.writeString(csv, """
-                personOid;tripId;legId;tripMode;distanceInKm
-                1;1;0;4;12.0
-                1;1;1;4;9.0
-                2;1;0;1;25.0
-                3;1;0;4;5.0
+                personOid;tripId;legId;tripMode;mainMode;legMode;distanceInKm;sourceZone;targetZone;fromX;fromY;toX;toY;tripBegin;tripEnd
+                1;1;0;4;4;3;12.0;100001;100002;8.10;48.10;8.30;48.30;10;20
+                1;1;1;4;4;4;9.0;100002;100003;8.10;48.10;8.30;48.30;10;30
+                2;1;0;1;1;1;25.0;100001;100004;8.10;48.10;8.40;48.40;40;60
+                3;1;0;4;4;4;5.0;100003;100004;8.30;48.30;8.40;48.40;70;80
                 """);
 
         SimulationResultIngestor.ModeDistanceMetrics metrics =

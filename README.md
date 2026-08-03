@@ -27,6 +27,13 @@ zonen-, bevölkerungs-, matrix- und logistikbezogene mobiTopp/logiTopp-Artefakte
 Visum-Matrizen `.mtx.bz2` + Matrix-YAMLs, Verteilzentren, Paketnachfrage-Parameter, manifest.json).
 Swagger-UI: http://localhost:8090/swagger-ui.html
 
+Nach einem logiTopp-Lauf normalisiert SyntheSis die simulierte Personenverkehrsnachfrage in
+den nativen Vertrag `synthesis-travel-demand-v1` unter `artifacts/demand/`. Vollständige Wege,
+ihre einzelnen Legs sowie dünn besetzte 15-Minuten-Zonen- und OD-Profile stehen damit
+reproduzierbar für KPI-Auswertung, Kalibrierung, SUMO und weitere Zielmodelle bereit.
+Modus-, Ziel- und Routenentscheidungen sind Ergebnisse des Laufs; die Zeitstempel bleiben
+geplante Zeiten. Das ist bewusst ein SyntheSis-Vertrag und keine FleetPy-Dateischnittstelle.
+
 **Zwei-Achsen-Modell** (im Studio unter „Modellierung" wählbar): _Achse A – Verhaltensquelle_
 (actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, inkl. Was-wäre-wenn-Szenarien) ×
 _Achse B – Zielmodell_ (logiTopp · MobileCity-Export · **SUMO**, Mehrfachauswahl).

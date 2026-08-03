@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import de.synthesis.generation.demand.DemandArtifacts;
+import de.synthesis.generation.demand.LogitoppDemandAdapter;
+import de.synthesis.generation.demand.TravelDemand;
 import de.synthesis.reference.Mid2017;
 import de.synthesis.scenario.Scenario;
 
@@ -69,7 +72,10 @@ public class SimulationResultIngestor {
                           Scenario.ReturnDemand returnDemand) throws IOException {
         Path simulationDir = artifacts.resolve("simulation");
 
-        Demand demand = readDemand(resultsDir.resolve("demandsimulationResult.csv"));
+        Path demandCsv = resultsDir.resolve("demandsimulationResult.csv");
+        TravelDemand travelDemand = new LogitoppDemandAdapter().read(demandCsv);
+        DemandArtifacts.write(artifacts.resolve("demand"), travelDemand, demandCsv, mapper);
+        Demand demand = summarizeDemand(travelDemand);
         DepotData depotData = readDepots(resultsDir);
         applyCepsp(depotData.depots(),
                 artifacts.resolve("legacy/logistics/distribution-centers.csv"));
@@ -111,32 +117,19 @@ public class SimulationResultIngestor {
         final Map<String, long[]> modeDistanceCounts = new LinkedHashMap<>();
     }
 
-    private static Demand readDemand(Path file) throws IOException {
+    private static Demand summarizeDemand(TravelDemand travelDemand) {
         Demand demand = new Demand();
-        Map<String, Double> tripDistances = new HashMap<>();
-        Map<String, String> tripModes = new HashMap<>();
-        Set<String> startedTrips = new HashSet<>();
-        forEachRow(file, (header, cells) -> {
-            String personOid = cells[header.get("personOid")];
-            demand.persons.add(personOid);
-            String tripKey = personOid + '\0' + cells[header.get("tripId")];
-            tripDistances.merge(tripKey,
-                    parseDouble(cells[header.get("distanceInKm")]), Double::sum);
-            // eine Zeile je Weg-Etappe; legId 0 = Wegbeginn
-            if ("0".equals(cells[header.get("legId")]) && startedTrips.add(tripKey)) {
-                demand.trips++;
-                String mode = modeName(cells[header.get("tripMode")]);
-                tripModes.put(tripKey, mode);
-                demand.modeCounts.merge(mode, 1L, Long::sum);
-            }
-        });
-        for (String tripKey : startedTrips) {
-            double distanceKm = tripDistances.getOrDefault(tripKey, 0.0);
+        for (TravelDemand.PersonTrip trip : travelDemand.trips()) {
+            demand.persons.add(trip.personOid());
+            demand.trips++;
+            String mode = trip.mode().artifactName();
+            demand.modeCounts.merge(mode, 1L, Long::sum);
+            double distanceKm = trip.distanceKm();
             demand.totalKm += distanceKm;
             int bandIndex = distanceBandIndex(distanceKm);
             demand.distanceBandCounts[bandIndex]++;
             demand.modeDistanceCounts
-                    .computeIfAbsent(tripModes.get(tripKey),
+                    .computeIfAbsent(mode,
                             ignored -> new long[Mid2017.DISTANCE_BANDS.size()])
                     [bandIndex]++;
         }
@@ -145,7 +138,7 @@ public class SimulationResultIngestor {
 
     /** Liest die für die Modus-Distanz-Kalibrierung benötigten Rohwerte ohne KPI-Rundung. */
     public static ModeDistanceMetrics readModeDistanceMetrics(Path demandCsv) throws IOException {
-        Demand demand = readDemand(demandCsv);
+        Demand demand = summarizeDemand(new LogitoppDemandAdapter().read(demandCsv));
         int longBand = Mid2017.DISTANCE_BANDS.size() - 1;
         long longTrips = demand.distanceBandCounts[longBand];
         long[] ptByDistance = demand.modeDistanceCounts.get("publicTransport");
@@ -157,18 +150,6 @@ public class SimulationResultIngestor {
                 ? Double.NaN : modeDistanceJointRmse(demand.modeDistanceCounts, demand.trips);
         return new ModeDistanceMetrics(
                 demand.trips, longTrips, overallPtShare, longPtShare, jointRmse);
-    }
-
-    /** Legacy StandardMode-Codes → MiD-Hauptverkehrsmittel-Gruppen. */
-    private static String modeName(String code) {
-        return switch (code) {
-            case "0" -> "bike";
-            case "1" -> "car";
-            case "2" -> "passenger";
-            case "3" -> "pedestrian";
-            case "4" -> "publicTransport";
-            default -> "other";
-        };
     }
 
     // --- Depots (fleet.csv + vehicle_events.csv) ---------------------------------

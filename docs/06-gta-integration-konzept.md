@@ -671,16 +671,16 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   `carTrips`/`deliveryTrips` getrennt aus. Damit simuliert SUMO die **Last-Mile-Logistik im realen
   Straßenverkehr** – Grundlage für Emissions-/Netzlast-Auswertungen je Fahrzeugtyp (offen).
 - **Rad multimodal (2026-07-06):** neben PKW+Lieferverkehr speist SUMO jetzt auch die **Rad-Trips**
-  der Personen-Nachfrage ein (`readBikeTrips`, `tripMode==0`=BICYCLE, `vType="fahrrad"` vClass
+  der Personen-Nachfrage ein (kanonischer `mainMode==0`=BICYCLE, `vType="fahrrad"` vClass
   bicycle, emissionsfrei); Netz behält Radkanten (`--keep-edges.by-vclass passenger,bicycle`).
   `Result.bikeTrips` + `summary.json` + Studio-Zeile „Zusammensetzung" (PKW/Rad/Lieferverkehr).
 - **Fuß multimodal (2026-07-06):** Fußgänger sind in SUMO **keine Fahrzeuge**, sondern
   `<person>` mit `<personTrip>` (kein `<trip>`) — eigener Schreibpfad (`persons.xml`), Netz um
   Gehwege/Querungen erweitert (`--sidewalks.guess --crossings.guess`). `duarouter --mapmatch.distance`
   snappt die Geo-Koordinaten wie bei Fahrzeugen; Fahrzeuge und Personen werden in **einem**
-  duarouter-Lauf geroutet. `readWalkTrips` (`tripMode==3`=PEDESTRIAN); kein CO₂.
+  duarouter-Lauf geroutet. Kanonischer `mainMode==3`=PEDESTRIAN; kein CO₂.
 - **ÖV/Bus via GTFS — Phase C (✅ 2026-07-07):** GTFS-Fahrplan → `gtfs2pt.py` → Bus-Haltestellen/-Fahrten;
-  Nachfrage-Personen mit `tripMode==4` (PUBLICTRANSPORT) fahren **intermodal** mit
+  Nachfrage-Personen mit `mainMode==4` (PUBLICTRANSPORT) fahren **intermodal** mit
   (`modes="public"` → Fußweg → `<ride>` → Fußweg). Pipeline: **`GtfsCropper`** schneidet einen
   Verbund-Feed streaming auf Region+Zeitfenster zu (verwirft `shapes.txt`, wahrt referenzielle
   Integrität; KVV-Feed 121 MB → 720 KB) → **`GtfsSource`** löst die Quelle auf: **Auto-Fetch** aus
@@ -1180,3 +1180,80 @@ Empfohlene Reihenfolge:
 **Go/No-Go nach Schritt 5:** technisches Go für den experimentellen MVP; Produktiv-Default und
 Prognoseeinsatz bleiben No-Go, weil eine empirisch kalibrierte Quote und Rücklaufzeit fehlen.
 Die Ausbaustufen aus G.7 beginnen jeweils erst nach ihrem eigenen Evidenz-Gate.
+
+## H. Native Verkehrsnachfrage-Schicht — ✅ UMGESETZT (2026-07-30)
+
+### H.1 Übernommenes Konzept und Abgrenzung
+
+Aus dem FleetPy-Ansatz werden die **konzeptionellen** Bausteine einer klaren
+Nachfrage-Prozessgrenze, reproduzierbarer Einzelwege und zeitlich-räumlicher Aggregate
+übernommen. Die Implementierung bindet weder FleetPy ein noch erzeugt sie dessen
+Request-Dateiformat. Sie ist ein nativer, simulatorunabhängiger SyntheSis-Vertrag zwischen
+simulierter logiTopp-Nachfrage und den nachgelagerten Auswertungs-/Zielmodellen.
+
+Referenzen für den konzeptionellen Ausgangspunkt:
+[TUM-VT/FleetPy](https://github.com/TUM-VT/FleetPy) und
+[FleetPy-Wiki](https://github.com/TUM-VT/FleetPy/wiki).
+
+### H.2 Modell- und Parservertrag
+
+`TravelDemand` bildet vollständige Personenwege und ihre geordneten Legs ab. Der einzige
+Legacy-Adapter `LogitoppDemandAdapter` löst alle Spalten über Namen statt Positionen auf und
+setzt folgende Semantik durch:
+
+- Wegschlüssel ist `(personOid, tripId)`;
+- der kanonische Hauptmodus kommt aus `mainMode`; die potenziell intermodale
+  `tripMode`-Sequenz bleibt als Raw-Wert erhalten;
+- geplante Startzeit und Ursprungszone kommen aus `legId=0`, geplante Ankunft und Zielzone aus
+  dem letzten Leg;
+- die Aktivitätskoordinaten `fromX…toY` bilden nur die Hülle des Gesamtwegs; mobiTopp 0.3.580
+  exportiert keine Leg-Geometrien;
+- Wegdistanz ist die Summe aller Leg-Distanzen; je Leg bleiben Modus, Quell-/Zielzone und
+  Distanz erhalten, aber keine vorgetäuschten Leg-Koordinaten oder Leg-Abfahrtszeiten;
+- Abfahrten liegen im Wochenhorizont, Ankünfte dürfen bei einem am Sonntag begonnenen Weg
+  höchstens einen Tag darüber hinausreichen;
+- fehlende Pflichtspalten, kurze Zeilen, doppelte/lückenhafte Legs, negative Distanzen/Zeiten
+  oder nicht-endliche Werte führen zu einem Fehler mit Datei, Zeile, Feld und Wegschlüssel;
+- die `mainMode`-Codes 0–4 werden auf Rad/Pkw/Mitfahrer/Fuß/ÖV abgebildet; unbekannte Codes
+  bleiben für Audits erhalten und tragen den expliziten Modus `other`.
+
+Damit berechnen KPI-Ingestion, Distanz- und Modus-Distanz-Kalibrierung, LLM-Modusauswertung
+und SUMO dieselbe Wegdistanz. Die vier festen SUMO-Spaltenparser und der separate
+Nahdistanz-Parser entfallen.
+
+### H.3 Artefakte und Aggregate
+
+Jeder erfolgreiche Ingest schreibt atomar und deterministisch:
+
+| Artefakt | Inhalt |
+|---|---|
+| `demand/metadata.json` | Contract, geplante Zeit-/Zonenbasis, SHA-256 des Raw-Inputs, Mengen und Moduszähler |
+| `demand/person-trips.csv` | ein vollständiger Weg je Zeile; kanonischer `mainMode` plus rohe `tripMode`-Sequenz |
+| `demand/legs.csv` | erhaltene Leg-Modi, Quell-/Zielzonen und Distanzen; keine im Raw-Export nicht vorhandene Leg-Geometrie |
+| `demand/zone-flows.csv` | Abfahrten und Ankünfte je `Zone.id`, Modus und 15-Minuten-Bin |
+| `demand/od-flows.csv` | gerichtete sparse OD-Nachfrage je `Zone.id`, Modus und 15-Minuten-Bin |
+
+Die Bins sind halboffen (`[Start, Start+15 min)`) und verwenden Minuten seit Montag 00:00;
+Wochentage werden nicht übereinandergelegt. OD-Flüsse und Zonenabfahrten werden nach
+geplanter Abfahrtszeit, Zonenankünfte nach geplanter Ankunftszeit gebinnt. Für jeden Lauf
+gelten die Bilanzen
+`Quellzeilen = Legs`, `Wege = Summe OD`, `Wege = Summe Abfahrten = Summe Ankünfte`.
+Alle Zähler repräsentieren die simulierte Stichprobe mit realisierten Modus- und
+Zielentscheidungen; die Zeitstempel sind keine Messwerte. Eine spätere Hochrechnung braucht
+einen eigenen versionierten Vertrag und erfolgt nicht implizit.
+
+### H.4 SUMO-Selektion
+
+SUMO filtert das gemeinsame Modell einmal nach Tag und Modus. Das bestehende Limit bleibt
+zunächst je Modus bestehen. Wird es überschritten, zieht SyntheSis deterministisch die
+Mittelpunkte gleich breiter empirischer Zeitquantile; dadurch bleibt der beobachtete
+Tagesverlauf proportional vertreten, statt nur die frühesten Wege zu übernehmen. Innerhalb
+gleicher Abfahrtszeit löst ein stabiler Weg-Hash die Auswahl von Personen-/Zonenreihenfolgen.
+Jeder Personenweg wird genau einer Kategorie zugeordnet:
+
+`an duarouter übergeben + anderer Tag + nicht abbildbarer Modus/fehlendes ÖV-Netz + Modus-Cap`.
+
+Mitfahrer werden weiterhin nicht als zusätzliche Fahrzeuge emittiert, weil die
+Fahrer-Mitfahrer-Verknüpfung im Raw-Vertrag fehlt. Diese fachliche Grenze ist nun sichtbar
+bilanziert statt still übersprungen. Die Bilanz endet bewusst vor dem Routing:
+Map-Matching-Drops durch `duarouter --ignore-errors` werden noch nicht separat ausgewiesen.

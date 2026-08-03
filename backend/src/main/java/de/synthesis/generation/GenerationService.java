@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.synthesis.SynthesisProperties;
+import de.synthesis.generation.demand.LogitoppDemandAdapter;
+import de.synthesis.generation.demand.TravelDemand;
 import de.synthesis.generation.pipeline.ActitoppRunner;
 import de.synthesis.generation.pipeline.GtaBehaviorRunner;
 import de.synthesis.generation.pipeline.ActivityGenerator;
@@ -727,8 +729,10 @@ public class GenerationService {
                 + summary.deliveredDeliveries() + " zugestellt), "
                 + summary.customerReturns() + " Kundenretouren ("
                 + summary.collectedReturns() + " eingesammelt), "
-                + summary.tours() + " Touren – KPIs unter simulation/");
+                + summary.tours() + " Touren – KPIs unter simulation/, "
+                + "normalisierte Nachfrage unter demand/");
         job.summary.put("simulatedTrips", summary.trips());
+        job.summary.put("trafficDemandContract", TravelDemand.CONTRACT);
         job.summary.put("simulatedParcels", summary.parcels());
         job.summary.put("deliveredParcels", summary.delivered());
         job.summary.put("simulatedDeliveries", summary.deliveries());
@@ -1201,36 +1205,11 @@ public class GenerationService {
         }
     }
 
-    /** Anteil der Wege &lt; 1 km aus demandsimulationResult.csv (legId==0, distanceInKm idx16). */
-    private double readNearDistanceShare(Path resultsDir) {
+    /** Anteil vollständiger Wege &lt; 1 km aus dem gemeinsamen Demand-Modell. */
+    private double readNearDistanceShare(Path resultsDir) throws IOException {
         Path csv = resultsDir.resolve("demandsimulationResult.csv");
-        long near = 0;
-        long total = 0;
-        try (java.io.BufferedReader r = Files.newBufferedReader(csv)) {
-            r.readLine(); // header
-            String line;
-            while ((line = r.readLine()) != null) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] c = line.split(";", -1);
-                if (c.length < 17 || !"0".equals(c[1].trim())) {
-                    continue; // nur legId==0 zählt jeden Weg einmal
-                }
-                try {
-                    double km = Double.parseDouble(c[16].trim());
-                    total++;
-                    if (km < 1.0) {
-                        near++;
-                    }
-                } catch (NumberFormatException ignored) {
-                    // Zeile ohne gültige Distanz überspringen
-                }
-            }
-        } catch (IOException e) {
-            return Double.NaN;
-        }
-        return total == 0 ? Double.NaN : (double) near / total;
+        TravelDemand demand = new LogitoppDemandAdapter().read(csv);
+        return demand.nearTripShare();
     }
 
     private interface StageWork<T> {

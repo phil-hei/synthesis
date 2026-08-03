@@ -37,10 +37,10 @@ class SimulationResultIngestorTest {
         Path zoneRepository = Files.createDirectories(artifacts.resolve("zone-repository"));
 
         Files.writeString(results.resolve("demandsimulationResult.csv"), """
-                tripId;legId;personOid;distanceInKm;tripMode
-                1;0;person-1;0.6;1
-                1;1;person-1;0.5;4
-                2;0;person-2;20.0;3
+                personOid;tripId;legId;tripMode;mainMode;legMode;distanceInKm;sourceZone;targetZone;fromX;fromY;toX;toY;tripBegin;tripEnd
+                person-1;1;0;1;1;1;0.6;100001;100002;8.10;48.10;8.30;48.30;10;11
+                person-1;1;1;1;1;4;0.5;100002;100003;8.10;48.10;8.30;48.30;10;12
+                person-2;2;0;3;3;3;20.0;100003;100004;8.30;48.30;8.40;48.40;20;30
                 """);
         Files.writeString(results.resolve("fleet.csv"), "owner;vehicleType\n");
         Files.writeString(results.resolve("parcel-orders-private.csv"),
@@ -84,6 +84,12 @@ class SimulationResultIngestorTest {
                 .isEqualTo(SimulationResultIngestor.LOGISTICS_KPI_CONTRACT);
         assertThat(kpis.at("/logistics/deliveries/generated").asLong()).isZero();
         assertThat(kpis.at("/logistics/customerReturns/generated").asLong()).isZero();
+        assertThat(mapper.readTree(artifacts.resolve("demand/metadata.json").toFile())
+                .path("contract").asText()).isEqualTo("synthesis-travel-demand-v1");
+        assertThat(Files.readAllLines(artifacts.resolve("demand/person-trips.csv")))
+                .hasSize(3);
+        assertThat(Files.readAllLines(artifacts.resolve("demand/legs.csv")))
+                .hasSize(4);
     }
 
     @Test
@@ -204,8 +210,8 @@ class SimulationResultIngestorTest {
         Path zoneRepository = Files.createDirectories(artifacts.resolve("zone-repository"));
 
         Files.writeString(results.resolve("demandsimulationResult.csv"), """
-                tripId;legId;personOid;distanceInKm;tripMode
-                1;0;person-1;2.0;1
+                personOid;tripId;legId;tripMode;mainMode;legMode;distanceInKm;sourceZone;targetZone;fromX;fromY;toX;toY;tripBegin;tripEnd
+                person-1;1;0;1;1;1;2.0;100001;100002;8.10;48.10;8.20;48.20;10;15
                 """);
         Files.writeString(results.resolve("fleet.csv"), """
                 owner;vehicleType

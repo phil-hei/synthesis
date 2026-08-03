@@ -36,7 +36,7 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | 8 | Legacy-Export | Umwandlung in das logiTopp-Legacy-Format | `legacy/…` |
 | 9 | **MobileCity-Export (B)** | District-aggregierte Config-Tabellen | `mobilecity/` (5 CSV + `summary.json`) |
 | 10 | Manifest | Lauf-Metadaten | `manifest.json` |
-| 11 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete, experimentell inkl. Kundenretouren als Abholaufträge (+ optional Kalibrierungsschleife) | `demandsimulationResult.csv`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
+| 11 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete, experimentell inkl. Kundenretouren als Abholaufträge (+ optional Kalibrierungsschleife); normalisiert die simulierten Personenwege einmal in den nativen Demand-Vertrag | `demandsimulationResult.csv`, `demand/{metadata.json,person-trips.csv,legs.csv,zone-flows.csv,od-flows.csv}`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
 | 12 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-, Rad- und Fuß-Trips** der Nachfrage + **Zustelltouren** (Lkw/Lastenrad) + optional **ÖV/Bus** (GTFS → `gtfs2pt.py`, intermodal); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp inkl. Bus) | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte) |
 | 13 | **Netz-Feedback (optional)** | Gleichgewichts-Schleife: Stau-Faktoren je Zonenrelation (1–3), **MSA-gedämpft** in die Pkw-Matrix → logiTopp entscheidet neu → SUMO erneut – bis Konvergenz (Δ<0,01, max. 3 Iterationen) | aktualisierte `CAR_TTC`-Matrizen + neue `kpis.json`/SUMO-Artefakte |
 | 14 | **LLM-Moduswahl (A, GTA 3c)** | LLM wählt Modus je Distanzband auf simulierten Trips | `simulation/llm-mode-choice.json` |
@@ -86,6 +86,9 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   Distanzbänder inkl. RMSE vs. MiD sowie richtungsgetrennte Zustell-/Retouren-KPIs nach
   `synthesis-logistics-kpis-v1`; im Studio und Szenariovergleich sichtbar),
   `depot-stats.json`, `tours.geojson`, `parcel-density.geojson`, `demandsimulationResult.csv`
+- **Native Verkehrsnachfrage:** `demand/metadata.json` (`synthesis-travel-demand-v1`),
+  `person-trips.csv`, `legs.csv` sowie sparse `zone-flows.csv` und `od-flows.csv` in
+  15-Minuten-Bins; simulierte Stichprobe mit geplanten Zeiten, ohne implizite Hochrechnung
 - **SUMO:** `sumo/statistics.xml`, `summary.json` (Fahrzeuge nach PKW/Rad/Fuß/Lieferverkehr/ÖV,
   CO₂ je Fahrzeugtyp inkl. Bus), `congestion.geojson` (Netzlast)
 - **KI:** `llm-mode-choice.json`, `gta-personas.json` (Begründungen + Was-wäre-wenn)
@@ -103,10 +106,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
         ↓
   Routing-Matrizen (GraphHopper) + Logistik
         ↓
-  ── Achse B: Zielmodell ──  logiTopp | SUMO | MobileCity
-        ↓            ↑______________|
-        ↓        (Netz-Feedback: SUMO-Stauzeiten → Pkw-Matrix → neue Entscheidung, MSA-iterativ bis Konvergenz)
-  ── SUMO multimodal ──  PKW · Rad · Fuß · Lieferverkehr · optional ÖV/Bus (GTFS)
+  ── Achse B ──  MobileCity | logiTopp → Native Demand → SUMO (optional)
+                              ↑            ↓             |
+                              |   vollständige Wege,     |
+                              |   Legs, 15-min Zonen/OD  |
+                              |__________________________|
+                    Netz-Feedback: SUMO-Stauzeiten → Pkw-Matrix → neue Entscheidung
         ↓
   KPIs / Touren / CO₂ / Netzlast-Karte / LLM-Moduswahl
         ↓

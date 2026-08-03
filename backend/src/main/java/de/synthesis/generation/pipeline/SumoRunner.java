@@ -1,6 +1,8 @@
 package de.synthesis.generation.pipeline;
 
 import de.synthesis.SynthesisProperties;
+import de.synthesis.generation.demand.LogitoppDemandAdapter;
+import de.synthesis.generation.demand.TravelDemand;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -89,6 +91,19 @@ public class SumoRunner {
     public Result run(Path artifacts, String osmXml, Path demandResult, Path plannedTours,
                       PtProvider ptProvider, Consumer<String> log)
             throws IOException, InterruptedException {
+        return run(
+                artifacts,
+                osmXml,
+                new LogitoppDemandAdapter().read(demandResult),
+                plannedTours,
+                ptProvider,
+                log);
+    }
+
+    /** Führt SUMO mit der bereits normalisierten SyntheSis-Nachfrage aus. */
+    public Result run(Path artifacts, String osmXml, TravelDemand demand, Path plannedTours,
+                      PtProvider ptProvider, Consumer<String> log)
+            throws IOException, InterruptedException {
         Path dir = artifacts.resolve("sumo");
         Files.createDirectories(dir);
 
@@ -116,10 +131,11 @@ public class SumoRunner {
             }
         }
 
-        // 2. PKW- und Rad-Trips der Nachfrage + Zustelltouren-Legs als Geo-Trips schreiben
-        List<Trip> trips = new ArrayList<>(readCarTrips(demandResult));
+        // 2. Den gemeinsamen Demand-Vertrag genau einmal nach Tag, Modus und Cap selektieren.
+        DemandSelection selection = selectDemand(demand, pt != null);
+        List<Trip> trips = new ArrayList<>(selection.cars());
         int carTrips = trips.size();
-        List<Trip> bikes = readBikeTrips(demandResult);
+        List<Trip> bikes = selection.bikes();
         int bikeTrips = bikes.size();
         trips.addAll(bikes);
         int deliveryTrips = 0;
@@ -132,11 +148,11 @@ public class SumoRunner {
 
         // Personen: Fußgänger (Fußweg) und – falls ÖV verfügbar – ÖV-Nachfrage (intermodal:
         // Fußweg → Ride → Fußweg). Beide sind SUMO-<person>, keine <trip>.
-        List<Trip> persons = new ArrayList<>(readWalkTrips(demandResult));
+        List<Trip> persons = new ArrayList<>(selection.walkers());
         int walkTrips = persons.size();
         int ptRiders = 0;
         if (pt != null) {
-            List<Trip> riders = readTransitTrips(demandResult);
+            List<Trip> riders = selection.transitRiders();
             ptRiders = riders.size();
             persons.addAll(riders);
         }
@@ -150,6 +166,10 @@ public class SumoRunner {
                 + day + ", max " + maxTrips + " je Modus) + " + deliveryTrips
                 + " Lieferverkehr-Legs + " + ptRiders + " ÖV-Fahrgäste ("
                 + ptVehicles + " ÖV-Fahrten) übernommen");
+        log.accept("Demand-Bilanz: " + selection.emitted() + " übernommen, "
+                + selection.otherDay() + " anderer Tag, "
+                + selection.unsupported() + " nicht abbildbar, "
+                + selection.capped() + " oberhalb Modus-Cap");
 
         // 3. Geo-Trips/-Personen auf Netzkanten abbilden + routen (duarouter snappt LonLat nativ);
         // die ÖV-Halte/-Fahrzeuge sind für die intermodale Personen-Routung nötig
@@ -435,117 +455,140 @@ public class SumoRunner {
                 String toLon, String toLat) {
     }
 
+    record DemandSelection(
+            List<Trip> cars,
+            List<Trip> bikes,
+            List<Trip> walkers,
+            List<Trip> transitRiders,
+            int otherDay,
+            int unsupported,
+            int capped) {
+
+        int emitted() {
+            return cars.size() + bikes.size() + walkers.size() + transitRiders.size();
+        }
+    }
+
     private record TourClosure(String type, String depotLon, String depotLat,
                                String lastLon, String lastLat, int departMinute,
                                boolean returning) {
     }
 
-    /** demandsimulationResult.csv → PKW-Trips des Tages (Typ "pkw"). */
-    private List<Trip> readCarTrips(Path demandResult) throws IOException {
+    /**
+     * Kanonische Personenwege → SUMO-Nachfrage des konfigurierten Tages.
+     *
+     * <p>Mitfahrer bleiben explizit ausgeschlossen: ohne Fahrer-Mitfahrer-Verknüpfung
+     * würde ihre Übernahme Fahrzeuge doppelt zählen. Ein fehlendes ÖV-Netz wird ebenfalls
+     * in {@code unsupported} bilanziert. Überschreitet ein Modus das Limit, wird eine
+     * deterministische Quantilstichprobe über seinen Tagesverlauf gezogen.
+     */
+    DemandSelection selectDemand(TravelDemand demand, boolean publicTransportAvailable) {
         int dayStart = day * 1440;
         int dayEnd = (day + 1) * 1440;
-        List<Trip> trips = new ArrayList<>();
-        try (BufferedReader reader = Files.newBufferedReader(demandResult, StandardCharsets.UTF_8)) {
-            reader.readLine(); // header
-            String line;
-            while ((line = reader.readLine()) != null && trips.size() < maxTrips) {
-                if (line.isBlank()) {
+        List<TravelDemand.PersonTrip> carCandidates = new ArrayList<>();
+        List<TravelDemand.PersonTrip> bikeCandidates = new ArrayList<>();
+        List<TravelDemand.PersonTrip> walkCandidates = new ArrayList<>();
+        List<TravelDemand.PersonTrip> transitCandidates = new ArrayList<>();
+        int otherDay = 0;
+        int unsupported = 0;
+        for (TravelDemand.PersonTrip personTrip : demand.trips()) {
+            double begin = personTrip.plannedDepartureMinute();
+            if (begin < dayStart || begin >= dayEnd) {
+                otherDay++;
+                continue;
+            }
+            switch (personTrip.mode()) {
+                case CAR -> carCandidates.add(personTrip);
+                case BIKE -> bikeCandidates.add(personTrip);
+                case PEDESTRIAN -> walkCandidates.add(personTrip);
+                case PUBLIC_TRANSPORT -> {
+                    if (!publicTransportAvailable) {
+                        unsupported++;
+                        continue;
+                    }
+                    transitCandidates.add(personTrip);
+                }
+                case PASSENGER, OTHER -> {
+                    unsupported++;
                     continue;
                 }
-                String[] c = line.split(";", -1);
-                // legId(1)==0, tripMode(12)==1 (StandardMode.CAR), tripBegin(42) in Minuten
-                if (c.length < 43 || !"0".equals(c[1]) || !"1".equals(c[12])) {
-                    continue;
-                }
-                int begin = (int) Double.parseDouble(c[42]);
-                if (begin < dayStart || begin >= dayEnd) {
-                    continue;
-                }
-                trips.add(new Trip((begin - dayStart) * 60, "pkw", c[38], c[39], c[40], c[41]));
+                default -> throw new IllegalStateException(
+                        "Nicht behandelter Demand-Modus " + personTrip.mode());
             }
         }
-        return trips;
+        List<Trip> cars = temporalSample(carCandidates, "pkw", dayStart);
+        List<Trip> bikes = temporalSample(bikeCandidates, "fahrrad", dayStart);
+        List<Trip> walkers = temporalSample(walkCandidates, "fuss", dayStart);
+        List<Trip> transitRiders = temporalSample(transitCandidates, "oev", dayStart);
+        int eligible = carCandidates.size() + bikeCandidates.size()
+                + walkCandidates.size() + transitCandidates.size();
+        int emitted = cars.size() + bikes.size() + walkers.size() + transitRiders.size();
+        int capped = eligible - emitted;
+        DemandSelection selection = new DemandSelection(
+                cars,
+                bikes,
+                walkers,
+                transitRiders,
+                otherDay,
+                unsupported,
+                capped);
+        if (selection.emitted() + selection.otherDay()
+                + selection.unsupported() + selection.capped() != demand.tripCount()) {
+            throw new IllegalStateException("SUMO-Demand-Selektion verletzt die Mengenbilanz");
+        }
+        return selection;
     }
 
-    /** demandsimulationResult.csv → Rad-Trips des Tages (Typ "fahrrad", tripMode 0 = BICYCLE). */
-    private List<Trip> readBikeTrips(Path demandResult) throws IOException {
-        int dayStart = day * 1440;
-        int dayEnd = (day + 1) * 1440;
-        List<Trip> trips = new ArrayList<>();
-        try (BufferedReader reader = Files.newBufferedReader(demandResult, StandardCharsets.UTF_8)) {
-            reader.readLine(); // header
-            String line;
-            while ((line = reader.readLine()) != null && trips.size() < maxTrips) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] c = line.split(";", -1);
-                // legId(1)==0, tripMode(12)==0 (StandardMode.BICYCLE), tripBegin(42) in Minuten
-                if (c.length < 43 || !"0".equals(c[1]) || !"0".equals(c[12])) {
-                    continue;
-                }
-                int begin = (int) Double.parseDouble(c[42]);
-                if (begin < dayStart || begin >= dayEnd) {
-                    continue;
-                }
-                trips.add(new Trip((begin - dayStart) * 60, "fahrrad", c[38], c[39], c[40], c[41]));
+    /**
+     * Wählt bei einem Cap die Mittelpunkte gleich breiter empirischer Quantile. Dadurch
+     * bleibt der Tagesverlauf proportional vertreten, ohne zusätzliche Zufallsquelle.
+     * Innerhalb gleicher Abfahrtszeit entkoppelt ein stabiler Weg-Hash die Auswahl von
+     * Personen-/Zonenreihenfolgen.
+     */
+    private List<Trip> temporalSample(
+            List<TravelDemand.PersonTrip> candidates, String type, int dayStart) {
+        List<TravelDemand.PersonTrip> ordered = candidates.stream()
+                .sorted(Comparator.comparingDouble(TravelDemand.PersonTrip::plannedDepartureMinute)
+                        .thenComparingLong(SumoRunner::stableTripHash)
+                        .thenComparing(TravelDemand.PersonTrip::personOid)
+                        .thenComparing(TravelDemand.PersonTrip::tripId))
+                .toList();
+        int limit = Math.max(0, maxTrips);
+        List<Trip> selected = new ArrayList<>(Math.min(limit, ordered.size()));
+        if (ordered.size() <= limit) {
+            for (TravelDemand.PersonTrip trip : ordered) {
+                selected.add(toSumoTrip(trip, type, dayStart));
+            }
+        } else if (limit > 0) {
+            for (int i = 0; i < limit; i++) {
+                int index = (int) Math.floor((i + 0.5) * ordered.size() / limit);
+                selected.add(toSumoTrip(ordered.get(index), type, dayStart));
             }
         }
-        return trips;
+        return List.copyOf(selected);
     }
 
-    /** demandsimulationResult.csv → Fuß-Trips des Tages (Typ "fuss", tripMode 3 = PEDESTRIAN). */
-    private List<Trip> readWalkTrips(Path demandResult) throws IOException {
-        int dayStart = day * 1440;
-        int dayEnd = (day + 1) * 1440;
-        List<Trip> trips = new ArrayList<>();
-        try (BufferedReader reader = Files.newBufferedReader(demandResult, StandardCharsets.UTF_8)) {
-            reader.readLine(); // header
-            String line;
-            while ((line = reader.readLine()) != null && trips.size() < maxTrips) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] c = line.split(";", -1);
-                // legId(1)==0, tripMode(12)==3 (StandardMode.PEDESTRIAN), tripBegin(42) in Minuten
-                if (c.length < 43 || !"0".equals(c[1]) || !"3".equals(c[12])) {
-                    continue;
-                }
-                int begin = (int) Double.parseDouble(c[42]);
-                if (begin < dayStart || begin >= dayEnd) {
-                    continue;
-                }
-                trips.add(new Trip((begin - dayStart) * 60, "fuss", c[38], c[39], c[40], c[41]));
-            }
-        }
-        return trips;
+    private static Trip toSumoTrip(
+            TravelDemand.PersonTrip personTrip, String type, int dayStart) {
+        int departSec =
+                (int) Math.floor((personTrip.plannedDepartureMinute() - dayStart) * 60);
+        return new Trip(
+                departSec,
+                type,
+                Double.toString(personTrip.fromLon()),
+                Double.toString(personTrip.fromLat()),
+                Double.toString(personTrip.toLon()),
+                Double.toString(personTrip.toLat()));
     }
 
-    /** demandsimulationResult.csv → ÖV-Trips des Tages (Typ "oev", tripMode 4 = PUBLICTRANSPORT). */
-    private List<Trip> readTransitTrips(Path demandResult) throws IOException {
-        int dayStart = day * 1440;
-        int dayEnd = (day + 1) * 1440;
-        List<Trip> trips = new ArrayList<>();
-        try (BufferedReader reader = Files.newBufferedReader(demandResult, StandardCharsets.UTF_8)) {
-            reader.readLine(); // header
-            String line;
-            while ((line = reader.readLine()) != null && trips.size() < maxTrips) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] c = line.split(";", -1);
-                // legId(1)==0, tripMode(12)==4 (StandardMode.PUBLICTRANSPORT), tripBegin(42) in Minuten
-                if (c.length < 43 || !"0".equals(c[1]) || !"4".equals(c[12])) {
-                    continue;
-                }
-                int begin = (int) Double.parseDouble(c[42]);
-                if (begin < dayStart || begin >= dayEnd) {
-                    continue;
-                }
-                trips.add(new Trip((begin - dayStart) * 60, "oev", c[38], c[39], c[40], c[41]));
-            }
+    private static long stableTripHash(TravelDemand.PersonTrip trip) {
+        long hash = 0xcbf29ce484222325L;
+        String value = trip.personOid() + '\0' + trip.tripId();
+        for (int i = 0; i < value.length(); i++) {
+            hash ^= value.charAt(i);
+            hash *= 0x100000001b3L;
         }
-        return trips;
+        return hash;
     }
 
     /**

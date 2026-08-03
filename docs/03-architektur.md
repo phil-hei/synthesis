@@ -48,7 +48,7 @@ flowchart LR
 | `zoning` | Zonen aus OSM-Admin-Grenzen oder H3/Grid; erzeugt `zones.csv`, GeoJSON, MobileCity-District-Artefakte |
 | `datasynthesis` | Provider-Slots je Datenebene (echt/öffentlich/synthetisch, siehe 02): Strukturdaten, Attraktivitäten, Survey-Template, Pendler, Depots |
 | `matrices` | Zentroid-Bestimmung, Matrix-Berechnung via GraphHopper/R5, Visum-MTX-Export + Matrix-YAMLs |
-| `demand` | Generierung der mobiTopp-Projektstruktur (Configs, Wahlmodell-Parameter), Ausführung Long-Term → Short-Term → logiTopp als externe JVM-Prozesse, Ergebnis-Ingestion |
+| `demand` | Generierung der mobiTopp-Projektstruktur (Configs, Wahlmodell-Parameter), Ausführung Long-Term → Short-Term → logiTopp als externe JVM-Prozesse, Normalisierung in `synthesis-travel-demand-v1`, Ergebnis-Ingestion |
 | `export` | Export-Adapter-SPI; erste Adapter: GeoJSON/CSV (Visualisierung), MobileCity (siehe unten) |
 | `jobs` | Asynchrone Pipeline-Ausführung: Stufengraph, Status, Logs, Abbruch; Fortschritt per SSE/WebSocket ans Frontend |
 | `storage` | Dateibasierter Artefakt-Store `data/scenarios/<id>/<stage>/…` mit Manifest (Hash der Eingaben → Cache/Re-Run-Entscheidung) |
@@ -76,7 +76,7 @@ Jede Stufe: deklarierte Inputs/Outputs, idempotent, Seed-gesteuert reproduzierba
 | 5 Pendler | Zonen + BA/Gravitationsmodell | `commuters.csv` |
 | 6 Matrizen | Zonen + OSM/GTFS-Routing | `*_TTC/COST/DIS.mtx.bz2`, Matrix-YAMLs |
 | 7 Long-Term | 3–6 + Survey-Template | `person/household/activity/car/fixedDestination.csv` |
-| 8 Short-Term + logiTopp | 7 + Matrizen + Logistik-Parameter | Wege-/Touren-CSVs, Zustell-, Abhol- und Paketstatus-Events |
+| 8 Short-Term + logiTopp | 7 + Matrizen + Logistik-Parameter | Raw-Wege-/Touren-CSVs, Zustell-, Abhol- und Paketstatus-Events; native Wege/Legs sowie 15-Minuten-Zonen-/OD-Profile unter `demand/` |
 | 9 Export | 8 + Adapterwahl | GeoJSON-Layer, KPI-JSON, MobileCity-Paket, … |
 
 ## Szenario-Schema (Generik-Achse 2)
@@ -129,6 +129,31 @@ und Frontend spiegeln den Vertrag mit `enabled=false` als rückwärtskompatiblem
 `SimulationResultIngestor` schreibt den additiven Vertrag
 `synthesis-logistics-kpis-v1`, trennt Zustellung, Zustell-Rückläufer und Kundenretoure und
 verifiziert Richtung, Ziehregel sowie Pickup→Depot-Unload vor der Ergebnisfreigabe.
+
+Die Personenverkehrsnachfrage besitzt seit 2026-07-30 ebenfalls eine explizite interne
+Prozessgrenze. Nur `LogitoppDemandAdapter` kennt das Legacy-Schema
+`demandsimulationResult.csv`; danach arbeiten KPI-Ingestion, Distanzkalibrierung,
+LLM-Auswertung und SUMO mit `TravelDemand`. Ein Weg wird über `(personOid, tripId)`
+identifiziert, seine Legs nach `legId` geordnet, seine Distanz über alle Legs summiert und
+sein Ursprung/Ziel aus erstem/letztem Leg abgeleitet. Ungültige Pflichtfelder, doppelte oder
+lückenhafte Legs und nicht-endliche Werte schlagen sichtbar fehl. Unbekannte Moduscodes
+bleiben als Code erhalten und werden kontrolliert als `other` ausgewiesen.
+
+Eine wichtige Provenienzgrenze bleibt explizit: mobiTopp 0.3.580 schreibt je Leg dessen
+Modus, Quell-/Zielzone, Distanz und Endzeit, die Koordinaten `fromX…toY` und `tripBegin`
+stammen aber aus den umschließenden Aktivitäten. `TravelDemand.Leg` behauptet deshalb keine
+Leg-Geometrie oder eigene Leg-Abfahrtszeit; diese Felder werden nur am vollständigen
+`PersonTrip` geführt.
+
+Der versionierte Artefaktvertrag `synthesis-travel-demand-v1` liegt unter
+`artifacts/demand/`: `person-trips.csv`, `legs.csv`, `zone-flows.csv`, `od-flows.csv` und
+`metadata.json`. Die Profile verwenden halboffene 15-Minuten-Intervalle auf der absoluten
+Wochenzeit; `Zone.id` wird unverändert verwendet, nicht aus Listenindex oder Matrixspalte
+abgeleitet. Es handelt sich um **simulierte Stichprobenwege**, nicht um hochgerechnete
+Prognosewerte. Der kanonische Hauptmodus stammt aus `mainMode`; die potenziell intermodale
+`tripMode`-Sequenz bleibt separat für Audits erhalten. Die Zeitstempel sind geplante
+logiTopp-Zeiten, keine beobachteten Ankunftszeiten. Die Dateien werden deterministisch sortiert
+und atomar ersetzt.
 
 ## Frontend (Angular, wie simudrive)
 

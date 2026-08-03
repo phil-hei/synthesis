@@ -18,13 +18,11 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 class LlmModeChoiceTest {
 
-    /** Demand row with legId=0 and the given distanceInKm at the expected column indices. */
+    /** Vollständige Raw-Demand-Zeile mit der gegebenen Wegdistanz. */
     private static String row(double km) {
-        String[] c = new String[17];
-        java.util.Arrays.fill(c, "");
-        c[1] = "0";          // legId
-        c[16] = String.valueOf(km); // distanceInKm
-        return String.join(";", c);
+        int id = (int) (km * 10);
+        return "person-" + id + ";" + id + ";0;1;1;1;" + km
+                + ";100001;100002;8.1;48.1;8.2;48.2;" + id + ";" + (id + 1);
     }
 
     @Test
@@ -35,7 +33,9 @@ class LlmModeChoiceTest {
 
         Path demand = Files.createTempFile("mc-demand", ".csv");
         try {
-            Files.writeString(demand, "header\n" + row(0.5) + "\n" + row(3.0) + "\n" + row(15.0) + "\n");
+            Files.writeString(demand, """
+                    personOid;tripId;legId;tripMode;mainMode;legMode;distanceInKm;sourceZone;targetZone;fromX;fromY;toX;toY;tripBegin;tripEnd
+                    """ + row(0.5) + "\n" + row(3.0) + "\n" + row(15.0) + "\n");
 
             LlmModeChoiceRunner.Result r = new LlmModeChoiceRunner(config, 77L).run(demand, m -> { });
             assertEquals(3, r.trips(), "drei Trips eingelesen");

@@ -5,14 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.synthesis.SynthesisProperties;
+import de.synthesis.generation.demand.LogitoppDemandAdapter;
+import de.synthesis.generation.demand.TravelDemand;
 
-import java.io.BufferedReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -71,35 +70,23 @@ public class LlmModeChoiceRunner {
      * @param demandResult mobiTopp-Trip-Ergebnis (demandsimulationResult.csv mit distanceInKm)
      */
     public Result run(Path demandResult, Consumer<String> log) throws Exception {
+        return run(new LogitoppDemandAdapter().read(demandResult), log);
+    }
+
+    /** Bündelt die vollständigen Wege des gemeinsamen SyntheSis-Demand-Modells. */
+    public Result run(TravelDemand demand, Consumer<String> log) throws Exception {
         int[] counts = new int[BAND_MAX.length];
         double[] sumKm = new double[BAND_MAX.length];
         int total = 0;
-        try (BufferedReader reader = Files.newBufferedReader(demandResult, StandardCharsets.UTF_8)) {
-            reader.readLine(); // header
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] c = line.split(";", -1);
-                // legId(1)==0 zählt jeden Trip einmal; distanceInKm(16)
-                if (c.length < 17 || !"0".equals(c[1])) {
-                    continue;
-                }
-                double km;
-                try {
-                    km = Double.parseDouble(c[16]);
-                } catch (NumberFormatException e) {
-                    continue;
-                }
-                if (km <= 0) {
-                    continue;
-                }
-                int b = band(km);
-                counts[b]++;
-                sumKm[b] += km;
-                total++;
+        for (TravelDemand.PersonTrip trip : demand.trips()) {
+            double km = trip.distanceKm();
+            if (km <= 0) {
+                continue;
             }
+            int b = band(km);
+            counts[b]++;
+            sumKm[b] += km;
+            total++;
         }
         if (total == 0) {
             throw new IllegalStateException("Keine Trips mit distanceInKm in der Nachfrage");

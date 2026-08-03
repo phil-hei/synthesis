@@ -278,6 +278,36 @@ Generierung ein Simulations-Panel (KPIs, Modal Split vs. MiD 2017, Depot-Statist
 zuschaltbare Kartenlayer (Paketdichte-Choropleth, Tourlinien). Verifiziert im Browser:
 kompletter Durchlauf inkl. 22-s-Simulation aus einem Klick auf „Nachfragemodell generieren".
 
+## Native Verkehrsnachfrage-Schicht (2026-07-30) — Parser und Bilanzen bestanden
+
+Der neue Vertrag `synthesis-travel-demand-v1` wurde gegen kleine adversariale Fixtures und
+den vorhandenen realen Rastatt-Output geprüft. Die Tests belegen:
+
+- beliebige Header- und Raw-Zeilenreihenfolge sowie das Legacy-Abschluss-Trennzeichen `;`;
+- korrekte Verdichtung eines unsortierten Walk–ÖV–Walk-Wegs aus drei Legs: kanonischer
+  Hauptmodus aus `mainMode`, rohe `tripMode`-Sequenz erhalten, Ursprung/geplante Abfahrt vom
+  ersten Leg, Ziel/geplante Ankunft vom letzten Leg, Distanz als Leg-Summe, Leg-Modi/-Zonen
+  erhalten;
+- die nachgewiesene mobiTopp-0.3.580-Provenienzgrenze: Aktivitätskoordinaten werden nicht als
+  Leg-Geometrien ausgegeben oder dokumentiert;
+- Fail-fast mit Datei-, Zeilen-, Feld- und Wegangabe bei fehlenden Spalten, doppelten Legs und
+  `NaN`, überlaufender Leg-Distanzsumme oder unplausiblem Zeitüberlauf; unbekannte Moduscodes
+  bleiben als `other` plus Raw-Code sichtbar;
+- exakte 15-Minuten-Grenzen, getrennte Wochentage, gerichtete A→B/B→A- und intrazonale
+  Relationen sowie die Mengenbilanzen von Wegen, OD, Abfahrten und Ankünften;
+- byte-identische native CSV-Artefakte bei anderer Raw-Zeilenreihenfolge und byte-identische
+  Gesamtausgabe bei Wiederholung desselben Inputs;
+- explizite SUMO-Bilanz für anderen Tag, nicht abbildbare Modi/fehlendes ÖV-Netz und Modus-Cap.
+
+Beim dokumentierten Lauf wurde das optionale Golden-Fixture gelesen: **70.188 Wege/Legs** mit den
+Moduszählern Rad **3.895**, Pkw **15.288**, Mitfahrer **7.081**, Fuß **36.439** und ÖV
+**7.485**. Der bestehende KPI-Multi-Leg-Test bestätigt unverändert die Aggregation von
+`12 + 9 = 21 km` vor der Distanzband-Zuordnung. Damit ist die interne Semantik und
+Reproduzierbarkeit bewiesen; die verkehrliche Prognosegüte der Nachfrage ist dadurch nicht
+automatisch validiert. Die vollständige Offline-Backend-Suite lief anschließend mit
+**93 Tests, 0 Fehlern und 6 umgebungsabhängigen Skips**; der installierte SUMO-E2E-Test
+lief dabei tatsächlich durch und wurde nicht übersprungen.
+
 ### Plausibilität vs. MiD 2017 (erster Befund, Rastatt-Region, 6.000 Einwohner synthetisch)
 
 | Kennwert | Simulation | MiD 2017 | Einordnung |
