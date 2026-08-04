@@ -66,14 +66,14 @@ Die Backend-Tests liegen unter `backend/src/test/java/de/synthesis/`. Suite-Lauf
 | `scenario/ComparisonControllerTest.java` | Vergleich liefert nur vorhandene Szenarien in Anfrage-Reihenfolge; `simulated=true` ausschließlich bei parsebarer `kpis.json`, beschädigtes JSON wird nicht als Simulationsergebnis ausgegeben | keine | keine (`@TempDir`) |
 
 Die fixture-freie Frontend-Suite läuft mit `cd frontend && npm test` über Angulars nativen
-Vitest-Runner (11 Tests, Stand 2026-08-04):
+Vitest-Runner (15 Tests, Stand 2026-08-04):
 
 | Klasse (unter `frontend/src/app/`) | Prüft |
 |---|---|
 | `app.component.spec.ts` | Anwendungsshell, Navigation und Router-Outlets werden gerendert |
 | `core/services/api.service.spec.ts` | Szenario-GET und Kodierung mehrerer Vergleichs-IDs im API-Vertrag |
 | `features/comparison/comparison.component.spec.ts` | Initialladen und Rendern des migrierten Pickers, sichtbare Ladefehler ohne veraltete Daten, blockierte Doppelaufrufe im Ladezustand, Leerauswahl ohne API-Aufruf, exakte Tabellenspannen mit/ohne MiD-Spalte sowie gemischte simulierte/nicht simulierte Ergebnisse inklusive MiD-Referenz |
-| `features/studio/studio.component.spec.ts` | Rendern des migrierten Studio-Templates sowie Initialisierung und Cleanup der Leaflet-Karte ohne Backend oder Netzwerk |
+| `features/studio/studio.component.spec.ts` | Rendern des migrierten Studio-Templates, Leaflet-Lebenszyklus sowie sichtbare Fehlerzustände für Szenarioliste, Defaults, Löschung und Upload-Status ohne Backend oder Netzwerk |
 
 Verifizierte Kommandos:
 

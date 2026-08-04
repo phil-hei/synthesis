@@ -34,6 +34,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   drawMode = false;
   busy = false;
   message = '';
+  scenarioListError = '';
   estimateInfo = '';
   upload: UploadSummary | null = null;
   uploadBusy = false;
@@ -96,25 +97,37 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   // --- Szenario-Verwaltung -------------------------------------------------
 
   reloadScenarios(): void {
-    this.api.listScenarios().subscribe(list => this.scenarios = list);
+    this.api.listScenarios().subscribe({
+      next: list => {
+        this.scenarios = list;
+        this.scenarioListError = '';
+      },
+      error: () => {
+        this.scenarios = [];
+        this.scenarioListError = 'Szenarien konnten nicht geladen werden';
+      }
+    });
   }
 
   newScenario(): void {
     this.stopPolling();
-    this.api.scenarioDefaults().subscribe(defaults => {
-      this.scenario = defaults;          // region ist hier null: noch kein Rechteck
-      this.selectedScenarioId = '';
-      this.job = null;
-      this.artifacts = [];
-      this.estimateInfo = '';
-      this.upload = null;
-      this.roadNetworkUpload = null;
-      this.commuterUpload = null;
-      this.message = '';
-      this.clearSimulation();
-      this.drawRegion();
-      this.zoneLayer?.remove();
-      this.drawDepots();
+    this.api.scenarioDefaults().subscribe({
+      next: defaults => {
+        this.scenario = defaults;          // region ist hier null: noch kein Rechteck
+        this.selectedScenarioId = '';
+        this.job = null;
+        this.artifacts = [];
+        this.estimateInfo = '';
+        this.upload = null;
+        this.roadNetworkUpload = null;
+        this.commuterUpload = null;
+        this.message = '';
+        this.clearSimulation();
+        this.drawRegion();
+        this.zoneLayer?.remove();
+        this.drawDepots();
+      },
+      error: () => this.message = 'Szenariovorlage konnte nicht geladen werden'
     });
   }
 
@@ -204,9 +217,17 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!selected?.id || !confirm(`Szenario "${selected.name}" löschen?`)) {
       return;
     }
-    this.api.deleteScenario(selected.id).subscribe(() => {
-      this.reloadScenarios();
-      this.newScenario();
+    this.busy = true;
+    this.api.deleteScenario(selected.id).subscribe({
+      next: () => {
+        this.busy = false;
+        this.reloadScenarios();
+        this.newScenario();
+      },
+      error: () => {
+        this.busy = false;
+        this.message = 'Szenario konnte nicht gelöscht werden';
+      }
     });
   }
 
@@ -539,37 +560,40 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.scenario?.id) {
       return;
     }
-    this.api.listUploads(this.scenario.id).subscribe(list => {
-      const grid = list.find(u => u.name === 'population-grid.csv');
-      if (grid) {
-        this.upload = {
-          name: grid.name, format: 'hochgeladen', points: 0,
-          totalPopulation: 0, skippedLines: 0
-        };
-      }
-      const network = list.find(u => u.name === 'road-network.osm');
-      if (network) {
-        this.roadNetworkUpload = {
-          name: network.name, nodes: 0, ways: 0, highwayWays: 0,
-          minLat: 0, minLon: 0, maxLat: 0, maxLon: 0, sha256: ''
-        };
-      }
-      const commuters = list.find(u => u.name === 'commuters.csv');
-      if (commuters) {
-        this.commuterUpload = {
-          name: commuters.name, relations: 0, totalCommuters: 0,
-          relationsWithHomeInRegion: 0, source: '', exportTotalCommuters: 0,
-          coverage: 0, skippedAggregateRows: 0, unresolvedMunicipalities: 0
-        };
-      }
-      const workplaceMargins = list.find(u => u.name === 'workplace-margins.csv');
-      if (workplaceMargins) {
-        this.workplaceMarginUpload = {
-          name: workplaceMargins.name, source: '', date: '', municipalities: 0,
-          residentWorkers: 0, outboundWorkers: 0, externalShare: 0,
-          unresolvedMunicipalities: 0
-        };
-      }
+    this.api.listUploads(this.scenario.id).subscribe({
+      next: list => {
+        const grid = list.find(u => u.name === 'population-grid.csv');
+        if (grid) {
+          this.upload = {
+            name: grid.name, format: 'hochgeladen', points: 0,
+            totalPopulation: 0, skippedLines: 0
+          };
+        }
+        const network = list.find(u => u.name === 'road-network.osm');
+        if (network) {
+          this.roadNetworkUpload = {
+            name: network.name, nodes: 0, ways: 0, highwayWays: 0,
+            minLat: 0, minLon: 0, maxLat: 0, maxLon: 0, sha256: ''
+          };
+        }
+        const commuters = list.find(u => u.name === 'commuters.csv');
+        if (commuters) {
+          this.commuterUpload = {
+            name: commuters.name, relations: 0, totalCommuters: 0,
+            relationsWithHomeInRegion: 0, source: '', exportTotalCommuters: 0,
+            coverage: 0, skippedAggregateRows: 0, unresolvedMunicipalities: 0
+          };
+        }
+        const workplaceMargins = list.find(u => u.name === 'workplace-margins.csv');
+        if (workplaceMargins) {
+          this.workplaceMarginUpload = {
+            name: workplaceMargins.name, source: '', date: '', municipalities: 0,
+            residentWorkers: 0, outboundWorkers: 0, externalShare: 0,
+            unresolvedMunicipalities: 0
+          };
+        }
+      },
+      error: () => this.message = 'Upload-Status konnte nicht geladen werden'
     });
   }
 
@@ -651,17 +675,23 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   private startPolling(scenarioId: string): void {
     this.stopPolling();
     this.pollTimer = setInterval(() => {
-      this.api.generationStatus(scenarioId).subscribe(job => {
-        if (this.scenario?.id !== scenarioId) {
-          this.stopPolling();
-          return;
-        }
-        this.job = job;
-        if (job.state === 'DONE' || job.state === 'FAILED') {
-          this.stopPolling();
-          if (job.state === 'DONE') {
-            this.loadArtifacts();
+      this.api.generationStatus(scenarioId).subscribe({
+        next: job => {
+          if (this.scenario?.id !== scenarioId) {
+            this.stopPolling();
+            return;
           }
+          this.job = job;
+          if (job.state === 'DONE' || job.state === 'FAILED') {
+            this.stopPolling();
+            if (job.state === 'DONE') {
+              this.loadArtifacts();
+            }
+          }
+        },
+        error: () => {
+          this.stopPolling();
+          this.message = 'Job-Status konnte nicht geladen werden';
         }
       });
     }, 1500);
@@ -676,7 +706,13 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private loadArtifacts(): void {
     if (this.scenario?.id) {
-      this.api.listArtifacts(this.scenario.id).subscribe(list => this.artifacts = list);
+      this.api.listArtifacts(this.scenario.id).subscribe({
+        next: list => this.artifacts = list,
+        error: () => {
+          this.artifacts = [];
+          this.message = 'Artefakte konnten nicht geladen werden';
+        }
+      });
       this.loadSimulation();
       this.api.artifactJson(this.scenario.id, 'mobilecity/summary.json')
         .subscribe({ next: s => this.mobileCity = s, error: () => this.mobileCity = null });

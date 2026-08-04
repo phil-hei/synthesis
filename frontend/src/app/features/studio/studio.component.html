@@ -5,11 +5,12 @@
     <section class="block">
       <div class="block-head">
         <h2>Szenario</h2>
-        <button (click)="newScenario()" title="Leeres Szenario anlegen – Region anschließend auf der Karte zeichnen">+ Neu</button>
+        <button (click)="newScenario()" [disabled]="busy"
+          title="Leeres Szenario anlegen – Region anschließend auf der Karte zeichnen">+ Neu</button>
       </div>
       <label>Vorhandenes Szenario laden
         <span class="select-row">
-          <select [(ngModel)]="selectedScenarioId" (change)="onScenarioSelected()"
+          <select [(ngModel)]="selectedScenarioId" (change)="onScenarioSelected()" [disabled]="busy"
             title="Gespeichertes Szenario auswählen und laden">
             <option value="">– Neues Szenario –</option>
             @for (s of scenarios; track s) {
@@ -17,11 +18,14 @@
             }
           </select>
           @if (selectedScenarioId) {
-            <button class="link danger" (click)="deleteSelected()"
+            <button class="link danger" (click)="deleteSelected()" [disabled]="busy"
             title="Ausgewähltes Szenario löschen">✕</button>
           }
         </span>
       </label>
+      @if (scenarioListError) {
+        <p class="message" aria-live="polite">{{ scenarioListError }}</p>
+      }
     </section>
 
     @if (scenario) {
@@ -427,7 +431,7 @@
           title="Startet die Generierungspipeline: Zonen, Attraktivitäten, Bevölkerung, Aktivitäten, Matrizen, Logistik">
           {{ running ? 'Generierung läuft…' : 'Nachfragemodell generieren' }}
         </button>
-        <p class="message">{{ message }}</p>
+        <p class="message" aria-live="polite">{{ message }}</p>
       </section>
     }
   </aside>

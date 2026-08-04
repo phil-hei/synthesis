@@ -826,6 +826,11 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Fixture-freie Komponententests rendern den Vergleich mit und ohne MiD-Spalte sowie die
   Studio-Shell inklusive Leaflet-Karte. **Verifiziert:** `ComparisonControllerTest`,
   Angular/Vitest-Suite 11/11 grün und Produktions-AOT-Build.
+- **✅ Studio-Fehlerzustände sichtbar gemacht (2026-08-04):** Fehler beim Laden von
+  Szenarioliste, Defaults, Upload-Status, Artefakten oder laufendem Job-Polling werden sichtbar
+  gemeldet. Ein gescheitertes Löschen setzt den Busy-Zustand zurück und behält die Auswahl;
+  Polling stoppt beim ersten Statusfehler statt den Backend-Aufruf endlos zu wiederholen.
+  **Verifiziert:** fixture-freie Angular/Vitest-Suite 15/15 grün und Produktions-AOT-Build.
 - Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
   `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,
   vgl. docs/05); GPL-Konformität (Arm's-length-Trennung) dokumentieren.
