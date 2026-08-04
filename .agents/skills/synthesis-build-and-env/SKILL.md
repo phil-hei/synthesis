@@ -349,7 +349,7 @@ Welche Komponente schaltet welches Feature/welchen Test frei? Alle bedingten Tes
 | SUMO (Achse B) | Schritt 2 + Demand-CSV (Schritt-6-Falle) + `rastatt-test.osm` (selbstheilend) | `SumoRunnerTest` | Test übersprungen; Stufe „SUMO (Verkehr)" SKIPPED |
 | ÖV/Bus (Phase C) | Schritt 2 + 4 + Demand-CSV + `kvv-gtfs.zip` + env `SYNTHESIS_TRANSIT_VENV` | `PtIntegrationTest` | Test übersprungen; ÖV-Stufe SKIPPED |
 | GTFS-Verarbeitung isoliert | `kvv-gtfs.zip` | `GtfsCropperTest`, `GtfsSourceTest` | Tests übersprungen |
-| Frontend | Schritt 1 | `npx ng build`; http://localhost:4300 | — |
+| Frontend | Schritt 1 | `npm test`; `npm run build`; http://localhost:4300 | — |
 
 Endabnahme („alles da"): `mvn -o test` mit gesetztem `SUMO_HOME` und
 `SYNTHESIS_TRANSIT_VENV` — **Erwartung: 0 Failures und keine übersprungenen
@@ -365,8 +365,8 @@ voller Frontend-Lauf mit allen Zielmodellen, alle Stufen DONE.
   und Fixture-Pfade aus `backend/src/test/java/de/synthesis/generation/**`;
   `validation/`-Inventar per `ls` verifiziert; KIT-Build-Kette wörtlich aus
   `docs/05-validierung.md`; Rail/Tram-Blocker aus `docs/06-gta-integration-konzept.md`.
-- Verifizierte Kommandos (real ausgeführt, Stand 2026-07-07/-08): Backend-/Frontend-Start,
-  `mvn -o test`, `npx ng build`, `mvn clean` (Finder-Falle), venv-Aufbau (pandas 3.0.3 /
+- Verifizierte Kommandos (real ausgeführt, zuletzt Stand 2026-08-04): Backend-/Frontend-Start,
+  `mvn -o test`, `npm test`, `npm run build`, `mvn clean` (Finder-Falle), venv-Aufbau (pandas 3.0.3 /
   rtree 1.4.1 / pyproj 3.7.2 auf Python 3.14), Ollama-Setup (brew, pull 4,7 GB),
   KVV-GTFS-curl (121 MB).
 - Als „aus der Projekthistorie überliefert, verifizieren" markiert: Rolle des JDK 11 in

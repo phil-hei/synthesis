@@ -154,7 +154,7 @@ Doku-Stand 2026-07-08). Vor einem Release diese Tabelle gegen docs/06 E re-verif
 | Ollama | MIT | ok |
 | **Qwen2.5-7B-Instruct** | Apache-2.0 (echtes Open Source, nicht nur „open weight") | ok. **Llama 3.1 wurde bewusst verworfen** (Llama-Community-Lizenz mit Auflagen; Entscheidung `docs/06` Phase 3a, siehe auch `synthesis-failure-archaeology`). |
 | Spring Boot, Jackson, Commons | Apache-2.0 | ok |
-| Angular 18 / Leaflet / OpenJDK | MIT / BSD-2 / GPL+CE | ok |
+| Angular 21 / Leaflet / OpenJDK | MIT / BSD-2 / GPL+CE | ok |
 | OSM-Daten (Overpass) | ODbL | Attribution „© OpenStreetMap-Mitwirkende" bei Karten-/Datennutzung |
 | **NVBW/MobiData-BW-GTFS** | ODbL | Attribution beachten; bei Nutzung der `shapes.txt` (OSM-abgeleitete Geometrien) ist die Attribution „© OpenStreetMap-Mitwirkende" Pflicht. Hinweis: unser `GtfsCropper` **verwirft `shapes.txt`** derzeit (Stand 2026-07-08, `docs/06` Phase 2/Phase C) – die shapes-Attribution wird erst relevant, wenn das geändert wird. |
 
@@ -188,9 +188,9 @@ Jede publizierte Zahl muss von Dritten (und von uns in 6 Monaten) nachvollziehba
 2. **Seed** – der Szenario-Seed; für GTA gilt das abgeleitete Seed-Schema
    (`scenario.seed*31 + persona.hashCode`) als Teil des Protokolls.
 3. **Commit-Hash** – `git rev-parse HEAD` des Standes, mit dem gerechnet wurde.
-4. **Versionsliste** (die Pins, Stand 2026-07-08 – vor Publikation re-verifizieren):
+4. **Versionsliste** (die Pins, Stand 2026-08-04 – vor Publikation re-verifizieren):
    SUMO **1.26**, Ollama-Modell **qwen2.5:7b-instruct**, mobiTopp legacy **0.3.580**,
-   GraphHopper **8.0**, Java 21 / Spring Boot 3.5.5, Angular 18.2; plus Ollama-Version und
+   GraphHopper **8.0**, Java 21 / Spring Boot 3.5.5, Angular 21.2; plus Ollama-Version und
    Hardware (LLM-Reproduzierbarkeit ist backendgebunden, siehe Abschnitt 2d).
 5. **Kennzahlen-Extraktion über Skripte** aus `synthesis-diagnostics-and-tooling` – keine
    handgelesenen Zahlen aus UI-Panels in Papers.

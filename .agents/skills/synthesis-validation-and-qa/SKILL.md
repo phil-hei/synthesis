@@ -38,8 +38,9 @@ Was „bewiesen" heißt, in absteigender Beweiskraft:
 3. **Code-Lektüre.** Zulässig als Hypothesenquelle, nie als Beweis.
 
 Zusatzregeln:
-- **UI-Behauptungen** brauchen mindestens `cd frontend && npx ng build` (strict AOT ist
-  das Frontend-Gate) und historisch zusätzlich einen Screenshot einer geseedeten Preview.
+- **UI-Behauptungen** brauchen mindestens `cd frontend && npm test` sowie
+  `cd frontend && npm run build` (Interaktionstests plus strict AOT sind das Frontend-Gate)
+  und historisch zusätzlich einen Screenshot einer geseedeten Preview.
 - **„Läuft bei mir" zählt nicht.** Das ausgeführte Kommando plus die konkrete Zahl
   (Fahrzeuge, Trips, RMSE, Dateigröße) gehört in die Doku bzw. Commit-Message.
 
@@ -78,7 +79,7 @@ Vitest-Runner (15 Tests, Stand 2026-08-04):
 Verifizierte Kommandos:
 
 ```bash
-cd backend && mvn -o test                       # 118 Testfälle, externe Tests ggf. geskippt
+cd backend && mvn -o test                       # 120 Testfälle, externe Tests ggf. geskippt
 mvn -o test -Dtest=SumoRunnerTest               # nur SUMO-Kette
 SUMO_HOME=… SYNTHESIS_TRANSIT_VENV=validation/transit-venv/bin/python \
   mvn -o test -Dtest=PtIntegrationTest          # voller ÖV-Test (~23 min überliefert)

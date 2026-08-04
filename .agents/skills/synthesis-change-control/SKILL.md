@@ -3,7 +3,7 @@ name: synthesis-change-control
 description: >
   Change-Control-Runbook für das SyntheSis-Repo: Wie Änderungen klassifiziert, abgesichert,
   committet und dokumentiert werden. Laden, WENN du (a) Code oder Doku ändern/committen/mergen
-  willst, (b) wissen musst, welche Gates (mvn -o test, npx ng build) vor einem Commit grün sein
+  willst, (b) wissen musst, welche Gates (mvn -o test, npm test, npm run build) vor einem Commit grün sein
   müssen, (c) ein neues Feature/Flag/Pipeline-Stufe planst, (d) ein externes Tool (SUMO, gtfs2pt,
   duarouter, Ollama, GraphHopper) integrieren willst, (e) git push / GitHub Desktop / GitLab-Remote
   Fragen hast, (f) unsicher bist, ob validation/ angefasst werden darf, oder (g) wissen musst,
@@ -64,7 +64,7 @@ baut oder fachlich modelliert.
 ```bash
 # Gate 1 – Backend-Testsuite (komplett, offline)
 cd backend && mvn -o test
-# Erwartung (Stand: 2026-08-04): 118 Testfälle grün; 6 umgebungsabhängige
+# Erwartung (Stand: 2026-08-04): 120 Testfälle grün; 6 umgebungsabhängige
 # Testfälle werden ohne externe Laufzeit/Env-Variablen übersprungen – das ist normal.
 
 # Gate 2 – Frontend-Tests + strict-AOT-Build (fängt NG5002/TS2531, die ng serve NICHT fängt)
@@ -111,7 +111,8 @@ Klassifiziere JEDE Änderung zuerst; daraus folgt die Absicherung:
 ### 2. Kein Merge/Commit ohne grüne Gates
 
 - **Regel:** Vor jedem Commit mit Code-Anteil: `cd backend && mvn -o test` UND
-  `cd frontend && npx ng build` (je nach Änderungsklasse, siehe Tabelle; im Zweifel beide).
+  `cd frontend && npm test` sowie `cd frontend && npm run build` (je nach Änderungsklasse,
+  siehe Tabelle; im Zweifel alle drei Gates).
 - **Rationale:** Der strict-AOT-Build fängt Fehlerklassen, die im Dev-Server unsichtbar bleiben.
 - **Vorfall (überliefert, 2026-07-02):** Typographische Anführungszeichen „…" in einem
   HTML-`title`-Attribut brachen den AOT-Build (NG5002) – im laufenden `ng serve` fiel nichts auf.
@@ -179,7 +180,7 @@ Klassifiziere JEDE Änderung zuerst; daraus folgt die Absicherung:
 ## Checkliste vor jedem Commit
 
 1. [ ] Änderungsklasse bestimmt (Tabelle oben)?
-2. [ ] Pflicht-Gates der Klasse grün (`mvn -o test` / `npx ng build`)?
+2. [ ] Pflicht-Gates der Klasse grün (`mvn -o test` / `npm test` / `npm run build`)?
 3. [ ] Bei neuem Feature: Flag in `Scenario.java` mit `default=false`? Fehlerpfad setzt `FAILED`,
    Tool-Abwesenheit `SKIPPED`?
 4. [ ] Bei externem Tool: Spike über die ganze Kette gelaufen? Runner mit `isAvailable()`?
