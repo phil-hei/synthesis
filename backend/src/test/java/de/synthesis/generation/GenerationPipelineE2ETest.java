@@ -94,7 +94,8 @@ class GenerationPipelineE2ETest {
                 "population/commuters.csv",
                 "matrix/travel_times/CAR_TTC.mtx.bz2", "matrix/other/CAR_DIS.mtx.bz2",
                 "legacy/demand-data/person.csv", "legacy/matrices/matrix-configuration.yaml",
-                "mobilecity/REGdistricts.csv", "mobilecity/summary.json",
+                "mobilecity/REGdistricts.csv", "mobilecity/TECCarFleet.csv",
+                "mobilecity/summary.json",
                 "mobilecity/districts.shp", "mobilecity/districts.shx",
                 "mobilecity/districts.dbf", "mobilecity/districts.prj",
                 "manifest.json")) {

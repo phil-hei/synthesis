@@ -853,11 +853,14 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
       (Motivation/Description/Specifics). Status-Workflow: 0 = offen, 1 = KIT definiert,
       2 = Takomat implementiert. Referenzbeispiel: 10 KVV.MyShuttle-Bediengebiete (BEV
       „London Taxi", Abend-/Nachtbetrieb).
-    - **Konsequenzen für uns (Folge-Items):** (a) **TECCarFleet-Beitrag machbar:**
-      `stock.total` je District können wir direkt aus unserer synthetischen Population liefern
-      (car.csv × household.homeZone → 6. MobileCity-Exporttabelle im EpigeneCSV-Stil);
+    - **Konsequenzen für uns (Folge-Items):** (a) **✅ TECCarFleet-Beitrag umgesetzt
+      (2026-08-04):** `MobileCityExporter` liefert `stock.total` je District direkt aus der
+      synthetischen Population (`car.csv` × `household.homeZone`) als 6. MobileCity-Exporttabelle
+      im EpigeneCSV-Stil;
       `registrations`/`shareElectric` bewusst NICHT (keine Neuzulassungs-/Antriebsmix-
-      Modellierung) → Takomat-Defaults. (b) **Maßnahmen-Evidenz-Export (Konzept):** die
+      Modellierung) → Takomat-Defaults. `MobileCityExporterTest` emuliert den Fremdparser und
+      prüft Tabellenname, Basisjahr und District-Zählung; die Offline-E2E-Pipeline fordert das
+      Artefakt. (b) **Maßnahmen-Evidenz-Export (Konzept):** die
       ±3-Wirkungs-Scores sind grob — unser Szenario-Vergleich liefert die quantitative
       Grundlage je Maßnahme (Basis- vs. Maßnahmen-Szenario → Δ CO₂ aus SUMO/HBEFA,
       Δ Modal-Split, Δ km), aus der KIT/Takomat Scores und `parameterFile`-Inhalte ableiten
@@ -874,8 +877,7 @@ Emissions-/Netzlast-KPIs und Nachfrage↔Netz-Feedback (alle ✅), GTA-Verhalten
 Cache, Reproduzierbarkeit), LLM-Moduswahl, Was-wäre-wenn-Szenarien mit Agenten-Begründungen.
 Offen: **Phase 4** (Produktiv-Härtung: Lauf-Projekte als feste Abhängigkeit/Container, self-hosted
 Overpass). Optionale nächste Bausteine aus der TEC-/Governance-Analyse (2026-07-16, s. Phase 5):
-**TECCarFleet-Export** (klein: `stock.total` je District aus car.csv/household.csv als 6.
-MobileCity-Tabelle) und **Maßnahmen-Evidenz-Export** (Konzept: Szenario-Deltas als quantitative
+**Maßnahmen-Evidenz-Export** (Konzept: Szenario-Deltas als quantitative
 Grundlage für ME-Wirkungs-Scores — vor Umsetzung mit Takomat/KIT abstimmen). Aus der
 INSPIRE-Schiene weiter offen: Zensus-Direktzuordnung (Rasterzelle→INSPIRE-Zone ohne Re-Gridding)
 und INSPIRE-Zell-IDs als MobileCity-`districtId` statt `SYN-NNN`.

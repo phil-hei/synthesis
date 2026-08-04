@@ -732,6 +732,10 @@ Demand-Tabellen: `REGdistricts.csv` (Zone→District, intern=Typ 1 / extern=Typ 
 normiert), `POPinhabitants.csv` (Children/Adults/Seniors je District je Basisjahr, aus der
 KIT-Altersstruktur) und `POPtrips.csv` (mittlere Wege/Person·Tag je Altersgruppe × Zweck aus den
 Aktivitätenplänen; jede Aktivitäts-Transition = ein Weg, Heimweg behält den Herkunftszweck).
+Seit 2026-08-04 ergänzt `TECCarFleet.csv` als fünfte Fachtabelle den privaten Pkw-Bestand
+`stock.total` je District im Basisjahr. Die Aggregation zählt `car.csv` über den Haushaltseigentümer
+und `household.homeZone`; Neuzulassungen und Elektroanteile werden mangels kalibrierter Daten bewusst
+nicht erzeugt und bleiben Takomat-Defaults.
 **Verifiziert**: 64 Districts (56 intern/8 extern), Attraktivitäts-Scores 0..100 (genau ein 100 je
 Purpose), Einwohner 6.042 = 907 Kinder/3.538 Erwachsene/1.597 Senioren (= KIT-Demografie). POPtrips
 trifft die Karlsruhe-Referenz: **Erwachsene 3,44 (Ref 3,38), Senioren 3,04 (Ref 2,99)** Wege/Tag,
@@ -754,6 +758,11 @@ Enum-Werte exakt (Children/Adults/Seniors, Education/Work/Shopping/Leisure). Mit
 Parser-Emulation (repliziert die Block-/emptyLine-Logik) bestätigt: alle vier `FindTable`-Aufrufe
 greifen, Spalten/Zeilen/Werte korrekt. **Mit Takomat abzustimmen**: NUTS3-District-IDs (statt
 `SYN-NNN`), vollständiger Study-Area-Import (Netz/TEC/MOD), Messagepack via Config Tool (.NET 8).
+
+**TECCarFleet verifiziert (2026-08-04):** `MobileCityExporterTest` emuliert die gepaddete
+EpigeneCSV-Blocklogik unabhängig vom Writer, findet exakt `stock.total` mit Header
+`districtID,2025` und weist Mehrfach-Pkw sowie das Ignorieren unbekannter Haushaltszonen nach.
+`GenerationPipelineE2ETest` fordert das Artefakt in der vollständigen Offline-Pipeline.
 
 ## Distanz-Kalibrierung über drei Seeds (2026-07-27) — teilweise wirksam
 
@@ -830,19 +839,22 @@ Kalibrierung mit getrennten Hebeln sinnvoll.
 ## Offene Punkte (nächste Schritte)
 
 1. **MobileCity finalisieren** (Takomat): Parser-Anforderungen klären (Jahresspalten, NUTS3-IDs),
-   alle vier Demand-Tabellen in die MobileCity Config Tool importieren/validieren, Messagepack-
-   Konvertierung; ggf. Netz-/TEC-/MOD-Tabellen für einen vollständigen Study-Area-Import.
+   die vorhandenen Demand- und Geometrietabellen im MobileCity Config Tool importieren/validieren,
+   Messagepack-Konvertierung sowie Defaults für Netz-/TEC-/MOD-Tabellen für einen vollständigen
+   Study-Area-Import mit Takomat festlegen.
 2. **Routing-Zuverlässigkeit (Produktiv)**: szenariogebundener, validierter OSM-XML-Upload ist
    umgesetzt; offen bleiben Auto-Clip/Cache und eine vollständig bewiesene PBF-Kette.
-3. **populationsynthesis-Anbindung** entlang einer der beiden Pfade oben (Datenentscheidung nötig:
-   Deutschland-Pfad mit Zensus-Tabellen vs. generischer Seed-Pfad).
-2. **Wahlmodell-Kalibrierung**: Distanz-Sensitivität der Zielwahl (Rastatt-kalibriert) deckelt
-   Weglänge; größtes verbleibendes Plausibilitäts-Thema (Fuß über, MIV-Fahrer unter MiD).
-3. **MobileCity-Schnittstelle (Takomat)**: erzeugte Nachfrage/Touren in die Network Pipeline
-   exportieren — eigentliches Projektziel; Import-Format mit Takomat klären.
-4. Tutorial nutzt zone-`id`-Lookup für Bikesharing-Stationen → bei eigenen Zonen-IDs werden
+3. **Populationsdaten verbreitern**: Der generische Seed-Pfad ist umgesetzt; ein direkter
+   Deutschland-Pfad über ARS-Geometrien und Zensus-Regionaltabellen bleibt eine optionale,
+   datenabhängige Erweiterung.
+4. **Distanz-/Moduskalibrierung übertragen**: Arbeitsplatz-Randwert und BA-Außenanker sind für
+   Rastatt befördert; offen sind der Mehrregionen-Beleg und eine produktive
+   Langweg-Moduskalibrierung.
+5. **Bikesharing-Zonenreferenz**: Das Tutorial nutzt einen zone-`id`-Lookup für Stationen; bei
+   eigenen Zonen-IDs werden
    die Rastatt-Stationen verworfen (nur WARNING, kein Fehler).
-5. KIT-Kontakt: Migrationsstand logiTopp → neuer Kern; offizielles Aktivitätsset mit 23/71.
+6. **Externe Klärungen**: KIT-Kontakt zu logiTopp-Migration, actitoppNG-Lizenz und offiziellem
+   Aktivitätsset; Takomat-Klärung zu den noch benötigten MobileCity-Defaults.
 
 ## Reproduktion
 

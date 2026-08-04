@@ -20,9 +20,10 @@ import java.util.Map;
  * (districtType 1) and external zones the surrounding (0).
  *
  * <p>Output under {@code artifacts/mobilecity/}: REGdistricts.csv, REGattractivity.csv,
- * POPinhabitants.csv — in the column structure of the MobileCity Config Tool import
- * tables (see Network Pipeline / Includes/StudyAreas). District ids are synthetic
- * ({@code SYN-NNN}); for a real study area they are replaced by NUTS3-coded ids.
+ * POPinhabitants.csv, POPtrips.csv and the evidenced part of TECCarFleet.csv — in the
+ * column structure of the MobileCity Config Tool import tables (see Network Pipeline /
+ * Includes/StudyAreas). District ids are synthetic ({@code SYN-NNN}); for a real study
+ * area they are replaced by NUTS3-coded ids.
  */
 public class MobileCityExporter {
 
@@ -44,22 +45,25 @@ public class MobileCityExporter {
         Files.createDirectories(dir);
         long[][] ageByZone = countAgeGroups(artifactsDir.resolve("population"));
         double[][] rates = countTripRates(artifactsDir.resolve("population"));
+        long[] carsByZone = countCarStock(artifactsDir.resolve("population"));
 
         writeStudyAreaConfig(dir.resolve("StudyAreaConfig.csv"));
         writeDistricts(dir.resolve("REGdistricts.csv"));
         writeAttractivity(dir.resolve("REGattractivity.csv"));
         writeInhabitants(dir.resolve("POPinhabitants.csv"), ageByZone);
         writeTrips(dir.resolve("POPtrips.csv"), rates);
+        writeCarFleet(dir.resolve("TECCarFleet.csv"), carsByZone);
         // District-Geometrien als Shapefile (WGS84, Attribut districtID) – laut Takomat
         // (2026-07-03) das erwartete Importformat; IDs müssen zu REGdistricts passen.
         ShapefileWriter.writeRectangles(dir.resolve("districts"), zones, "districtID",
                 MobileCityExporter::districtId);
-        writeSummary(dir.resolve("summary.json"), ageByZone, rates);
-        return 9; // 5 Tabellen + districts.shp/.shx/.dbf/.prj
+        writeSummary(dir.resolve("summary.json"), ageByZone, rates, carsByZone);
+        return 10; // 6 Tabellen + districts.shp/.shx/.dbf/.prj
     }
 
     /** Compact summary for the frontend MobileCity panel (counts + KPIs). */
-    private void writeSummary(Path file, long[][] ageByZone, double[][] rates) throws IOException {
+    private void writeSummary(Path file, long[][] ageByZone, double[][] rates,
+                              long[] carsByZone) throws IOException {
         long studyArea = zones.stream().filter(z -> !z.external).count();
         long[] inhabitants = new long[3];
         for (Zone zone : zones) {
@@ -70,9 +74,15 @@ public class MobileCityExporter {
             }
         }
         long total = inhabitants[0] + inhabitants[1] + inhabitants[2];
+        long cars = 0;
+        for (Zone zone : zones) {
+            if (!zone.external) {
+                cars += carsByZone[zone.index];
+            }
+        }
         StringBuilder json = new StringBuilder();
         json.append("{\n");
-        json.append("  \"tables\": 5,\n");
+        json.append("  \"tables\": 6,\n");
         json.append("  \"districts\": {\"total\": ").append(zones.size())
                 .append(", \"studyArea\": ").append(studyArea)
                 .append(", \"surrounding\": ").append(zones.size() - studyArea).append("},\n");
@@ -80,6 +90,7 @@ public class MobileCityExporter {
                 .append(", \"adults\": ").append(inhabitants[1])
                 .append(", \"seniors\": ").append(inhabitants[2])
                 .append(", \"total\": ").append(total).append("},\n");
+        json.append("  \"privateCars\": ").append(cars).append(",\n");
         json.append("  \"tripsPerDay\": {\"children\": ").append(round2(groupSum(rates, 0)))
                 .append(", \"adults\": ").append(round2(groupSum(rates, 1)))
                 .append(", \"seniors\": ").append(round2(groupSum(rates, 2))).append("}\n");
@@ -208,6 +219,25 @@ public class MobileCityExporter {
         }
     }
 
+    // --- TECCarFleet -----------------------------------------------------------
+
+    /**
+     * Private passenger-car stock by district for the scenario reference year.
+     * Registrations and electric shares are deliberately absent: the population
+     * generator has neither registration events nor a calibrated powertrain mix,
+     * so MobileCity/Takomat defaults remain responsible for those sub-tables.
+     */
+    private void writeCarFleet(Path file, long[] carsByZone) throws IOException {
+        List<String> rows = new ArrayList<>();
+        for (Zone zone : zones) {
+            rows.add(districtId(zone) + "," + carsByZone[zone.index]);
+        }
+        try (Writer w = Files.newBufferedWriter(file)) {
+            fileTitle(w, "TECCarFleet");
+            table(w, "stock.total", "districtID," + BASE_YEAR, rows);
+        }
+    }
+
     // --- MobileCity-Tabellenformat ---------------------------------------------
 
     /**
@@ -315,6 +345,25 @@ public class MobileCityExporter {
             int age = Integer.parseInt(cells[3]);
             int group = age < 18 ? 0 : age < 65 ? 1 : 2;
             counts[zoneIndex][group]++;
+        });
+        return counts;
+    }
+
+    /** Counts generated private cars per household home district. */
+    private long[] countCarStock(Path populationDir) throws IOException {
+        long[] counts = new long[zones.size()];
+        Map<Long, Integer> householdToZone = new HashMap<>();
+        forEachRow(populationDir.resolve("household.csv"), cells -> {
+            Zone zone = zoneById(Long.parseLong(cells[3]));
+            if (zone != null) {
+                householdToZone.put(Long.parseLong(cells[1]), zone.index);
+            }
+        });
+        forEachRow(populationDir.resolve("car.csv"), cells -> {
+            Integer zoneIndex = householdToZone.get(Long.parseLong(cells[0]));
+            if (zoneIndex != null) {
+                counts[zoneIndex]++;
+            }
         });
         return counts;
     }

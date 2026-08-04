@@ -34,7 +34,7 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | 6 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle; Netzquelle Szenario-OSM-XML → Serverdatei → Overpass, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
 | 7 | Logistik | Depots, Packstationen, Paketnachfrage sowie optionale Kundenretouren als Pickup-Nachfrage | `distribution-centers.csv`, `cepsp-shares.csv`, `parcel-demand-config.yaml` |
 | 8 | Legacy-Export | Umwandlung in das logiTopp-Legacy-Format | `legacy/…` |
-| 9 | **MobileCity-Export (B)** | District-aggregierte Config-Tabellen | `mobilecity/` (5 CSV + `summary.json`) |
+| 9 | **MobileCity-Export (B)** | District-aggregierte Config-Tabellen inkl. privatem Pkw-Bestand | `mobilecity/` (6 CSV + Shapefile + `summary.json`) |
 | 10 | Manifest | Lauf-Metadaten | `manifest.json` |
 | 11 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete, experimentell inkl. Kundenretouren als Abholaufträge (+ optional Kalibrierungsschleife); normalisiert die simulierten Personenwege einmal in den nativen Demand-Vertrag | `demandsimulationResult.csv`, `demand/{metadata.json,person-trips.csv,legs.csv,zone-flows.csv,od-flows.csv}`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
 | 12 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-, Rad- und Fuß-Trips** der Nachfrage + **Zustelltouren** (Lkw/Lastenrad) + optional **ÖV/Bus** (GTFS → `gtfs2pt.py`, intermodal); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp inkl. Bus) | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte) |

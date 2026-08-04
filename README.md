@@ -117,6 +117,6 @@ Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
    (`mobiTopp_legacy` + `logitopp`) der gangbare Weg; mittelfristig Abstimmung mit dem KIT IFV.
 3. **Generik über drei Achsen:** austauschbare Daten-Provider je Datenebene (echt → öffentlich → synthetisch),
    ein deklaratives Szenario-Schema, und Export-Adapter (MobileCity, CSV/GeoJSON, später MATSim).
-4. **MobileCity-Integration über definierte Artefakte:** unsere Zonierung liefert exakt die District-Inputs
-   (GPKG + Excel), die die bestehenden Network-Pipelines (Car/Bike/Transit → OLC Mapper → Config Tool)
-   erwarten; die Nachfrageergebnisse (Wege, Pakettouren) werden als zusätzlicher Export-Adapter angebunden.
+4. **MobileCity-Integration über definierte Artefakte:** unsere Zonierung liefert District-Geometrien
+   als WGS84-Shapefile und aggregierte EpigeneCSV-Tabellen für Bevölkerung, Wege, Attraktivitäten und
+   privaten Pkw-Bestand; Netz-/TEC-/MOD-Defaults und Messagepack-Import bleiben mit Takomat abzustimmen.

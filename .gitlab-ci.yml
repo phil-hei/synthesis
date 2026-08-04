@@ -1,0 +1,36 @@
+stages:
+  - test
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+
+backend-tests:
+  stage: test
+  image: maven:3.9.11-eclipse-temurin-21
+  cache:
+    key: maven
+    paths:
+      - .m2/repository/
+  script:
+    - cd backend
+    - mvn --batch-mode test
+  artifacts:
+    when: always
+    reports:
+      junit: backend/target/surefire-reports/TEST-*.xml
+
+frontend-tests-and-build:
+  stage: test
+  image: node:20
+  cache:
+    key:
+      files:
+        - frontend/package-lock.json
+    paths:
+      - .npm/
+  script:
+    - cd frontend
+    - npm ci
+    - npm test
+    - npm run build

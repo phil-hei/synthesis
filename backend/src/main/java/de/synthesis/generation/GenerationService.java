@@ -667,7 +667,7 @@ public class GenerationService {
         }
         int files = new MobileCityExporter(ctx.zones).export(ctx.artifacts);
         job.log(files + " MobileCity-Config-Tabellen (REGdistricts/REGattractivity/"
-                + "POPinhabitants) unter mobilecity/ geschrieben");
+                + "POPinhabitants/POPtrips/TECCarFleet) unter mobilecity/ geschrieben");
     }
 
     // --- Stufe 10: Manifest ----------------------------------------------------------------

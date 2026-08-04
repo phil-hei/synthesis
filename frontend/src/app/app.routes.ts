@@ -1,9 +1,15 @@
 import { Routes } from '@angular/router';
-import { StudioComponent } from './features/studio/studio.component';
-import { ComparisonComponent } from './features/comparison/comparison.component';
 
 export const routes: Routes = [
-  { path: '', component: StudioComponent },
-  { path: 'vergleich', component: ComparisonComponent },
+  {
+    path: '',
+    loadComponent: () => import('./features/studio/studio.component')
+      .then(module => module.StudioComponent)
+  },
+  {
+    path: 'vergleich',
+    loadComponent: () => import('./features/comparison/comparison.component')
+      .then(module => module.ComparisonComponent)
+  },
   { path: '**', redirectTo: '' }
 ];
