@@ -2,204 +2,322 @@
   <aside class="picker">
     <h2>Szenarien wählen</h2>
     <p class="hint">Mehrere Szenarien zum Vergleich auswählen. KPIs erscheinen für Szenarien
-      mit abgeschlossener Simulation (Pipeline-Stufe „Simulation").</p>
-    <label class="pick" *ngFor="let s of scenarios">
-      <input type="checkbox" [(ngModel)]="selected[s.id!]">
-      {{ s.name }}
-    </label>
+    mit abgeschlossener Simulation (Pipeline-Stufe „Simulation").</p>
+    @for (s of scenarios; track s) {
+      <label class="pick">
+        <input type="checkbox" [(ngModel)]="selected[s.id!]">
+        {{ s.name }}
+      </label>
+    }
     <button class="primary" (click)="loadComparison()" [disabled]="selectedIds.length === 0">
       Vergleichen ({{ selectedIds.length }})
     </button>
-    <p class="message" *ngIf="message">{{ message }}</p>
+    @if (message) {
+      <p class="message">{{ message }}</p>
+    }
   </aside>
 
   <main class="result">
-    <p class="placeholder" *ngIf="entries.length === 0">
-      Szenarien links auswählen und „Vergleichen" klicken.
-    </p>
+    @if (entries.length === 0) {
+      <p class="placeholder">
+        Szenarien links auswählen und „Vergleichen" klicken.
+      </p>
+    }
 
-    <table class="compare" *ngIf="entries.length > 0">
-      <thead>
-        <tr>
-          <th>Kennwert</th>
-          <th *ngFor="let e of entries">{{ e.name }}</th>
-          <th class="mid-col" *ngIf="mid">MiD 2017</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="group"><td [attr.colspan]="entries.length + 2">Parameter</td></tr>
-        <tr>
-          <td>Zellgröße</td>
-          <td *ngFor="let e of entries">{{ e.params.cellSizeMeters }} m</td>
-          <td *ngIf="mid"></td>
-        </tr>
-        <tr>
-          <td>Stichprobenanteil</td>
-          <td *ngFor="let e of entries">{{ e.params.samplingFraction }}</td>
-          <td *ngIf="mid"></td>
-        </tr>
-        <tr>
-          <td>Echtes Routing</td>
-          <td *ngFor="let e of entries">{{ e.params.useRealRouting ? 'ja' : 'Luftlinie' }}</td>
-          <td *ngIf="mid"></td>
-        </tr>
-        <tr>
-          <td>Pakete/Person·Woche</td>
-          <td *ngFor="let e of entries">{{ e.params.parcelsPerPersonWeek }}</td>
-          <td *ngIf="mid"></td>
-        </tr>
-        <tr>
-          <td>Kundenretouren</td>
-          <td *ngFor="let e of entries">
-            {{ e.params.returnsEnabled ? pct(e.params.returnShare) : 'aus' }}
-          </td>
-          <td *ngIf="mid"></td>
-        </tr>
-        <tr>
-          <td>Depots</td>
-          <td *ngFor="let e of entries">{{ e.params.depots }}</td>
-          <td *ngIf="mid"></td>
-        </tr>
-
-        <tr class="group"><td [attr.colspan]="entries.length + 2">Nachfrage</td></tr>
-        <tr>
-          <td>Wege gesamt</td>
-          <td *ngFor="let e of entries">{{ e.kpis?.demand?.trips != null ? (e.kpis.demand.trips | number:'1.0-0') : '–' }}</td>
-          <td class="mid-col" *ngIf="mid">–</td>
-        </tr>
-        <tr>
-          <td>Wege/Person·Tag</td>
-          <td *ngFor="let e of entries">{{ e.kpis?.demand?.tripsPerPersonDay ?? '–' }}</td>
-          <td class="mid-col" *ngIf="mid">{{ mid.tripsPerPersonDay }}</td>
-        </tr>
-        <tr>
-          <td>Ø Weglänge</td>
-          <td *ngFor="let e of entries">{{ e.kpis?.demand?.avgTripKm != null ? e.kpis.demand.avgTripKm + ' km' : '–' }}</td>
-          <td class="mid-col" *ngIf="mid">{{ mid.avgTripKm }} km</td>
-        </tr>
-
-        <ng-container *ngIf="distanceBandRows.length > 0">
-          <tr class="group"><td [attr.colspan]="entries.length + 2">Distanzverteilung</td></tr>
+    @if (entries.length > 0) {
+      <table class="compare">
+        <thead>
           <tr>
-            <td>RMSE zu MiD</td>
-            <td *ngFor="let e of entries">{{ e.kpis?.demand?.distanceBandRmseToMid2017 ?? '–' }}</td>
-            <td class="mid-col" *ngIf="mid">0</td>
+            <th>Kennwert</th>
+            @for (e of entries; track e) {
+              <th>{{ e.name }}</th>
+            }
+            @if (mid) {
+              <th class="mid-col">MiD 2017</th>
+            }
           </tr>
-          <tr *ngFor="let band of distanceBandRows">
-            <td>{{ band.label }}</td>
-            <td *ngFor="let e of entries">{{ pct1(e.kpis?.demand?.distanceBands?.[band.key]) }}</td>
-            <td class="mid-col" *ngIf="mid">{{ pct1(mid.distanceBands?.[band.key]) }}</td>
-          </tr>
-        </ng-container>
-
-        <tr class="group"><td [attr.colspan]="entries.length + 2">Modal Split</td></tr>
-        <tr *ngFor="let key of modeKeys">
-          <td>{{ modeLabel(key) }}</td>
-          <td *ngFor="let e of entries">{{ pct(e.kpis?.demand?.modalSplit?.[key]) }}</td>
-          <td class="mid-col" *ngIf="mid">{{ pct(mid.modalSplit?.[key]) }}</td>
-        </tr>
-
-        <ng-container *ngIf="hasModeDistanceKpis">
-          <tr class="group">
-            <td [attr.colspan]="entries.length + 2">Modus × Distanz</td>
+        </thead>
+        <tbody>
+          <tr class="group"><td [attr.colspan]="entries.length + 2">Parameter</td></tr>
+          <tr>
+            <td>Zellgröße</td>
+            @for (e of entries; track e) {
+              <td>{{ e.params.cellSizeMeters }} m</td>
+            }
+            @if (mid) {
+              <td></td>
+            }
           </tr>
           <tr>
-            <td>Gemeinsamer 30-Zellen-RMSE zu MiD</td>
-            <td *ngFor="let e of entries">
-              {{ e.kpis?.demand?.modeDistanceJointRmseToMid2017 ?? '–' }}
-            </td>
-            <td class="mid-col" *ngIf="mid">0</td>
+            <td>Stichprobenanteil</td>
+            @for (e of entries; track e) {
+              <td>{{ e.params.samplingFraction }}</td>
+            }
+            @if (mid) {
+              <td></td>
+            }
           </tr>
-        </ng-container>
-
-        <tr class="group"><td [attr.colspan]="entries.length + 2">Logistik</td></tr>
-        <tr>
-          <td>Zustellaufträge</td>
-          <td *ngFor="let e of entries">{{ deliveryGenerated(e) != null
-            ? (deliveryGenerated(e) | number:'1.0-0') : '–' }}</td>
-          <td *ngIf="mid"></td>
-        </tr>
-        <tr>
-          <td>Zustellquote</td>
-          <td *ngFor="let e of entries">{{ pct(deliveryRate(e)) }}</td>
-          <td *ngIf="mid"></td>
-        </tr>
-        <ng-container *ngIf="hasLogisticsKpis">
           <tr>
-            <td>Zustell-Rückläufer</td>
-            <td *ngFor="let e of entries">{{ e.kpis?.logistics?.deliveries?.failedReturning != null
-              ? (e.kpis.logistics.deliveries.failedReturning | number:'1.0-0') : '–' }}</td>
-            <td *ngIf="mid"></td>
+            <td>Echtes Routing</td>
+            @for (e of entries; track e) {
+              <td>{{ e.params.useRealRouting ? 'ja' : 'Luftlinie' }}</td>
+            }
+            @if (mid) {
+              <td></td>
+            }
+          </tr>
+          <tr>
+            <td>Pakete/Person·Woche</td>
+            @for (e of entries; track e) {
+              <td>{{ e.params.parcelsPerPersonWeek }}</td>
+            }
+            @if (mid) {
+              <td></td>
+            }
           </tr>
           <tr>
             <td>Kundenretouren</td>
-            <td *ngFor="let e of entries">{{ e.kpis?.logistics?.customerReturns?.generated != null
-              ? (e.kpis.logistics.customerReturns.generated | number:'1.0-0') : '–' }}</td>
-            <td *ngIf="mid"></td>
+            @for (e of entries; track e) {
+              <td>
+                {{ e.params.returnsEnabled ? pct(e.params.returnShare) : 'aus' }}
+              </td>
+            }
+            @if (mid) {
+              <td></td>
+            }
           </tr>
           <tr>
-            <td>Abholungen geplant</td>
-            <td *ngFor="let e of entries">{{ e.kpis?.logistics?.customerReturns?.plannedPickups != null
-              ? (e.kpis.logistics.customerReturns.plannedPickups | number:'1.0-0') : '–' }}</td>
-            <td *ngIf="mid"></td>
+            <td>Depots</td>
+            @for (e of entries; track e) {
+              <td>{{ e.params.depots }}</td>
+            }
+            @if (mid) {
+              <td></td>
+            }
+          </tr>
+          <tr class="group"><td [attr.colspan]="entries.length + 2">Nachfrage</td></tr>
+          <tr>
+            <td>Wege gesamt</td>
+            @for (e of entries; track e) {
+              <td>{{ e.kpis?.demand?.trips != null ? (e.kpis.demand.trips | number:'1.0-0') : '–' }}</td>
+            }
+            @if (mid) {
+              <td class="mid-col">–</td>
+            }
           </tr>
           <tr>
-            <td>Retouren eingesammelt</td>
-            <td *ngFor="let e of entries">{{ e.kpis?.logistics?.customerReturns?.collected != null
-              ? (e.kpis.logistics.customerReturns.collected | number:'1.0-0') : '–' }}</td>
-            <td *ngIf="mid"></td>
+            <td>Wege/Person·Tag</td>
+            @for (e of entries; track e) {
+              <td>{{ e.kpis?.demand?.tripsPerPersonDay ?? '–' }}</td>
+            }
+            @if (mid) {
+              <td class="mid-col">{{ mid.tripsPerPersonDay }}</td>
+            }
           </tr>
           <tr>
-            <td>Abholquote</td>
-            <td *ngFor="let e of entries">{{ pct(e.kpis?.logistics?.customerReturns?.collectionRate) }}</td>
-            <td *ngIf="mid"></td>
+            <td>Ø Weglänge</td>
+            @for (e of entries; track e) {
+              <td>{{ e.kpis?.demand?.avgTripKm != null ? e.kpis.demand.avgTripKm + ' km' : '–' }}</td>
+            }
+            @if (mid) {
+              <td class="mid-col">{{ mid.avgTripKm }} km</td>
+            }
           </tr>
-        </ng-container>
-
-        <ng-container *ngIf="hasSumo">
-          <tr class="group"><td [attr.colspan]="entries.length + 2">Verkehr &amp; Emissionen (SUMO)</td></tr>
+          @if (distanceBandRows.length > 0) {
+            <tr class="group"><td [attr.colspan]="entries.length + 2">Distanzverteilung</td></tr>
+            <tr>
+              <td>RMSE zu MiD</td>
+              @for (e of entries; track e) {
+                <td>{{ e.kpis?.demand?.distanceBandRmseToMid2017 ?? '–' }}</td>
+              }
+              @if (mid) {
+                <td class="mid-col">0</td>
+              }
+            </tr>
+            @for (band of distanceBandRows; track band) {
+              <tr>
+                <td>{{ band.label }}</td>
+                @for (e of entries; track e) {
+                  <td>{{ pct1(e.kpis?.demand?.distanceBands?.[band.key]) }}</td>
+                }
+                @if (mid) {
+                  <td class="mid-col">{{ pct1(mid.distanceBands?.[band.key]) }}</td>
+                }
+              </tr>
+            }
+          }
+          <tr class="group"><td [attr.colspan]="entries.length + 2">Modal Split</td></tr>
+          @for (key of modeKeys; track key) {
+            <tr>
+              <td>{{ modeLabel(key) }}</td>
+              @for (e of entries; track e) {
+                <td>{{ pct(e.kpis?.demand?.modalSplit?.[key]) }}</td>
+              }
+              @if (mid) {
+                <td class="mid-col">{{ pct(mid.modalSplit?.[key]) }}</td>
+              }
+            </tr>
+          }
+          @if (hasModeDistanceKpis) {
+            <tr class="group">
+              <td [attr.colspan]="entries.length + 2">Modus × Distanz</td>
+            </tr>
+            <tr>
+              <td>Gemeinsamer 30-Zellen-RMSE zu MiD</td>
+              @for (e of entries; track e) {
+                <td>
+                  {{ e.kpis?.demand?.modeDistanceJointRmseToMid2017 ?? '–' }}
+                </td>
+              }
+              @if (mid) {
+                <td class="mid-col">0</td>
+              }
+            </tr>
+          }
+          <tr class="group"><td [attr.colspan]="entries.length + 2">Logistik</td></tr>
           <tr>
-            <td>Fahrzeuge (simuliert)</td>
-            <td *ngFor="let e of entries">{{ e.sumo?.vehicles != null ? (e.sumo.vehicles | number:'1.0-0') : '–' }}</td>
-            <td *ngIf="mid"></td>
-          </tr>
-          <tr title="Zustelltouren-Legs (Lkw/Lastenrad) aus logiTopp">
-            <td>davon Lieferverkehr</td>
-            <td *ngFor="let e of entries">{{ e.sumo?.deliveryTrips != null ? (e.sumo.deliveryTrips | number:'1.0-0') : '–' }}</td>
-            <td *ngIf="mid"></td>
-          </tr>
-          <tr title="Eingespeiste Rad- und Fuß-Trips der Personen-Nachfrage (Fußgänger als SUMO-Personen)">
-            <td>Rad / Fuß</td>
-            <td *ngFor="let e of entries">{{ e.sumo?.carTrips != null
-              ? ((e.sumo.bikeTrips || 0 | number:'1.0-0') + ' / ' + (e.sumo.walkTrips || 0 | number:'1.0-0')) : '–' }}</td>
-            <td *ngIf="mid"></td>
-          </tr>
-          <tr title="ÖV (Bus, GTFS→gtfs2pt): fahrplangebundene Fahrten und intermodal mitfahrende Nachfrage-Personen">
-            <td>ÖV Fahrten / Fahrgäste</td>
-            <td *ngFor="let e of entries">{{ e.sumo?.ptVehicles
-              ? ((e.sumo.ptVehicles | number:'1.0-0') + ' / ' + (e.sumo.ptRiders || 0 | number:'1.0-0')) : '–' }}</td>
-            <td *ngIf="mid"></td>
+            <td>Zustellaufträge</td>
+            @for (e of entries; track e) {
+              <td>{{ deliveryGenerated(e) != null
+              ? (deliveryGenerated(e) | number:'1.0-0') : '–' }}</td>
+            }
+            @if (mid) {
+              <td></td>
+            }
           </tr>
           <tr>
-            <td>Ø Geschwindigkeit</td>
-            <td *ngFor="let e of entries">{{ e.sumo?.meanSpeedKmh != null ? e.sumo.meanSpeedKmh + ' km/h' : '–' }}</td>
-            <td *ngIf="mid"></td>
+            <td>Zustellquote</td>
+            @for (e of entries; track e) {
+              <td>{{ pct(deliveryRate(e)) }}</td>
+            }
+            @if (mid) {
+              <td></td>
+            }
           </tr>
-          <tr title="CO₂-Schätzung über HBEFA-Emissionsklassen (Lastenräder emissionsfrei)">
-            <td>CO₂ gesamt</td>
-            <td *ngFor="let e of entries">{{ e.sumo?.co2Kg != null ? (e.sumo.co2Kg | number:'1.0-1') + ' kg' : '–' }}</td>
-            <td *ngIf="mid"></td>
-          </tr>
-          <tr>
-            <td>CO₂ Pkw / Lieferv. / Bus</td>
-            <td *ngFor="let e of entries">
-              {{ e.sumo?.co2KgByType ? ((e.sumo.co2KgByType['pkw'] || 0 | number:'1.0-1') + ' / '
-                 + (e.sumo.co2KgByType['lkw'] || 0 | number:'1.0-1') + ' / '
-                 + (e.sumo.co2KgByType['bus'] || 0 | number:'1.0-1') + ' kg') : '–' }}</td>
-            <td *ngIf="mid"></td>
-          </tr>
-        </ng-container>
-      </tbody>
-    </table>
+          @if (hasLogisticsKpis) {
+            <tr>
+              <td>Zustell-Rückläufer</td>
+              @for (e of entries; track e) {
+                <td>{{ e.kpis?.logistics?.deliveries?.failedReturning != null
+                ? (e.kpis.logistics.deliveries.failedReturning | number:'1.0-0') : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr>
+              <td>Kundenretouren</td>
+              @for (e of entries; track e) {
+                <td>{{ e.kpis?.logistics?.customerReturns?.generated != null
+                ? (e.kpis.logistics.customerReturns.generated | number:'1.0-0') : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr>
+              <td>Abholungen geplant</td>
+              @for (e of entries; track e) {
+                <td>{{ e.kpis?.logistics?.customerReturns?.plannedPickups != null
+                ? (e.kpis.logistics.customerReturns.plannedPickups | number:'1.0-0') : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr>
+              <td>Retouren eingesammelt</td>
+              @for (e of entries; track e) {
+                <td>{{ e.kpis?.logistics?.customerReturns?.collected != null
+                ? (e.kpis.logistics.customerReturns.collected | number:'1.0-0') : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr>
+              <td>Abholquote</td>
+              @for (e of entries; track e) {
+                <td>{{ pct(e.kpis?.logistics?.customerReturns?.collectionRate) }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+          }
+          @if (hasSumo) {
+            <tr class="group"><td [attr.colspan]="entries.length + 2">Verkehr &amp; Emissionen (SUMO)</td></tr>
+            <tr>
+              <td>Fahrzeuge (simuliert)</td>
+              @for (e of entries; track e) {
+                <td>{{ e.sumo?.vehicles != null ? (e.sumo.vehicles | number:'1.0-0') : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr title="Zustelltouren-Legs (Lkw/Lastenrad) aus logiTopp">
+              <td>davon Lieferverkehr</td>
+              @for (e of entries; track e) {
+                <td>{{ e.sumo?.deliveryTrips != null ? (e.sumo.deliveryTrips | number:'1.0-0') : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr title="Eingespeiste Rad- und Fuß-Trips der Personen-Nachfrage (Fußgänger als SUMO-Personen)">
+              <td>Rad / Fuß</td>
+              @for (e of entries; track e) {
+                <td>{{ e.sumo?.carTrips != null
+                ? ((e.sumo.bikeTrips || 0 | number:'1.0-0') + ' / ' + (e.sumo.walkTrips || 0 | number:'1.0-0')) : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr title="ÖV (Bus, GTFS→gtfs2pt): fahrplangebundene Fahrten und intermodal mitfahrende Nachfrage-Personen">
+              <td>ÖV Fahrten / Fahrgäste</td>
+              @for (e of entries; track e) {
+                <td>{{ e.sumo?.ptVehicles
+                ? ((e.sumo.ptVehicles | number:'1.0-0') + ' / ' + (e.sumo.ptRiders || 0 | number:'1.0-0')) : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr>
+              <td>Ø Geschwindigkeit</td>
+              @for (e of entries; track e) {
+                <td>{{ e.sumo?.meanSpeedKmh != null ? e.sumo.meanSpeedKmh + ' km/h' : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr title="CO₂-Schätzung über HBEFA-Emissionsklassen (Lastenräder emissionsfrei)">
+              <td>CO₂ gesamt</td>
+              @for (e of entries; track e) {
+                <td>{{ e.sumo?.co2Kg != null ? (e.sumo.co2Kg | number:'1.0-1') + ' kg' : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+            <tr>
+              <td>CO₂ Pkw / Lieferv. / Bus</td>
+              @for (e of entries; track e) {
+                <td>
+                  {{ e.sumo?.co2KgByType ? ((e.sumo.co2KgByType['pkw'] || 0 | number:'1.0-1') + ' / '
+                  + (e.sumo.co2KgByType['lkw'] || 0 | number:'1.0-1') + ' / '
+                + (e.sumo.co2KgByType['bus'] || 0 | number:'1.0-1') + ' kg') : '–' }}</td>
+              }
+              @if (mid) {
+                <td></td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
   </main>
 </div>

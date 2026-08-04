@@ -269,7 +269,7 @@ Kalibrierung ist ein mobiTopp-Logit-Thema; GTA umgeht sie.
 | Komponente | Lizenz |
 |---|---|
 | Spring Boot, Jackson, Commons, **GraphHopper-core 8.0** | Apache 2.0 |
-| Angular 18 (MIT), Leaflet (BSD-2), OpenJDK (GPL+CE) | permissiv/open |
+| Angular 21 (MIT), Leaflet (BSD-2), OpenJDK (GPL+CE) | permissiv/open |
 | **mobiTopp legacy + logiTopp** (Lauf-Stack) | **GPL-3.0** (copyleft) |
 | mobiTopp (Kotlin), populationsynthesis | MIT |
 | actitoppNG | LICENSE-Datei = **GPL**, POM = „MIT" → **widersprüchlich, mit KIT klären** |
@@ -804,9 +804,18 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   logiTopp-Simulation explizit, beenden ihren Executor und räumen Temp-Daten auf. Der
   GTFS-„kein Feed"-Test verwendet eine leere Feed-Registry statt versehentlich einen Download zu
   starten; das Studio-Polling bleibt an der beim Start erfassten Szenario-ID. Frontend verlangt
-  Node 20/22 (`.nvmrc`/`engines`), weil Node 26 mit Angular 18/esbuild abstürzte.
+  Node 20 (`.nvmrc`), weil Node 26 mit Angular 18/esbuild abstürzte. Nach der Migration auf
+  Angular 21 gelten über `engines` die offiziell unterstützten Linien 20.19+, 22.12+ und 24.
   **Verifiziert:** Backend-Suite 44 Tests grün (6 externe Skips), `npx ng build` grün mit
   Node 20.20.2.
+- **✅ Frontend-Sicherheits- und Testtooling aktualisiert (2026-08-04):** Angular wurde gemäß
+  offiziellem Migrationspfad einzeln von 18 über 19 und 20 auf **21.2.19** angehoben; der
+  schlankere Builder aus `@angular/build` ersetzt `@angular-devkit/build-angular`. Angulars
+  nativer Vitest-Runner ersetzt Jest samt Kompatibilitätsschicht. Der Produktions-Audit sank von
+  acht hohen Treffern auf null; im reinen Entwicklungs-Tooling verbleiben fünf Upstream-Treffer
+  (vier moderat, einer hoch), deren betroffene Versionen Angular CLI/Build derzeit exakt pinnt.
+  **Verifiziert:** 3/3 Frontend-Tests, Produktions-AOT-Build (305,57 kB initial) und
+  GitLab-CI-Vertrag mit `npm test` + `npm run build`.
 - Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
   `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,
   vgl. docs/05); GPL-Konformität (Arm's-length-Trennung) dokumentieren.

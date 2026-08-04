@@ -168,7 +168,8 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   zurückgestellt statt halbfertig ausgeliefert (Details: [docs/06](06-gta-integration-konzept.md)).
 
 ## 8. Technologie-Stack (Kurzüberblick)
-- **Frontend:** Angular 18.2 (TypeScript 5.5, RxJS 7.8), Leaflet 1.9.4, OpenStreetMap-Tiles.
+- **Frontend:** Angular 21.2 (TypeScript 5.9, RxJS 7.8), Leaflet 1.9.4,
+  OpenStreetMap-Tiles; Unit-Tests mit Angulars nativem Vitest-Runner.
 - **Backend/API:** Java 21, Spring Boot 3.5.5, springdoc-openapi (Swagger), Jackson, Maven.
 - **Routing & Geo:** GraphHopper 8.0 (eingebettet, Apache-2.0), Overpass/OSM (+ Mirror-Fallbacks).
 - **Achse A:** KIT actiTopp/actitoppNG (Kotlin, extern), KIT populationsynthesis (MIT),

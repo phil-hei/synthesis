@@ -2,7 +2,7 @@
 name: synthesis-build-and-env
 description: >
   Setup-Runbook: die SyntheSis-Entwicklungsumgebung von null auf einer frischen Maschine
-  reproduzieren (Angular 18 + Spring Boot 3.5/Java 21 + externe Toolchain). Laden, WENN du
+  reproduzieren (Angular 21 + Spring Boot 3.5/Java 21 + externe Toolchain). Laden, WENN du
   (a) auf einem neuen Rechner das Projekt aufsetzt ("frische Maschine", "Setup", "Installation",
   "Onboarding"), (b) eine Komponente fehlt oder falsch installiert ist ("SUMO_HOME nicht gesetzt",
   "sumo not found", "venv fehlt", "pip install schlägt fehl", "PEP 668", "externally-managed-environment"),
@@ -38,15 +38,15 @@ repo-relativ (Repo-Root = Verzeichnis mit `backend/`, `frontend/`, `docs/`, `val
 - **Konfigurations-Feintuning** (Flags, `application.yml`-Optionen, Feature-Gates)
   → `synthesis-config-and-flags`.
 - **Code ändern/committen** → `synthesis-change-control`.
-- CI/Container-Setup: nicht abgedeckt — das Projekt wird lokal entwickelt; es gibt kein
-  Dockerfile und keine CI-Pipeline im Repo (Stand 2026-07-08).
+- Container-Setup: nicht abgedeckt. Die GitLab-CI prüft Backend-Tests sowie Frontend-Tests und
+  Produktions-Build; die externe Toolchain bleibt lokal (Stand 2026-08-04).
 
 ## Big Picture: Was gehört zur Umgebung?
 
 | Schicht | Komponenten | Ohne sie |
 |---|---|---|
-| Kern | JDK 21, Maven, Node 18+, git | nichts läuft |
-| App | `backend/` (Spring Boot 3.5.5, Port 8090), `frontend/` (Angular 18, Port 4300) | keine App |
+| Kern | JDK 21, Maven, Node 20.19+/22.12+/24, git | nichts läuft |
+| App | `backend/` (Spring Boot 3.5.5, Port 8090), `frontend/` (Angular 21, Port 4300) | keine App |
 | SUMO | SUMO 1.26 (`sumo`/`netconvert`/`duarouter`), `$SUMO_HOME` | SUMO-Stufe SKIPPED, SumoRunnerTest übersprungen |
 | LLM | Ollama + `qwen2.5:7b-instruct` | GTA fällt auf actiTopp zurück (dokumentierter Fallback) |
 | ÖV | `validation/transit-venv` (pandas/rtree/pyproj) für `gtfs2pt.py` | ÖV-Stufe SKIPPED |
@@ -60,13 +60,13 @@ aufwendigste Teil dieses Runbooks (Schritt 5).
 
 ## Schritt 1: Basis — JDK 21, Maven, Node, Backend + Frontend
 
-Versionen (Ground Truth aus `backend/pom.xml` und `frontend/package.json`, Stand 2026-07-08):
+Versionen (Ground Truth aus `backend/pom.xml` und `frontend/package.json`, Stand 2026-08-04):
 
 - Backend: Spring Boot **3.5.5** (Parent-POM), `java.version` **21**, springdoc 2.8.5,
   commons-compress 1.27.1, GraphHopper 8.0 (eingebettet — kein separater Dienst nötig).
-- Frontend: Angular **^18.2.0**, TypeScript ~5.5, Leaflet 1.9.4. Angular 18 verlangt
-  Node ≥ 18.19 (Angular-Doku). Angular CLI wird über `npx ng` / devDependency benutzt —
-  keine globale Installation nötig.
+- Frontend: Angular **^21.2.19**, TypeScript ~5.9, Leaflet 1.9.4. Unterstützt werden
+  Node **^20.19.0**, **^22.12.0** oder **^24.0.0**; `.nvmrc` fixiert die Referenz auf 20.20.2.
+  Angular CLI wird über `npx ng` / devDependency benutzt — keine globale Installation nötig.
 
 ```bash
 # macOS-typisch (Homebrew); jede andere JDK-21-Distribution geht auch:
@@ -89,7 +89,8 @@ git clone <repo-url> SyntheSis && cd SyntheSis
 3. Build-Gates prüfen:
    ```bash
    cd backend && mvn -o test          # offline; erst NACH einem Online-Lauf möglich
-   cd frontend && npx ng build        # AOT-Build
+   cd frontend && npm test            # nativer Angular/Vitest-Runner
+   cd frontend && npm run build       # Produktions-AOT-Build
    ```
    **Erwartung:** beide grün — aber Achtung: viele Backend-Tests überspringen sich per
    `assumeTrue`, solange SUMO/validation//LLM fehlen (Verifikations-Matrix, Schritt 8).

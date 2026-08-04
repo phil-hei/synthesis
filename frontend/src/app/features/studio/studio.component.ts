@@ -19,7 +19,6 @@ import {
 
 @Component({
   selector: 'app-studio',
-  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './studio.component.html',
   styleUrls: ['./studio.component.css']

@@ -67,8 +67,8 @@ cd backend && mvn -o test
 # Erwartung (Stand: 2026-08-04): 118 Testfälle grün; 6 umgebungsabhängige
 # Testfälle werden ohne externe Laufzeit/Env-Variablen übersprungen – das ist normal.
 
-# Gate 2 – Frontend strict-AOT-Build (fängt NG5002/TS2531, die ng serve NICHT fängt)
-cd frontend && npx ng build
+# Gate 2 – Frontend-Tests + strict-AOT-Build (fängt NG5002/TS2531, die ng serve NICHT fängt)
+cd frontend && npm test && npm run build
 ```
 
 Nützlich bei Maven-Fehlern („Unable to find a single main class"):
@@ -91,7 +91,7 @@ Klassifiziere JEDE Änderung zuerst; daraus folgt die Absicherung:
 | Klasse | Beispiel | Pflicht-Gates | Zusatzpflichten |
 |---|---|---|---|
 | **Doku-only** | Tippfehler, Abschnitt in `docs/` | keine (nur Konsistenz: Querverweise/README stimmen weiter) | – |
-| **Frontend-only** | Panel, Template, CSS | `cd frontend && npx ng build` | – |
+| **Frontend-only** | Panel, Template, CSS | `cd frontend && npm test && npm run build` | – |
 | **Backend-Refactoring, verhaltensgleich** | Umbau ohne Verhaltensänderung | `cd backend && mvn -o test` (komplett) | Verhaltensgleichheit ist BEHAUPTUNG, die Suite ist der Beweis. Vorbild: Commit `e4b6d64` (PipelineContext-Refactoring, „verhaltensgleich: komplette Testsuite inkl. E2E grün") |
 | **Neue Pipeline-Stufe / neues Feature-Flag** | neue Achse-B-Fähigkeit | beide Gates | Voller Zyklus: Spike → Flag `default=false` → Tests → E2E-Verifikation → Doku-Eintrag (siehe Nicht-Verhandelbare 3–5) |
 | **Externe-Tool-Integration** | neues SUMO-Tool, neues LLM | beide Gates | Spike-Pflicht über die GANZE Kette; Kapselung als Runner mit `isAvailable()`; graceful degradation: Stage `SKIPPED`, wenn das Tool fehlt (Muster: `TransitRunner.isAvailable()` in `backend/src/main/java/de/synthesis/generation/pipeline/TransitRunner.java`) |

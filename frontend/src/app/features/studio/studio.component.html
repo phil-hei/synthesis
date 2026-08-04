@@ -10,30 +10,35 @@
       <label>Vorhandenes Szenario laden
         <span class="select-row">
           <select [(ngModel)]="selectedScenarioId" (change)="onScenarioSelected()"
-                  title="Gespeichertes Szenario auswählen und laden">
+            title="Gespeichertes Szenario auswählen und laden">
             <option value="">– Neues Szenario –</option>
-            <option *ngFor="let s of scenarios" [value]="s.id">{{ s.name }}</option>
+            @for (s of scenarios; track s) {
+              <option [value]="s.id">{{ s.name }}</option>
+            }
           </select>
-          <button class="link danger" *ngIf="selectedScenarioId" (click)="deleteSelected()"
-                  title="Ausgewähltes Szenario löschen">✕</button>
+          @if (selectedScenarioId) {
+            <button class="link danger" (click)="deleteSelected()"
+            title="Ausgewähltes Szenario löschen">✕</button>
+          }
         </span>
       </label>
     </section>
 
-    <ng-container *ngIf="scenario">
+    @if (scenario) {
       <section class="block">
         <label>Name
           <input [(ngModel)]="scenario.name" title="Anzeigename des Szenarios">
         </label>
         <label title="Untersuchungsgebiet: mit „Region zeichnen' direkt auf der Karte aufziehen oder den sichtbaren Kartenausschnitt übernehmen">
           Region
-          <span class="region-info" *ngIf="scenario.region; else noRegion">
-            {{ scenario.region.minLat | number:'1.3-3' }}, {{ scenario.region.minLon | number:'1.3-3' }} –
-            {{ scenario.region.maxLat | number:'1.3-3' }}, {{ scenario.region.maxLon | number:'1.3-3' }}
-          </span>
-          <ng-template #noRegion>
+          @if (scenario.region) {
+            <span class="region-info">
+              {{ scenario.region.minLat | number:'1.3-3' }}, {{ scenario.region.minLon | number:'1.3-3' }} –
+              {{ scenario.region.maxLat | number:'1.3-3' }}, {{ scenario.region.maxLon | number:'1.3-3' }}
+            </span>
+          } @else {
             <span class="region-info missing">Noch keine Region gesetzt – auf der Karte zeichnen</span>
-          </ng-template>
+          }
         </label>
         <label title="Kantenlänge einer quadratischen Rasterzelle. Jede Zelle wird eine Verkehrszelle (Zone) des Nachfragemodells: Alle Wege werden zwischen Zonen-Mittelpunkten modelliert. Kleinere Zellen = feinere Auflösung, aber quadratisch mehr Matrix-Einträge (Limit 600 Zonen).">
           Zellgröße Zonenraster (m) ⓘ
@@ -47,10 +52,11 @@
           </select>
         </label>
       </section>
-
       <section class="block">
         <h2>Bevölkerung</h2>
-        <p class="hint" *ngIf="estimateInfo">{{ estimateInfo }}</p>
+        @if (estimateInfo) {
+          <p class="hint">{{ estimateInfo }}</p>
+        }
         <label title="Gesamtzahl der Einwohner in der Region. Wird beim Setzen der Region automatisch aus OSM-Siedlungsdaten (place-Nodes mit population-Tag) vorbefüllt; leer = Schätzung über Einwohnerdichte.">
           Einwohner gesamt ⓘ
           <input type="number" [(ngModel)]="scenario.population.totalPersons">
@@ -80,104 +86,114 @@
           Echtes Routing (GraphHopper statt Luftlinie)
         </label>
         <div class="upload"
-             title="Szenariogebundenes OSM-XML-Straßennetz für reproduzierbares Offline-Routing. Die Datei muss die gewählte Region vollständig abdecken und highway-Wege enthalten. Sie hat Vorrang vor Server-Konfiguration und Overpass; PBF wird noch nicht unterstützt.">
-          <ng-container *ngIf="!roadNetworkUpload">
+          title="Szenariogebundenes OSM-XML-Straßennetz für reproduzierbares Offline-Routing. Die Datei muss die gewählte Region vollständig abdecken und highway-Wege enthalten. Sie hat Vorrang vor Server-Konfiguration und Overpass; PBF wird noch nicht unterstützt.">
+          @if (!roadNetworkUpload) {
             <label class="upload-button" [class.disabled]="!scenario.id || roadNetworkUploadBusy">
               {{ roadNetworkUploadBusy ? 'Netz wird geprüft…' : 'OSM-Straßennetz hochladen (.osm/.xml) ⓘ' }}
               <input type="file" accept=".osm,.xml,application/xml,text/xml"
-                     (change)="onRoadNetworkSelected($event)"
-                     [disabled]="!scenario.id || roadNetworkUploadBusy">
+                (change)="onRoadNetworkSelected($event)"
+                [disabled]="!scenario.id || roadNetworkUploadBusy">
             </label>
-            <p class="hint" *ngIf="!scenario.id">Zum Hochladen Szenario zuerst speichern.</p>
-          </ng-container>
-          <div class="upload-info" *ngIf="roadNetworkUpload">
-            <span>
-              🛣️ Lokales OSM-Netz aktiv
-              <ng-container *ngIf="roadNetworkUpload.highwayWays > 0">
-                – {{ roadNetworkUpload.highwayWays.toLocaleString() }} Straßen,
-                SHA-256 {{ roadNetworkUpload.sha256.slice(0, 12) }}…
-              </ng-container>
-            </span>
-            <button class="link danger" (click)="removeRoadNetwork()"
-                    title="Hochgeladenes Straßennetz entfernen">✕</button>
-          </div>
+            @if (!scenario.id) {
+              <p class="hint">Zum Hochladen Szenario zuerst speichern.</p>
+            }
+          }
+          @if (roadNetworkUpload) {
+            <div class="upload-info">
+              <span>
+                🛣️ Lokales OSM-Netz aktiv
+                @if (roadNetworkUpload.highwayWays > 0) {
+                  – {{ roadNetworkUpload.highwayWays.toLocaleString() }} Straßen,
+                  SHA-256 {{ roadNetworkUpload.sha256.slice(0, 12) }}…
+                }
+              </span>
+              <button class="link danger" (click)="removeRoadNetwork()"
+              title="Hochgeladenes Straßennetz entfernen">✕</button>
+            </div>
+          }
         </div>
         <label class="checkbox" title="Externe Zielzonen rund um das Gebiet ergänzen, damit ein Teil der Wege das Untersuchungsgebiet verlässt (realistischere Weglängen). Ohne Einwohner, nur als Ziele.">
           <input type="checkbox" [(ngModel)]="scenario.population.externalTrips">
           Außenbeziehungen (externe Zielzonen)
         </label>
         <div class="upload"
-             title="Akzeptiert eine normalisierte Pendler-OD-Matrix oder einen amtlichen BA-Export 'Auspendler Gemeinden'. BA-Gemeindeschlüssel werden über BKG VG250 aufgelöst. Der BA-Export verteilt die Außenziele; die Außenquote kommt optional aus dem Arbeitsplatz-Randwert darunter. 'Außenbeziehungen' muss aktiv sein.">
-          <ng-container *ngIf="!commuterUpload">
+          title="Akzeptiert eine normalisierte Pendler-OD-Matrix oder einen amtlichen BA-Export 'Auspendler Gemeinden'. BA-Gemeindeschlüssel werden über BKG VG250 aufgelöst. Der BA-Export verteilt die Außenziele; die Außenquote kommt optional aus dem Arbeitsplatz-Randwert darunter. 'Außenbeziehungen' muss aktiv sein.">
+          @if (!commuterUpload) {
             <label class="upload-button" [class.disabled]="!scenario.id || commuterUploadBusy">
               {{ commuterUploadBusy ? 'Matrix wird geprüft…' : 'Pendlermatrix hochladen (CSV) ⓘ' }}
               <input type="file" accept=".csv,text/csv" (change)="onCommutersSelected($event)"
-                     [disabled]="!scenario.id || commuterUploadBusy">
+                [disabled]="!scenario.id || commuterUploadBusy">
             </label>
             <p class="hint">BA-Export: Auspendler Gemeinden · alternativ homeLat;homeLon;workLat;workLon;commuters</p>
-          </ng-container>
-          <div class="upload-info" *ngIf="commuterUpload">
-            <span>
-              🧭 Pendler-OD aktiv
-              <ng-container *ngIf="commuterUpload.relations > 0">
-                – {{ commuterUpload.relations.toLocaleString() }} Relationen,
-                {{ commuterUpload.totalCommuters.toLocaleString() }} Pendler
-              </ng-container>
-            </span>
-            <button class="link danger" (click)="removeCommuters()"
-                    title="Pendlermatrix entfernen">✕</button>
-          </div>
+          }
+          @if (commuterUpload) {
+            <div class="upload-info">
+              <span>
+                🧭 Pendler-OD aktiv
+                @if (commuterUpload.relations > 0) {
+                  – {{ commuterUpload.relations.toLocaleString() }} Relationen,
+                  {{ commuterUpload.totalCommuters.toLocaleString() }} Pendler
+                }
+              </span>
+              <button class="link danger" (click)="removeCommuters()"
+              title="Pendlermatrix entfernen">✕</button>
+            </div>
+          }
         </div>
         <div class="upload"
-             title="Amtlicher Flat-File-CSV-Export der Regionalstatistik-Tabelle 13111-08-02-5-B. ERW033 (Beschäftigte am Wohnort) und PEN092 (Auspendelnde) bestimmen die Außenquote. Wirksam zusammen mit einer externen Pendler-OD und aktivierten Außenbeziehungen.">
-          <ng-container *ngIf="!workplaceMarginUpload">
+          title="Amtlicher Flat-File-CSV-Export der Regionalstatistik-Tabelle 13111-08-02-5-B. ERW033 (Beschäftigte am Wohnort) und PEN092 (Auspendelnde) bestimmen die Außenquote. Wirksam zusammen mit einer externen Pendler-OD und aktivierten Außenbeziehungen.">
+          @if (!workplaceMarginUpload) {
             <label class="upload-button" [class.disabled]="!scenario.id || workplaceMarginUploadBusy">
               {{ workplaceMarginUploadBusy ? 'Randwert wird geprüft…' : 'Arbeitsplatz-Randwert 13111 hochladen (CSV) ⓘ' }}
               <input type="file" accept=".csv,text/csv" (change)="onWorkplaceMarginsSelected($event)"
-                     [disabled]="!scenario.id || workplaceMarginUploadBusy">
+                [disabled]="!scenario.id || workplaceMarginUploadBusy">
             </label>
             <p class="hint">Regionalstatistik: Tabelle 13111-08-02-5-B · Download „Flat-File-CSV“</p>
-          </ng-container>
-          <div class="upload-info" *ngIf="workplaceMarginUpload">
-            <span>
-              📊 Arbeitsplatz-Randwert aktiv
-              <ng-container *ngIf="workplaceMarginUpload.residentWorkers > 0">
-                – {{ (workplaceMarginUpload.externalShare * 100).toLocaleString('de-DE', { maximumFractionDigits: 2 }) }} % außen,
-                Stichtag {{ workplaceMarginUpload.date }}
-              </ng-container>
-            </span>
-            <button class="link danger" (click)="removeWorkplaceMargins()"
-                    title="Arbeitsplatz-Randwert entfernen">✕</button>
-          </div>
+          }
+          @if (workplaceMarginUpload) {
+            <div class="upload-info">
+              <span>
+                📊 Arbeitsplatz-Randwert aktiv
+                @if (workplaceMarginUpload.residentWorkers > 0) {
+                  – {{ (workplaceMarginUpload.externalShare * 100).toLocaleString('de-DE', { maximumFractionDigits: 2 }) }} % außen,
+                  Stichtag {{ workplaceMarginUpload.date }}
+                }
+              </span>
+              <button class="link danger" (click)="removeWorkplaceMargins()"
+              title="Arbeitsplatz-Randwert entfernen">✕</button>
+            </div>
+          }
         </div>
         <label class="checkbox" title="Haushalte aus einem KIT-synthetisierten Demografie-Sample ziehen (realistische Alters-/Geschlechts-/Haushaltsgrößen-Verteilung) statt aus Ad-hoc-Annahmen.">
           <input type="checkbox" [(ngModel)]="scenario.population.useKitPopulation">
           KIT-Demografie-Sample (Haushalte)
         </label>
-
         <div class="upload"
-             title="Punktbasiertes Bevölkerungsraster als CSV: Zensus-2022-Gitter (x_mp_100m;y_mp_100m;Einwohner), INSPIRE-/Eurostat-Gitter-IDs (GRD_ID bzw. GITTER_ID + Einwohner/T, z. B. Eurostat Census Grid 2021 europaweit) oder generisch (lat;lon;population). EPSG:3035 wird automatisch umgerechnet. Hat Vorrang vor OSM- und Dichte-Schätzung.">
-          <ng-container *ngIf="!upload">
+          title="Punktbasiertes Bevölkerungsraster als CSV: Zensus-2022-Gitter (x_mp_100m;y_mp_100m;Einwohner), INSPIRE-/Eurostat-Gitter-IDs (GRD_ID bzw. GITTER_ID + Einwohner/T, z. B. Eurostat Census Grid 2021 europaweit) oder generisch (lat;lon;population). EPSG:3035 wird automatisch umgerechnet. Hat Vorrang vor OSM- und Dichte-Schätzung.">
+          @if (!upload) {
             <label class="upload-button" [class.disabled]="!scenario.id || uploadBusy">
               {{ uploadBusy ? 'Wird verarbeitet…' : 'Bevölkerungsraster hochladen (CSV) ⓘ' }}
               <input type="file" accept=".csv,text/csv" (change)="onGridFileSelected($event)"
-                     [disabled]="!scenario.id || uploadBusy">
+                [disabled]="!scenario.id || uploadBusy">
             </label>
-            <p class="hint" *ngIf="!scenario.id">Zum Hochladen Szenario zuerst speichern.</p>
-          </ng-container>
-          <div class="upload-info" *ngIf="upload">
-            <span>
-              📄 Bevölkerungsraster aktiv
-              <ng-container *ngIf="upload.points > 0">
-                – {{ upload.points.toLocaleString() }} Punkte,
-                {{ upload.totalPopulation.toLocaleString() }} Einwohner ({{ upload.format }})
-              </ng-container>
-            </span>
-            <button class="link danger" (click)="removeUpload()" title="Hochgeladenes Raster entfernen">✕</button>
-          </div>
+            @if (!scenario.id) {
+              <p class="hint">Zum Hochladen Szenario zuerst speichern.</p>
+            }
+          }
+          @if (upload) {
+            <div class="upload-info">
+              <span>
+                📄 Bevölkerungsraster aktiv
+                @if (upload.points > 0) {
+                  – {{ upload.points.toLocaleString() }} Punkte,
+                  {{ upload.totalPopulation.toLocaleString() }} Einwohner ({{ upload.format }})
+                }
+              </span>
+              <button class="link danger" (click)="removeUpload()" title="Hochgeladenes Raster entfernen">✕</button>
+            </div>
+          }
         </div>
       </section>
-
       <section class="block">
         <h2>Modellierung</h2>
         <label title="Achse A – wie das Verhalten (Aktivitäten, Modus) erzeugt wird">
@@ -188,18 +204,21 @@
             <option value="template">Vorlagen (einfach, vollständig offline)</option>
           </select>
         </label>
-        <p class="hint" *ngIf="scenario.population.behaviorSource === 'gta'">
-          GTA erzeugt Tagespläne über ein lokales LLM (Ollama). Personas werden gebündelt, daher
-          wenige LLM-Aufrufe – aber langsamer als actiTopp. Ist das LLM nicht erreichbar, wird
-          automatisch auf actiTopp zurückgefallen.
-        </p>
-        <label *ngIf="scenario.population.behaviorSource === 'gta'"
-               title="GTA 3d: Freitext-Szenario (Policy/Technologie), das die KI-Agenten bei der Tagesplanung berücksichtigen – z. B. eine autofreie Innenstadt oder kostenloser ÖPNV. Leer = normales Verhalten.">
-          Was-wäre-wenn-Kontext (optional)
-          <textarea rows="2" [(ngModel)]="scenario.population.gtaWhatIf"
-                    placeholder="z. B. Die Innenstadt ist komplett autofrei."></textarea>
-        </label>
-
+        @if (scenario.population.behaviorSource === 'gta') {
+          <p class="hint">
+            GTA erzeugt Tagespläne über ein lokales LLM (Ollama). Personas werden gebündelt, daher
+            wenige LLM-Aufrufe – aber langsamer als actiTopp. Ist das LLM nicht erreichbar, wird
+            automatisch auf actiTopp zurückgefallen.
+          </p>
+        }
+        @if (scenario.population.behaviorSource === 'gta') {
+          <label
+            title="GTA 3d: Freitext-Szenario (Policy/Technologie), das die KI-Agenten bei der Tagesplanung berücksichtigen – z. B. eine autofreie Innenstadt oder kostenloser ÖPNV. Leer = normales Verhalten.">
+            Was-wäre-wenn-Kontext (optional)
+            <textarea rows="2" [(ngModel)]="scenario.population.gtaWhatIf"
+            placeholder="z. B. Die Innenstadt ist komplett autofrei."></textarea>
+          </label>
+        }
         <div class="targets" title="Achse B – welche Zielmodelle die erzeugte Nachfrage verwerten (Mehrfachauswahl)">
           <span class="targets-label">Zielmodell</span>
           <label class="checkbox" title="Mikroskopische Personen- und Paketsimulation (KIT), liefert KPIs/Touren">
@@ -215,472 +234,551 @@
             SUMO (mikroskopischer Verkehr)
           </label>
         </div>
-
-        <label class="checkbox" *ngIf="hasTarget('logitopp')"
-               title="Passt die Moduswahl-Konstanten iterativ an den Ziel-Modal-Split an (mehrere Simulationsläufe, daher deutlich langsamer).">
-          <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeChoice"
-                 [disabled]="scenario.population.calibrateModeDistance">
-          Modal-Split kalibrieren (langsam)
-        </label>
-        <label class="checkbox" *ngIf="hasTarget('logitopp')"
-               title="Distanz-Kalibrierung der Zielwahl (experimentell): passt b_intrazonal iterativ an, bis der Anteil der Wege unter 1 km den Zielwert trifft. Mit „ÖV nach Distanz“ kombinierbar; sie läuft dann zuerst. Kann keine Fernwege in einem kleinen Gebiet erzeugen (mehrere Simulationsläufe).">
-          <input type="checkbox" [(ngModel)]="scenario.population.calibrateDistance">
-          Distanz-Verteilung kalibrieren (experimentell, langsam)
-        </label>
-        <label class="checkbox" *ngIf="hasTarget('logitopp')"
-               title="Experimentell: kalibriert das globale ÖV-Niveau über asc_put und den ÖV-Anstieg bei Wegen ab 20 km getrennt über b_tt_put gegen MiD 2017. Mit der Distanz-Verteilung kombinierbar und läuft dann auf deren korrigierten Zielwahlparametern. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe.">
-          <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeDistance"
-                 [disabled]="scenario.population.calibrateModeChoice">
-          ÖV nach Distanz kalibrieren (experimentell, langsam)
-        </label>
-        <div class="calib-target"
-             *ngIf="hasTarget('logitopp') && (scenario.population.calibrateModeChoice || scenario.population.calibrateModeDistance)"
-             title="Ziel-Modus-Anteile (Default MiD 2017 bundesweit; für die Region anpassbar)">
-          <span class="targets-label">Ziel-Modal-Split (Anteile)</span>
-          <label class="calib-row"
-                 title="Regionstyp-Vorlage (RegioStaR) – füllt die Zielwerte; danach frei anpassbar">
-            Vorlage
-            <select [(ngModel)]="selectedPreset" (ngModelChange)="applyRegionPreset($event)">
-              <option value="" disabled>– Regionstyp wählen –</option>
-              <option *ngFor="let p of regionPresets" [value]="p.id">{{ p.label }}</option>
-            </select>
-          </label>
-          <label class="calib-row" *ngFor="let m of calibrationModes">
-            {{ m.label }}
-            <input type="number" min="0" max="1" step="0.01"
-                   [(ngModel)]="scenario.population.calibrationTarget[m.key]">
-          </label>
-          <p class="hint">Richtwerte nach RegioStaR-Raumtyp (MiD-2017-Muster) – an offizielle
-            Regionaltabellen anpassbar.</p>
-        </div>
-        <label class="checkbox" *ngIf="hasTarget('logitopp')"
-               title="Experimentell (GTA 3c): zusätzliche LLM-gestützte Moduswahl je Distanzband auf den simulierten Trips – liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt das lokale LLM.">
-          <input type="checkbox" [(ngModel)]="scenario.population.llmModeChoice">
-          LLM-Moduswahl (experimentell, GTA 3c)
-        </label>
-        <label class="checkbox" *ngIf="hasTarget('logitopp') && hasTarget('sumo')"
-               title="Gleichgewichts-Schleife: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu, SUMO simuliert erneut – iterativ bis Konvergenz (mehrere zusätzliche Simulationsläufe, daher langsamer).">
-          <input type="checkbox" [(ngModel)]="scenario.population.sumoFeedback">
-          Netz-Feedback: SUMO-Stau ⇄ Nachfrage (iterativ)
-        </label>
-        <label class="checkbox" *ngIf="hasTarget('sumo')"
-               title="ÖV (Bus) in der SUMO-Simulation: GTFS-Fahrplan (Auto-Fetch nach Region, Upload-Fallback) wird via gtfs2pt.py zu Haltestellen und Bus-Fahrten; ÖV-Nachfrage fährt intermodal mit (Fußweg → Bus → Fußweg). Braucht ein Python-venv; gtfs2pt-Mapping ist langsam (Ergebnis wird gecacht).">
-          <input type="checkbox" [(ngModel)]="scenario.population.publicTransport">
-          ÖV/Bus in SUMO (GTFS, experimentell – Phase C)
-        </label>
-        <div class="hint" *ngIf="scenario.population.publicTransport && hasTarget('sumo')">
-          GTFS wird automatisch nach Region geladen. Kein Feed verfügbar?
-          <label class="linklike">GTFS-ZIP hochladen
-            <input type="file" accept=".zip" hidden
-                   [disabled]="!scenario.id" (change)="onGtfsSelected($event)"></label>
-          <span *ngIf="!scenario.id"> (erst Szenario speichern)</span>
-          <span *ngIf="scenario.population.gtfsUploadPath"> ✓ Feed hochgeladen</span>
-        </div>
-      </section>
-
-      <section class="block">
-        <h2>Logistik (logiTopp)</h2>
-        <label title="Mittelwert der Normalverteilung für Paketbestellungen je Person und Woche (logiTopp NumberOfParcelsSelector)">
-          Pakete je Person und Woche (Mittelwert)
-          <input type="number" [(ngModel)]="scenario.logistics.parcelsPerPersonWeek" min="0" step="0.05">
-        </label>
-        <label title="Streuung der Paketanzahl um den Mittelwert">
-          Standardabweichung
-          <input type="number" [(ngModel)]="scenario.logistics.parcelStdDev" min="0" step="0.05">
-        </label>
-        <div class="shares" title="Anteile der Zustellziele: nach Hause, an den Arbeitsplatz oder an eine Packstation">
-          <label>Anteil HOME
-            <input type="number" [(ngModel)]="scenario.logistics.shareHome" min="0" max="1" step="0.05">
-          </label>
-          <label>WORK
-            <input type="number" [(ngModel)]="scenario.logistics.shareWork" min="0" max="1" step="0.05">
-          </label>
-          <label>PACKSTATION
-            <input type="number" [(ngModel)]="scenario.logistics.sharePackstation" min="0" max="1" step="0.05">
-          </label>
-        </div>
-
-        <div class="returns-config" *ngIf="hasTarget('logitopp')">
+        @if (hasTarget('logitopp')) {
           <label class="checkbox"
-                 title="Experimentell: erzeugt zusätzliche private Abholaufträge in logiTopp. Die Quote ist eine Szenarioannahme und kein kalibrierter Branchenwert.">
-            <input type="checkbox" [(ngModel)]="scenario.logistics.returns.enabled">
-            Kundenretouren als Abholaufträge (experimentell)
+            title="Passt die Moduswahl-Konstanten iterativ an den Ziel-Modal-Split an (mehrere Simulationsläufe, daher deutlich langsamer).">
+            <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeChoice"
+              [disabled]="scenario.population.calibrateModeDistance">
+            Modal-Split kalibrieren (langsam)
           </label>
-          <p class="hint">
-            Eine Kundenretoure ist ein zusätzlicher Pickup beim Empfänger. Sie ist nicht mit
-            einem Ursprungspaket verknüpft und nicht mit dem Status RETURNING nach einem
-            fehlgeschlagenen Zustellversuch gleichzusetzen.
-          </p>
-          <ng-container *ngIf="scenario.logistics.returns.enabled">
-            <label title="Zusätzliche Retouren relativ zur Zahl der privaten Zustellaufträge. Muss bei aktivierten Retouren größer 0 und höchstens 1 sein.">
-              Retourenquote auf private Zustellaufträge
-              <input type="number"
-                     [(ngModel)]="scenario.logistics.returns.shareOfPrivateOrders"
-                     min="0.01" max="1" step="0.05">
+        }
+        @if (hasTarget('logitopp')) {
+          <label class="checkbox"
+            title="Distanz-Kalibrierung der Zielwahl (experimentell): passt b_intrazonal iterativ an, bis der Anteil der Wege unter 1 km den Zielwert trifft. Mit „ÖV nach Distanz“ kombinierbar; sie läuft dann zuerst. Kann keine Fernwege in einem kleinen Gebiet erzeugen (mehrere Simulationsläufe).">
+            <input type="checkbox" [(ngModel)]="scenario.population.calibrateDistance">
+            Distanz-Verteilung kalibrieren (experimentell, langsam)
+          </label>
+        }
+        @if (hasTarget('logitopp')) {
+          <label class="checkbox"
+            title="Experimentell: kalibriert das globale ÖV-Niveau über asc_put und den ÖV-Anstieg bei Wegen ab 20 km getrennt über b_tt_put gegen MiD 2017. Mit der Distanz-Verteilung kombinierbar und läuft dann auf deren korrigierten Zielwahlparametern. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe.">
+            <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeDistance"
+              [disabled]="scenario.population.calibrateModeChoice">
+            ÖV nach Distanz kalibrieren (experimentell, langsam)
+          </label>
+        }
+        @if (hasTarget('logitopp') && (scenario.population.calibrateModeChoice || scenario.population.calibrateModeDistance)) {
+          <div class="calib-target"
+            title="Ziel-Modus-Anteile (Default MiD 2017 bundesweit; für die Region anpassbar)">
+            <span class="targets-label">Ziel-Modal-Split (Anteile)</span>
+            <label class="calib-row"
+              title="Regionstyp-Vorlage (RegioStaR) – füllt die Zielwerte; danach frei anpassbar">
+              Vorlage
+              <select [(ngModel)]="selectedPreset" (ngModelChange)="applyRegionPreset($event)">
+                <option value="" disabled>– Regionstyp wählen –</option>
+                @for (p of regionPresets; track p) {
+                  <option [value]="p.id">{{ p.label }}</option>
+                }
+              </select>
             </label>
-            <div class="shares"
-                 title="Anteile der Abholorte für Kundenretouren; HOME und WORK müssen zusammen 1 ergeben">
-              <label>Abholung HOME
-                <input type="number"
-                       [(ngModel)]="scenario.logistics.returns.pickupShares.home"
-                       min="0" max="1" step="0.05">
+            @for (m of calibrationModes; track m) {
+              <label class="calib-row">
+                {{ m.label }}
+                <input type="number" min="0" max="1" step="0.01"
+                  [(ngModel)]="scenario.population.calibrationTarget[m.key]">
               </label>
-              <label>WORK
-                <input type="number"
-                       [(ngModel)]="scenario.logistics.returns.pickupShares.work"
-                       min="0" max="1" step="0.05">
-              </label>
+            }
+            <p class="hint">Richtwerte nach RegioStaR-Raumtyp (MiD-2017-Muster) – an offizielle
+            Regionaltabellen anpassbar.</p>
+          </div>
+        }
+        @if (hasTarget('logitopp')) {
+          <label class="checkbox"
+            title="Experimentell (GTA 3c): zusätzliche LLM-gestützte Moduswahl je Distanzband auf den simulierten Trips – liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt das lokale LLM.">
+            <input type="checkbox" [(ngModel)]="scenario.population.llmModeChoice">
+            LLM-Moduswahl (experimentell, GTA 3c)
+          </label>
+        }
+        @if (hasTarget('logitopp') && hasTarget('sumo')) {
+          <label class="checkbox"
+            title="Gleichgewichts-Schleife: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu, SUMO simuliert erneut – iterativ bis Konvergenz (mehrere zusätzliche Simulationsläufe, daher langsamer).">
+            <input type="checkbox" [(ngModel)]="scenario.population.sumoFeedback">
+            Netz-Feedback: SUMO-Stau ⇄ Nachfrage (iterativ)
+          </label>
+        }
+        @if (hasTarget('sumo')) {
+          <label class="checkbox"
+            title="ÖV (Bus) in der SUMO-Simulation: GTFS-Fahrplan (Auto-Fetch nach Region, Upload-Fallback) wird via gtfs2pt.py zu Haltestellen und Bus-Fahrten; ÖV-Nachfrage fährt intermodal mit (Fußweg → Bus → Fußweg). Braucht ein Python-venv; gtfs2pt-Mapping ist langsam (Ergebnis wird gecacht).">
+            <input type="checkbox" [(ngModel)]="scenario.population.publicTransport">
+            ÖV/Bus in SUMO (GTFS, experimentell – Phase C)
+          </label>
+        }
+        @if (scenario.population.publicTransport && hasTarget('sumo')) {
+          <div class="hint">
+            GTFS wird automatisch nach Region geladen. Kein Feed verfügbar?
+            <label class="linklike">GTFS-ZIP hochladen
+              <input type="file" accept=".zip" hidden
+              [disabled]="!scenario.id" (change)="onGtfsSelected($event)"></label>
+              @if (!scenario.id) {
+                <span> (erst Szenario speichern)</span>
+              }
+              @if (scenario.population.gtfsUploadPath) {
+                <span> ✓ Feed hochgeladen</span>
+              }
             </div>
+          }
+        </section>
+        <section class="block">
+          <h2>Logistik (logiTopp)</h2>
+          <label title="Mittelwert der Normalverteilung für Paketbestellungen je Person und Woche (logiTopp NumberOfParcelsSelector)">
+            Pakete je Person und Woche (Mittelwert)
+            <input type="number" [(ngModel)]="scenario.logistics.parcelsPerPersonWeek" min="0" step="0.05">
+          </label>
+          <label title="Streuung der Paketanzahl um den Mittelwert">
+            Standardabweichung
+            <input type="number" [(ngModel)]="scenario.logistics.parcelStdDev" min="0" step="0.05">
+          </label>
+          <div class="shares" title="Anteile der Zustellziele: nach Hause, an den Arbeitsplatz oder an eine Packstation">
+            <label>Anteil HOME
+              <input type="number" [(ngModel)]="scenario.logistics.shareHome" min="0" max="1" step="0.05">
+            </label>
+            <label>WORK
+              <input type="number" [(ngModel)]="scenario.logistics.shareWork" min="0" max="1" step="0.05">
+            </label>
+            <label>PACKSTATION
+              <input type="number" [(ngModel)]="scenario.logistics.sharePackstation" min="0" max="1" step="0.05">
+            </label>
+          </div>
+          @if (hasTarget('logitopp')) {
+            <div class="returns-config">
+              <label class="checkbox"
+                title="Experimentell: erzeugt zusätzliche private Abholaufträge in logiTopp. Die Quote ist eine Szenarioannahme und kein kalibrierter Branchenwert.">
+              <input type="checkbox" [(ngModel)]="scenario.logistics.returns.enabled">
+              Kundenretouren als Abholaufträge (experimentell)
+            </label>
             <p class="hint">
-              HOME + WORK müssen zusammen 1 ergeben. Packstationen sind im MVP noch kein
-              Retourenkanal.
+              Eine Kundenretoure ist ein zusätzlicher Pickup beim Empfänger. Sie ist nicht mit
+              einem Ursprungspaket verknüpft und nicht mit dem Status RETURNING nach einem
+              fehlgeschlagenen Zustellversuch gleichzusetzen.
             </p>
-          </ng-container>
-        </div>
-
+            @if (scenario.logistics.returns.enabled) {
+              <label title="Zusätzliche Retouren relativ zur Zahl der privaten Zustellaufträge. Muss bei aktivierten Retouren größer 0 und höchstens 1 sein.">
+                Retourenquote auf private Zustellaufträge
+                <input type="number"
+                  [(ngModel)]="scenario.logistics.returns.shareOfPrivateOrders"
+                  min="0.01" max="1" step="0.05">
+              </label>
+              <div class="shares"
+                title="Anteile der Abholorte für Kundenretouren; HOME und WORK müssen zusammen 1 ergeben">
+                <label>Abholung HOME
+                  <input type="number"
+                    [(ngModel)]="scenario.logistics.returns.pickupShares.home"
+                    min="0" max="1" step="0.05">
+                </label>
+                <label>WORK
+                  <input type="number"
+                    [(ngModel)]="scenario.logistics.returns.pickupShares.work"
+                    min="0" max="1" step="0.05">
+                </label>
+              </div>
+              <p class="hint">
+                HOME + WORK müssen zusammen 1 ergeben. Packstationen sind im MVP noch kein
+                Retourenkanal.
+              </p>
+            }
+          </div>
+        }
         <div class="block-head">
           <h3>Depots ({{ scenario.logistics.depots.length }})</h3>
           <button [class.toggled]="depotMode" (click)="toggleDepotMode()"
-                  title="Modus aktivieren und dann auf die Karte klicken, um ein Verteilzentrum zu platzieren">
+            title="Modus aktivieren und dann auf die Karte klicken, um ein Verteilzentrum zu platzieren">
             {{ depotMode ? 'Depot-Modus aktiv – Karte anklicken' : 'Depot auf Karte setzen' }}
           </button>
         </div>
-        <p class="hint" *ngIf="scenario.logistics.depots.length === 0">
-          Ohne eigene Depots nutzt die Pipeline echte OSM-Logistikstandorte (Postdepots, Kurierdienste);
-          falls keine vorhanden sind, werden Depots an gewerblich geeigneten Zonen mit guter
-          Erreichbarkeit der Wohnbevölkerung platziert (Gewerbe-Eignung × Nachfragenähe).
-        </p>
-        <div class="depot-table" *ngIf="scenario.logistics.depots.length > 0">
-          <div class="depot depot-header">
-            <span class="depot-name">Name</span>
-            <span title="Fahrzeugtyp / Effizienzprofil der Zustellflotte">Fahrzeug</span>
-            <span title="Anzahl Zusteller">Zusteller</span>
-            <span title="Anteil am Paketaufkommen (wird automatisch normiert)">Anteil</span>
-            <span></span>
-          </div>
-          <div class="depot-rows">
-            <div class="depot" *ngFor="let depot of scenario.logistics.depots; let i = index">
-              <input class="depot-name" [(ngModel)]="depot.name" title="Name des Depots">
-              <select [(ngModel)]="depot.vehicleType" title="Fahrzeugtyp / Effizienzprofil der Zustellflotte">
-                <option value="TRUCK">Transporter</option>
-                <option value="CARGO_BIKE">Lastenrad</option>
-              </select>
-              <input type="number" [(ngModel)]="depot.employees" title="Anzahl Zusteller" min="1">
-              <input type="number" [(ngModel)]="depot.share" title="Anteil am Paketaufkommen (wird normiert)" min="0" max="1" step="0.05">
-              <button class="link danger" (click)="removeDepot(i)" title="Depot entfernen">✕</button>
+        @if (scenario.logistics.depots.length === 0) {
+          <p class="hint">
+            Ohne eigene Depots nutzt die Pipeline echte OSM-Logistikstandorte (Postdepots, Kurierdienste);
+            falls keine vorhanden sind, werden Depots an gewerblich geeigneten Zonen mit guter
+            Erreichbarkeit der Wohnbevölkerung platziert (Gewerbe-Eignung × Nachfragenähe).
+          </p>
+        }
+        @if (scenario.logistics.depots.length > 0) {
+          <div class="depot-table">
+            <div class="depot depot-header">
+              <span class="depot-name">Name</span>
+              <span title="Fahrzeugtyp / Effizienzprofil der Zustellflotte">Fahrzeug</span>
+              <span title="Anzahl Zusteller">Zusteller</span>
+              <span title="Anteil am Paketaufkommen (wird automatisch normiert)">Anteil</span>
+              <span></span>
+            </div>
+            <div class="depot-rows">
+              @for (depot of scenario.logistics.depots; track depot; let i = $index) {
+                <div class="depot">
+                  <input class="depot-name" [(ngModel)]="depot.name" title="Name des Depots">
+                  <select [(ngModel)]="depot.vehicleType" title="Fahrzeugtyp / Effizienzprofil der Zustellflotte">
+                    <option value="TRUCK">Transporter</option>
+                    <option value="CARGO_BIKE">Lastenrad</option>
+                  </select>
+                  <input type="number" [(ngModel)]="depot.employees" title="Anzahl Zusteller" min="1">
+                  <input type="number" [(ngModel)]="depot.share" title="Anteil am Paketaufkommen (wird normiert)" min="0" max="1" step="0.05">
+                  <button class="link danger" (click)="removeDepot(i)" title="Depot entfernen">✕</button>
+                </div>
+              }
             </div>
           </div>
-        </div>
+        }
       </section>
-
       <section class="block actions">
         <button class="primary" (click)="save()" [disabled]="busy || !scenario.region"
-                [title]="scenario.region ? 'Szenario speichern' : 'Erst Region auf der Karte zeichnen'">
+          [title]="scenario.region ? 'Szenario speichern' : 'Erst Region auf der Karte zeichnen'">
           Speichern
         </button>
         <button class="primary" (click)="generate()" [disabled]="!scenario.id || running"
-                title="Startet die Generierungspipeline: Zonen, Attraktivitäten, Bevölkerung, Aktivitäten, Matrizen, Logistik">
+          title="Startet die Generierungspipeline: Zonen, Attraktivitäten, Bevölkerung, Aktivitäten, Matrizen, Logistik">
           {{ running ? 'Generierung läuft…' : 'Nachfragemodell generieren' }}
         </button>
         <p class="message">{{ message }}</p>
       </section>
-    </ng-container>
+    }
   </aside>
 
   <!-- Mitte: Karte -->
   <main class="map-wrap">
     <div class="map-toolbar">
       <button [class.toggled]="drawMode" (click)="toggleDrawMode()"
-              title="Modus aktivieren und dann mit gedrückter Maustaste ein Rechteck auf der Karte aufziehen">
+        title="Modus aktivieren und dann mit gedrückter Maustaste ein Rechteck auf der Karte aufziehen">
         {{ drawMode ? 'Zeichnen aktiv – Rechteck aufziehen' : 'Region zeichnen' }}
       </button>
       <button (click)="useMapBounds()"
-              title="Übernimmt den aktuell sichtbaren Kartenausschnitt (Viewport) als Untersuchungsregion">
+        title="Übernimmt den aktuell sichtbaren Kartenausschnitt (Viewport) als Untersuchungsregion">
         Sichtbaren Ausschnitt übernehmen
       </button>
       <button (click)="previewZones()"
-              title="Zeigt das Zonenraster für die aktuelle Region und Zellgröße, ohne etwas zu speichern">
+        title="Zeigt das Zonenraster für die aktuelle Region und Zellgröße, ohne etwas zu speichern">
         Zonen-Vorschau
       </button>
-      <ng-container *ngIf="hasSimLayers">
+      @if (hasSimLayers) {
         <span class="toolbar-sep"></span>
         <button [class.toggled]="showParcelLayer" (click)="toggleParcelLayer()"
-                title="Zugestellte Pakete je Zone aus der logiTopp-Simulation (dunkler = mehr Pakete)">
+          title="Zugestellte Pakete je Zone aus der logiTopp-Simulation (dunkler = mehr Pakete)">
           📦 Paketdichte
         </button>
         <button [class.toggled]="showTourLayer" (click)="toggleTourLayer()"
-                title="Geplante Zustelltouren (blau = Transporter, grün = Lastenrad)">
+          title="Geplante Zustelltouren (blau = Transporter, grün = Lastenrad)">
           🚚 Touren
         </button>
         <button [class.toggled]="showCongestionLayer" (click)="toggleCongestionLayer()"
-                title="Netzlast aus SUMO: Kantenfarbe nach gemessener Geschwindigkeit relativ zum Tempolimit (grün ≥80 %, orange 50–80 %, rot <50 %)">
+          title="Netzlast aus SUMO: Kantenfarbe nach gemessener Geschwindigkeit relativ zum Tempolimit (grün ≥80 %, orange 50–80 %, rot <50 %)">
           🚦 Netzlast
         </button>
-      </ng-container>
+      }
     </div>
     <div id="map"></div>
   </main>
 
   <!-- Rechte Spalte: Pipeline + Artefakte -->
-  <aside class="panel" *ngIf="job || artifacts.length > 0">
-    <section class="block" *ngIf="job">
-      <h2>Pipeline</h2>
-      <ul class="stages">
-        <li *ngFor="let stage of job.stages" [attr.data-status]="stage.status" [title]="stage.message || ''">
-          <span class="status-dot"></span>
-          <span class="stage-name">{{ stage.name }}</span>
-          <span class="stage-time" *ngIf="stage.durationMs">{{ stage.durationMs }} ms</span>
-        </li>
-      </ul>
-      <p class="error" *ngIf="job.error">{{ job.error }}</p>
-      <div class="summary" *ngIf="job.summary && job.state === 'DONE'">
-        <h3>Ergebnis</h3>
-        <table>
-          <tr><td>Zonen</td><td>{{ job.summary['zones'] }}</td></tr>
-          <tr><td>Personen</td><td>{{ job.summary['persons'] }}</td></tr>
-          <tr><td>Haushalte</td><td>{{ job.summary['households'] }}</td></tr>
-          <tr><td>Pkw</td><td>{{ job.summary['cars'] }}</td></tr>
-          <tr><td>Depots</td><td>{{ job.summary['depots'] }}</td></tr>
-          <tr><td>Einwohner-Quelle</td><td>{{ job.summary['populationSource'] }}</td></tr>
-          <tr><td>OSM-Daten</td><td>{{ job.summary['osmDataUsed'] ? 'ja' : 'nein (synthetisch)' }}</td></tr>
-        </table>
-      </div>
-      <details class="log" *ngIf="job.log.length > 0">
-        <summary>Log ({{ job.log.length }})</summary>
-        <pre>{{ job.log.join('\n') }}</pre>
-      </details>
-    </section>
-
-    <section class="block" *ngIf="simKpis">
-      <h2>Simulation (logiTopp)</h2>
-      <table class="kpis">
-        <tr title="Alle simulierten Wege der Modellwoche">
-          <td>Wege (Woche)</td><td>{{ simKpis.demand?.trips | number:'1.0-0' }}</td></tr>
-        <tr title="Wege je Person und Tag; MiD 2017 (bundesweit): {{ simKpis.mid2017?.tripsPerPersonDay }}">
-          <td>Wege/Person/Tag</td>
-          <td>{{ simKpis.demand?.tripsPerPersonDay }}
-            <span class="mid">MiD {{ simKpis.mid2017?.tripsPerPersonDay }}</span></td></tr>
-        <tr title="Mittlere Weglänge der simulierten Wege; MiD 2017: {{ simKpis.mid2017?.avgTripKm }} km">
-          <td>Ø Weglänge</td>
-          <td>{{ simKpis.demand?.avgTripKm }} km
-            <span class="mid">MiD {{ simKpis.mid2017?.avgTripKm }} km</span></td></tr>
-        <ng-container *ngIf="simKpis.logistics as logistics; else legacyParcelKpis">
-          <tr><td>Zustellaufträge</td>
-            <td>{{ logistics.deliveries.generated | number:'1.0-0' }}</td></tr>
-          <tr title="In der Modellwoche erfolgreich zugestellte Pakete">
-            <td>davon zugestellt</td>
-            <td>{{ logistics.deliveries.delivered | number:'1.0-0' }}
-              ({{ logistics.deliveries.deliveryRate * 100 | number:'1.0-0' }} %)</td></tr>
-          <tr title="Eindeutige Zustellpakete, die nach mindestens einem fehlgeschlagenen Zustellversuch zum Depot zurückliefen">
-            <td>Zustell-Rückläufer</td>
-            <td>{{ logistics.deliveries.failedReturning | number:'1.0-0' }}</td></tr>
-          <tr><td>Kundenretouren</td>
-            <td>{{ logistics.customerReturns.generated | number:'1.0-0' }}</td></tr>
-          <tr title="Innerhalb der Modellwoche geplante Abholungen und tatsächlich zum Depot zurückgebrachte Kundenretouren">
-            <td>Abholungen</td>
-            <td>{{ logistics.customerReturns.plannedPickups | number:'1.0-0' }} geplant /
-              {{ logistics.customerReturns.collected | number:'1.0-0' }} eingesammelt
-              ({{ logistics.customerReturns.collectionRate * 100 | number:'1.0-0' }} %)</td></tr>
-        </ng-container>
-        <ng-template #legacyParcelKpis>
-          <tr><td>Pakete</td><td>{{ simKpis.parcels?.total | number:'1.0-0' }}</td></tr>
-          <tr title="In der Modellwoche zugestellte Pakete (älterer KPI-Vertrag ohne Richtungstrennung)">
-            <td>davon zugestellt</td>
-            <td>{{ simKpis.parcels?.delivered | number:'1.0-0' }}
-              ({{ (simKpis.parcels?.deliveryRate ?? 0) * 100 | number:'1.0-0' }} %)</td></tr>
-        </ng-template>
-        <tr><td>Laufzeit</td><td>{{ simKpis.simulationSeconds }} s</td></tr>
-      </table>
-
-      <h3>Modal Split vs. MiD 2017</h3>
-      <table class="kpis modal-split">
-        <tr><th></th><th>Simulation</th><th>MiD</th></tr>
-        <tr *ngFor="let row of modalSplitRows">
-          <td>{{ row.label }}</td>
-          <td>{{ row.sim * 100 | number:'1.0-0' }} %</td>
-          <td>{{ row.mid != null ? ((row.mid * 100 | number:'1.0-0') + ' %') : '–' }}</td>
-        </tr>
-      </table>
-      <p class="hint">Referenz: MiD 2017, bundesweite Mittelwerte. Abweichungen sind erwartbar:
-        Rastatt-kalibrierte Wahlmodelle und die Abgrenzung des Untersuchungsgebiets wirken auf
-        die Ergebnisse.</p>
-
-      <ng-container *ngIf="distanceBandRows.length > 0">
-        <h3>Distanzverteilung vs. MiD 2017</h3>
-        <table class="kpis modal-split">
-          <tr><th>Wegelänge</th><th>Simulation</th><th>MiD</th></tr>
-          <tr *ngFor="let row of distanceBandRows">
-            <td>{{ row.label }}</td>
-            <td>{{ row.sim != null ? ((row.sim * 100 | number:'1.1-1') + ' %') : '–' }}</td>
-            <td>{{ row.mid != null ? ((row.mid * 100 | number:'1.1-1') + ' %') : '–' }}</td>
-          </tr>
-        </table>
-        <p class="hint">
-          Sechs-Band-RMSE zu MiD:
-          {{ simKpis.demand?.distanceBandRmseToMid2017 ?? '–' }}.
-          <a *ngIf="simKpis.mid2017?.distanceBandsSourceUrl"
-             [href]="simKpis.mid2017?.distanceBandsSourceUrl"
-             target="_blank" rel="noopener">Quelle: {{ simKpis.mid2017?.distanceBandsSource }}</a>
-        </p>
-      </ng-container>
-
-      <ng-container *ngIf="modeDistanceRows.length > 0">
-        <h3>Modal Split je Distanzband</h3>
-        <div class="table-scroll">
-          <table class="kpis mode-distance">
-            <tr>
-              <th>Wegelänge</th>
-              <th *ngFor="let mode of modeDistanceRows[0].modes">{{ mode.label }}</th>
-            </tr>
-            <tr *ngFor="let row of modeDistanceRows">
-              <td>{{ row.label }}</td>
-              <td *ngFor="let mode of row.modes"
-                  title="Simulation / MiD 2017">
-                {{ pct1(mode.sim) }} / {{ pct1(mode.mid) }}
-              </td>
-            </tr>
-          </table>
-        </div>
-        <p class="hint">
-          Je Zelle: Simulation / MiD. Gemeinsamer 30-Zellen-RMSE:
-          {{ simKpis.demand?.modeDistanceJointRmseToMid2017 ?? '–' }}.
-          <a *ngIf="simKpis.mid2017?.modeDistanceSourceUrl"
-             [href]="simKpis.mid2017?.modeDistanceSourceUrl"
-             target="_blank" rel="noopener">Quelle: {{ simKpis.mid2017?.modeDistanceSource }}</a>
-        </p>
-      </ng-container>
-
-      <ng-container *ngIf="llmModeChoice">
-        <h3>LLM-Moduswahl (experimentell) vs. MNL / MiD</h3>
-        <table class="kpis modal-split">
-          <tr><th></th><th>LLM</th><th>MNL</th><th>MiD</th></tr>
-          <tr *ngFor="let m of calibrationModes">
-            <td>{{ m.label }}</td>
-            <td>{{ llmModeChoice.modalSplit[m.key] * 100 | number:'1.0-0' }} %</td>
-            <td>{{ llmModeChoice.logitoppMnl[m.key] != null ? ((llmModeChoice.logitoppMnl[m.key] * 100 | number:'1.0-0') + ' %') : '–' }}</td>
-            <td>{{ llmModeChoice.mid2017[m.key] != null ? ((llmModeChoice.mid2017[m.key] * 100 | number:'1.0-0') + ' %') : '–' }}</td>
-          </tr>
-        </table>
-        <p class="hint">{{ llmModeChoice.trips | number:'1.0-0' }} Trips, je Distanzband ein LLM-Aufruf
-          (geerdet in Reisezeiten). RMSE zu MiD {{ llmModeChoice.rmseToMid }}, zu MNL {{ llmModeChoice.rmseToMnl }}.
-          Die rohe LLM-Moduswahl überschätzt typischerweise aktive Modi (ihr fehlen die kalibrierten
-          Modus-Konstanten des MNL).</p>
-      </ng-container>
-
-      <ng-container *ngIf="simDepots.length > 0">
-        <h3>Depots</h3>
-        <div class="table-scroll">
-          <table class="kpis depots">
-            <tr><th>Depot</th><th>Dienst</th><th>Flotte</th><th>Zustellung</th><th>Retoure</th><th>Touren</th><th>km</th></tr>
-            <tr *ngFor="let depot of simDepots">
-              <td>{{ depot.name }}</td>
-              <td>{{ depot.cepsp }}</td>
-              <td>{{ depot.vehicles }} × {{ depot.vehicleType === 'BIKE' ? 'Rad' : 'Lkw' }}</td>
-              <td title="{{ depot.delivered }} zugestellt / {{ depot.deliveriesAssigned ?? depot.parcelsAssigned }} erzeugt; {{ depot.failedReturning ?? 0 }} Zustell-Rückläufer">
-                {{ depot.delivered | number:'1.0-0' }} /
-                {{ depot.deliveriesAssigned ?? depot.parcelsAssigned | number:'1.0-0' }}</td>
-              <td title="{{ depot.pickupsPlanned ?? 0 }} Abholungen geplant">
-                {{ depot.customerReturnsAssigned != null
-                  ? ((depot.pickupsCollected ?? 0 | number:'1.0-0') + ' / '
-                    + (depot.customerReturnsAssigned | number:'1.0-0'))
-                  : '–' }}</td>
-              <td>{{ depot.tours | number:'1.0-0' }}</td>
-              <td>{{ depot.distanceKm | number:'1.0-0' }}</td>
-            </tr>
-          </table>
-        </div>
-      </ng-container>
-    </section>
-
-    <section class="block" *ngIf="sumoSummary">
-      <h2>SUMO (mikroskopischer Verkehr)</h2>
-      <p class="hint">Mikroskopische Simulation der Auto- und Rad-Trips aus der logiTopp-Nachfrage
-        (OSM-Netz → netconvert → duarouter → sumo).</p>
-      <table class="kpis">
-        <tr title="Eingespeiste und erfolgreich abgeschlossene Fahrzeug-Fahrten">
-          <td>Fahrzeuge</td><td>{{ sumoSummary.vehicles | number:'1.0-0' }}</td></tr>
-        <tr *ngIf="sumoSummary.carTrips != null"
-            title="Zusammensetzung der eingespeisten Trips: PKW, Rad und Fuß aus der Personen-Nachfrage (Fußgänger als SUMO-Personen), Lieferverkehr aus logiTopp (Lkw als vClass delivery, Lastenräder als bicycle)">
-          <td>Zusammensetzung</td>
-          <td>{{ sumoSummary.carTrips | number:'1.0-0' }} PKW
-            <span class="mid">/ {{ sumoSummary.bikeTrips || 0 | number:'1.0-0' }} Rad
-            / {{ sumoSummary.walkTrips || 0 | number:'1.0-0' }} Fuß
-            <ng-container *ngIf="sumoSummary.deliveryTrips != null">/ {{ sumoSummary.deliveryTrips | number:'1.0-0' }} Lieferverkehr</ng-container></span></td></tr>
-        <tr *ngIf="sumoSummary.ptVehicles"
-            title="ÖV (GTFS → gtfs2pt.py): fahrplangebundene Bus-Fahrten und intermodal mitfahrende Nachfrage-Personen (Fußweg → Bus → Fußweg)">
-          <td>ÖV (Bus)</td>
-          <td>{{ sumoSummary.ptVehicles | number:'1.0-0' }} Fahrten
-            <span class="mid">/ {{ sumoSummary.ptRiders || 0 | number:'1.0-0' }} Fahrgäste</span></td></tr>
-        <tr *ngIf="sumoSummary.co2Kg != null"
-            title="CO₂-Schätzung über HBEFA-Emissionsklassen (Pkw: Benzin EU4, Lkw: Diesel-Lieferwagen EU4, Lastenrad: emissionsfrei)">
-          <td>CO₂ (HBEFA)</td>
-          <td>{{ sumoSummary.co2Kg | number:'1.0-1' }} kg
-            <span class="mid" *ngIf="sumoSummary.co2KgByType">
-              Pkw {{ sumoSummary.co2KgByType['pkw'] || 0 | number:'1.0-1' }} /
-              Lkw {{ sumoSummary.co2KgByType['lkw'] || 0 | number:'1.0-1' }}
-              <ng-container *ngIf="sumoSummary.co2KgByType['bus']">/
-              Bus {{ sumoSummary.co2KgByType['bus'] | number:'1.0-1' }}</ng-container> kg</span></td></tr>
-        <tr><td>Ø Reisedauer</td><td>{{ sumoSummary.meanDurationMin }} min</td></tr>
-        <tr><td>Ø Routenlänge</td><td>{{ sumoSummary.meanRouteLengthKm }} km</td></tr>
-        <tr title="Mittlere Reisegeschwindigkeit inkl. Halte/Wartezeiten">
-          <td>Ø Geschwindigkeit</td><td>{{ sumoSummary.meanSpeedKmh }} km/h</td></tr>
-        <tr><td>Laufzeit</td><td>{{ sumoSummary.runtimeSeconds }} s</td></tr>
-      </table>
-      <ul class="artifacts">
-        <li *ngFor="let t of ['sumo/net.net.xml','sumo/routes.rou.xml','sumo/scenario.sumocfg','sumo/statistics.xml']">
-          <a [href]="artifactUrl(t)" target="_blank">{{ t }}</a>
-        </li>
-      </ul>
-    </section>
-
-    <section class="block" *ngIf="gtaPersonas">
-      <h2>GTA-Agenten (KI-Verhalten)</h2>
-      <p class="hint" *ngIf="gtaPersonas.whatIf">
-        Was-wäre-wenn-Szenario: „{{ gtaPersonas.whatIf }}"
-      </p>
-      <table class="kpis">
-        <tr><th>Persona</th><th>Personen</th><th>Begründung (LLM)</th></tr>
-        <tr *ngFor="let p of gtaPersonas.personas">
-          <td>{{ p.label }}</td>
-          <td>{{ p.persons | number:'1.0-0' }}</td>
-          <td>{{ p.reason || '–' }}</td>
-        </tr>
-      </table>
-      <p class="hint">Je distinkter Persona ein LLM-Plan (gebündelt); die Begründung erklärt die
-        Tagesgestaltung – bei aktivem Was-wäre-wenn-Szenario dessen Einfluss.</p>
-    </section>
-
-    <section class="block" *ngIf="mobileCity">
-      <h2>MobileCity-Export</h2>
-      <p class="hint">District-aggregierte Config-Tabellen für die MobileCity/Takomat-App.</p>
-      <table class="kpis">
-        <tr title="Verkehrszellen als MobileCity-Districts (Untersuchungsgebiet + Umland)">
-          <td>Districts</td>
-          <td>{{ mobileCity.districts?.total }}
-            <span class="mid">{{ mobileCity.districts?.studyArea }} Gebiet / {{ mobileCity.districts?.surrounding }} Umland</span></td></tr>
-        <tr title="Einwohner je Altersgruppe (Children/Adults/Seniors)">
-          <td>Einwohner</td>
-          <td>{{ mobileCity.inhabitants?.total | number:'1.0-0' }}
-            <span class="mid">{{ mobileCity.inhabitants?.children }} K / {{ mobileCity.inhabitants?.adults }} E / {{ mobileCity.inhabitants?.seniors }} S</span></td></tr>
-        <tr title="Mittlere Wege/Person·Tag je Altersgruppe (POPtrips)">
-          <td>Wege/Tag</td>
-          <td>K {{ mobileCity.tripsPerDay?.children }} · E {{ mobileCity.tripsPerDay?.adults }} · S {{ mobileCity.tripsPerDay?.seniors }}</td></tr>
-      </table>
-      <ul class="artifacts">
-        <li *ngFor="let t of ['StudyAreaConfig.csv','REGdistricts.csv','REGattractivity.csv','POPinhabitants.csv','POPtrips.csv','districts.shp','districts.dbf','districts.shx','districts.prj']">
-          <a [href]="mobileCityUrl(t)" target="_blank">{{ t }}</a>
-        </li>
-      </ul>
-    </section>
-
-    <section class="block" *ngIf="artifacts.length > 0">
-      <h2>Artefakte ({{ artifacts.length }})</h2>
-      <ul class="artifacts">
-        <li *ngFor="let artifact of artifacts">
-          <a [href]="artifactUrl(artifact.path)" target="_blank">{{ artifact.path }}</a>
-          <span class="size">{{ formatSize(artifact.sizeBytes) }}</span>
-        </li>
-      </ul>
-    </section>
-  </aside>
-</div>
+  @if (job || artifacts.length > 0) {
+    <aside class="panel">
+      @if (job) {
+        <section class="block">
+          <h2>Pipeline</h2>
+          <ul class="stages">
+            @for (stage of job.stages; track stage) {
+              <li [attr.data-status]="stage.status" [title]="stage.message || ''">
+                <span class="status-dot"></span>
+                <span class="stage-name">{{ stage.name }}</span>
+                @if (stage.durationMs) {
+                  <span class="stage-time">{{ stage.durationMs }} ms</span>
+                }
+              </li>
+            }
+          </ul>
+          @if (job.error) {
+            <p class="error">{{ job.error }}</p>
+          }
+          @if (job.summary && job.state === 'DONE') {
+            <div class="summary">
+              <h3>Ergebnis</h3>
+              <table>
+                <tr><td>Zonen</td><td>{{ job.summary['zones'] }}</td></tr>
+                <tr><td>Personen</td><td>{{ job.summary['persons'] }}</td></tr>
+                <tr><td>Haushalte</td><td>{{ job.summary['households'] }}</td></tr>
+                <tr><td>Pkw</td><td>{{ job.summary['cars'] }}</td></tr>
+                <tr><td>Depots</td><td>{{ job.summary['depots'] }}</td></tr>
+                <tr><td>Einwohner-Quelle</td><td>{{ job.summary['populationSource'] }}</td></tr>
+                <tr><td>OSM-Daten</td><td>{{ job.summary['osmDataUsed'] ? 'ja' : 'nein (synthetisch)' }}</td></tr>
+              </table>
+            </div>
+          }
+          @if (job.log.length > 0) {
+            <details class="log">
+              <summary>Log ({{ job.log.length }})</summary>
+              <pre>{{ job.log.join('\n') }}</pre>
+            </details>
+          }
+        </section>
+      }
+      @if (simKpis) {
+        <section class="block">
+          <h2>Simulation (logiTopp)</h2>
+          <table class="kpis">
+            <tr title="Alle simulierten Wege der Modellwoche">
+              <td>Wege (Woche)</td><td>{{ simKpis.demand?.trips | number:'1.0-0' }}</td></tr>
+              <tr title="Wege je Person und Tag; MiD 2017 (bundesweit): {{ simKpis.mid2017?.tripsPerPersonDay }}">
+                <td>Wege/Person/Tag</td>
+                <td>{{ simKpis.demand?.tripsPerPersonDay }}
+                  <span class="mid">MiD {{ simKpis.mid2017?.tripsPerPersonDay }}</span></td></tr>
+                  <tr title="Mittlere Weglänge der simulierten Wege; MiD 2017: {{ simKpis.mid2017?.avgTripKm }} km">
+                    <td>Ø Weglänge</td>
+                    <td>{{ simKpis.demand?.avgTripKm }} km
+                      <span class="mid">MiD {{ simKpis.mid2017?.avgTripKm }} km</span></td></tr>
+                      @if (simKpis.logistics; as logistics) {
+                        <tr><td>Zustellaufträge</td>
+                        <td>{{ logistics.deliveries.generated | number:'1.0-0' }}</td></tr>
+                        <tr title="In der Modellwoche erfolgreich zugestellte Pakete">
+                          <td>davon zugestellt</td>
+                          <td>{{ logistics.deliveries.delivered | number:'1.0-0' }}
+                          ({{ logistics.deliveries.deliveryRate * 100 | number:'1.0-0' }} %)</td></tr>
+                          <tr title="Eindeutige Zustellpakete, die nach mindestens einem fehlgeschlagenen Zustellversuch zum Depot zurückliefen">
+                            <td>Zustell-Rückläufer</td>
+                            <td>{{ logistics.deliveries.failedReturning | number:'1.0-0' }}</td></tr>
+                            <tr><td>Kundenretouren</td>
+                            <td>{{ logistics.customerReturns.generated | number:'1.0-0' }}</td></tr>
+                            <tr title="Innerhalb der Modellwoche geplante Abholungen und tatsächlich zum Depot zurückgebrachte Kundenretouren">
+                              <td>Abholungen</td>
+                              <td>{{ logistics.customerReturns.plannedPickups | number:'1.0-0' }} geplant /
+                                {{ logistics.customerReturns.collected | number:'1.0-0' }} eingesammelt
+                              ({{ logistics.customerReturns.collectionRate * 100 | number:'1.0-0' }} %)</td></tr>
+                            } @else {
+                              <tr><td>Pakete</td><td>{{ simKpis.parcels?.total | number:'1.0-0' }}</td></tr>
+                              <tr title="In der Modellwoche zugestellte Pakete (älterer KPI-Vertrag ohne Richtungstrennung)">
+                                <td>davon zugestellt</td>
+                                <td>{{ simKpis.parcels?.delivered | number:'1.0-0' }}
+                                ({{ (simKpis.parcels?.deliveryRate ?? 0) * 100 | number:'1.0-0' }} %)</td></tr>
+                              }
+                              <tr><td>Laufzeit</td><td>{{ simKpis.simulationSeconds }} s</td></tr>
+                            </table>
+                            <h3>Modal Split vs. MiD 2017</h3>
+                            <table class="kpis modal-split">
+                              <tr><th></th><th>Simulation</th><th>MiD</th></tr>
+                              @for (row of modalSplitRows; track row) {
+                                <tr>
+                                  <td>{{ row.label }}</td>
+                                  <td>{{ row.sim * 100 | number:'1.0-0' }} %</td>
+                                  <td>{{ row.mid != null ? ((row.mid * 100 | number:'1.0-0') + ' %') : '–' }}</td>
+                                </tr>
+                              }
+                            </table>
+                            <p class="hint">Referenz: MiD 2017, bundesweite Mittelwerte. Abweichungen sind erwartbar:
+                              Rastatt-kalibrierte Wahlmodelle und die Abgrenzung des Untersuchungsgebiets wirken auf
+                            die Ergebnisse.</p>
+                            @if (distanceBandRows.length > 0) {
+                              <h3>Distanzverteilung vs. MiD 2017</h3>
+                              <table class="kpis modal-split">
+                                <tr><th>Wegelänge</th><th>Simulation</th><th>MiD</th></tr>
+                                @for (row of distanceBandRows; track row) {
+                                  <tr>
+                                    <td>{{ row.label }}</td>
+                                    <td>{{ row.sim != null ? ((row.sim * 100 | number:'1.1-1') + ' %') : '–' }}</td>
+                                    <td>{{ row.mid != null ? ((row.mid * 100 | number:'1.1-1') + ' %') : '–' }}</td>
+                                  </tr>
+                                }
+                              </table>
+                              <p class="hint">
+                                Sechs-Band-RMSE zu MiD:
+                                {{ simKpis.demand?.distanceBandRmseToMid2017 ?? '–' }}.
+                                @if (simKpis.mid2017?.distanceBandsSourceUrl) {
+                                  <a
+                                    [href]="simKpis.mid2017?.distanceBandsSourceUrl"
+                                  target="_blank" rel="noopener">Quelle: {{ simKpis.mid2017?.distanceBandsSource }}</a>
+                                }
+                              </p>
+                            }
+                            @if (modeDistanceRows.length > 0) {
+                              <h3>Modal Split je Distanzband</h3>
+                              <div class="table-scroll">
+                                <table class="kpis mode-distance">
+                                  <tr>
+                                    <th>Wegelänge</th>
+                                    @for (mode of modeDistanceRows[0].modes; track mode) {
+                                      <th>{{ mode.label }}</th>
+                                    }
+                                  </tr>
+                                  @for (row of modeDistanceRows; track row) {
+                                    <tr>
+                                      <td>{{ row.label }}</td>
+                                      @for (mode of row.modes; track mode) {
+                                        <td
+                                          title="Simulation / MiD 2017">
+                                          {{ pct1(mode.sim) }} / {{ pct1(mode.mid) }}
+                                        </td>
+                                      }
+                                    </tr>
+                                  }
+                                </table>
+                              </div>
+                              <p class="hint">
+                                Je Zelle: Simulation / MiD. Gemeinsamer 30-Zellen-RMSE:
+                                {{ simKpis.demand?.modeDistanceJointRmseToMid2017 ?? '–' }}.
+                                @if (simKpis.mid2017?.modeDistanceSourceUrl) {
+                                  <a
+                                    [href]="simKpis.mid2017?.modeDistanceSourceUrl"
+                                  target="_blank" rel="noopener">Quelle: {{ simKpis.mid2017?.modeDistanceSource }}</a>
+                                }
+                              </p>
+                            }
+                            @if (llmModeChoice) {
+                              <h3>LLM-Moduswahl (experimentell) vs. MNL / MiD</h3>
+                              <table class="kpis modal-split">
+                                <tr><th></th><th>LLM</th><th>MNL</th><th>MiD</th></tr>
+                                @for (m of calibrationModes; track m) {
+                                  <tr>
+                                    <td>{{ m.label }}</td>
+                                    <td>{{ llmModeChoice.modalSplit[m.key] * 100 | number:'1.0-0' }} %</td>
+                                    <td>{{ llmModeChoice.logitoppMnl[m.key] != null ? ((llmModeChoice.logitoppMnl[m.key] * 100 | number:'1.0-0') + ' %') : '–' }}</td>
+                                    <td>{{ llmModeChoice.mid2017[m.key] != null ? ((llmModeChoice.mid2017[m.key] * 100 | number:'1.0-0') + ' %') : '–' }}</td>
+                                  </tr>
+                                }
+                              </table>
+                              <p class="hint">{{ llmModeChoice.trips | number:'1.0-0' }} Trips, je Distanzband ein LLM-Aufruf
+                                (geerdet in Reisezeiten). RMSE zu MiD {{ llmModeChoice.rmseToMid }}, zu MNL {{ llmModeChoice.rmseToMnl }}.
+                                Die rohe LLM-Moduswahl überschätzt typischerweise aktive Modi (ihr fehlen die kalibrierten
+                              Modus-Konstanten des MNL).</p>
+                            }
+                            @if (simDepots.length > 0) {
+                              <h3>Depots</h3>
+                              <div class="table-scroll">
+                                <table class="kpis depots">
+                                  <tr><th>Depot</th><th>Dienst</th><th>Flotte</th><th>Zustellung</th><th>Retoure</th><th>Touren</th><th>km</th></tr>
+                                  @for (depot of simDepots; track depot) {
+                                    <tr>
+                                      <td>{{ depot.name }}</td>
+                                      <td>{{ depot.cepsp }}</td>
+                                      <td>{{ depot.vehicles }} × {{ depot.vehicleType === 'BIKE' ? 'Rad' : 'Lkw' }}</td>
+                                      <td title="{{ depot.delivered }} zugestellt / {{ depot.deliveriesAssigned ?? depot.parcelsAssigned }} erzeugt; {{ depot.failedReturning ?? 0 }} Zustell-Rückläufer">
+                                        {{ depot.delivered | number:'1.0-0' }} /
+                                      {{ depot.deliveriesAssigned ?? depot.parcelsAssigned | number:'1.0-0' }}</td>
+                                      <td title="{{ depot.pickupsPlanned ?? 0 }} Abholungen geplant">
+                                        {{ depot.customerReturnsAssigned != null
+                                        ? ((depot.pickupsCollected ?? 0 | number:'1.0-0') + ' / '
+                                        + (depot.customerReturnsAssigned | number:'1.0-0'))
+                                      : '–' }}</td>
+                                      <td>{{ depot.tours | number:'1.0-0' }}</td>
+                                      <td>{{ depot.distanceKm | number:'1.0-0' }}</td>
+                                    </tr>
+                                  }
+                                </table>
+                              </div>
+                            }
+                          </section>
+                        }
+                        @if (sumoSummary) {
+                          <section class="block">
+                            <h2>SUMO (mikroskopischer Verkehr)</h2>
+                            <p class="hint">Mikroskopische Simulation der Auto- und Rad-Trips aus der logiTopp-Nachfrage
+                            (OSM-Netz → netconvert → duarouter → sumo).</p>
+                            <table class="kpis">
+                              <tr title="Eingespeiste und erfolgreich abgeschlossene Fahrzeug-Fahrten">
+                                <td>Fahrzeuge</td><td>{{ sumoSummary.vehicles | number:'1.0-0' }}</td></tr>
+                                @if (sumoSummary.carTrips != null) {
+                                  <tr
+                                    title="Zusammensetzung der eingespeisten Trips: PKW, Rad und Fuß aus der Personen-Nachfrage (Fußgänger als SUMO-Personen), Lieferverkehr aus logiTopp (Lkw als vClass delivery, Lastenräder als bicycle)">
+                                    <td>Zusammensetzung</td>
+                                    <td>{{ sumoSummary.carTrips | number:'1.0-0' }} PKW
+                                      <span class="mid">/ {{ sumoSummary.bikeTrips || 0 | number:'1.0-0' }} Rad
+                                        / {{ sumoSummary.walkTrips || 0 | number:'1.0-0' }} Fuß
+                                        @if (sumoSummary.deliveryTrips != null) {
+                                          / {{ sumoSummary.deliveryTrips | number:'1.0-0' }} Lieferverkehr
+                                        }</span></td></tr>
+                                      }
+                                      @if (sumoSummary.ptVehicles) {
+                                        <tr
+                                          title="ÖV (GTFS → gtfs2pt.py): fahrplangebundene Bus-Fahrten und intermodal mitfahrende Nachfrage-Personen (Fußweg → Bus → Fußweg)">
+                                          <td>ÖV (Bus)</td>
+                                          <td>{{ sumoSummary.ptVehicles | number:'1.0-0' }} Fahrten
+                                            <span class="mid">/ {{ sumoSummary.ptRiders || 0 | number:'1.0-0' }} Fahrgäste</span></td></tr>
+                                          }
+                                          @if (sumoSummary.co2Kg != null) {
+                                            <tr
+                                              title="CO₂-Schätzung über HBEFA-Emissionsklassen (Pkw: Benzin EU4, Lkw: Diesel-Lieferwagen EU4, Lastenrad: emissionsfrei)">
+                                              <td>CO₂ (HBEFA)</td>
+                                              <td>{{ sumoSummary.co2Kg | number:'1.0-1' }} kg
+                                                @if (sumoSummary.co2KgByType) {
+                                                  <span class="mid">
+                                                    Pkw {{ sumoSummary.co2KgByType['pkw'] || 0 | number:'1.0-1' }} /
+                                                    Lkw {{ sumoSummary.co2KgByType['lkw'] || 0 | number:'1.0-1' }}
+                                                    @if (sumoSummary.co2KgByType['bus']) {
+                                                      /
+                                                      Bus {{ sumoSummary.co2KgByType['bus'] | number:'1.0-1' }}
+                                                    } kg</span>
+                                                  }</td></tr>
+                                                }
+                                                <tr><td>Ø Reisedauer</td><td>{{ sumoSummary.meanDurationMin }} min</td></tr>
+                                                <tr><td>Ø Routenlänge</td><td>{{ sumoSummary.meanRouteLengthKm }} km</td></tr>
+                                                <tr title="Mittlere Reisegeschwindigkeit inkl. Halte/Wartezeiten">
+                                                  <td>Ø Geschwindigkeit</td><td>{{ sumoSummary.meanSpeedKmh }} km/h</td></tr>
+                                                  <tr><td>Laufzeit</td><td>{{ sumoSummary.runtimeSeconds }} s</td></tr>
+                                                </table>
+                                                <ul class="artifacts">
+                                                  @for (t of ['sumo/net.net.xml','sumo/routes.rou.xml','sumo/scenario.sumocfg','sumo/statistics.xml']; track t) {
+                                                    <li>
+                                                      <a [href]="artifactUrl(t)" target="_blank">{{ t }}</a>
+                                                    </li>
+                                                  }
+                                                </ul>
+                                              </section>
+                                            }
+                                            @if (gtaPersonas) {
+                                              <section class="block">
+                                                <h2>GTA-Agenten (KI-Verhalten)</h2>
+                                                @if (gtaPersonas.whatIf) {
+                                                  <p class="hint">
+                                                    Was-wäre-wenn-Szenario: „{{ gtaPersonas.whatIf }}"
+                                                  </p>
+                                                }
+                                                <table class="kpis">
+                                                  <tr><th>Persona</th><th>Personen</th><th>Begründung (LLM)</th></tr>
+                                                  @for (p of gtaPersonas.personas; track p) {
+                                                    <tr>
+                                                      <td>{{ p.label }}</td>
+                                                      <td>{{ p.persons | number:'1.0-0' }}</td>
+                                                      <td>{{ p.reason || '–' }}</td>
+                                                    </tr>
+                                                  }
+                                                </table>
+                                                <p class="hint">Je distinkter Persona ein LLM-Plan (gebündelt); die Begründung erklärt die
+                                                Tagesgestaltung – bei aktivem Was-wäre-wenn-Szenario dessen Einfluss.</p>
+                                              </section>
+                                            }
+                                            @if (mobileCity) {
+                                              <section class="block">
+                                                <h2>MobileCity-Export</h2>
+                                                <p class="hint">District-aggregierte Config-Tabellen für die MobileCity/Takomat-App.</p>
+                                                <table class="kpis">
+                                                  <tr title="Verkehrszellen als MobileCity-Districts (Untersuchungsgebiet + Umland)">
+                                                    <td>Districts</td>
+                                                    <td>{{ mobileCity.districts?.total }}
+                                                      <span class="mid">{{ mobileCity.districts?.studyArea }} Gebiet / {{ mobileCity.districts?.surrounding }} Umland</span></td></tr>
+                                                      <tr title="Einwohner je Altersgruppe (Children/Adults/Seniors)">
+                                                        <td>Einwohner</td>
+                                                        <td>{{ mobileCity.inhabitants?.total | number:'1.0-0' }}
+                                                          <span class="mid">{{ mobileCity.inhabitants?.children }} K / {{ mobileCity.inhabitants?.adults }} E / {{ mobileCity.inhabitants?.seniors }} S</span></td></tr>
+                                                          <tr title="Mittlere Wege/Person·Tag je Altersgruppe (POPtrips)">
+                                                            <td>Wege/Tag</td>
+                                                            <td>K {{ mobileCity.tripsPerDay?.children }} · E {{ mobileCity.tripsPerDay?.adults }} · S {{ mobileCity.tripsPerDay?.seniors }}</td></tr>
+                                                          </table>
+                                                          <ul class="artifacts">
+                                                            @for (t of ['StudyAreaConfig.csv','REGdistricts.csv','REGattractivity.csv','POPinhabitants.csv','POPtrips.csv','districts.shp','districts.dbf','districts.shx','districts.prj']; track t) {
+                                                              <li>
+                                                                <a [href]="mobileCityUrl(t)" target="_blank">{{ t }}</a>
+                                                              </li>
+                                                            }
+                                                          </ul>
+                                                        </section>
+                                                      }
+                                                      @if (artifacts.length > 0) {
+                                                        <section class="block">
+                                                          <h2>Artefakte ({{ artifacts.length }})</h2>
+                                                          <ul class="artifacts">
+                                                            @for (artifact of artifacts; track artifact) {
+                                                              <li>
+                                                                <a [href]="artifactUrl(artifact.path)" target="_blank">{{ artifact.path }}</a>
+                                                                <span class="size">{{ formatSize(artifact.sizeBytes) }}</span>
+                                                              </li>
+                                                            }
+                                                          </ul>
+                                                        </section>
+                                                      }
+                                                    </aside>
+                                                  }
+                                                </div>

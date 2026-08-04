@@ -12,7 +12,6 @@ import { Scenario } from '../../core/models/scenario.model';
  */
 @Component({
   selector: 'app-comparison',
-  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './comparison.component.html',
   styleUrls: ['./comparison.component.css']

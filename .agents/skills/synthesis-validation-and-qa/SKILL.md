@@ -71,7 +71,7 @@ cd backend && mvn -o test                       # 118 Testfälle, externe Tests 
 mvn -o test -Dtest=SumoRunnerTest               # nur SUMO-Kette
 SUMO_HOME=… SYNTHESIS_TRANSIT_VENV=validation/transit-venv/bin/python \
   mvn -o test -Dtest=PtIntegrationTest          # voller ÖV-Test (~23 min überliefert)
-cd frontend && npx ng build                     # strict AOT = Frontend-Gate
+cd frontend && npm test && npm run build         # Vitest + Produktions-AOT = Frontend-Gate
 ```
 
 ## 3. Muster für neue Tests
@@ -121,7 +121,8 @@ Schwellen werden VOR dem Lauf festgelegt**, nie nachträglich ans Ergebnis angep
 - **Netz-Feedback:** Konvergenz bei Δ < 0,01 (MSA-Δ über Relationen, vgl. `FeedbackMathTest`).
 - **Plausibilitätsfenster trips/Person/Tag:** ~2,8–3,5, Referenz MiD 3,1.
 - **Merge-Gate:** vollständige Suite grün (`cd backend && mvn -o test`) plus
-  `cd frontend && npx ng build` bei Frontend-Änderungen (Details → `synthesis-change-control`).
+  `cd frontend && npm test && npm run build` bei Frontend-Änderungen
+  (Details → `synthesis-change-control`).
 - **OD-Stau-Faktoren:** in [1,3] (hart im `SumoRunnerTest` asserted).
 
 ## Provenienz & Wartung
