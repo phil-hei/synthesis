@@ -1,5 +1,6 @@
 package de.synthesis.scenario;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -54,12 +55,13 @@ public class ComparisonController {
         params.put("depots", scenario.logistics.depots.size());
 
         Path simulation = repository.artifactsDir(scenario.id).resolve("simulation");
-        node.set("kpis", readJson(simulation.resolve("kpis.json")));
+        JsonNode kpis = readJson(simulation.resolve("kpis.json"));
+        node.set("kpis", kpis);
         node.set("depotStats", readJson(simulation.resolve("depot-stats.json")));
         // SUMO-Kennzahlen (Fahrzeuge, Lieferverkehr, CO₂ je Typ) für den Emissionsvergleich
         node.set("sumo", readJson(repository.artifactsDir(scenario.id)
                 .resolve("sumo").resolve("summary.json")));
-        node.put("simulated", Files.exists(simulation.resolve("kpis.json")));
+        node.put("simulated", !kpis.isNull());
         return node;
     }
 

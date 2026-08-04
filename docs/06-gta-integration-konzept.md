@@ -821,8 +821,10 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   keine unsichtbare zusätzliche MiD-Spalte mehr. API-Fehler werden sichtbar gemeldet und löschen
   veraltete Vergleichsergebnisse, statt sie als aktuellen Stand stehen zu lassen. Während einer
   Anfrage verhindert ein sichtbarer Ladezustand parallele Doppelaufrufe; Statusmeldungen werden
-  über `aria-live` angekündigt. Fixture-freie Komponententests rendern den Vergleich mit und ohne
-  MiD-Spalte sowie die Studio-Shell inklusive Leaflet-Karte. **Verifiziert:**
+  über `aria-live` angekündigt. Das Backend setzt `simulated=true` nur noch für eine parsebare
+  `simulation/kpis.json`; eine beschädigte Datei wird nicht als gültiges Ergebnis ausgegeben.
+  Fixture-freie Komponententests rendern den Vergleich mit und ohne MiD-Spalte sowie die
+  Studio-Shell inklusive Leaflet-Karte. **Verifiziert:** `ComparisonControllerTest`,
   Angular/Vitest-Suite 11/11 grün und Produktions-AOT-Build.
 - Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
   `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,
