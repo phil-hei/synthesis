@@ -832,7 +832,9 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Szenarioliste, Defaults, Upload-Status, Artefakten oder laufendem Job-Polling werden sichtbar
   gemeldet. Ein gescheitertes Löschen setzt den Busy-Zustand zurück und behält die Auswahl;
   Polling stoppt beim ersten Statusfehler statt den Backend-Aufruf endlos zu wiederholen.
-  **Verifiziert:** fixture-freie Angular/Vitest-Suite 15/15 grün und Produktions-AOT-Build.
+  Save-Validierung, Polling-Abbruch und Timer-Cleanup beim Verlassen des Studios sind als
+  Interaktionstests abgesichert. **Verifiziert:** fixture-freie Angular/Vitest-Suite 18/18 grün
+  und Produktions-AOT-Build.
 - Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
   `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,
   vgl. docs/05); GPL-Konformität (Arm's-length-Trennung) dokumentieren.

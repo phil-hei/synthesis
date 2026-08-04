@@ -10,8 +10,11 @@ describe('StudioComponent', () => {
   let api: {
     listScenarios: ReturnType<typeof vi.fn>;
     scenarioDefaults: ReturnType<typeof vi.fn>;
+    createScenario: ReturnType<typeof vi.fn>;
+    updateScenario: ReturnType<typeof vi.fn>;
     deleteScenario: ReturnType<typeof vi.fn>;
     listUploads: ReturnType<typeof vi.fn>;
+    generate: ReturnType<typeof vi.fn>;
     generationStatus: ReturnType<typeof vi.fn>;
   };
 
@@ -20,8 +23,11 @@ describe('StudioComponent', () => {
     api = {
       listScenarios: vi.fn(() => of([])),
       scenarioDefaults: vi.fn(() => of(null)),
+      createScenario: vi.fn(),
+      updateScenario: vi.fn(),
       deleteScenario: vi.fn(() => of(undefined)),
       listUploads: vi.fn(() => of([])),
+      generate: vi.fn(() => of(job('QUEUED'))),
       generationStatus: vi.fn(() => of(job('RUNNING')))
     };
 
@@ -33,6 +39,7 @@ describe('StudioComponent', () => {
 
   afterEach(() => {
     fixture?.destroy();
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -97,6 +104,52 @@ describe('StudioComponent', () => {
     fixture.componentInstance.onScenarioSelected();
 
     expect(fixture.componentInstance.message).toBe('Upload-Status konnte nicht geladen werden');
+  });
+
+  it('rejects saving before a region has been selected', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('draft');
+
+    fixture.componentInstance.save();
+
+    expect(api.createScenario).not.toHaveBeenCalled();
+    expect(api.updateScenario).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.busy).toBe(false);
+    expect(fixture.componentInstance.message)
+      .toBe('Bitte zuerst eine Region auf der Karte zeichnen');
+  });
+
+  it('stops polling after the first status failure', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('saved');
+    api.generationStatus.mockReturnValue(throwError(() => new Error('offline')));
+    vi.useFakeTimers();
+
+    fixture.componentInstance.generate();
+    vi.advanceTimersByTime(1500);
+
+    expect(api.generate).toHaveBeenCalledWith('saved');
+    expect(api.generationStatus).toHaveBeenCalledOnce();
+    expect(fixture.componentInstance.message).toBe('Job-Status konnte nicht geladen werden');
+
+    vi.advanceTimersByTime(3000);
+    expect(api.generationStatus).toHaveBeenCalledOnce();
+  });
+
+  it('clears active polling when the studio is destroyed', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('saved');
+    vi.useFakeTimers();
+
+    fixture.componentInstance.generate();
+    fixture.destroy();
+    fixture = null;
+    vi.advanceTimersByTime(3000);
+
+    expect(api.generationStatus).not.toHaveBeenCalled();
   });
 });
 
