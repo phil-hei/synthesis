@@ -751,15 +751,15 @@
                                                 <table class="kpis">
                                                   <tr title="Verkehrszellen als MobileCity-Districts (Untersuchungsgebiet + Umland)">
                                                     <td>Districts</td>
-                                                    <td>{{ mobileCity.districts?.total }}
-                                                      <span class="mid">{{ mobileCity.districts?.studyArea }} Gebiet / {{ mobileCity.districts?.surrounding }} Umland</span></td></tr>
+                                                    <td>{{ mobileCity.districts.total }}
+                                                      <span class="mid">{{ mobileCity.districts.studyArea }} Gebiet / {{ mobileCity.districts.surrounding }} Umland</span></td></tr>
                                                       <tr title="Einwohner je Altersgruppe (Children/Adults/Seniors)">
                                                         <td>Einwohner</td>
-                                                        <td>{{ mobileCity.inhabitants?.total | number:'1.0-0' }}
-                                                          <span class="mid">{{ mobileCity.inhabitants?.children }} K / {{ mobileCity.inhabitants?.adults }} E / {{ mobileCity.inhabitants?.seniors }} S</span></td></tr>
+                                                        <td>{{ mobileCity.inhabitants.total | number:'1.0-0' }}
+                                                          <span class="mid">{{ mobileCity.inhabitants.children }} K / {{ mobileCity.inhabitants.adults }} E / {{ mobileCity.inhabitants.seniors }} S</span></td></tr>
                                                           <tr title="Mittlere Wege/Person·Tag je Altersgruppe (POPtrips)">
                                                             <td>Wege/Tag</td>
-                                                            <td>K {{ mobileCity.tripsPerDay?.children }} · E {{ mobileCity.tripsPerDay?.adults }} · S {{ mobileCity.tripsPerDay?.seniors }}</td></tr>
+                                                            <td>K {{ mobileCity.tripsPerDay.children }} · E {{ mobileCity.tripsPerDay.adults }} · S {{ mobileCity.tripsPerDay.seniors }}</td></tr>
                                                           </table>
                                                           <ul class="artifacts">
                                                             @for (t of ['StudyAreaConfig.csv','REGdistricts.csv','REGattractivity.csv','POPinhabitants.csv','POPtrips.csv','districts.shp','districts.dbf','districts.shx','districts.prj']; track t) {

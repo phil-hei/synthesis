@@ -1,4 +1,59 @@
+import type { FeatureCollection, LineString, Polygon } from 'geojson';
+
 /** Ergebnis-Artefakte der Pipeline (JSON-Formate aus artifacts/…). */
+
+/** Gemeinsame Eigenschaften der Zonen-Polygone aus Vorschau und Pipeline-Artefakten. */
+export interface ZoneFeatureProperties {
+  zoneId: string;
+  name: string;
+  population?: number;
+  households?: number;
+  parcels?: number;
+  deliveries?: number;
+  customerReturns?: number;
+  [property: string]: string | number | undefined;
+}
+
+/** Antwort von POST /api/preview/zones. */
+export interface ZonePreview extends FeatureCollection<Polygon, ZoneFeatureProperties> {
+  cellSizeMeters: number;
+  autoAdjusted: boolean;
+}
+
+export type ParcelDensityGeoJson = FeatureCollection<Polygon, ZoneFeatureProperties>;
+
+export interface TourFeatureProperties {
+  depot: string;
+  vehicleType: string;
+  tourId: string;
+  distanceKm: number;
+  stops: number;
+  deliveries: number;
+  pickups: number;
+  failedDeliveries: number;
+}
+
+export type TourGeoJson = FeatureCollection<LineString, TourFeatureProperties>;
+
+export interface CongestionFeatureProperties {
+  edge: string;
+  speedKmh: number;
+  limitKmh: number;
+  relSpeed: number;
+  timeLossS: number;
+  sampledS: number;
+}
+
+export type CongestionGeoJson = FeatureCollection<LineString, CongestionFeatureProperties>;
+
+/** mobilecity/summary.json – aggregierte Übersicht des Takomat-Exports. */
+export interface MobileCitySummary {
+  tables: number;
+  districts: { total: number; studyArea: number; surrounding: number };
+  inhabitants: { children: number; adults: number; seniors: number; total: number };
+  privateCars: number;
+  tripsPerDay: { children: number; adults: number; seniors: number };
+}
 
 /** Modus → Anteil (0..1), Schlüssel: pedestrian/bike/car/passenger/publicTransport. */
 export interface ModalSplit {

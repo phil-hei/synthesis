@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ComparisonEntry } from '../models/results.model';
+import { ComparisonEntry, ZonePreview } from '../models/results.model';
 import {
   ArtifactInfo, CommuterUploadSummary, GenerationJob, Region, RegionEstimate, RoadNetworkUploadSummary,
   Scenario, UploadInfo, UploadSummary, WorkplaceMarginUploadSummary
@@ -35,8 +35,9 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/scenarios/${id}`);
   }
 
-  previewZones(region: Region, cellSizeMeters: number, mode = 'grid'): Observable<any> {
-    return this.http.post<any>(`${this.base}/preview/zones`, { region, cellSizeMeters, mode });
+  previewZones(region: Region, cellSizeMeters: number, mode = 'grid'): Observable<ZonePreview> {
+    return this.http.post<ZonePreview>(
+      `${this.base}/preview/zones`, { region, cellSizeMeters, mode });
   }
 
   estimateRegion(region: Region): Observable<RegionEstimate> {
@@ -114,7 +115,7 @@ export class ApiService {
   }
 
   /** Lädt ein JSON-Artefakt (z. B. simulation/kpis.json); 404 wenn Stufe übersprungen. */
-  artifactJson<T = any>(id: string, path: string): Observable<T> {
+  artifactJson<T = unknown>(id: string, path: string): Observable<T> {
     return this.http.get<T>(this.artifactUrl(id, path));
   }
 

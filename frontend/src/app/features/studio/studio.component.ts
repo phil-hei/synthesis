@@ -8,14 +8,22 @@ import {
   Scenario, UploadSummary, WorkplaceMarginUploadSummary
 } from '../../core/models/scenario.model';
 import {
+  CongestionFeatureProperties,
+  CongestionGeoJson,
   DepotStats,
   DISTANCE_BAND_ROWS,
   GtaPersonas,
   LlmModeChoiceResult,
+  MobileCitySummary,
   ModalSplit,
+  ParcelDensityGeoJson,
   SimKpis,
-  SumoSummary
+  SumoSummary,
+  TourFeatureProperties,
+  TourGeoJson,
+  ZoneFeatureProperties
 } from '../../core/models/results.model';
+import type { LineString, Polygon } from 'geojson';
 
 @Component({
   selector: 'app-studio',
@@ -49,7 +57,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   sumoSummary: SumoSummary | null = null;
   llmModeChoice: LlmModeChoiceResult | null = null;
   gtaPersonas: GtaPersonas | null = null;
-  mobileCity: any = null;
+  mobileCity: MobileCitySummary | null = null;
   simDepots: DepotStats[] = [];
   showParcelLayer = false;
   showTourLayer = false;
@@ -59,15 +67,15 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   private regionLayer: L.Rectangle | null = null;
   private drawRect: L.Rectangle | null = null;
   private drawStart: L.LatLng | null = null;
-  private zoneLayer: L.GeoJSON | null = null;
+  private zoneLayer: L.GeoJSON<ZoneFeatureProperties, Polygon> | null = null;
   private depotLayer = L.layerGroup();
   private pollTimer: ReturnType<typeof setInterval> | null = null;
-  private parcelLayer: L.GeoJSON | null = null;
-  private tourLayer: L.GeoJSON | null = null;
-  private congestionLayer: L.GeoJSON | null = null;
-  private parcelDensity: any = null;
-  private tourData: any = null;
-  private congestionData: any = null;
+  private parcelLayer: L.GeoJSON<ZoneFeatureProperties, Polygon> | null = null;
+  private tourLayer: L.GeoJSON<TourFeatureProperties, LineString> | null = null;
+  private congestionLayer: L.GeoJSON<CongestionFeatureProperties, LineString> | null = null;
+  private parcelDensity: ParcelDensityGeoJson | null = null;
+  private tourData: TourGeoJson | null = null;
+  private congestionData: CongestionGeoJson | null = null;
 
   constructor(private api: ApiService) {
   }
@@ -395,7 +403,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
         this.scenario.zoning.mode).subscribe({
       next: geojson => {
         this.zoneLayer?.remove();
-        this.zoneLayer = L.geoJSON(geojson, {
+        this.zoneLayer = L.geoJSON<ZoneFeatureProperties, Polygon>(geojson, {
           style: { color: '#15314f', weight: 1, fillOpacity: 0.05 }
         }).addTo(this.map);
         if (geojson.autoAdjusted && this.scenario) {
@@ -714,7 +722,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
       this.loadSimulation();
-      this.api.artifactJson(this.scenario.id, 'mobilecity/summary.json')
+      this.api.artifactJson<MobileCitySummary>(this.scenario.id, 'mobilecity/summary.json')
         .subscribe({ next: s => this.mobileCity = s, error: () => this.mobileCity = null });
     }
   }
@@ -737,9 +745,9 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({ next: kpis => this.simKpis = kpis, error: () => this.simKpis = null });
     this.api.artifactJson<DepotStats[]>(id, 'simulation/depot-stats.json')
       .subscribe({ next: depots => this.simDepots = depots, error: () => this.simDepots = [] });
-    this.api.artifactJson(id, 'simulation/parcel-density.geojson')
+    this.api.artifactJson<ParcelDensityGeoJson>(id, 'simulation/parcel-density.geojson')
       .subscribe({ next: geo => this.parcelDensity = geo, error: () => this.parcelDensity = null });
-    this.api.artifactJson(id, 'simulation/tours.geojson')
+    this.api.artifactJson<TourGeoJson>(id, 'simulation/tours.geojson')
       .subscribe({ next: geo => this.tourData = geo, error: () => this.tourData = null });
     this.api.artifactJson<SumoSummary>(id, 'sumo/summary.json')
       .subscribe({ next: s => this.sumoSummary = s, error: () => this.sumoSummary = null });
@@ -747,7 +755,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({ next: s => this.llmModeChoice = s, error: () => this.llmModeChoice = null });
     this.api.artifactJson<GtaPersonas>(id, 'population/gta-personas.json')
       .subscribe({ next: s => this.gtaPersonas = s, error: () => this.gtaPersonas = null });
-    this.api.artifactJson(id, 'sumo/congestion.geojson')
+    this.api.artifactJson<CongestionGeoJson>(id, 'sumo/congestion.geojson')
       .subscribe({ next: geo => this.congestionData = geo, error: () => this.congestionData = null });
   }
 
@@ -784,8 +792,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     const max = Math.max(1, ...this.parcelDensity.features
-      .map((f: any) => f.properties?.parcels ?? 0));
-    this.parcelLayer = L.geoJSON(this.parcelDensity, {
+      .map(feature => feature.properties?.parcels ?? 0));
+    this.parcelLayer = L.geoJSON<ZoneFeatureProperties, Polygon>(this.parcelDensity, {
       style: feature => ({
         color: '#8e44ad', weight: 1,
         fillColor: '#8e44ad',
@@ -804,7 +812,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.showTourLayer || !this.tourData) {
       return;
     }
-    this.tourLayer = L.geoJSON(this.tourData, {
+    this.tourLayer = L.geoJSON<TourFeatureProperties, LineString>(this.tourData, {
       style: feature => ({
         color: feature?.properties?.vehicleType === 'BIKE' ? '#27ae60' : '#2980b9',
         weight: 1, opacity: 0.35
@@ -823,7 +831,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.showCongestionLayer || !this.congestionData) {
       return;
     }
-    this.congestionLayer = L.geoJSON(this.congestionData, {
+    this.congestionLayer = L.geoJSON<CongestionFeatureProperties, LineString>(this.congestionData, {
       style: feature => {
         const rel = feature?.properties?.relSpeed ?? 1;
         return {
