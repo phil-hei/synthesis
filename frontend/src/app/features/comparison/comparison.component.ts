@@ -40,6 +40,10 @@ export class ComparisonComponent implements OnInit {
     return Object.keys(this.selected).filter(id => this.selected[id]);
   }
 
+  get tableColumnCount(): number {
+    return 1 + this.entries.length + (this.mid ? 1 : 0);
+  }
+
   loadComparison(): void {
     const ids = this.selectedIds;
     if (ids.length === 0) {

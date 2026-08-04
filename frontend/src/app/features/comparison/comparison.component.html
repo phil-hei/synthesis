@@ -38,7 +38,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="group"><td [attr.colspan]="entries.length + 2">Parameter</td></tr>
+          <tr class="group"><td [attr.colspan]="tableColumnCount">Parameter</td></tr>
           <tr>
             <td>Zellgröße</td>
             @for (e of entries; track e) {
@@ -95,7 +95,7 @@
               <td></td>
             }
           </tr>
-          <tr class="group"><td [attr.colspan]="entries.length + 2">Nachfrage</td></tr>
+          <tr class="group"><td [attr.colspan]="tableColumnCount">Nachfrage</td></tr>
           <tr>
             <td>Wege gesamt</td>
             @for (e of entries; track e) {
@@ -124,7 +124,7 @@
             }
           </tr>
           @if (distanceBandRows.length > 0) {
-            <tr class="group"><td [attr.colspan]="entries.length + 2">Distanzverteilung</td></tr>
+            <tr class="group"><td [attr.colspan]="tableColumnCount">Distanzverteilung</td></tr>
             <tr>
               <td>RMSE zu MiD</td>
               @for (e of entries; track e) {
@@ -146,7 +146,7 @@
               </tr>
             }
           }
-          <tr class="group"><td [attr.colspan]="entries.length + 2">Modal Split</td></tr>
+          <tr class="group"><td [attr.colspan]="tableColumnCount">Modal Split</td></tr>
           @for (key of modeKeys; track key) {
             <tr>
               <td>{{ modeLabel(key) }}</td>
@@ -160,7 +160,7 @@
           }
           @if (hasModeDistanceKpis) {
             <tr class="group">
-              <td [attr.colspan]="entries.length + 2">Modus × Distanz</td>
+              <td [attr.colspan]="tableColumnCount">Modus × Distanz</td>
             </tr>
             <tr>
               <td>Gemeinsamer 30-Zellen-RMSE zu MiD</td>
@@ -174,7 +174,7 @@
               }
             </tr>
           }
-          <tr class="group"><td [attr.colspan]="entries.length + 2">Logistik</td></tr>
+          <tr class="group"><td [attr.colspan]="tableColumnCount">Logistik</td></tr>
           <tr>
             <td>Zustellaufträge</td>
             @for (e of entries; track e) {
@@ -246,7 +246,7 @@
             </tr>
           }
           @if (hasSumo) {
-            <tr class="group"><td [attr.colspan]="entries.length + 2">Verkehr &amp; Emissionen (SUMO)</td></tr>
+            <tr class="group"><td [attr.colspan]="tableColumnCount">Verkehr &amp; Emissionen (SUMO)</td></tr>
             <tr>
               <td>Fahrzeuge (simuliert)</td>
               @for (e of entries; track e) {

@@ -65,13 +65,13 @@ Die Backend-Tests liegen unter `backend/src/test/java/de/synthesis/`. Suite-Lauf
 | `generation/pipeline/PtIntegrationTest.java` | Volle ÖV-Kette (Phase C): GTFS-Auto-Fetch aus Raw-Cache → Zuschnitt → `gtfs2pt.py` (Fahrplan-Infrastruktur, Fenster 6–9 Uhr — **Test-Override**; Betriebs-Default ist 6–10) → SumoRunner mit intermodaler Personen-Routung, `maxTrips=1500`. Asserts: `ptVehicles() > 0`, `ptRiders() > 0`, PKW/Rad weiterhin simuliert, mindestens eine `<ride>`-Etappe im `routes.rou.xml` | **Env-gated**: `SYNTHESIS_TRANSIT_VENV` gesetzt + existiert; alle drei Fixtures vorhanden; `sumo.isAvailable()`; `transit.isAvailable()` | `demandsimulationResult.csv`, `validation/rastatt-test.osm`, `validation/kvv-gtfs.zip`; ~23 min überliefert — deshalb Env-gated, nicht im Standard-Lauf |
 
 Die fixture-freie Frontend-Suite läuft mit `cd frontend && npm test` über Angulars nativen
-Vitest-Runner (7 Tests, Stand 2026-08-04):
+Vitest-Runner (8 Tests, Stand 2026-08-04):
 
 | Klasse (unter `frontend/src/app/`) | Prüft |
 |---|---|
 | `app.component.spec.ts` | Anwendungsshell, Navigation und Router-Outlets werden gerendert |
 | `core/services/api.service.spec.ts` | Szenario-GET und Kodierung mehrerer Vergleichs-IDs im API-Vertrag |
-| `features/comparison/comparison.component.spec.ts` | Initialladen und Rendern des migrierten Pickers, Leerauswahl ohne API-Aufruf sowie gemischte simulierte/nicht simulierte Ergebnisse inklusive MiD-Referenz |
+| `features/comparison/comparison.component.spec.ts` | Initialladen und Rendern des migrierten Pickers, Leerauswahl ohne API-Aufruf, exakte Tabellenspannen mit/ohne MiD-Spalte sowie gemischte simulierte/nicht simulierte Ergebnisse inklusive MiD-Referenz |
 | `features/studio/studio.component.spec.ts` | Rendern des migrierten Studio-Templates sowie Initialisierung und Cleanup der Leaflet-Karte ohne Backend oder Netzwerk |
 
 Verifizierte Kommandos:

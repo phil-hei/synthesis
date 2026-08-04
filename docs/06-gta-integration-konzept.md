@@ -816,6 +816,11 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   (vier moderat, einer hoch), deren betroffene Versionen Angular CLI/Build derzeit exakt pinnt.
   **Verifiziert:** 3/3 Frontend-Tests, Produktions-AOT-Build (305,57 kB initial) und
   GitLab-CI-Vertrag mit `npm run audit:prod` + `npm test` + `npm run build`.
+- **✅ Szenariovergleich gegen Layout-Regressionen abgesichert (2026-08-04):** Die
+  Gruppenzeilen verwenden nun die tatsächlich gerenderte Spaltenzahl; ohne KPI-Referenz entsteht
+  keine unsichtbare zusätzliche MiD-Spalte mehr. Fixture-freie Komponententests rendern den
+  Vergleich mit und ohne MiD-Spalte sowie die Studio-Shell inklusive Leaflet-Karte.
+  **Verifiziert:** Angular/Vitest-Suite 8/8 grün und Produktions-AOT-Build.
 - Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
   `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,
   vgl. docs/05); GPL-Konformität (Arm's-length-Trennung) dokumentieren.

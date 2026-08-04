@@ -52,6 +52,22 @@ describe('ComparisonComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Bitte mindestens ein Szenario auswählen');
   });
 
+  it('spans group rows only across columns that are rendered', () => {
+    comparisonEntries = [
+      { name: 'Basis', simulated: false, params: params() },
+      { name: 'Ohne Ergebnis', simulated: false, params: params() }
+    ];
+    const fixture = TestBed.createComponent(ComparisonComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.selected = { basis: true, 'ohne-ergebnis': true };
+
+    fixture.componentInstance.loadComparison();
+    fixture.detectChanges();
+
+    const groupCell = (fixture.nativeElement as HTMLElement).querySelector('.group td');
+    expect(groupCell?.getAttribute('colspan')).toBe('3');
+  });
+
   it('renders mixed comparison results and the MiD reference', () => {
     comparisonEntries = [
       {
@@ -77,6 +93,8 @@ describe('ComparisonComponent', () => {
     expect(text).toContain('MiD 2017');
     expect(text).toContain('Ohne Simulationsergebnis (nur Parameter): Ohne Ergebnis');
     expect(text).toContain('12.5 km');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.group td')
+      ?.getAttribute('colspan')).toBe('4');
   });
 });
 
