@@ -9,11 +9,12 @@
         {{ s.name }}
       </label>
     }
-    <button class="primary" (click)="loadComparison()" [disabled]="selectedIds.length === 0">
-      Vergleichen ({{ selectedIds.length }})
+    <button class="primary" (click)="loadComparison()"
+      [disabled]="selectedIds.length === 0 || loading">
+      {{ loading ? 'Wird geladen…' : 'Vergleichen (' + selectedIds.length + ')' }}
     </button>
     @if (message) {
-      <p class="message">{{ message }}</p>
+      <p class="message" aria-live="polite">{{ message }}</p>
     }
   </aside>
 

@@ -819,9 +819,11 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
 - **✅ Szenariovergleich gegen Layout-Regressionen abgesichert (2026-08-04):** Die
   Gruppenzeilen verwenden nun die tatsächlich gerenderte Spaltenzahl; ohne KPI-Referenz entsteht
   keine unsichtbare zusätzliche MiD-Spalte mehr. API-Fehler werden sichtbar gemeldet und löschen
-  veraltete Vergleichsergebnisse, statt sie als aktuellen Stand stehen zu lassen. Fixture-freie
-  Komponententests rendern den Vergleich mit und ohne MiD-Spalte sowie die Studio-Shell inklusive
-  Leaflet-Karte. **Verifiziert:** Angular/Vitest-Suite 10/10 grün und Produktions-AOT-Build.
+  veraltete Vergleichsergebnisse, statt sie als aktuellen Stand stehen zu lassen. Während einer
+  Anfrage verhindert ein sichtbarer Ladezustand parallele Doppelaufrufe; Statusmeldungen werden
+  über `aria-live` angekündigt. Fixture-freie Komponententests rendern den Vergleich mit und ohne
+  MiD-Spalte sowie die Studio-Shell inklusive Leaflet-Karte. **Verifiziert:**
+  Angular/Vitest-Suite 11/11 grün und Produktions-AOT-Build.
 - Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
   `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,
   vgl. docs/05); GPL-Konformität (Arm's-length-Trennung) dokumentieren.

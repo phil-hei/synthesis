@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { DISTANCE_BAND_ROWS, DistanceBands } from '../../core/models/results.model';
 import { Scenario } from '../../core/models/scenario.model';
@@ -23,6 +24,7 @@ export class ComparisonComponent implements OnInit {
   entries: any[] = [];
   mid: any = null;
   message = '';
+  loading = false;
 
   private readonly modeLabels: Record<string, string> = {
     pedestrian: 'Fuß', bike: 'Rad', car: 'MIV (Fahrer)',
@@ -57,7 +59,8 @@ export class ComparisonComponent implements OnInit {
       this.message = 'Bitte mindestens ein Szenario auswählen';
       return;
     }
-    this.api.compare(ids).subscribe({
+    this.loading = true;
+    this.api.compare(ids).pipe(finalize(() => this.loading = false)).subscribe({
       next: entries => {
         this.entries = entries;
         // Bei gemischten Alt-/Neuläufen die reichste Referenz wählen: ältere kpis.json

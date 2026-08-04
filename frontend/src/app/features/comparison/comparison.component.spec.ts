@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Scenario } from '../../core/models/scenario.model';
 import { ApiService } from '../../core/services/api.service';
@@ -77,6 +77,29 @@ describe('ComparisonComponent', () => {
     expect(groupCell?.getAttribute('colspan')).toBe('3');
   });
 
+  it('prevents duplicate requests while a comparison is loading', () => {
+    const response = new Subject<any[]>();
+    api.compare.mockReturnValue(response);
+    const fixture = TestBed.createComponent(ComparisonComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.selected = { basis: true };
+
+    fixture.componentInstance.loadComparison();
+    fixture.detectChanges();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector('button');
+    expect(fixture.componentInstance.loading).toBe(true);
+    expect(button?.getAttribute('disabled')).not.toBeNull();
+    expect(button?.textContent).toContain('Wird geladen');
+
+    response.next([]);
+    response.complete();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.loading).toBe(false);
+    expect(button?.getAttribute('disabled')).toBeNull();
+  });
+
   it('clears stale results when loading the comparison fails', () => {
     api.compare.mockReturnValue(throwError(() => new Error('offline')));
     const fixture = TestBed.createComponent(ComparisonComponent);
@@ -90,7 +113,9 @@ describe('ComparisonComponent', () => {
 
     expect(fixture.componentInstance.entries).toEqual([]);
     expect(fixture.componentInstance.mid).toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Vergleich konnte nicht geladen werden');
+    const message = (fixture.nativeElement as HTMLElement).querySelector('.message');
+    expect(message?.textContent).toContain('Vergleich konnte nicht geladen werden');
+    expect(message?.getAttribute('aria-live')).toBe('polite');
     expect(fixture.nativeElement.textContent).not.toContain('Veraltet');
   });
 
