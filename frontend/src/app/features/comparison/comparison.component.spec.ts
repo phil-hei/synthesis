@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Scenario } from '../../core/models/scenario.model';
 import { ApiService } from '../../core/services/api.service';
@@ -41,6 +41,15 @@ describe('ComparisonComponent', () => {
     expect(element.textContent).toContain('Ohne Ergebnis');
   });
 
+  it('shows a visible error when scenarios cannot be loaded', () => {
+    api.listScenarios.mockReturnValue(throwError(() => new Error('offline')));
+    const fixture = TestBed.createComponent(ComparisonComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.scenarios).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('Szenarien konnten nicht geladen werden');
+  });
+
   it('does not call the comparison API without a selection', () => {
     const fixture = TestBed.createComponent(ComparisonComponent);
     fixture.detectChanges();
@@ -66,6 +75,23 @@ describe('ComparisonComponent', () => {
 
     const groupCell = (fixture.nativeElement as HTMLElement).querySelector('.group td');
     expect(groupCell?.getAttribute('colspan')).toBe('3');
+  });
+
+  it('clears stale results when loading the comparison fails', () => {
+    api.compare.mockReturnValue(throwError(() => new Error('offline')));
+    const fixture = TestBed.createComponent(ComparisonComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.entries = [{ name: 'Veraltet' }];
+    fixture.componentInstance.mid = { avgTripKm: 12.5 };
+    fixture.componentInstance.selected = { basis: true };
+
+    fixture.componentInstance.loadComparison();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.entries).toEqual([]);
+    expect(fixture.componentInstance.mid).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Vergleich konnte nicht geladen werden');
+    expect(fixture.nativeElement.textContent).not.toContain('Veraltet');
   });
 
   it('renders mixed comparison results and the MiD reference', () => {
