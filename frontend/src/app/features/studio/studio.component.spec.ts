@@ -14,6 +14,10 @@ describe('StudioComponent', () => {
     updateScenario: ReturnType<typeof vi.fn>;
     deleteScenario: ReturnType<typeof vi.fn>;
     listUploads: ReturnType<typeof vi.fn>;
+    deletePopulationGrid: ReturnType<typeof vi.fn>;
+    deleteRoadNetwork: ReturnType<typeof vi.fn>;
+    deleteCommuters: ReturnType<typeof vi.fn>;
+    deleteWorkplaceMargins: ReturnType<typeof vi.fn>;
     generate: ReturnType<typeof vi.fn>;
     generationStatus: ReturnType<typeof vi.fn>;
   };
@@ -27,6 +31,10 @@ describe('StudioComponent', () => {
       updateScenario: vi.fn(),
       deleteScenario: vi.fn(() => of(undefined)),
       listUploads: vi.fn(() => of([])),
+      deletePopulationGrid: vi.fn(() => of(undefined)),
+      deleteRoadNetwork: vi.fn(() => of(undefined)),
+      deleteCommuters: vi.fn(() => of(undefined)),
+      deleteWorkplaceMargins: vi.fn(() => of(undefined)),
       generate: vi.fn(() => of(job('QUEUED'))),
       generationStatus: vi.fn(() => of(job('RUNNING')))
     };
@@ -104,6 +112,35 @@ describe('StudioComponent', () => {
     fixture.componentInstance.onScenarioSelected();
 
     expect(fixture.componentInstance.message).toBe('Upload-Status konnte nicht geladen werden');
+  });
+
+  it('reports removal failures and resets every upload busy state', () => {
+    const failure = throwError(() => new Error('offline'));
+    api.deletePopulationGrid.mockReturnValue(failure);
+    api.deleteRoadNetwork.mockReturnValue(failure);
+    api.deleteCommuters.mockReturnValue(failure);
+    api.deleteWorkplaceMargins.mockReturnValue(failure);
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('saved');
+
+    fixture.componentInstance.removeUpload();
+    expect(fixture.componentInstance.uploadBusy).toBe(false);
+    expect(fixture.componentInstance.message)
+      .toBe('Bevölkerungsraster konnte nicht entfernt werden');
+
+    fixture.componentInstance.removeRoadNetwork();
+    expect(fixture.componentInstance.roadNetworkUploadBusy).toBe(false);
+    expect(fixture.componentInstance.message).toBe('Straßennetz konnte nicht entfernt werden');
+
+    fixture.componentInstance.removeCommuters();
+    expect(fixture.componentInstance.commuterUploadBusy).toBe(false);
+    expect(fixture.componentInstance.message).toBe('Pendlermatrix konnte nicht entfernt werden');
+
+    fixture.componentInstance.removeWorkplaceMargins();
+    expect(fixture.componentInstance.workplaceMarginUploadBusy).toBe(false);
+    expect(fixture.componentInstance.message)
+      .toBe('Arbeitsplatz-Randwert konnte nicht entfernt werden');
   });
 
   it('rejects saving before a region has been selected', () => {

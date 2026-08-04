@@ -112,7 +112,8 @@
                 }
               </span>
               <button class="link danger" (click)="removeRoadNetwork()"
-              title="Hochgeladenes Straßennetz entfernen">✕</button>
+                [disabled]="roadNetworkUploadBusy"
+                title="Hochgeladenes Straßennetz entfernen">✕</button>
             </div>
           }
         </div>
@@ -140,7 +141,8 @@
                 }
               </span>
               <button class="link danger" (click)="removeCommuters()"
-              title="Pendlermatrix entfernen">✕</button>
+                [disabled]="commuterUploadBusy"
+                title="Pendlermatrix entfernen">✕</button>
             </div>
           }
         </div>
@@ -164,7 +166,8 @@
                 }
               </span>
               <button class="link danger" (click)="removeWorkplaceMargins()"
-              title="Arbeitsplatz-Randwert entfernen">✕</button>
+                [disabled]="workplaceMarginUploadBusy"
+                title="Arbeitsplatz-Randwert entfernen">✕</button>
             </div>
           }
         </div>
@@ -193,7 +196,8 @@
                   {{ upload.totalPopulation.toLocaleString() }} Einwohner ({{ upload.format }})
                 }
               </span>
-              <button class="link danger" (click)="removeUpload()" title="Hochgeladenes Raster entfernen">✕</button>
+              <button class="link danger" (click)="removeUpload()" [disabled]="uploadBusy"
+                title="Hochgeladenes Raster entfernen">✕</button>
             </div>
           }
         </div>

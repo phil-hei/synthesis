@@ -833,7 +833,9 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   gemeldet. Ein gescheitertes Löschen setzt den Busy-Zustand zurück und behält die Auswahl;
   Polling stoppt beim ersten Statusfehler statt den Backend-Aufruf endlos zu wiederholen.
   Save-Validierung, Polling-Abbruch und Timer-Cleanup beim Verlassen des Studios sind als
-  Interaktionstests abgesichert. **Verifiziert:** fixture-freie Angular/Vitest-Suite 18/18 grün
+  Interaktionstests abgesichert. Auch das Entfernen von Bevölkerungsraster, Straßennetz,
+  Pendlermatrix und Arbeitsplatz-Randwert meldet API-Fehler sichtbar und setzt den jeweiligen
+  Busy-Zustand zurück. **Verifiziert:** fixture-freie Angular/Vitest-Suite 20/20 grün
   und Produktions-AOT-Build.
 - Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
   `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,

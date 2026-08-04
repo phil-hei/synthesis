@@ -448,9 +448,17 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.scenario?.id) {
       return;
     }
-    this.api.deletePopulationGrid(this.scenario.id).subscribe(() => {
-      this.upload = null;
-      this.message = 'Bevölkerungsraster entfernt';
+    this.uploadBusy = true;
+    this.api.deletePopulationGrid(this.scenario.id).subscribe({
+      next: () => {
+        this.upload = null;
+        this.uploadBusy = false;
+        this.message = 'Bevölkerungsraster entfernt';
+      },
+      error: () => {
+        this.uploadBusy = false;
+        this.message = 'Bevölkerungsraster konnte nicht entfernt werden';
+      }
     });
   }
 
@@ -482,9 +490,17 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.scenario?.id) {
       return;
     }
-    this.api.deleteRoadNetwork(this.scenario.id).subscribe(() => {
-      this.roadNetworkUpload = null;
-      this.message = 'OSM-Straßennetz entfernt; Routing nutzt wieder Server-Konfiguration oder Overpass';
+    this.roadNetworkUploadBusy = true;
+    this.api.deleteRoadNetwork(this.scenario.id).subscribe({
+      next: () => {
+        this.roadNetworkUpload = null;
+        this.roadNetworkUploadBusy = false;
+        this.message = 'OSM-Straßennetz entfernt; Routing nutzt wieder Server-Konfiguration oder Overpass';
+      },
+      error: () => {
+        this.roadNetworkUploadBusy = false;
+        this.message = 'Straßennetz konnte nicht entfernt werden';
+      }
     });
   }
 
@@ -519,9 +535,17 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.scenario?.id) {
       return;
     }
-    this.api.deleteCommuters(this.scenario.id).subscribe(() => {
-      this.commuterUpload = null;
-      this.message = 'Pendlermatrix entfernt; Arbeitsziele nutzen wieder das Gravitationsmodell';
+    this.commuterUploadBusy = true;
+    this.api.deleteCommuters(this.scenario.id).subscribe({
+      next: () => {
+        this.commuterUpload = null;
+        this.commuterUploadBusy = false;
+        this.message = 'Pendlermatrix entfernt; Arbeitsziele nutzen wieder das Gravitationsmodell';
+      },
+      error: () => {
+        this.commuterUploadBusy = false;
+        this.message = 'Pendlermatrix konnte nicht entfernt werden';
+      }
     });
   }
 
@@ -554,9 +578,17 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.scenario?.id) {
       return;
     }
-    this.api.deleteWorkplaceMargins(this.scenario.id).subscribe(() => {
-      this.workplaceMarginUpload = null;
-      this.message = 'Arbeitsplatz-Randwert entfernt; Außenquote nutzt wieder das Gravitationsmodell';
+    this.workplaceMarginUploadBusy = true;
+    this.api.deleteWorkplaceMargins(this.scenario.id).subscribe({
+      next: () => {
+        this.workplaceMarginUpload = null;
+        this.workplaceMarginUploadBusy = false;
+        this.message = 'Arbeitsplatz-Randwert entfernt; Außenquote nutzt wieder das Gravitationsmodell';
+      },
+      error: () => {
+        this.workplaceMarginUploadBusy = false;
+        this.message = 'Arbeitsplatz-Randwert konnte nicht entfernt werden';
+      }
     });
   }
 
