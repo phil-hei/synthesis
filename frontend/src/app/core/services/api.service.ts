@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { ComparisonEntry } from '../models/results.model';
 import {
   ArtifactInfo, CommuterUploadSummary, GenerationJob, Region, RegionEstimate, RoadNetworkUploadSummary,
   Scenario, UploadInfo, UploadSummary, WorkplaceMarginUploadSummary
@@ -118,7 +119,8 @@ export class ApiService {
   }
 
   /** Bündelt Parameter + Simulations-KPIs mehrerer Szenarien für den Vergleich. */
-  compare(ids: string[]): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/comparison`, { params: { ids: ids.join(',') } });
+  compare(ids: string[]): Observable<ComparisonEntry[]> {
+    return this.http.get<ComparisonEntry[]>(
+      `${this.base}/comparison`, { params: { ids: ids.join(',') } });
   }
 }

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ComparisonEntry, ComparisonParams } from '../../core/models/results.model';
 import { Scenario } from '../../core/models/scenario.model';
 import { ApiService } from '../../core/services/api.service';
 import { ComparisonComponent } from './comparison.component';
@@ -11,7 +12,7 @@ describe('ComparisonComponent', () => {
     scenario('ohne-ergebnis', 'Ohne Ergebnis')
   ];
 
-  let comparisonEntries: any[];
+  let comparisonEntries: ComparisonEntry[];
   let api: {
     listScenarios: ReturnType<typeof vi.fn>;
     compare: ReturnType<typeof vi.fn>;
@@ -63,8 +64,8 @@ describe('ComparisonComponent', () => {
 
   it('spans group rows only across columns that are rendered', () => {
     comparisonEntries = [
-      { name: 'Basis', simulated: false, params: params() },
-      { name: 'Ohne Ergebnis', simulated: false, params: params() }
+      comparisonEntry('basis', 'Basis'),
+      comparisonEntry('ohne-ergebnis', 'Ohne Ergebnis')
     ];
     const fixture = TestBed.createComponent(ComparisonComponent);
     fixture.detectChanges();
@@ -78,7 +79,7 @@ describe('ComparisonComponent', () => {
   });
 
   it('prevents duplicate requests while a comparison is loading', () => {
-    const response = new Subject<any[]>();
+    const response = new Subject<ComparisonEntry[]>();
     api.compare.mockReturnValue(response);
     const fixture = TestBed.createComponent(ComparisonComponent);
     fixture.detectChanges();
@@ -104,7 +105,7 @@ describe('ComparisonComponent', () => {
     api.compare.mockReturnValue(throwError(() => new Error('offline')));
     const fixture = TestBed.createComponent(ComparisonComponent);
     fixture.detectChanges();
-    fixture.componentInstance.entries = [{ name: 'Veraltet' }];
+    fixture.componentInstance.entries = [comparisonEntry('stale', 'Veraltet')];
     fixture.componentInstance.mid = { avgTripKm: 12.5 };
     fixture.componentInstance.selected = { basis: true };
 
@@ -121,16 +122,14 @@ describe('ComparisonComponent', () => {
 
   it('renders mixed comparison results and the MiD reference', () => {
     comparisonEntries = [
-      {
-        name: 'Basis',
+      comparisonEntry('basis', 'Basis', {
         simulated: true,
-        params: params(),
         kpis: {
           demand: { trips: 1000, tripsPerPersonDay: 3.0, avgTripKm: 9.5 },
           mid2017: { tripsPerPersonDay: 3.1, avgTripKm: 12.5 }
         }
-      },
-      { name: 'Ohne Ergebnis', simulated: false, params: params() }
+      }),
+      comparisonEntry('ohne-ergebnis', 'Ohne Ergebnis')
     ];
     const fixture = TestBed.createComponent(ComparisonComponent);
     fixture.detectChanges();
@@ -195,7 +194,21 @@ function scenario(id: string, name: string): Scenario {
   };
 }
 
-function params(): Record<string, unknown> {
+function comparisonEntry(
+    id: string, name: string, overrides: Partial<ComparisonEntry> = {}): ComparisonEntry {
+  return {
+    id,
+    name,
+    params: params(),
+    kpis: null,
+    depotStats: null,
+    sumo: null,
+    simulated: false,
+    ...overrides
+  };
+}
+
+function params(): ComparisonParams {
   return {
     cellSizeMeters: 500,
     samplingFraction: 1,

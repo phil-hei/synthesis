@@ -823,6 +823,8 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Anfrage verhindert ein sichtbarer Ladezustand parallele Doppelaufrufe; Statusmeldungen werden
   über `aria-live` angekündigt. Das Backend setzt `simulated=true` nur noch für eine parsebare
   `simulation/kpis.json`; eine beschädigte Datei wird nicht als gültiges Ergebnis ausgegeben.
+  Der Frontend-Vertrag für Parameter, KPIs, Depot- und SUMO-Ergebnisse ist vollständig typisiert;
+  `strictTemplates` prüft den Vergleich damit ohne `any`-Ausnahme.
   Fixture-freie Komponententests rendern den Vergleich mit und ohne MiD-Spalte sowie die
   Studio-Shell inklusive Leaflet-Karte. **Verifiziert:** `ComparisonControllerTest`,
   Angular/Vitest-Suite 11/11 grün und Produktions-AOT-Build.

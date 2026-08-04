@@ -3,7 +3,9 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
-import { DISTANCE_BAND_ROWS, DistanceBands } from '../../core/models/results.model';
+import {
+  ComparisonEntry, DISTANCE_BAND_ROWS, DistanceBands, Mid2017Reference
+} from '../../core/models/results.model';
 import { Scenario } from '../../core/models/scenario.model';
 
 /**
@@ -21,8 +23,8 @@ export class ComparisonComponent implements OnInit {
 
   scenarios: Scenario[] = [];
   selected: Record<string, boolean> = {};
-  entries: any[] = [];
-  mid: any = null;
+  entries: ComparisonEntry[] = [];
+  mid: Mid2017Reference | null = null;
   message = '';
   loading = false;
 
@@ -124,13 +126,13 @@ export class ComparisonComponent implements OnInit {
     return value == null ? '–' : (value * 100).toFixed(1).replace('.', ',') + ' %';
   }
 
-  deliveryGenerated(entry: any): number | null {
+  deliveryGenerated(entry: ComparisonEntry): number | null {
     return entry.kpis?.logistics?.deliveries?.generated
       ?? entry.kpis?.parcels?.total
       ?? null;
   }
 
-  deliveryRate(entry: any): number | null {
+  deliveryRate(entry: ComparisonEntry): number | null {
     return entry.kpis?.logistics?.deliveries?.deliveryRate
       ?? entry.kpis?.parcels?.deliveryRate
       ?? null;

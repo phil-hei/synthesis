@@ -100,7 +100,7 @@
           <tr>
             <td>Wege gesamt</td>
             @for (e of entries; track e) {
-              <td>{{ e.kpis?.demand?.trips != null ? (e.kpis.demand.trips | number:'1.0-0') : '–' }}</td>
+              <td>{{ e.kpis?.demand?.trips != null ? (e.kpis?.demand?.trips | number:'1.0-0') : '–' }}</td>
             }
             @if (mid) {
               <td class="mid-col">–</td>
@@ -118,7 +118,7 @@
           <tr>
             <td>Ø Weglänge</td>
             @for (e of entries; track e) {
-              <td>{{ e.kpis?.demand?.avgTripKm != null ? e.kpis.demand.avgTripKm + ' km' : '–' }}</td>
+              <td>{{ e.kpis?.demand?.avgTripKm != null ? e.kpis?.demand?.avgTripKm + ' km' : '–' }}</td>
             }
             @if (mid) {
               <td class="mid-col">{{ mid.avgTripKm }} km</td>
@@ -200,7 +200,7 @@
               <td>Zustell-Rückläufer</td>
               @for (e of entries; track e) {
                 <td>{{ e.kpis?.logistics?.deliveries?.failedReturning != null
-                ? (e.kpis.logistics.deliveries.failedReturning | number:'1.0-0') : '–' }}</td>
+                ? (e.kpis?.logistics?.deliveries?.failedReturning | number:'1.0-0') : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -210,7 +210,7 @@
               <td>Kundenretouren</td>
               @for (e of entries; track e) {
                 <td>{{ e.kpis?.logistics?.customerReturns?.generated != null
-                ? (e.kpis.logistics.customerReturns.generated | number:'1.0-0') : '–' }}</td>
+                ? (e.kpis?.logistics?.customerReturns?.generated | number:'1.0-0') : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -220,7 +220,7 @@
               <td>Abholungen geplant</td>
               @for (e of entries; track e) {
                 <td>{{ e.kpis?.logistics?.customerReturns?.plannedPickups != null
-                ? (e.kpis.logistics.customerReturns.plannedPickups | number:'1.0-0') : '–' }}</td>
+                ? (e.kpis?.logistics?.customerReturns?.plannedPickups | number:'1.0-0') : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -230,7 +230,7 @@
               <td>Retouren eingesammelt</td>
               @for (e of entries; track e) {
                 <td>{{ e.kpis?.logistics?.customerReturns?.collected != null
-                ? (e.kpis.logistics.customerReturns.collected | number:'1.0-0') : '–' }}</td>
+                ? (e.kpis?.logistics?.customerReturns?.collected | number:'1.0-0') : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -251,7 +251,7 @@
             <tr>
               <td>Fahrzeuge (simuliert)</td>
               @for (e of entries; track e) {
-                <td>{{ e.sumo?.vehicles != null ? (e.sumo.vehicles | number:'1.0-0') : '–' }}</td>
+                <td>{{ e.sumo?.vehicles != null ? (e.sumo?.vehicles | number:'1.0-0') : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -260,7 +260,7 @@
             <tr title="Zustelltouren-Legs (Lkw/Lastenrad) aus logiTopp">
               <td>davon Lieferverkehr</td>
               @for (e of entries; track e) {
-                <td>{{ e.sumo?.deliveryTrips != null ? (e.sumo.deliveryTrips | number:'1.0-0') : '–' }}</td>
+                <td>{{ e.sumo?.deliveryTrips != null ? (e.sumo?.deliveryTrips | number:'1.0-0') : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -270,7 +270,7 @@
               <td>Rad / Fuß</td>
               @for (e of entries; track e) {
                 <td>{{ e.sumo?.carTrips != null
-                ? ((e.sumo.bikeTrips || 0 | number:'1.0-0') + ' / ' + (e.sumo.walkTrips || 0 | number:'1.0-0')) : '–' }}</td>
+                ? ((e.sumo?.bikeTrips || 0 | number:'1.0-0') + ' / ' + (e.sumo?.walkTrips || 0 | number:'1.0-0')) : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -280,7 +280,7 @@
               <td>ÖV Fahrten / Fahrgäste</td>
               @for (e of entries; track e) {
                 <td>{{ e.sumo?.ptVehicles
-                ? ((e.sumo.ptVehicles | number:'1.0-0') + ' / ' + (e.sumo.ptRiders || 0 | number:'1.0-0')) : '–' }}</td>
+                ? ((e.sumo?.ptVehicles | number:'1.0-0') + ' / ' + (e.sumo?.ptRiders || 0 | number:'1.0-0')) : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -289,7 +289,7 @@
             <tr>
               <td>Ø Geschwindigkeit</td>
               @for (e of entries; track e) {
-                <td>{{ e.sumo?.meanSpeedKmh != null ? e.sumo.meanSpeedKmh + ' km/h' : '–' }}</td>
+                <td>{{ e.sumo?.meanSpeedKmh != null ? e.sumo?.meanSpeedKmh + ' km/h' : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -298,7 +298,7 @@
             <tr title="CO₂-Schätzung über HBEFA-Emissionsklassen (Lastenräder emissionsfrei)">
               <td>CO₂ gesamt</td>
               @for (e of entries; track e) {
-                <td>{{ e.sumo?.co2Kg != null ? (e.sumo.co2Kg | number:'1.0-1') + ' kg' : '–' }}</td>
+                <td>{{ e.sumo?.co2Kg != null ? (e.sumo?.co2Kg | number:'1.0-1') + ' kg' : '–' }}</td>
               }
               @if (mid) {
                 <td></td>
@@ -308,9 +308,9 @@
               <td>CO₂ Pkw / Lieferv. / Bus</td>
               @for (e of entries; track e) {
                 <td>
-                  {{ e.sumo?.co2KgByType ? ((e.sumo.co2KgByType['pkw'] || 0 | number:'1.0-1') + ' / '
-                  + (e.sumo.co2KgByType['lkw'] || 0 | number:'1.0-1') + ' / '
-                + (e.sumo.co2KgByType['bus'] || 0 | number:'1.0-1') + ' kg') : '–' }}</td>
+                  {{ e.sumo?.co2KgByType ? ((e.sumo?.co2KgByType?.['pkw'] || 0 | number:'1.0-1') + ' / '
+                  + (e.sumo?.co2KgByType?.['lkw'] || 0 | number:'1.0-1') + ' / '
+                + (e.sumo?.co2KgByType?.['bus'] || 0 | number:'1.0-1') + ' kg') : '–' }}</td>
               }
               @if (mid) {
                 <td></td>

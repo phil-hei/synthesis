@@ -115,6 +115,30 @@ export interface SumoSummary {
   co2KgByType?: { [vType: string]: number };
 }
 
+/** Parameterteil eines Eintrags von GET /api/comparison. */
+export interface ComparisonParams {
+  cellSizeMeters: number;
+  samplingFraction: number;
+  useRealRouting: boolean;
+  parcelsPerPersonWeek: number;
+  returnsEnabled: boolean;
+  returnShare: number;
+  depots: number;
+}
+
+export type Mid2017Reference = NonNullable<SimKpis['mid2017']>;
+
+/** Vollständiger Frontend-Vertrag des Szenariovergleichs. */
+export interface ComparisonEntry {
+  id: string;
+  name: string;
+  params: ComparisonParams;
+  kpis: SimKpis | null;
+  depotStats: DepotStats[] | null;
+  sumo: SumoSummary | null;
+  simulated: boolean;
+}
+
 /** population/gta-personas.json – GTA-Personas mit LLM-Begründungen (GTA 3d). */
 export interface GtaPersonas {
   whatIf?: string;
