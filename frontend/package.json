@@ -9,6 +9,7 @@
     "start": "ng serve --port 4300 --proxy-config proxy.conf.json",
     "build": "ng build --configuration production",
     "build:dev": "ng build --configuration development",
+    "audit:prod": "npm audit --omit=dev",
     "test": "ng test --watch=false",
     "test:watch": "ng test"
   },

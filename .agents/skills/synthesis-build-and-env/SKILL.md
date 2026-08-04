@@ -38,8 +38,8 @@ repo-relativ (Repo-Root = Verzeichnis mit `backend/`, `frontend/`, `docs/`, `val
 - **Konfigurations-Feintuning** (Flags, `application.yml`-Optionen, Feature-Gates)
   → `synthesis-config-and-flags`.
 - **Code ändern/committen** → `synthesis-change-control`.
-- Container-Setup: nicht abgedeckt. Die GitLab-CI prüft Backend-Tests sowie Frontend-Tests und
-  Produktions-Build; die externe Toolchain bleibt lokal (Stand 2026-08-04).
+- Container-Setup: nicht abgedeckt. Die GitLab-CI prüft Backend-Tests sowie Frontend-Tests,
+  Produktions-Audit und Produktions-Build; die externe Toolchain bleibt lokal (Stand 2026-08-04).
 
 ## Big Picture: Was gehört zur Umgebung?
 

@@ -815,7 +815,7 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   acht hohen Treffern auf null; im reinen Entwicklungs-Tooling verbleiben fünf Upstream-Treffer
   (vier moderat, einer hoch), deren betroffene Versionen Angular CLI/Build derzeit exakt pinnt.
   **Verifiziert:** 3/3 Frontend-Tests, Produktions-AOT-Build (305,57 kB initial) und
-  GitLab-CI-Vertrag mit `npm test` + `npm run build`.
+  GitLab-CI-Vertrag mit `npm run audit:prod` + `npm test` + `npm run build`.
 - Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
   `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,
   vgl. docs/05); GPL-Konformität (Arm's-length-Trennung) dokumentieren.
