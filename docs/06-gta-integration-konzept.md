@@ -837,9 +837,17 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Pendlermatrix und Arbeitsplatz-Randwert meldet API-Fehler sichtbar und setzt den jeweiligen
   Busy-Zustand zurück. **Verifiziert:** fixture-freie Angular/Vitest-Suite 20/20 grün
   und Produktions-AOT-Build.
-- Lauf-Projekte (mobitopp-rastatt/actitoppNG/SUMO) als **feste Abhängigkeit/Container** statt
-  `validation/`; self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt (Routing-Robustheit,
-  vgl. docs/05); GPL-Konformität (Arm's-length-Trennung) dokumentieren.
+- **✅ Reproduzierbarer Laufzeitvertrag, erste Stufe (2026-08-11):**
+  `runtime/versions.env` und `runtime/kit-sources.env` pinnen Toolversionen sowie fünf
+  KIT-Upstream-Commits; `scripts/bootstrap-runtime.sh` rekonstruiert die gitignorierten
+  Laufprojekte und das Transit-venv. Versionierte logiTopp-/actiTopp-Patches besitzen
+  Marker- und Hash-Verträge. `scripts/preflight.sh` erkennt unvollständige oder
+  abweichende Installationen, `scripts/dev.sh` startet den lokalen Stack und
+  `scripts/verify.sh full` prüft actiTopp, SUMO, GTFS/PT und Ollama. Ein manueller
+  GitLab-Job adressiert dafür self-hosted Runner. **Offen:** vollständiger
+  logiTopp-Golden-Lauf im Volltest, vorkonfiguriertes Runner-/Container-Image,
+  self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt sowie abschließende
+  GPL-Arm's-length-Dokumentation.
 
 ### Phase 5 – Externe Klärungen (nicht-technisch, parallel)
 - **Takomat:** MobileCity-Import finalisieren (Netz-/TEC-/MOD-Tabellen, Messagepack,
@@ -902,15 +910,16 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
 
 ### Wiederinbetriebnahme auf neuem Laptop — ✅ KERN + ÖV + LLM (2026-08-11)
 
-- **Kern bestätigt:** Backend-Suite 124 Tests ohne Fehler (6 umgebungsabhängig übersprungen),
-  Frontend 20/20 Tests und Angular-Produktionsbuild grün. Der kleine
+- **Kern bestätigt:** Backend-Suite zunächst 124 Tests ohne Fehler; nach Ergänzung der
+  actiTopp-Vertrags- und Integrationstests bestand die Vollabnahme 126/126 ohne Skip.
+  Frontend 20/20 Tests und Angular-Produktionsbuild sind grün. Der kleine
   `GenerationPipelineE2ETest` lief 4/4 einschließlich lokalem Legacy/logiTopp-Pfad.
 - **SUMO 1.27.1 kompatibel:** Der versionsunabhängige macOS-Framework-Pfad und die
   PATH-Erkennung ersetzen den fest verdrahteten 1.26.0-Pfad. Die native SUMO-Kette bestand
   mit 1.27.1; 1.26 bleibt der historische Reproduktions-Pin für publizierte Altwerte.
 - **ÖV vollständig bestätigt:** Python 3.14 mit pandas 3.0.5, rtree 1.4.1 und pyproj 3.7.2;
   `PtIntegrationTest` lief KVV-GTFS → `gtfs2pt.py` → SUMO mit ÖV-Fahrzeugen und
-  intermodalen `<ride>`-Etappen in 147,7 s. Dabei wurde ein echter Portierungsfehler behoben:
+  intermodalen `<ride>`-Etappen zuletzt in 143,9 s. Dabei wurde ein echter Portierungsfehler behoben:
   relative `venv-python`-/`gtfs2pt`-Pfade werden vor dem Wechsel ins Artefaktverzeichnis
   absolut aufgelöst.
 - **LLM vollständig bestätigt:** Ollama 0.32.8 und `qwen2.5:7b-instruct` (4,7 GB) laufen
@@ -921,17 +930,20 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   verwenden. Nur ein innerhalb der Sandbox gestarteter GPU-Prozess scheiterte mit
   `failed to create command queue`; dies ist kein M5-/Ollama-Laufzeitblocker des Projekts.
 
-**Aktuelle Priorität:** (P0) externe Legacy-Laufprojekte containerisieren und Overpass durch
-self-hosted/PBF absichern; (P1) Distanz-/Moduskalibrierung über weitere Regionen und Seeds
-validieren; (P2) Maßnahmen-Evidenz- und INSPIRE-Exporte erst nach Takomat/KIT-Abstimmung.
+**Aktuelle Priorität:** (P0) den neuen reproduzierbaren Laufzeitvertrag um einen vollständigen
+logiTopp-Golden-Lauf, ein vorkonfiguriertes Runner-/Container-Image und ein lokales PBF ergänzen;
+(P1) Distanz-/Moduskalibrierung über weitere Regionen und Seeds validieren; (P2)
+Maßnahmen-Evidenz- und INSPIRE-Exporte erst nach Takomat/KIT-Abstimmung.
 
 ### Empfohlene Reihenfolge
 **0 ✅ → 1 ✅ → (2 ✅ ∥ 3 ✅) → 4**, Phase 5 durchgehend parallel. Phasen 0–3 vollständig umgesetzt
 (3a–3d): Zwei-Achsen-Gerüst, On-demand-Kalibrierung, SUMO-Zielmodell inkl. Lieferverkehr,
 Emissions-/Netzlast-KPIs und Nachfrage↔Netz-Feedback (alle ✅), GTA-Verhaltensquelle (lokales LLM,
 Cache, Reproduzierbarkeit), LLM-Moduswahl, Was-wäre-wenn-Szenarien mit Agenten-Begründungen.
-Offen: **Phase 4** (Produktiv-Härtung: Lauf-Projekte als feste Abhängigkeit/Container, self-hosted
-Overpass). Optionale nächste Bausteine aus der TEC-/Governance-Analyse (2026-07-16, s. Phase 5):
+Offen in **Phase 4**: vollständiger logiTopp-Golden-Lauf, Runner-/Container-Image,
+self-hosted Overpass beziehungsweise lokales PBF und GPL-Abschlussprüfung. Die gepinnten
+Laufprojekte, reproduzierbaren Patch-Verträge, Vorprüfung und Full-Runtime-CI sind umgesetzt.
+Optionale nächste Bausteine aus der TEC-/Governance-Analyse (2026-07-16, s. Phase 5):
 **Maßnahmen-Evidenz-Export** (Konzept: Szenario-Deltas als quantitative
 Grundlage für ME-Wirkungs-Scores — vor Umsetzung mit Takomat/KIT abstimmen). Aus der
 INSPIRE-Schiene weiter offen: Zensus-Direktzuordnung (Rasterzelle→INSPIRE-Zone ohne Re-Gridding)

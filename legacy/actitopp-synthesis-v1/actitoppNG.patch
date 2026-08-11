@@ -1,0 +1,18 @@
+diff --git a/build.gradle.kts b/build.gradle.kts
+index cde220d..d7b5f77 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -46,0 +47,13 @@ tasks.test {
++// SyntheSis: actiTopp-Wochenpläne aus einer Personen-CSV erzeugen
++//   sh gradlew runSynthesis -Pinput=/pfad/persons.csv -Poutput=/pfad/schedules.csv
++tasks.register<JavaExec>("runSynthesis") {
++    group = "synthesis"
++    description = "Generate actiTopp weekly schedules for a SyntheSis person CSV"
++    classpath = sourceSets["main"].runtimeClasspath
++    mainClass.set("edu.kit.ifv.mobitopp.actitoppNG.synthesis.SynthesisRunnerKt")
++    args(
++        project.findProperty("input") ?: "input.csv",
++        project.findProperty("output") ?: "output.csv",
++    )
++}
++

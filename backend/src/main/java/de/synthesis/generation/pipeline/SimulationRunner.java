@@ -77,6 +77,7 @@ public class SimulationRunner {
         ProcessBuilder builder = new ProcessBuilder("sh", "gradlew", "runDeliverySynthesis",
                 "-PconfigFile=" + config.toAbsolutePath());
         builder.directory(projectDir.toFile());
+        ExternalJavaToolchain.configure(builder);
         builder.redirectErrorStream(true);
         builder.redirectOutput(logFile.toFile());
 

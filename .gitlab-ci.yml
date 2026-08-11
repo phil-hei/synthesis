@@ -35,3 +35,17 @@ frontend-tests-and-build:
     - npm run audit:prod
     - npm test
     - npm run build
+
+# Native Vollprüfung auf einem projektgebundenen Shell-Runner. Der Job ist bewusst
+# manuell/optional: SUMO, Ollama, die gepinnten KIT-Clones und GTFS-Fixtures sind
+# nicht Bestandteil der generischen Docker-Runner.
+full-runtime-tests:
+  stage: test
+  tags:
+    - synthesis-runtime
+  rules:
+    - if: '$RUN_FULL_INTEGRATION == "true"'
+    - when: manual
+      allow_failure: true
+  script:
+    - scripts/verify.sh full

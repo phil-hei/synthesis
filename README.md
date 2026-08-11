@@ -12,6 +12,18 @@ dateibasierte Szenario-Artefakte, externe Simulations-Toolchain).
 
 ## Anwendung starten (MVP)
 
+Empfohlener Einstieg mit versioniertem Umgebungscheck und gemeinsamem Prozess-Lifecycle:
+
+```bash
+scripts/preflight.sh core
+scripts/dev.sh
+```
+
+Der vollständige Neuaufbau der externen Laufumgebung ist in
+[docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md) beschrieben.
+
+Alternativ können beide Anwendungen weiterhin einzeln gestartet werden:
+
 ```bash
 # Backend (Spring Boot, Port 8090) – erzeugt Artefakte unter backend/data/scenarios/<id>/artifacts/
 cd backend && mvn spring-boot:run
@@ -104,6 +116,7 @@ Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
 | [docs/05-validierung.md](docs/05-validierung.md) | Phase-0-Validierung: Artefakte erfolgreich durch echten mobiTopp-Lauf, 8 Format-Befunde, Legacy-Stack-Build |
 | [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md) | Zwei-Achsen-Modell, GTA-Integrationskonzept, On-demand- und Modus-Distanz-Kalibrierung, SUMO-Zielmodell (inkl. Rad/Fuß/ÖV-GTFS, Rail/Tram-Befund), experimentelle Retourenlogistik, Roadmap |
 | [docs/07-ansatz-zusammenfassung.md](docs/07-ansatz-zusammenfassung.md) | Kompaktes Briefing: Ansatz, 14-stufige Pipeline, KI-Pipeline (GTA), Artefakte, Datenfluss, Tech-Stack |
+| [docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md) | Gepinnte Laufzeiten und KIT-Commits, Bootstrap, Preflight, gemeinsamer Start und vollständige Self-hosted-CI-Abnahme |
 
 ## Kernaussagen (TL;DR)
 

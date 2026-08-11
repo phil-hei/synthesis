@@ -28,6 +28,13 @@ Simulation (logiTopp), actiTopp, ÖV-Tests und Fixtures nicht funktionieren.
 Publikum: Mid-Level-Entwickler:in bzw. ein Agent, der das Repo nicht kennt. Alle Pfade
 repo-relativ (Repo-Root = Verzeichnis mit `backend/`, `frontend/`, `docs/`, `validation/`).
 
+**Bevorzugter Einstieg seit 2026-08-11:** Die Ground Truth liegt in
+`runtime/versions.env`, `runtime/kit-sources.env` und
+`runtime/transit-requirements.txt`. Mit `scripts/bootstrap-runtime.sh all` wird die
+gitignorierte Laufumgebung rekonstruiert; `scripts/preflight.sh full` prüft sie und
+`scripts/verify.sh full` führt die vollständige technische Abnahme aus. Die manuellen
+Schritte unten erklären und diagnostizieren denselben Vertrag.
+
 ## Wann NICHT nutzen
 
 - **Die Umgebung steht schon und du willst sie benutzen** (Pipeline starten, Szenario
@@ -38,8 +45,9 @@ repo-relativ (Repo-Root = Verzeichnis mit `backend/`, `frontend/`, `docs/`, `val
 - **Konfigurations-Feintuning** (Flags, `application.yml`-Optionen, Feature-Gates)
   → `synthesis-config-and-flags`.
 - **Code ändern/committen** → `synthesis-change-control`.
-- Container-Setup: nicht abgedeckt. Die GitLab-CI prüft Backend-Tests sowie Frontend-Tests,
-  Produktions-Audit und Produktions-Build; die externe Toolchain bleibt lokal (Stand 2026-08-04).
+- Container-Setup: nicht abgedeckt. Die GitLab-CI prüft Backend und Frontend portabel;
+  `full-runtime-tests` kann auf einem selbst gehosteten Runner mit Tag
+  `synthesis-runtime` die externe Toolchain prüfen (Stand 2026-08-11).
 
 ## Big Picture: Was gehört zur Umgebung?
 
@@ -183,7 +191,7 @@ python3 -m venv validation/transit-venv
 validation/transit-venv/bin/pip install pandas rtree pyproj
 ```
 
-Verifizierte Versionen (Stand 2026-07-07, Python 3.14): pandas 3.0.3, rtree 1.4.1,
+Verifizierte Versionen (Stand 2026-08-11, Python 3.14): pandas 3.0.5, rtree 1.4.1,
 pyproj 3.7.2. `rtree` bringt `libspatialindex` im Wheel mit — kein `brew install` nötig.
 
 **PEP-668-Falle:** NIE `pip install` ins System-/Homebrew-Python — schlägt mit
@@ -358,17 +366,16 @@ Welche Komponente schaltet welches Feature/welchen Test frei? Alle bedingten Tes
 | Kern-Pipeline (Artefakt-Generierung) | Schritt 1 | `GenerationPipelineE2ETest` (läuft offline: Luftlinie, Template-Verhalten) | — (Basis) |
 | Reine Logik | Schritt 1 | `FeedbackMathTest`, `ModeChoiceCalibratorTest`, `ShapefileWriterTest` | — |
 | logiTopp-Simulation (Pipeline-Stufe) | 5b (`mobitopp-rastatt` + logitopp in mavenLocal) | Simulations-Asserts in `GenerationPipelineE2ETest`; Stufe DONE im Frontend | Asserts übersprungen; Stufe SKIPPED |
-| actiTopp-Verhalten | 5a (Kotlin-Stack + actitoppNG-`runSynthesis`) | Pipeline-Lauf mit `useActitopp`; Fallback-Log beobachten | Fallback auf Template-Generator |
+| actiTopp-Verhalten | 5a (Kotlin-Stack + actitoppNG-`runSynthesis`) | `ActitoppRunnerTest`, mit `SYNTHESIS_RUN_ACTITOPP_TEST=true` auch `ActitoppIntegrationTest` | Fallback auf Template-Generator; Integrationstest übersprungen |
 | GTA/LLM (Achse A) + LLM-Moduswahl | Schritt 3 (Ollama erreichbar) | `GtaBehaviorTest`, `LlmModeChoiceTest` | Tests übersprungen; GTA fällt auf actiTopp zurück |
 | SUMO (Achse B) | Schritt 2 + Demand-CSV (Schritt-6-Falle) + `rastatt-test.osm` (selbstheilend) | `SumoRunnerTest` | Test übersprungen; Stufe „SUMO (Verkehr)" SKIPPED |
 | ÖV/Bus (Phase C) | Schritt 2 + 4 + Demand-CSV + `kvv-gtfs.zip` + env `SYNTHESIS_TRANSIT_VENV` | `PtIntegrationTest` | Test übersprungen; ÖV-Stufe SKIPPED |
 | GTFS-Verarbeitung isoliert | `kvv-gtfs.zip` | `GtfsCropperTest`, `GtfsSourceTest` | Tests übersprungen |
 | Frontend | Schritt 1 | `npm test`; `npm run build`; http://localhost:4300 | — |
 
-Endabnahme („alles da"): `mvn -o test` mit gesetztem `SUMO_HOME` und
-`SYNTHESIS_TRANSIT_VENV` — **Erwartung: 0 Failures und keine übersprungenen
-SUMO-/ÖV-/GTFS-Tests** (Skip-Meldungen im Log gegen die Matrix abgleichen); danach ein
-voller Frontend-Lauf mit allen Zielmodellen, alle Stufen DONE.
+Endabnahme („alles da"): `scripts/verify.sh full` — **Erwartung: 0 Failures und
+0 Skips**. Ein vollständiger logiTopp-Wochenlauf bleibt wegen Laufzeit und
+Speicherbedarf eine eigene fachliche Abnahme.
 
 ## Provenienz & Wartung
 
@@ -381,11 +388,12 @@ voller Frontend-Lauf mit allen Zielmodellen, alle Stufen DONE.
   `validation/`-Inventar per `ls` verifiziert; KIT-Build-Kette wörtlich aus
   `docs/05-validierung.md`; Rail/Tram-Blocker aus `docs/06-gta-integration-konzept.md`.
 - Verifizierte Kommandos (real ausgeführt, zuletzt Stand 2026-08-11): Backend-/Frontend-Start,
-  `mvn -o test`, `npm test`, `npm run build`, `mvn clean` (Finder-Falle), venv-Aufbau (pandas 3.0.3 /
-  rtree 1.4.1 / pyproj 3.7.2 auf Python 3.14; neue Maschine: pandas 3.0.5), Ollama-Setup
+  `scripts/verify.sh full`, `mvn -o test`, `npm test`, `npm run build`, `mvn clean`
+  (Finder-Falle), venv-Aufbau (pandas 3.0.5 / rtree 1.4.1 / pyproj 3.7.2 auf
+  Python 3.14), Ollama-Setup
   (brew 0.32.8, pull 4,7 GB; M5/Metal bestätigt), KVV-GTFS-curl (121 MB),
-  `GenerationPipelineE2ETest` 4/4, `PtIntegrationTest` vollständig in 147,7 s sowie
-  `GtaBehaviorTest` + `LlmModeChoiceTest` 6/6 Live-Tests ohne Skip in 72 s.
+  `GenerationPipelineE2ETest` 4/4, `PtIntegrationTest` vollständig in 143,9 s,
+  echter actiTopp-Smoke in 4,3 s sowie die gesamte Backend-Suite 126/126 ohne Skip.
 - Als „aus der Projekthistorie überliefert, verifizieren" markiert: Rolle des JDK 11 in
   `validation/tools/`, actitoppNG-Lizenzlage, Linux-Installationswege.
 - Volatil (bei Nutzung > ~3 Monate nach diesem Stand prüfen): SUMO-Version/Framework-Pfad
