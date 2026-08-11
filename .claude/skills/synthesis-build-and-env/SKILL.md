@@ -165,11 +165,13 @@ Hardware-Realität (16-GB-M1, Projekterfahrung Stand ~2026-07): ~11 tok/s, Model
 **Falle:** Ollama NIE parallel zu einer großen logiTopp-JVM (bis 12 GB Heap) laufen
 lassen — 16 GB RAM reichen nicht für beide.
 
-**M5-Befund 2026-08-11:** Homebrew-Ollama 0.32.8 lädt `qwen2.5:7b-instruct` in einer
-verwalteten Codex-Sitzung nicht (`failed to create command queue`, HTTP 500), auch nicht mit
-`OLLAMA_LLM_LIBRARY=cpu`. Installation und Modell-Download sind trotzdem vollständig. Vor GTA-
-Läufen außerhalb Codex mit `ollama run qwen2.5:7b-instruct 'Antworte nur mit OK.'` gegenprüfen
-und bei gleichem Fehler eine M5-kompatible Ollama-Version pinnen.
+**M5-Befund 2026-08-11:** Homebrew-Ollama 0.32.8 lädt `qwen2.5:7b-instruct` in einer normalen
+Terminal-Sitzung erfolgreich über Metal (29/29 Schichten auf der GPU). Der Smoke-Test antwortete
+korrekt; danach bestanden `GtaBehaviorTest` und `LlmModeChoiceTest` 6/6 Live-Tests ohne Skip in
+72 s. Für Codex-Agentenläufe Ollama im normalen Terminal starten und den laufenden Server per
+HTTP verwenden. Ein direkt innerhalb der verwalteten Codex-Sandbox gestarteter GPU-Prozess kann
+mit `failed to create command queue`/HTTP 500 scheitern; das ist eine Sandbox-Grenze, kein
+M5-Kompatibilitätsblocker. Test: `ollama run qwen2.5:7b-instruct 'Antworte nur mit OK.'`.
 
 ## Schritt 4: transit-venv (nur für die ÖV-Stufe)
 
@@ -381,8 +383,9 @@ voller Frontend-Lauf mit allen Zielmodellen, alle Stufen DONE.
 - Verifizierte Kommandos (real ausgeführt, zuletzt Stand 2026-08-11): Backend-/Frontend-Start,
   `mvn -o test`, `npm test`, `npm run build`, `mvn clean` (Finder-Falle), venv-Aufbau (pandas 3.0.3 /
   rtree 1.4.1 / pyproj 3.7.2 auf Python 3.14; neue Maschine: pandas 3.0.5), Ollama-Setup
-  (brew 0.32.8, pull 4,7 GB; M5-Ausführungsblocker oben), KVV-GTFS-curl (121 MB),
-  `GenerationPipelineE2ETest` 4/4 sowie `PtIntegrationTest` vollständig in 147,7 s.
+  (brew 0.32.8, pull 4,7 GB; M5/Metal bestätigt), KVV-GTFS-curl (121 MB),
+  `GenerationPipelineE2ETest` 4/4, `PtIntegrationTest` vollständig in 147,7 s sowie
+  `GtaBehaviorTest` + `LlmModeChoiceTest` 6/6 Live-Tests ohne Skip in 72 s.
 - Als „aus der Projekthistorie überliefert, verifizieren" markiert: Rolle des JDK 11 in
   `validation/tools/`, actitoppNG-Lizenzlage, Linux-Installationswege.
 - Volatil (bei Nutzung > ~3 Monate nach diesem Stand prüfen): SUMO-Version/Framework-Pfad

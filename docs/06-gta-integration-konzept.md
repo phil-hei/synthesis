@@ -900,7 +900,7 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
 - **KIT:** actitoppNG-Lizenz, logiTopp-Migrationsstand, ggf. MiD-/Zensus-Datenzugang.
 - **GTA-Autoren (Leipzig/ScaDS.AI):** Kooperation, Persona-/MiD-Datengrundlage.
 
-### Wiederinbetriebnahme auf neuem Laptop — ✅ KERN + ÖV, ⚠️ LLM (2026-08-11)
+### Wiederinbetriebnahme auf neuem Laptop — ✅ KERN + ÖV + LLM (2026-08-11)
 
 - **Kern bestätigt:** Backend-Suite 124 Tests ohne Fehler (6 umgebungsabhängig übersprungen),
   Frontend 20/20 Tests und Angular-Produktionsbuild grün. Der kleine
@@ -913,17 +913,17 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   intermodalen `<ride>`-Etappen in 147,7 s. Dabei wurde ein echter Portierungsfehler behoben:
   relative `venv-python`-/`gtfs2pt`-Pfade werden vor dem Wechsel ins Artefaktverzeichnis
   absolut aufgelöst.
-- **LLM installiert, in der verwalteten Codex-Sitzung blockiert:** Ollama 0.32.8 und
-  `qwen2.5:7b-instruct` (4,7 GB) sind vorhanden. Beim Modellstart scheitert der M5-Metal-
-  Kontext jedoch reproduzierbar mit `failed to create command queue`/HTTP 500, auch mit
-  `OLLAMA_LLM_LIBRARY=cpu`. Deshalb sind die Live-LLM-Tests auf diesem Ausführungspfad rot;
-  Kern/GTA-Fallback bleiben unverändert. Gegenprobe in einer normalen Terminal-Sitzung bzw.
-  mit einer M5-kompatiblen Ollama-Version ist vor einem GTA-Lauf Pflicht.
+- **LLM vollständig bestätigt:** Ollama 0.32.8 und `qwen2.5:7b-instruct` (4,7 GB) laufen
+  auf dem Apple M5 über Metal; 29/29 Modellschichten werden auf die GPU ausgelagert. Der
+  Terminal-Smoke-Test antwortete korrekt, anschließend bestanden `GtaBehaviorTest` und
+  `LlmModeChoiceTest` zusammen 6/6 Live-Tests ohne Skip in 72 s. Wichtig für Agentenläufe:
+  Ollama außerhalb der verwalteten Codex-Sandbox starten und den laufenden Server per HTTP
+  verwenden. Nur ein innerhalb der Sandbox gestarteter GPU-Prozess scheiterte mit
+  `failed to create command queue`; dies ist kein M5-/Ollama-Laufzeitblocker des Projekts.
 
-**Aktuelle Priorität:** (P0) Ollama außerhalb der verwalteten Sitzung gegenprüfen und eine
-M5-kompatible Version pinnen; (P1) externe Legacy-Laufprojekte containerisieren und Overpass
-durch self-hosted/PBF absichern; (P2) Distanz-/Moduskalibrierung über weitere Regionen und Seeds
-validieren; (P3) Maßnahmen-Evidenz- und INSPIRE-Exporte erst nach Takomat/KIT-Abstimmung.
+**Aktuelle Priorität:** (P0) externe Legacy-Laufprojekte containerisieren und Overpass durch
+self-hosted/PBF absichern; (P1) Distanz-/Moduskalibrierung über weitere Regionen und Seeds
+validieren; (P2) Maßnahmen-Evidenz- und INSPIRE-Exporte erst nach Takomat/KIT-Abstimmung.
 
 ### Empfohlene Reihenfolge
 **0 ✅ → 1 ✅ → (2 ✅ ∥ 3 ✅) → 4**, Phase 5 durchgehend parallel. Phasen 0–3 vollständig umgesetzt
