@@ -64,7 +64,7 @@ baut oder fachlich modelliert.
 ```bash
 # Gate 1 – Backend-Testsuite (komplett, offline)
 cd backend && mvn -o test
-# Erwartung (Stand: 2026-08-04): 120 Testfälle grün; 6 umgebungsabhängige
+# Erwartung (Stand: 2026-08-11): 124 Testfälle grün; 6 umgebungsabhängige
 # Testfälle werden ohne externe Laufzeit/Env-Variablen übersprungen – das ist normal.
 
 # Gate 2 – Frontend-Tests + strict-AOT-Build (fängt NG5002/TS2531, die ng serve NICHT fängt)

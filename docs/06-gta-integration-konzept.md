@@ -900,6 +900,31 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
 - **KIT:** actitoppNG-Lizenz, logiTopp-Migrationsstand, ggf. MiD-/Zensus-Datenzugang.
 - **GTA-Autoren (Leipzig/ScaDS.AI):** Kooperation, Persona-/MiD-Datengrundlage.
 
+### Wiederinbetriebnahme auf neuem Laptop — ✅ KERN + ÖV, ⚠️ LLM (2026-08-11)
+
+- **Kern bestätigt:** Backend-Suite 124 Tests ohne Fehler (6 umgebungsabhängig übersprungen),
+  Frontend 20/20 Tests und Angular-Produktionsbuild grün. Der kleine
+  `GenerationPipelineE2ETest` lief 4/4 einschließlich lokalem Legacy/logiTopp-Pfad.
+- **SUMO 1.27.1 kompatibel:** Der versionsunabhängige macOS-Framework-Pfad und die
+  PATH-Erkennung ersetzen den fest verdrahteten 1.26.0-Pfad. Die native SUMO-Kette bestand
+  mit 1.27.1; 1.26 bleibt der historische Reproduktions-Pin für publizierte Altwerte.
+- **ÖV vollständig bestätigt:** Python 3.14 mit pandas 3.0.5, rtree 1.4.1 und pyproj 3.7.2;
+  `PtIntegrationTest` lief KVV-GTFS → `gtfs2pt.py` → SUMO mit ÖV-Fahrzeugen und
+  intermodalen `<ride>`-Etappen in 147,7 s. Dabei wurde ein echter Portierungsfehler behoben:
+  relative `venv-python`-/`gtfs2pt`-Pfade werden vor dem Wechsel ins Artefaktverzeichnis
+  absolut aufgelöst.
+- **LLM installiert, in der verwalteten Codex-Sitzung blockiert:** Ollama 0.32.8 und
+  `qwen2.5:7b-instruct` (4,7 GB) sind vorhanden. Beim Modellstart scheitert der M5-Metal-
+  Kontext jedoch reproduzierbar mit `failed to create command queue`/HTTP 500, auch mit
+  `OLLAMA_LLM_LIBRARY=cpu`. Deshalb sind die Live-LLM-Tests auf diesem Ausführungspfad rot;
+  Kern/GTA-Fallback bleiben unverändert. Gegenprobe in einer normalen Terminal-Sitzung bzw.
+  mit einer M5-kompatiblen Ollama-Version ist vor einem GTA-Lauf Pflicht.
+
+**Aktuelle Priorität:** (P0) Ollama außerhalb der verwalteten Sitzung gegenprüfen und eine
+M5-kompatible Version pinnen; (P1) externe Legacy-Laufprojekte containerisieren und Overpass
+durch self-hosted/PBF absichern; (P2) Distanz-/Moduskalibrierung über weitere Regionen und Seeds
+validieren; (P3) Maßnahmen-Evidenz- und INSPIRE-Exporte erst nach Takomat/KIT-Abstimmung.
+
 ### Empfohlene Reihenfolge
 **0 ✅ → 1 ✅ → (2 ✅ ∥ 3 ✅) → 4**, Phase 5 durchgehend parallel. Phasen 0–3 vollständig umgesetzt
 (3a–3d): Zwei-Achsen-Gerüst, On-demand-Kalibrierung, SUMO-Zielmodell inkl. Lieferverkehr,

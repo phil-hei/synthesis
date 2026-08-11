@@ -45,7 +45,7 @@ Strukturen sind aus den Producer-Klassen abgelesen (Ground Truth = Code).
 
 | Datei | Producer-Klasse | Schlüssel/Spalten | Interpretation | Plausibilitäts-Anker (Stand 2026-07) |
 |---|---|---|---|---|
-| `artifacts/simulation/kpis.json` | `SimulationResultIngestor.writeKpis` | `simulationSeconds`; `demand.{trips, persons, tripsPerPersonDay, avgTripKm, distanceBands.{under1Km,km1ToUnder2,km2ToUnder5,km5ToUnder10,km10ToUnder20,km20AndMore}, distanceBandRmseToMid2017, modalSplit.{...}, modalSplitByDistanceBand.{...}, modeDistanceJointRmseToMid2017}`; `parcels.{...}`; `mid2017.{distanceBands,modalSplitByDistanceBand,distanceBandsSource,modeDistanceSource,...}` | Nachfrage-KPIs des logiTopp-Laufs. `tripsPerPersonDay` = trips/persons/7. Etappendistanzen werden je `personOid+tripId` zu einem Weg summiert; daraus entstehen Ø, Bandanteile und RMSE. `modalSplitByDistanceBand` ist der bedingte Modal-Split je Band; der gemeinsame RMSE vergleicht 30 Modus×Distanz-Zellen und deckt Fehlallokationen auf, die getrennte Randverteilungen verbergen. | MiD 2017: 3,1 Wege/Person·Tag; Ø 12,5 km; Distanzbänder `[.21,.14,.23,.16,.13,.13]`; Modal-Split Fuß .22 / Rad .11 / Pkw .43 / Mitfahrer .14 / ÖV .10. Modus×Distanz-Ziel: Tabelle A W10.5, auf sechs Bänder aggregiert. Regional gebundene Läufe hier: Ø ~3 km — bekannte Lücke → `synthesis-distanz-kampagne` |
+| `artifacts/simulation/kpis.json` | `SimulationResultIngestor.writeKpis` | `simulationSeconds`; `demand.{trips, persons, tripsPerPersonDay, avgTripKm, modalSplit.{pedestrian,bike,car,passenger,publicTransport}}`; `parcels.{total, delivered, deliveryRate}`; `mid2017.{...}` (Referenz eingebettet) | Nachfrage-KPIs des logiTopp-Laufs. `tripsPerPersonDay` = trips/persons/7 (Modellwoche). `avgTripKm` = Summe `distanceInKm` über **alle** Zeilen ÷ Trips (legId==0) | MiD 2017: 3,1 Wege/Person·Tag; Ø 12,5 km; Modal-Split Fuß 0.22 / Rad 0.11 / Pkw 0.43 / Mitfahrer 0.14 / ÖV 0.10. Regional gebundene Läufe hier: Ø ~3 km — bekannte Lücke → `synthesis-distanz-kampagne` |
 | `artifacts/simulation/depot-stats.json` | `SimulationResultIngestor.writeDepotStats` | Array: `name, cepsp, vehicleType, vehicles, parcelsAssigned, delivered, tours, distanceKm` | Logistik je Depot (aus fleet.csv + vehicle_events.csv) | `delivered` ≤ `parcelsAssigned`; `distanceKm` > 0 wenn Touren gefahren |
 | `artifacts/simulation/parcel-density.geojson` | `SimulationResultIngestor.writeParcelDensity` | Zonen-Features + `properties.parcels` | Paketaufkommen je Zone | Summe `parcels` ≈ `kpis.parcels.total` |
 | `artifacts/simulation/tours.geojson` | `SimulationResultIngestor.writeTours` | LineStrings, `properties.{depot, vehicleType, distanceKm, stops}` | Geplante Zustelltouren | — |
@@ -99,7 +99,7 @@ Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
 Liest `artifacts/simulation/kpis.json` + `artifacts/sumo/summary.json` (falls da).
 
 ```
-python3 .claude/skills/synthesis-diagnostics-and-tooling/scripts/kpi_report.py backend/data/scenarios/<id>
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/kpi_report.py backend/data/scenarios/<id>
 ```
 
 Beispielausgabe (getestet 2026-07-10 gegen eine strukturgleiche **Fixture** — lokal
@@ -130,7 +130,7 @@ Filtert `legId==0`, druckt Ø/Median km + Distanzband-Histogramm
 (<1, 1–2, 2–5, 5–10, 10–20, >20 km) gesamt und je Modus.
 
 ```
-python3 .claude/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py \
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py \
   validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv
 ```
 
@@ -169,7 +169,7 @@ Zählt den Modal-Split direkt aus der CSV und vergleicht gegen kpis.json
 kpis.json ab (RMSE ≥ 0.01), stammt die kpis.json von einem anderen Lauf.
 
 ```
-python3 .claude/skills/synthesis-diagnostics-and-tooling/scripts/modal_split.py \
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/modal_split.py \
   validation/mobitopp-rastatt/output/synthesis
 ```
 

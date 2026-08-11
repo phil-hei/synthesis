@@ -181,7 +181,7 @@ Keys mitpflegen.
 |---|---|---|---|
 | `enabled` | `true` | Stufe abschaltbar (SKIPPED) | `GenerationService`-Gate |
 | `bin-dir` | **berechnet** aus `$SUMO_HOME` (Ableitung s. u.) | Verzeichnis mit `sumo`/`netconvert`/`duarouter` | `SumoRunner` |
-| `sumo-home` | **berechnet**: `$SUMO_HOME`; ungesetzt → macOS-Framework-Fallback `/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO/share/sumo` | SUMO-Daten/Tools (i. d. R. `.../share/sumo`) | `SumoRunner`; wird an `TransitRunner` durchgereicht |
+| `sumo-home` | **berechnet**: `$SUMO_HOME`; ungesetzt → `sumo` auf dem PATH, danach versionsunabhängiger macOS-Framework-Fallback `/Library/Frameworks/EclipseSUMO.framework/EclipseSUMO/share/sumo` | SUMO-Daten/Tools (i. d. R. `.../share/sumo`) | `SumoRunner`; wird an `TransitRunner` durchgereicht |
 | `day` | `0` | Simulierter Wochentag (0 = Montag) | `SumoRunner` |
 | `max-trips` | `4000` | Obergrenze eingespeister Fahrzeug-Trips (Performance) | `SumoRunner` |
 | `timeout-minutes` | `15` | Timeout des SUMO-Laufs | `SumoRunner` |
@@ -195,11 +195,11 @@ Keys mitpflegen.
    `SUMO_HOME = .../EclipseSUMO/share/sumo`, Binaries unter `.../EclipseSUMO/bin`).
 3. Sonst `$SUMO_HOME/bin` (auch wenn nicht existent – `SumoRunner.isAvailable()` fängt das ab →
    SKIPPED „SUMO_HOME/Binaries prüfen").
-4. `$SUMO_HOME` ungesetzt/leer → macOS-Fallback
-   `/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO/bin`.
+4. `$SUMO_HOME` ungesetzt/leer → Wurzel aus dem ersten ausführbaren `sumo` auf dem PATH;
+   ohne Treffer macOS-Fallback `/Library/Frameworks/EclipseSUMO.framework/EclipseSUMO/bin`.
 
-Die Framework-Version `1.26.0` ist **hart codiert** (`Sumo.MAC_FRAMEWORK`) – bei SUMO-Update auf
-einem Mac ohne gesetztes `$SUMO_HOME` bricht der Fallback (Stand 2026-07-08).
+Der Framework-Fallback verwendet den Installer-Symlink `Versions/Current` indirekt und enthält
+keine Versionsnummer. Verifiziert mit SUMO 1.27.1 am 2026-08-11.
 
 ### 2.5 `synthesis.transit` (ÖV-Zielmodell, Phase C – Gegenstück zum Szenario-Flag `publicTransport`)
 
@@ -247,7 +247,7 @@ Ollama erreichbar, greift der Fallback; es gibt keinen harten Fehler.
 
 | Variable | Wirkung | Konsument |
 |---|---|---|
-| `SUMO_HOME` | Quelle der **berechneten Defaults** `synthesis.sumo.bin-dir`, `synthesis.sumo.sumo-home`, `synthesis.transit.gtfs2pt` (Ableitung s. Abschnitte 2.4/2.5). Ungesetzt → macOS-Framework-Fallback (hart codierte Version 1.26.0) | `SynthesisProperties.Sumo`/`Transit` – statisch bei Bean-Erzeugung gelesen; **Backend-Neustart nötig** nach Änderung |
+| `SUMO_HOME` | Quelle der **berechneten Defaults** `synthesis.sumo.bin-dir`, `synthesis.sumo.sumo-home`, `synthesis.transit.gtfs2pt` (Ableitung s. Abschnitte 2.4/2.5). Ungesetzt → PATH-Erkennung, danach versionsunabhängiger macOS-Framework-Fallback | `SynthesisProperties.Sumo`/`Transit` – statisch bei Bean-Erzeugung gelesen; **Backend-Neustart nötig** nach Änderung |
 | `SYNTHESIS_TRANSIT_VENV` | **Nur Test-Gate, keine Laufzeit-Wirkung:** `backend/src/test/java/de/synthesis/generation/pipeline/PtIntegrationTest.java` liest sie via `System.getenv` und überspringt den (langsamen) ÖV-Integrationstest, wenn ungesetzt („SYNTHESIS_TRANSIT_VENV nicht gesetzt – ÖV-Integrationstest übersprungen"). Zeigt auf den Python-Interpreter eines venv mit pandas/rtree/pyproj. Für den **Betrieb** gilt stattdessen `synthesis.transit.venv-python` | `PtIntegrationTest` |
 
 ---

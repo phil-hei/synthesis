@@ -37,11 +37,19 @@ public class TransitRunner {
     private final int timeoutMinutes;
 
     public TransitRunner(SynthesisProperties.Transit config, String sumoHome) {
-        this.venvPython = config.getVenvPython();
-        this.gtfs2pt = config.getGtfs2pt();
+        this.venvPython = absolutePath(config.getVenvPython());
+        this.gtfs2pt = absolutePath(config.getGtfs2pt());
         this.sumoHome = sumoHome;
         this.modes = config.getModes();
         this.timeoutMinutes = config.getTimeoutMinutes();
+    }
+
+    /** Externe Programme laufen aus dem Artefaktverzeichnis; relative Konfigpfade dort nie auflösen. */
+    private static String absolutePath(String configuredPath) {
+        if (configuredPath == null || configuredPath.isBlank()) {
+            return configuredPath;
+        }
+        return Path.of(configuredPath).toAbsolutePath().normalize().toString();
     }
 
     /** venv-Python und gtfs2pt.py müssen vorhanden sein. */

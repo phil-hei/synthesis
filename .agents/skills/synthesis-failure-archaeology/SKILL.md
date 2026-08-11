@@ -23,7 +23,7 @@ Sackgasse, verworfene Lösung und jedes Rollback, jeweils als **Symptom → Root
 Status → Was du stattdessen tust**. Bevor du einen "naheliegenden" Ansatz umsetzt, prüfe hier,
 ob er schon einmal gescheitert ist — und warum.
 
-**Stand: 2026-07-08.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
+**Stand: 2026-07-28.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
 und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzahlen sind
 überlieferte Werte vom jeweils genannten Datum, keine aktuellen Messungen.
 
@@ -60,6 +60,9 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E17 | Adapter-/Depot-Befunde A1–A12 | Legacy-Formate | ENTSCHIEDEN |
 | E18 | logiTopp-Befunde L1–L6 | Legacy-Formate | ENTSCHIEDEN |
 | E19 | "SynthesisApplication 2.class"-Falle | Infrastruktur | ENTSCHIEDEN |
+| E20 | `b_tt_put` allein als Modus-Distanz-Kalibrierung | Kalibrierung | ENTSCHIEDEN |
+| E21 | `PUT_ACT`/`PUT_EGT` erreichen die Legacy-Moduswahl nicht | Legacy-Formate | BLOCKIERT |
+| E22 | `<1 km`-Kalibrierung bei grober Zonierung | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -296,9 +299,81 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
 - **Was du stattdessen tust:** Anker und Klemmung nicht "optimieren"; bei Kalibrierproblemen
   zuerst Ziel-Split-Plausibilität und Iterationszahl prüfen.
 
+### E20 — `b_tt_put` allein als Modus-Distanz-Kalibrierung — ENTSCHIEDEN
+
+- **Symptom/Frage:** 96,65 % der Wege ab 20 km lagen im Großraum-Spike beim ÖV.
+  Reicht es, dessen Reisezeitkoeffizienten zwischen `-0,05` und `-0,20` zu kalibrieren?
+- **Befund:** Präregistriertes Raster `-0,08/-0,10/-0,12` verschob den Fernweg-ÖV
+  monoton auf 71,03/23,16/3,50 %, erreichte aber höchstens Joint-RMSE
+  0,054109 gegenüber 0,054671 in der Baseline. Kein Punkt bestand `<0,05` und
+  Verbesserung ≥0,004. `-0,10` lag bei Fernwegen nahe am Ziel, drückte ÖV global
+  aber auf 6,70 %.
+- **Root Cause:** `b_tt_put` verändert gleichzeitig die **Distanzschräge** und das
+  globale ÖV-Niveau. Ein Parameter kann beide Ziele hier nicht unabhängig treffen.
+  Zudem dominiert die falsche Distanzmarginale den gemeinsamen RMSE; im Spike fehlen
+  Wege unter 1 km vollständig (MiD: 21 %).
+- **Positiver Gegenbeweis/Lösungsweg:** Präregistrierte Komposition
+  `b_tt_put=-0,11` + `asc_put=-1,22` traf ÖV gesamt 9,34 % (MiD 10 %) und
+  ÖV ab 20 km 17,60 % (MiD 17,61 %); Modal-RMSE 0,105742→0,085375,
+  Joint-RMSE 0,054671→0,053002, Nachfrage stabil.
+- **Status/Regel:** Nie `b_tt_put` allein als Produktkalibrierung übernehmen.
+  Schräge (`b_tt_put`) und Niveau (`asc_put`) getrennt komponieren. Diese Regel ist
+  seit 2026-07-28 im opt-in `ModeDistanceCalibrator` umgesetzt; trotzdem kein
+  Default-Flip vor drei Seeds, Realrouting und gemeinsamer Distanzmarginal-
+  Kalibrierung. `calibrateDistance` + `calibrateModeDistance` werden inzwischen
+  genau in dieser Reihenfolge ausgeführt und teilen den Zielwahl-Override.
+  Der Legacy-Helper mit ÖV-Zugang/-Abgang `0.0` bleibt separat zu korrigieren.
+  Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Modus-Distanz-Kalibrierung (2026-07-28)“.
+
+### E22 — `<1 km`-Kalibrierung bei grober Zonierung — ENTSCHIEDEN
+
+- **Symptom/Frage:** Kann der kombinierte Distanz-/ÖV-Regler in einem
+  55×55-km-Großraum mit 2,3-km-Zellen die amtlichen 21 % Wege unter 1 km
+  herstellen?
+- **Befund:** Nein. Im Realrouting-A/B vom 2026-07-29 blieb `<1 km` trotz
+  acht Iterationen und `b_intrazonal`-Delta 0→14 bei 0,0 %. 81,54 % der
+  kalibrierten Wege landeten stattdessen im Band 1–<2 km;
+  Distanzband-RMSE 0,1343→0,3072, Joint-RMSE 0,0438→0,0857.
+  A/B hatten byte-identische `CAR_DIS`-/Zeitmatrizen, ein Routing-Fallback
+  ist ausgeschlossen.
+- **Root Cause:** Die zellgrößen-skalierte Matrix repräsentiert jede
+  intrazonale Pkw-Beziehung dort mit genau
+  `0,5214 × 2,3 km × 1,35 = 1,62 km`. `b_intrazonal` ändert nur die
+  Zielhäufigkeit, nicht die Matrixdistanz. Der Hebel ist für das
+  `<1 km`-Band deshalb strukturell nicht beobachtbar.
+- **Verworfener Scheinfix:** Nicht Clamp oder Iterationszahl erhöhen. Das
+  verstärkt ausschließlich die Fehlkonzentration im 1–<2-km-Band.
+- **Status/Regel:** `GenerationService` prüft vor dem Graphaufbau den kleinsten
+  intrazonalen Pkw-Matrixwert und lehnt `calibrateDistance=true` bei
+  `>=1 km` mit konkreter Auflösungsmeldung ab. Für neue Versuche feinere
+  Zonen wählen oder Distanzrepräsentation/Zielgröße separat herleiten und
+  präregistrieren. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Gemeinsame Kalibrierung mit Realrouting (2026-07-29)“.
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
+
+### E21 — `PUT_ACT`/`PUT_EGT` erreichen die Legacy-Moduswahl nicht — BLOCKIERT
+
+- **Symptom/Frage:** SyntheSis erzeugt ÖV-Zugangs- und Abgangsmatrizen mit je
+  sechs Minuten, im MNL-Nutzen steht `b_acc_put`; beeinflussen diese Werte die
+  Moduswahl?
+- **Befund:** Nein. Der externe `MultiNomialLogit1HelperOldImpl` liefert für
+  `getACCESS_TIME_PUBLICTRANSPORT(...)` und
+  `getEGRESS_TIME_PUBLICTRANSPORT(...)` hart `0.0`. Das dort verfügbare
+  `ImpedanceIfc` exponiert Reisezeit, Kosten und Distanz, aber keine separaten
+  Access-/Egress-Matrizen.
+- **Root Cause:** Die Matrizen werden exportiert, der verwendete externe
+  Legacy-Adapter bindet sie aber nicht an den Nutzen-Term an.
+- **Verworfener Scheinfix:** Nicht `PUT_ACT + PUT_EGT` auf `PUT_TTC` addieren.
+  Das vermischt Zugangs-/Abgangszeit mit In-Vehicle-Zeit und umgeht den
+  vorgesehenen Koeffizienten `b_acc_put`.
+- **Status/Regel:** Hauptrepo unverändert lassen. Erst den externen
+  Adaptervertrag explizit erweitern und danach in einem A/B-Lauf belegen, dass
+  `PUT_ACT`/`PUT_EGT` die Moduswahl erwartungsgemäß verändern. Evidenz:
+  `docs/05-validierung.md`, Abschnitt „ÖV-Zugang und -Abgang (2026-07-28)“.
 
 ### E16 — Die 8 Phase-0-Formatbefunde (2026-06-10) — ENTSCHIEDEN
 
@@ -424,7 +499,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-07-08.** Verfasst beim Ausscheiden des Principal Engineers.
+- **Stand: 2026-07-29.** Verfasst beim Ausscheiden des Principal Engineers und um E20–E22 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch

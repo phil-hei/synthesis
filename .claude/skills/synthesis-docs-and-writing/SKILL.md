@@ -123,8 +123,8 @@ Beobachtete Konvention über die gesamte Historie (17 Commits, `729acdb…4ad638
 - **Verifikation im Body**, wo vorhanden:
   > `ad7f0ba`: „Verifiziert: PtIntegrationTest faehrt die volle Kette (gated per SYNTHESIS_TRANSIT_VENV); Suite 18/18 gruen (PT-Test ohne venv skipped)."
 - **Schlusszeile bei KI-Beteiligung** (Modellname eingesetzt, belegt mit
-  `Claude Sonnet 5`, `Claude Opus 4.8`, `Claude Fable 5`):
-  > `Co-Authored-By: Claude <Modell> <noreply@anthropic.com>`
+  `Codex Sonnet 5`, `Codex Opus 4.8`, `Codex Fable 5`):
+  > `Co-Authored-By: Codex <Modell> <noreply@anthropic.com>`
 - **Kein `git push` aus der CLI** — Freigabe/Push-Prozess ist Sache von
   `synthesis-change-control`. Dieser Skill liefert nur den Message-Text.
 
@@ -189,11 +189,11 @@ Freitextform (neuer datierter Abschnitt):
 
 Verifiziert: <Test/Lauf + konkrete Zahlen; „Suite N/N grün">.
 
-Co-Authored-By: Claude <Modell> <noreply@anthropic.com>
+Co-Authored-By: Codex <Modell> <noreply@anthropic.com>
 ```
 
 Die `Co-Authored-By`-Zeile nur bei KI-Beteiligung; `<Modell>` durch das tatsächliche
-Modell ersetzen (Historie: `Claude Sonnet 5`, `Claude Opus 4.8`, `Claude Fable 5`).
+Modell ersetzen (Historie: `Codex Sonnet 5`, `Codex Opus 4.8`, `Codex Fable 5`).
 
 ## 6. Anti-Patterns
 
@@ -221,4 +221,4 @@ Modell ersetzen (Historie: `Claude Sonnet 5`, `Claude Opus 4.8`, `Claude Fable 5
   teils historisch / lebende Roadmap in docs/06 F", die Modellnamen in `Co-Authored-By`.
 - **Wartungsregel:** Wenn ein neues Doku-Dokument (docs/08+) entsteht oder ein Register
   umzieht, zuerst die Karte in Abschnitt 1 und die Checkliste in Abschnitt 3 nachziehen.
-- Autor: ausscheidender Principal Engineer (Doku-Übergabe), erstellt mit Claude.
+- Autor: ausscheidender Principal Engineer (Doku-Übergabe), erstellt mit Codex.

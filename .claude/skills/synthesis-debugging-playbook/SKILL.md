@@ -180,8 +180,9 @@ cd backend && mvn -o test -Dtest=SumoRunnerTest
 # Volle Testsuite offline
 cd backend && mvn -o test
 
-# Frontend-Compile prüfen (fängt NG5002/TS2531)
-cd frontend && npx ng build
+# Frontend-Interaktionen und Strict-AOT-Compile prüfen (fängt Regressionen sowie NG5002/TS2531)
+cd frontend && npm test
+cd frontend && npm run build
 ```
 
 ---

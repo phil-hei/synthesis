@@ -43,7 +43,7 @@ funktionierende ASC-Kalibrier-Mathematik im Nachbarmodul.
 die LLM-Splits (ASC-Analogon), NACH dem LLM-Call in `LlmModeChoiceRunner` — nicht im
 Prompt (belegt wirkungslos). (2) Korrektur gegen MiD auf einem Lauf fitten
 (ΔK=ln(target/llm), Clamp — `ModeChoiceCalibrator`-Formel). (3) Auf zweitem Seed/Szenario
-validieren (Generalisierung, nicht Memorierung). 
+validieren (Generalisierung, nicht Memorierung).
 **Ergebnis, wenn:** LLM-Pfad RMSE-zu-MiD < 0,07 (MNL-Niveau) auf einem NICHT zum Fitten
 benutzten Lauf, Reproduzierbarkeit erhalten. Gescheitert, wenn die Korrektur je Region neu
 gefittet werden muss und nicht überträgt — auch das wäre publizierbar (Negativ-Befund).

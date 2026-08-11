@@ -92,9 +92,7 @@ UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellier
 | `useActitopp` | boolean | `true` | **@Deprecated** – durch `behaviorSource` ersetzt; nur noch in `behaviorSourceEffective()` gelesen. UI: Checkbox „KIT actiTopp für Aktivitätenpläne" (Block „Bevölkerung") existiert noch | Legacy |
 | `useKitPopulation` | boolean | `true` | Haushalte aus KIT-synthetisiertem Demografie-Sample (realistische Zusammensetzungen) statt Ad-hoc-Ziehung. Konsument: `PopulationGenerator` | produktiv |
 | `calibrateModeChoice` | boolean | **`false`** | Iterative ASC-Kalibrierung der Moduswahl gegen Ziel-Modal-Split (mehrere Sim-Läufe, teuer). Konsument: `GenerationService` (Stufe „Simulation (logiTopp)") → `ModeChoiceCalibrator`. UI: Checkbox „Modal-Split kalibrieren (langsam)", gated `*ngIf="hasTarget('logitopp')"` | **experimentell** |
-| `calibrateDistance` | boolean | **`false`** | Iterative Zielwahl-Kalibrierung von `b_intrazonal` gegen den MiD-`<1 km`-Anteil. Konsument: `GenerationService` → `DistanceCalibrator`. UI: „Distanz-Verteilung kalibrieren". Mit `calibrateModeDistance` kombinierbar und läuft dann zuerst. | **experimentell** |
-| `calibrateModeDistance` | boolean | **`false`** | Zwei-Hebel-Kalibrierung gegen ÖV gesamt + ÖV ab 20 km: `asc_put` führt das Niveau, `b_tt_put` die Distanzschräge; mindestens 30 Fernwege. Konsument: `GenerationService` → `ModeDistanceCalibrator`. Komponiert nach `calibrateDistance` dessen Zielwahl-Override; ersetzt bei widersprüchlichen Alt-Szenarien nur `calibrateModeChoice`. | **experimentell** |
-| `calibrationTarget` | Map\<String, Double\> | MiD 2017 bundesweit: `pedestrian 0.22, bike 0.11, car 0.43, passenger 0.14, publicTransport 0.10` | Ziel-Modal-Split der Kalibrierung; leer/null → Fallback `ModeChoiceCalibrator.MID_2017`. `publicTransport` ist zugleich das globale Niveauziel von `calibrateModeDistance`; dessen Fernwegziel 17,61 % kommt aus MiD A W10.5. Auch von der LLM-Moduswahl als Referenz gelesen. UI: editierbare Zeilen + RegioStaR-Preset-Select bei Modus- oder Modus-Distanz-Kalibrierung | Datum produktiv; nur von experimentellen Flags genutzt |
+| `calibrationTarget` | Map\<String, Double\> | MiD 2017 bundesweit: `pedestrian 0.22, bike 0.11, car 0.43, passenger 0.14, publicTransport 0.10` | Ziel-Modal-Split der Kalibrierung; leer/null → Fallback `ModeChoiceCalibrator.MID_2017`. Auch von der LLM-Moduswahl als Referenz gelesen. UI: editierbare Zeilen + RegioStaR-Preset-Select, nur sichtbar wenn `calibrateModeChoice` an | Datum produktiv; nur von experimentellen Flags genutzt |
 | `llmModeChoice` | boolean | **`false`** | GTA 3c: zusätzliche LLM-gestützte Moduswahl auf den simulierten Trips (geerdet in Reisezeiten je Modus) – alternativer Modal-Split zum Vergleich mit MNL/MiD. Benötigt logiTopp + LLM. Konsument: Stufe „LLM-Moduswahl" → `LlmModeChoiceRunner`. UI: Checkbox, gated `hasTarget('logitopp')` | **experimentell** |
 | `sumoFeedback` | boolean | **`false`** | Netz-Feedback: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu (Gleichgewichts-Schleife). Benötigt logiTopp + SUMO. Konsument: Stufe „Netz-Feedback" → `FeedbackMath`. UI: Checkbox, gated `hasTarget('logitopp') && hasTarget('sumo')` | **experimentell** |
 | `publicTransport` | boolean | **`false`** | ÖV/Bus in SUMO (Phase C): GTFS (Auto-Fetch nach Region, Upload-Fallback) → `gtfs2pt.py` → Bus-Fahrplan; ÖV-Nachfrage fährt intermodal mit. Braucht Ziel SUMO + Python-venv; gtfs2pt-Mapping langsam (gecacht). Konsument: `GenerationService.buildPtProvider(...)` → `GtfsSource`/`GtfsCropper`/`TransitRunner`. UI: Checkbox, gated `hasTarget('sumo')` | **experimentell** |
@@ -126,8 +124,7 @@ GTA-Lauf eine Exception wirft (Log: „… Fallback actiTopp").
 ### 1.4 Experimentell vs. produktiv – Kurzliste (Stand 2026-07-08)
 
 **Experimentell (alle default `false` bzw. nicht die Default-Option; Beförderung nur über das
-Gate in `synthesis-change-control`):** `calibrateModeChoice`, `calibrateDistance`,
-`calibrateModeDistance`, `llmModeChoice`, `sumoFeedback`,
+Gate in `synthesis-change-control`):** `calibrateModeChoice`, `llmModeChoice`, `sumoFeedback`,
 `publicTransport`, `behaviorSource = "gta"` (+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
 Ziel `sumo` in `targetModels` ist funktionsfähig, aber **nicht** im Default enthalten.
 
@@ -167,8 +164,8 @@ Keys mitpflegen.
 | `enabled` | `true` | Stufe global abschaltbar (SKIPPED) | `GenerationService`-Gate |
 | `project-dir` | `../validation/mobitopp-rastatt` | Legacy-Projekt mit `gradlew runDeliverySynthesis` | `SimulationRunner` |
 | `timeout-minutes` | `30` | Timeout des Gradle-Laufs | `SimulationRunner` |
-| `calibration-iterations` | `8` | Max. Iterationen der drei Kalibrierungen (je Iteration ein Sim-Lauf) | `ModeChoiceCalibrator`, `DistanceCalibrator`, `ModeDistanceCalibrator` |
-| `calibration-tolerance` | `0.02` | Modal-Split: RMSE-Grenze; Modus-Distanz: beide ÖV-Zielabweichungen müssen einzeln innerhalb der Toleranz liegen | `ModeChoiceCalibrator`, `ModeDistanceCalibrator` |
+| `calibration-iterations` | `8` | Max. Iterationen der Modal-Split-Kalibrierung (je Iteration ein Sim-Lauf) | Kalibrierschleife (`ModeChoiceCalibrator`) |
+| `calibration-tolerance` | `0.02` | Abbruch, wenn RMSE der Modus-Anteile zum Ziel darunter liegt | Kalibrierschleife |
 
 ### 2.3 `synthesis.actitopp` (KIT actiTopp, Stufe „Aktivitätenpläne")
 
@@ -184,7 +181,7 @@ Keys mitpflegen.
 |---|---|---|---|
 | `enabled` | `true` | Stufe abschaltbar (SKIPPED) | `GenerationService`-Gate |
 | `bin-dir` | **berechnet** aus `$SUMO_HOME` (Ableitung s. u.) | Verzeichnis mit `sumo`/`netconvert`/`duarouter` | `SumoRunner` |
-| `sumo-home` | **berechnet**: `$SUMO_HOME`; ungesetzt → macOS-Framework-Fallback `/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO/share/sumo` | SUMO-Daten/Tools (i. d. R. `.../share/sumo`) | `SumoRunner`; wird an `TransitRunner` durchgereicht |
+| `sumo-home` | **berechnet**: `$SUMO_HOME`; ungesetzt → `sumo` auf dem PATH, danach versionsunabhängiger macOS-Framework-Fallback `/Library/Frameworks/EclipseSUMO.framework/EclipseSUMO/share/sumo` | SUMO-Daten/Tools (i. d. R. `.../share/sumo`) | `SumoRunner`; wird an `TransitRunner` durchgereicht |
 | `day` | `0` | Simulierter Wochentag (0 = Montag) | `SumoRunner` |
 | `max-trips` | `4000` | Obergrenze eingespeister Fahrzeug-Trips (Performance) | `SumoRunner` |
 | `timeout-minutes` | `15` | Timeout des SUMO-Laufs | `SumoRunner` |
@@ -198,11 +195,11 @@ Keys mitpflegen.
    `SUMO_HOME = .../EclipseSUMO/share/sumo`, Binaries unter `.../EclipseSUMO/bin`).
 3. Sonst `$SUMO_HOME/bin` (auch wenn nicht existent – `SumoRunner.isAvailable()` fängt das ab →
    SKIPPED „SUMO_HOME/Binaries prüfen").
-4. `$SUMO_HOME` ungesetzt/leer → macOS-Fallback
-   `/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO/bin`.
+4. `$SUMO_HOME` ungesetzt/leer → Wurzel aus dem ersten ausführbaren `sumo` auf dem PATH;
+   ohne Treffer macOS-Fallback `/Library/Frameworks/EclipseSUMO.framework/EclipseSUMO/bin`.
 
-Die Framework-Version `1.26.0` ist **hart codiert** (`Sumo.MAC_FRAMEWORK`) – bei SUMO-Update auf
-einem Mac ohne gesetztes `$SUMO_HOME` bricht der Fallback (Stand 2026-07-08).
+Der Framework-Fallback verwendet den Installer-Symlink `Versions/Current` indirekt und enthält
+keine Versionsnummer. Verifiziert mit SUMO 1.27.1 am 2026-08-11.
 
 ### 2.5 `synthesis.transit` (ÖV-Zielmodell, Phase C – Gegenstück zum Szenario-Flag `publicTransport`)
 
@@ -250,7 +247,7 @@ Ollama erreichbar, greift der Fallback; es gibt keinen harten Fehler.
 
 | Variable | Wirkung | Konsument |
 |---|---|---|
-| `SUMO_HOME` | Quelle der **berechneten Defaults** `synthesis.sumo.bin-dir`, `synthesis.sumo.sumo-home`, `synthesis.transit.gtfs2pt` (Ableitung s. Abschnitte 2.4/2.5). Ungesetzt → macOS-Framework-Fallback (hart codierte Version 1.26.0) | `SynthesisProperties.Sumo`/`Transit` – statisch bei Bean-Erzeugung gelesen; **Backend-Neustart nötig** nach Änderung |
+| `SUMO_HOME` | Quelle der **berechneten Defaults** `synthesis.sumo.bin-dir`, `synthesis.sumo.sumo-home`, `synthesis.transit.gtfs2pt` (Ableitung s. Abschnitte 2.4/2.5). Ungesetzt → PATH-Erkennung, danach versionsunabhängiger macOS-Framework-Fallback | `SynthesisProperties.Sumo`/`Transit` – statisch bei Bean-Erzeugung gelesen; **Backend-Neustart nötig** nach Änderung |
 | `SYNTHESIS_TRANSIT_VENV` | **Nur Test-Gate, keine Laufzeit-Wirkung:** `backend/src/test/java/de/synthesis/generation/pipeline/PtIntegrationTest.java` liest sie via `System.getenv` und überspringt den (langsamen) ÖV-Integrationstest, wenn ungesetzt („SYNTHESIS_TRANSIT_VENV nicht gesetzt – ÖV-Integrationstest übersprungen"). Zeigt auf den Python-Interpreter eines venv mit pandas/rtree/pyproj. Für den **Betrieb** gilt stattdessen `synthesis.transit.venv-python` | `PtIntegrationTest` |
 
 ---

@@ -2,7 +2,7 @@
 name: synthesis-build-and-env
 description: >
   Setup-Runbook: die SyntheSis-Entwicklungsumgebung von null auf einer frischen Maschine
-  reproduzieren (Angular 18 + Spring Boot 3.5/Java 21 + externe Toolchain). Laden, WENN du
+  reproduzieren (Angular 21 + Spring Boot 3.5/Java 21 + externe Toolchain). Laden, WENN du
   (a) auf einem neuen Rechner das Projekt aufsetzt ("frische Maschine", "Setup", "Installation",
   "Onboarding"), (b) eine Komponente fehlt oder falsch installiert ist ("SUMO_HOME nicht gesetzt",
   "sumo not found", "venv fehlt", "pip install schlägt fehl", "PEP 668", "externally-managed-environment"),
@@ -38,16 +38,16 @@ repo-relativ (Repo-Root = Verzeichnis mit `backend/`, `frontend/`, `docs/`, `val
 - **Konfigurations-Feintuning** (Flags, `application.yml`-Optionen, Feature-Gates)
   → `synthesis-config-and-flags`.
 - **Code ändern/committen** → `synthesis-change-control`.
-- CI/Container-Setup: nicht abgedeckt — das Projekt wird lokal entwickelt; es gibt kein
-  Dockerfile und keine CI-Pipeline im Repo (Stand 2026-07-08).
+- Container-Setup: nicht abgedeckt. Die GitLab-CI prüft Backend-Tests sowie Frontend-Tests,
+  Produktions-Audit und Produktions-Build; die externe Toolchain bleibt lokal (Stand 2026-08-04).
 
 ## Big Picture: Was gehört zur Umgebung?
 
 | Schicht | Komponenten | Ohne sie |
 |---|---|---|
-| Kern | JDK 21, Maven, Node 18+, git | nichts läuft |
-| App | `backend/` (Spring Boot 3.5.5, Port 8090), `frontend/` (Angular 18, Port 4300) | keine App |
-| SUMO | SUMO 1.26 (`sumo`/`netconvert`/`duarouter`), `$SUMO_HOME` | SUMO-Stufe SKIPPED, SumoRunnerTest übersprungen |
+| Kern | JDK 21, Maven, Node 20.19+/22.12+/24, git | nichts läuft |
+| App | `backend/` (Spring Boot 3.5.5, Port 8090), `frontend/` (Angular 21, Port 4300) | keine App |
+| SUMO | SUMO 1.26 (Reproduktions-Pin; 1.27.1 kompatibel getestet), `$SUMO_HOME` | SUMO-Stufe SKIPPED, SumoRunnerTest übersprungen |
 | LLM | Ollama + `qwen2.5:7b-instruct` | GTA fällt auf actiTopp zurück (dokumentierter Fallback) |
 | ÖV | `validation/transit-venv` (pandas/rtree/pyproj) für `gtfs2pt.py` | ÖV-Stufe SKIPPED |
 | **validation/** | KIT-Klone + gebaute mavenLocal-Artefakte + Fixtures | Simulation, actiTopp, ÖV-Test und Fixtures laufen nicht — **~die halbe Maschine** |
@@ -60,13 +60,13 @@ aufwendigste Teil dieses Runbooks (Schritt 5).
 
 ## Schritt 1: Basis — JDK 21, Maven, Node, Backend + Frontend
 
-Versionen (Ground Truth aus `backend/pom.xml` und `frontend/package.json`, Stand 2026-07-08):
+Versionen (Ground Truth aus `backend/pom.xml` und `frontend/package.json`, Stand 2026-08-04):
 
 - Backend: Spring Boot **3.5.5** (Parent-POM), `java.version` **21**, springdoc 2.8.5,
   commons-compress 1.27.1, GraphHopper 8.0 (eingebettet — kein separater Dienst nötig).
-- Frontend: Angular **^18.2.0**, TypeScript ~5.5, Leaflet 1.9.4. Angular 18 verlangt
-  Node ≥ 18.19 (Angular-Doku). Angular CLI wird über `npx ng` / devDependency benutzt —
-  keine globale Installation nötig.
+- Frontend: Angular **^21.2.19**, TypeScript ~5.9, Leaflet 1.9.4. Unterstützt werden
+  Node **^20.19.0**, **^22.12.0** oder **^24.0.0**; `.nvmrc` fixiert die Referenz auf 20.20.2.
+  Angular CLI wird über `npx ng` / devDependency benutzt — keine globale Installation nötig.
 
 ```bash
 # macOS-typisch (Homebrew); jede andere JDK-21-Distribution geht auch:
@@ -89,7 +89,8 @@ git clone <repo-url> SyntheSis && cd SyntheSis
 3. Build-Gates prüfen:
    ```bash
    cd backend && mvn -o test          # offline; erst NACH einem Online-Lauf möglich
-   cd frontend && npx ng build        # AOT-Build
+   cd frontend && npm test            # nativer Angular/Vitest-Runner
+   cd frontend && npm run build       # Produktions-AOT-Build
    ```
    **Erwartung:** beide grün — aber Achtung: viele Backend-Tests überspringen sich per
    `assumeTrue`, solange SUMO/validation//LLM fehlen (Verifikations-Matrix, Schritt 8).
@@ -100,13 +101,14 @@ Maven-Cache leer ist — einmal `mvn test` (online) laufen lassen, danach ist of
 Die KIT-Artefakte aus Schritt 5 sind dafür NICHT nötig: die Backend-Tests rufen die
 Gradle-Projekte als externe Prozesse auf, nicht als Maven-Dependencies.
 
-## Schritt 2: SUMO 1.26 (macOS: EclipseSUMO.framework)
+## Schritt 2: SUMO (macOS: EclipseSUMO.framework)
 
-macOS-Installationspfad (so auf der Referenzmaschine; als Konstante `MAC_FRAMEWORK` in
-`backend/src/main/java/de/synthesis/SynthesisProperties.java` hinterlegt):
+Der historische Reproduktions-Pin ist SUMO 1.26. Auf dem neuen M5-Laptop bestand die native
+SUMO-Kette am 2026-08-11 auch mit 1.27.1. Der Code verwendet den versionsunabhängigen
+Framework-Symlink:
 
 ```
-/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO
+/Library/Frameworks/EclipseSUMO.framework/EclipseSUMO
 ```
 
 Framework-Layout: `SUMO_HOME` ist `<Framework>/share/sumo` (Daten + `tools/`, u. a.
@@ -123,18 +125,19 @@ Ableitungslogik in `SynthesisProperties.Sumo` (im Code verifiziert):
 
 Setup:
 
-1. SUMO 1.26 installieren (macOS: offizielles EclipseSUMO-Framework-Paket von sumo.dlr.de;
+1. SUMO installieren (macOS: offizielles EclipseSUMO-Framework-Paket von sumo.dlr.de;
    Linux wäre Paketmanager/Build — hier nicht verifiziert).
-2. `SUMO_HOME` im Shell-Profil setzen:
+2. Optional `SUMO_HOME` im Shell-Profil setzen; ohne Variable wird zuerst `sumo` auf dem
+   `PATH`, danach der Framework-Symlink verwendet:
    ```bash
-   export SUMO_HOME=/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO/share/sumo
+   export SUMO_HOME=/Library/Frameworks/EclipseSUMO.framework/EclipseSUMO/share/sumo
    ```
 3. **Erwartung:**
    ```bash
    "$SUMO_HOME/../../bin/sumo" --version    # macOS-Framework-Layout
    # bzw. auf Standard-Layouts: "$SUMO_HOME/bin/sumo" --version
    ```
-   meldet `Eclipse SUMO sumo Version 1.26.x`; zusätzlich existiert
+   meldet eine kompatible SUMO-Version; zusätzlich existiert
    `$SUMO_HOME/tools/import/gtfs/gtfs2pt.py` (braucht Schritt 4/ÖV).
 
 **Falle:** Das Backend liest `SUMO_HOME` beim JVM-Start — die Variable muss in der Shell
@@ -161,6 +164,12 @@ Hardware-Realität (16-GB-M1, Projekterfahrung Stand ~2026-07): ~11 tok/s, Model
 ~4,6 GB im RAM, ~30–40 s je Persona (daher `max-personas`-Default 60).
 **Falle:** Ollama NIE parallel zu einer großen logiTopp-JVM (bis 12 GB Heap) laufen
 lassen — 16 GB RAM reichen nicht für beide.
+
+**M5-Befund 2026-08-11:** Homebrew-Ollama 0.32.8 lädt `qwen2.5:7b-instruct` in einer
+verwalteten Codex-Sitzung nicht (`failed to create command queue`, HTTP 500), auch nicht mit
+`OLLAMA_LLM_LIBRARY=cpu`. Installation und Modell-Download sind trotzdem vollständig. Vor GTA-
+Läufen außerhalb Codex mit `ollama run qwen2.5:7b-instruct 'Antworte nur mit OK.'` gegenprüfen
+und bei gleichem Fehler eine M5-kompatible Ollama-Version pinnen.
 
 ## Schritt 4: transit-venv (nur für die ÖV-Stufe)
 
@@ -192,6 +201,10 @@ Anbinden — zwei getrennte Konsumenten:
 
 **Erwartung:** `validation/transit-venv/bin/python -c "import pandas, rtree, pyproj"`
 läuft ohne Fehler.
+
+`TransitRunner` löst konfigurierte relative Interpreter- und `gtfs2pt`-Pfade beim Start gegen
+das Backend-Arbeitsverzeichnis absolut auf; damit funktionieren sie auch nach dem Wechsel in
+das temporäre Transit-Artefaktverzeichnis.
 
 ## Schritt 5: validation/ aufbauen — der heikelste Teil
 
@@ -348,7 +361,7 @@ Welche Komponente schaltet welches Feature/welchen Test frei? Alle bedingten Tes
 | SUMO (Achse B) | Schritt 2 + Demand-CSV (Schritt-6-Falle) + `rastatt-test.osm` (selbstheilend) | `SumoRunnerTest` | Test übersprungen; Stufe „SUMO (Verkehr)" SKIPPED |
 | ÖV/Bus (Phase C) | Schritt 2 + 4 + Demand-CSV + `kvv-gtfs.zip` + env `SYNTHESIS_TRANSIT_VENV` | `PtIntegrationTest` | Test übersprungen; ÖV-Stufe SKIPPED |
 | GTFS-Verarbeitung isoliert | `kvv-gtfs.zip` | `GtfsCropperTest`, `GtfsSourceTest` | Tests übersprungen |
-| Frontend | Schritt 1 | `npx ng build`; http://localhost:4300 | — |
+| Frontend | Schritt 1 | `npm test`; `npm run build`; http://localhost:4300 | — |
 
 Endabnahme („alles da"): `mvn -o test` mit gesetztem `SUMO_HOME` und
 `SYNTHESIS_TRANSIT_VENV` — **Erwartung: 0 Failures und keine übersprungenen
@@ -357,21 +370,23 @@ voller Frontend-Lauf mit allen Zielmodellen, alle Stufen DONE.
 
 ## Provenienz & Wartung
 
-- Stand: **2026-07-08**. Autor: ausscheidender Principal Engineer (Wissenstransfer).
+- Stand: **2026-08-11**. Ursprünglich als Wissenstransfer verfasst, auf dem neuen Laptop
+  erneut praktisch abgenommen.
 - Ground Truth: Versionen aus `backend/pom.xml` / `frontend/package.json` abgelesen;
   SUMO-Pfadableitung aus `backend/src/main/java/de/synthesis/SynthesisProperties.java`;
   Config-Keys aus `backend/src/main/resources/application.yml`; Test-Skip-Bedingungen
   und Fixture-Pfade aus `backend/src/test/java/de/synthesis/generation/**`;
   `validation/`-Inventar per `ls` verifiziert; KIT-Build-Kette wörtlich aus
   `docs/05-validierung.md`; Rail/Tram-Blocker aus `docs/06-gta-integration-konzept.md`.
-- Verifizierte Kommandos (real ausgeführt, Stand 2026-07-07/-08): Backend-/Frontend-Start,
-  `mvn -o test`, `npx ng build`, `mvn clean` (Finder-Falle), venv-Aufbau (pandas 3.0.3 /
-  rtree 1.4.1 / pyproj 3.7.2 auf Python 3.14), Ollama-Setup (brew, pull 4,7 GB),
-  KVV-GTFS-curl (121 MB).
+- Verifizierte Kommandos (real ausgeführt, zuletzt Stand 2026-08-11): Backend-/Frontend-Start,
+  `mvn -o test`, `npm test`, `npm run build`, `mvn clean` (Finder-Falle), venv-Aufbau (pandas 3.0.3 /
+  rtree 1.4.1 / pyproj 3.7.2 auf Python 3.14; neue Maschine: pandas 3.0.5), Ollama-Setup
+  (brew 0.32.8, pull 4,7 GB; M5-Ausführungsblocker oben), KVV-GTFS-curl (121 MB),
+  `GenerationPipelineE2ETest` 4/4 sowie `PtIntegrationTest` vollständig in 147,7 s.
 - Als „aus der Projekthistorie überliefert, verifizieren" markiert: Rolle des JDK 11 in
   `validation/tools/`, actitoppNG-Lizenzlage, Linux-Installationswege.
 - Volatil (bei Nutzung > ~3 Monate nach diesem Stand prüfen): SUMO-Version/Framework-Pfad
-  (1.26.0 fest im Code!), Ollama-Modellname/-größe, NVBW-GTFS-URL und Feed-Größe,
+  (PATH/versionsunabhängiger Framework-Symlink), Ollama-Modellname/-größe, NVBW-GTFS-URL und Feed-Größe,
   pip-Paketversionen, KIT-Repo-Stände auf GitHub.
 - Wartung: Bei Änderungen an `SynthesisProperties` (neue Stufen/Pfade),
   Dependency-Upgrades oder Umbauten in `validation/` diesen Skill mitziehen — er ist

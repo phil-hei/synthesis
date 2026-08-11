@@ -102,7 +102,7 @@ ist als Baseline UNZULÄSSIG.
 **Schritt 0b — Messen:**
 
 ```bash
-python3 .claude/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py \
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py \
   <szenario-dir bzw. results/demandsimulationResult.csv>
 ```
 
@@ -298,5 +298,5 @@ Re-Verifikation:
 ls validation/mobitopp-rastatt/config/shared/parameters/ | grep -i dest
 grep -n "destinationChoice" backend/src/main/java/de/synthesis/generation/pipeline/SimulationRunner.java
 grep -n "calibrateDistance" backend/src/main/java/de/synthesis/scenario/Scenario.java  # Erwartung: Feld default=false
-python3 .claude/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv
 ```

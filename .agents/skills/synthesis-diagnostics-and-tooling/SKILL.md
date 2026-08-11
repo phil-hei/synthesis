@@ -99,7 +99,7 @@ Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
 Liest `artifacts/simulation/kpis.json` + `artifacts/sumo/summary.json` (falls da).
 
 ```
-python3 .Codex/skills/synthesis-diagnostics-and-tooling/scripts/kpi_report.py backend/data/scenarios/<id>
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/kpi_report.py backend/data/scenarios/<id>
 ```
 
 Beispielausgabe (getestet 2026-07-10 gegen eine strukturgleiche **Fixture** — lokal
@@ -130,7 +130,7 @@ Filtert `legId==0`, druckt Ø/Median km + Distanzband-Histogramm
 (<1, 1–2, 2–5, 5–10, 10–20, >20 km) gesamt und je Modus.
 
 ```
-python3 .Codex/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py \
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py \
   validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv
 ```
 
@@ -169,7 +169,7 @@ Zählt den Modal-Split direkt aus der CSV und vergleicht gegen kpis.json
 kpis.json ab (RMSE ≥ 0.01), stammt die kpis.json von einem anderen Lauf.
 
 ```
-python3 .Codex/skills/synthesis-diagnostics-and-tooling/scripts/modal_split.py \
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/modal_split.py \
   validation/mobitopp-rastatt/output/synthesis
 ```
 

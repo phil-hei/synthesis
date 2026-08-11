@@ -102,7 +102,7 @@ ist als Baseline UNZULÄSSIG.
 **Schritt 0b — Messen:**
 
 ```bash
-python3 .Codex/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py \
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py \
   <szenario-dir bzw. results/demandsimulationResult.csv>
 ```
 
@@ -181,15 +181,25 @@ Erledigt (`backend/.../pipeline/DistanceCalibrator.java`, Muster `ModeChoiceCali
   ist die inverse gemessene Elastizität.
 - Läuft über den `destinationChoiceDir`-Override (Phase 2a), patcht nach
   `artifacts/simulation/dc-calibrated/`. Flag `population.calibrateDistance` default=false; Ziel
-  `synthesis.simulation.distance-calibration-target-near-share` (0,14, tunbar — kein amtlicher MiD-Wert).
-- `DistanceCalibratorTest` (Fake-Sim-Konvergenz + Clamp-Semantik: Datei hält Zustand VOR dem
-  letzten Update) grün; Suite 25/25. Studio-Checkbox vorhanden.
-- **End-to-End-validiert:** ein Schritt (`Δb −1,74`) brachte `<1 km` 0,250 → **0,142** (Ziel 0,14)
-  auf realem logiTopp → konvergiert in einer Iteration.
+  `synthesis.simulation.distance-calibration-target-near-share` (Default **0,21** aus MiD 2017
+  Tabelle A W12: 10 % `<0,5 km` + 11 % `0,5–<1 km`; tunbar).
+- `DistanceCalibratorTest` (Fake-Sim-Konvergenz von oberhalb UND unterhalb des Ziels +
+  Clamp-Semantik: Datei hält Zustand VOR dem letzten Update) grün. Studio-Checkbox vorhanden.
+- **Mechanik End-to-End-validiert:** Die historische Einzelprüfung brachte `<1 km` mit dem
+  später verworfenen Näherungswert 0,14 von 0,250 → 0,142. Die präregistrierte
+  Drei-Seed-Wiederholung vom 2026-07-28 validiert den amtlichen Default 0,21:
+  0,1515→0,1949 / 0,1605→0,2022 / 0,1552→0,1970, jeweils nach drei Iterationen.
 
-*Offen für später:* Multi-Band-Ziel (Hebel `b_0_1`/`b_1_2` ergänzen); Komposition mit der
-Modal-Split-Kalibrierung (heute gegenseitig ausschließend, `calibrateDistance` hat Vorrang); und
-die absolute Ø-Decke bleibt ein Gebietsgrößen-Problem (Kampagnen-Option B).
+*Offen für später:* Multi-Band-Ziel (Hebel `b_0_1`/`b_1_2` ergänzen) und die
+absolute Ø-Decke als Gebietsgrößen-Problem (Kampagnen-Option B). Die Komposition
+mit `calibrateModeDistance` ist umgesetzt: zuerst Zielwahl (`b_intrazonal`),
+danach ÖV-Niveau/-Schräge (`asc_put`/`b_tt_put`) auf demselben
+Zielwahl-Override. Der kombinierte Realrouting-Lauf vom 2026-07-29 wurde nach
+Seed 42 gestoppt: Bei 2,3-km-Zellen liegt der intrazonale Pkw-Matrixwert mit
+1,62 km außerhalb des `<1 km`-Zielbands, der Regler ist dort nicht
+identifizierbar. Solche Konfigurationen werden inzwischen vor dem Graphaufbau
+abgelehnt. Die reine `calibrateModeChoice`-Schleife ist weiterhin eine
+Alternative.
 
 ### Phase 4 — Joint-Validierung & Beförderung
 
@@ -201,6 +211,47 @@ Erfolg NUR wenn alle drei gleichzeitig (über ≥3 Seeds):
 Messung ausschließlich per Skripte (distance_profile.py, modal_split.py, kpi_report.py).
 Beförderung über synthesis-change-control (Tests grün, docs/06-✅-Eintrag mit
 vorher→nachher-Zahlen, Flag bleibt opt-in bis Partner-Feedback).
+
+**🔬 Drei-Seed-Gate 2026-07-27 gescheitert:** Der Lauf mit dem inzwischen verworfenen
+Näherungsziel 0,14 senkte `<1 km` im Mittel 15,6→14,7 %, verfehlte aber den amtlich aus
+MiD A W12 aggregierten Sechs-Band-Vektor `[21, 14, 23, 16, 13, 13] %`: B-RMSE
+0,1019–0,1094 bei vorab gesetztem Ziel ≤0,05; Seed 43 verschlechterte sich um 0,0080.
+Kein Default-Flip.
+
+**🔬 Drei-Seed-Wiederholung 2026-07-28 mit Default 0,21: Mechanik bestanden,
+Beförderung gescheitert.** `<1 km` steigt je Seed in das vorab definierte Fenster 19–23 %
+(19,49/20,22/19,70 %); der Sechs-Band-RMSE verbessert sich
+0,1055→0,0946 / 0,1014→0,0919 / 0,1019→0,0912. Modal-RMSE-Verschlechterung
+≤0,0048, Wege/P/Tag 3,19–3,26, keine ausgelösten Fallbacks. Der absolute Gate ≤0,05
+scheitert dennoch in allen Seeds, weil ≥20-km-Wege mit 0,29–0,43 % statt 13 % fast fehlen.
+`calibrateDistance` bleibt opt-in. Nächster Schritt: langes Ende über größeren Raum und/oder
+gravitationskonsistente externe Ziele, danach Multi-Band-Hebel.
+
+**🔬 Modus×Distanz-Kalibrierung 2026-07-28: Mechanik bestanden, Beförderung
+gescheitert.** Auf demselben Großraum-Export reagierte ÖV ab 20 km streng monoton auf
+`b_tt_put=-0,08/-0,10/-0,12` (71,03/23,16/3,50 %); ein Koeffizient konnte globales
+ÖV-Niveau und Distanzschräge nicht zugleich treffen. Die präregistrierte Zwei-Hebel-
+Kombination `b_tt_put=-0,11`, `asc_put=-1,22` traf beide Ziele nahezu:
+ÖV gesamt 9,34 % (MiD 10 %), ÖV ab 20 km 17,60 % (MiD 17,61 %),
+Modal-RMSE 0,105742→0,085375, Joint-RMSE 0,054671→0,053002. Wegezahl und
+Distanzbänder blieben stabil. Der Promotions-Gate Joint-RMSE <0,05 und Verbesserung
+≥0,004 scheitert dennoch, weil die Distanzmarginale selbst falsch bleibt (0 % statt
+21 % unter 1 km). **Regel:** `b_tt_put` (Schräge) nie allein kalibrieren; mit `asc_put`
+(Niveau) komponieren, aber keine Werte vor Drei-Seed-/Realrouting-/Distanzmarginal-
+Validierung übernehmen.
+
+**❌ Gemeinsame Realrouting-Kampagne 2026-07-29 nach Seed 42 gestoppt.**
+A/B verwendeten byte-identische GraphHopper-Matrizen, aber bei 2,3-km-Zellen
+bildet `CAR_DIS` intrazonal 1,62 km ab. Acht `b_intrazonal`-Iterationen mit
+Delta 0→14 ließen `<1 km` bei 0,0 %, während 1–<2 km auf 81,54 % stieg.
+Distanzband-RMSE verschlechterte sich 0,1343→0,3072, Joint-RMSE
+0,0438→0,0857. Der Modus-Distanz-Regler traf seine direkten ÖV-Ziele
+(9,28 % gesamt, 18,89 % ab 20 km), konnte die Distanzmarginale aber nicht
+heilen. **Regel:** Vor jeder Kampagne prüfen, ob der intrazonale Pkw-Matrixwert
+im kalibrierten Band liegt. Der Produktcode erzwingt dies nun fail-fast; bei
+`>=1 km` Zellgröße verkleinern oder die Distanzrepräsentation/Zielgröße
+methodisch neu präregistrieren. Seeds 43/44 nicht nachholen, solange diese
+Voraussetzung fehlt.
 
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
@@ -221,7 +272,7 @@ geroutet. A/B-validiert (Vorhersage vorab, Offline-Läufe seed 42): großes Gebi
 Ø 2,08→2,24 km, `<1 km` 31,8→29,1 %, Wegezahl exakt unverändert. **Achtung Baselines:** alle
 Luftlinien-Kennzahlen vor 2026-07-16 (auch die Option-B-Zahlen oben und die
 `DistanceCalibrator`-Ist-Werte) sind mit dem neuen Boden nicht mehr direkt vergleichbar;
-das Kalibrier-Ziel 0,14 bleibt gültig (Kalibrator regelt auf `b_intrazonal`).
+der frühere Näherungs-Zielwert 0,14 ist seit 2026-07-27 durch den amtlichen Wert 0,21 ersetzt.
 Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `MatrixGeneratorTest`.
 
 ## Wann diesen Skill NICHT nutzen
@@ -233,17 +284,19 @@ Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `M
 | Frage „wurde X schon probiert?" | synthesis-failure-archaeology |
 | Prozess-/Evidenzfragen | synthesis-research-methodology |
 
-## Provenienz & Wartung (Stand: 2026-07-10)
+## Provenienz & Wartung (Stand: 2026-07-29)
 
 Verifiziert am 2026-07-10: Parameterdateien + Inhalte (ls/cat oben), `destinationChoice:`-
 Verdrahtung (grep in SimulationRunner.java Z. 106–114), Baseline-Messung (distance_profile.py,
 70 188 Trips). Überliefert: Externe-Zonen-Befunde (docs/06, 2026-06-12), Kalibrier-Blaupause-
-Kennwerte (docs/06, 2026-06-21).
+Kennwerte (docs/06, 2026-06-21). MiD-Distanzziel: Tabellenband Deutschland, Tabelle A W12;
+Drei-Seed-Gates und Zielwert-Korrektur: docs/05–06 (2026-07-27/28).
+Realrouting-Stop-Gate und Auflösungsgrenze: docs/05–06 (2026-07-29).
 
 Re-Verifikation:
 ```bash
 ls validation/mobitopp-rastatt/config/shared/parameters/ | grep -i dest
 grep -n "destinationChoice" backend/src/main/java/de/synthesis/generation/pipeline/SimulationRunner.java
-grep -n "calibrateDistance" backend/src/main/java/de/synthesis/scenario/Scenario.java  # leer = Phase 3 noch offen
-python3 .Codex/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv
+grep -n "calibrateDistance" backend/src/main/java/de/synthesis/scenario/Scenario.java  # Erwartung: Feld default=false
+python3 .agents/skills/synthesis-diagnostics-and-tooling/scripts/distance_profile.py validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv
 ```

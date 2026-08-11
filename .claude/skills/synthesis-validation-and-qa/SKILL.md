@@ -14,8 +14,7 @@ description: >
 
 Verkehrsnachfrage-Generator (siehe `README.md`, `docs/05` Validierung, `docs/07`).
 Dieser Skill definiert, was in diesem Projekt als Evidenz zählt, inventarisiert die
-fachlich und extern besonders relevanten Testklassen samt Gates und Fixtures und
-beschreibt, wie man Tests korrekt ergänzt.
+tragenden Testklassen samt Gates und Fixtures und beschreibt, wie man Tests korrekt ergänzt.
 
 ## Wann NICHT nutzen
 
@@ -39,30 +38,25 @@ Was „bewiesen" heißt, in absteigender Beweiskraft:
 3. **Code-Lektüre.** Zulässig als Hypothesenquelle, nie als Beweis.
 
 Zusatzregeln:
-- **UI-Behauptungen** brauchen mindestens `cd frontend && npx ng build` (strict AOT ist
-  das Frontend-Gate) und historisch zusätzlich einen Screenshot einer geseedeten Preview.
+- **UI-Behauptungen** brauchen mindestens `cd frontend && npm test` sowie
+  `cd frontend && npm run build` (Interaktionstests plus strict AOT sind das Frontend-Gate)
+  und historisch zusätzlich einen Screenshot einer geseedeten Preview.
 - **„Läuft bei mir" zählt nicht.** Das ausgeführte Kommando plus die konkrete Zahl
   (Fahrzeuge, Trips, RMSE, Dateigröße) gehört in die Doku bzw. Commit-Message.
 
-## 2. Test-Inventar (Stand 2026-07-28)
+## 2. Test-Inventar (Stand 2026-08-11)
 
-Alle 25 Testklassen liegen unter `backend/src/test/java/de/synthesis/`. Frischer
-Suite-Lauf: `cd backend && mvn -o test` → 67 Tests, 0 Fehler, 6
-umgebungsabhängige Skips, 1:14 min. `PtIntegrationTest` bleibt ohne
-`SYNTHESIS_TRANSIT_VENV` geskippt; der vollständige Lauf ist historisch mit
-~23 min überliefert. Die Tabelle hebt die externen, integrativen und für
-fachliche Invarianten wichtigsten Klassen hervor.
+Die Backend-Tests liegen unter `backend/src/test/java/de/synthesis/`. Suite-Lauf:
+`cd backend && mvn -o test` → 124 Testfälle, 6 umgebungsabhängig übersprungen
+(2026-08-04). Laufzeiten einzelner externer Tests sind **überliefert**: `SumoRunnerTest`
+~45 s, `PtIntegrationTest` separat ~23 min.
 
 | Klasse (Pfad relativ zu `backend/src/test/java/de/synthesis/`) | Prüft | Gates (`assumeTrue`) | Fixtures |
 |---|---|---|---|
-| `generation/pipeline/ExternalZonesTest.java` | Externer Ring: 8 eindeutige Zielzonen auf 12-km-Radius, fortlaufende IDs/Indizes, keine Einwohner und je Kategorie exakt vierfache interne Gesamtattraktivität; leeres Raster bleibt leer | keine | keine |
 | `generation/pipeline/FeedbackMathTest.java` | Reine Mathematik der MSA-Dämpfung: k=1 übernimmt Faktoren ungedämpft, konstante Faktoren → Δ=0 (Konvergenz), Oszillation 1↔2 wird Richtung Mittel gedämpft (Ergebnis in (1.3, 1.7)) | keine | keine |
-| `generation/pipeline/PopulationGeneratorTest.java` | Globale Stichprobeninvariante über 576 Zonen mit KIT-Haushalten: 5 % von 40.000 ergeben exakt 2.000 Personen in Ergebnis und CSV; verhindert zonenzahlabhängige Rundungs-/Haushaltsüberschreitung | keine | gebündeltes `kit-population-sample.csv` |
 | `generation/pipeline/ModeChoiceCalibratorTest.java` | ASC-Kalibrierung gegen Fake-Sim (Softmax über die ASCs): RMSE sinkt und erreicht ≤0,02 in ≤10 Iterationen; Anker `asc_car_d` und `b_time` bleiben unverändert; Kommentarzeilen der MNL-Datei erhalten. Clamp-Test: ΔASC je Iteration auf ±1,5 begrenzt. **Clamp-Semantik:** die geschriebene Datei hält den Stand VOR dem letzten Update, daher Assert `(iterations-1) * 1.5` | keine | keine (MNL-Fixture inline als String) |
-| `generation/pipeline/ModeDistanceCalibratorTest.java` | Zwei-Hebel-Kalibrierung konvergiert gleichzeitig auf ÖV gesamt und ÖV ab 20 km; `asc_put`-/`b_tt_put`-Schritte sind getrennt geklemmt, Fremdparameter/Kommentare bleiben erhalten, der persistierte Stand entspricht dem letzten Simulationslauf. Zusätzlich: mehrteilige Wegdistanzen werden vor der Bandzuordnung summiert | keine | keine (MNL- und Demand-Fixtures inline) |
-| `generation/pipeline/SimulationRunnerTest.java` | Run-Config verwendet Projekt-Defaults ohne Overrides, lenkt MNL oder alle fünf Zielwahlparameter getrennt um und kann beide Overrides in einem kombinierten Lauf gleichzeitig setzen | keine | keine (Temp-Verzeichnisse) |
-| `generation/GenerationServiceCalibrationTest.java` | Netzfeedback übernimmt die per Szenario-Flag aktive Modus-/Modus-Distanz- und Zielwahl-Kalibrierung; `calibrateModeDistance` gewinnt bei widersprüchlichen Alt-Flags, deaktivierte Flags reaktivieren keine alten Artefakte | keine | keine (Temp-Verzeichnisse) |
 | `generation/pipeline/ShapefileWriterTest.java` | Liest das geschriebene ESRI-Shapefile binär zurück: file code 9994, Version 1000, shape type 5 (Polygon), Bbox, Record-Struktur (Header BE / Inhalt LE), geschlossener 5-Punkte-Ring, `.shx`-Offsets, dBase-Feld exakt `districtID` mit Werten `SYN-001`/`SYN-002`, `.prj` enthält `WGS_1984` — das Format, das der MobileCity-/Takomat-Import erwartet | keine | keine |
+| `generation/pipeline/MobileCityExporterTest.java` | Emuliert unabhängig die gepaddete EpigeneCSV-Blocklogik und prüft `TECCarFleet.stock.total`: Basisjahr-Header, Pkw-Zählung über `car.ownerId` → `household.homeZone`, Mehrfach-Pkw und Ignorieren unbekannter Zonen | keine | keine (CSV-Fixtures inline im Temp-Verzeichnis) |
 | `generation/pipeline/GtfsCropperTest.java` | Bbox-Zuschnitt am echten KVV-Feed auf Rastatt: Halte/Trips/Routen > 0, Ergebnis < 1/20 der Feed-Größe, `shapes.txt` verworfen, **referenzielle Integrität** (jede trip_id/stop_id aus `stop_times.txt` existiert in `trips.txt`/`stops.txt`). Zweiter Test: Zeitfenster 6–10 Uhr reduziert die Trip-Zahl echt | `Files.exists(validation/kvv-gtfs.zip)` | `validation/kvv-gtfs.zip` |
 | `generation/pipeline/GtfsSourceTest.java` | GTFS-Quellenauflösung **ohne Netz**: Raw-Cache wird mit `kvv.zip` vorbelegt → `resolve()` liefert `source()=="fetch"`, `feedName()=="kvv"`, zugeschnittener Feed geschrieben und < 1/20 der Rohgröße. Zweiter Test: Region ohne Feed-Abdeckung (Nordsee) und ohne Upload → `null` (ÖV wird übersprungen) — läuft komplett fixture-frei | Test 1: `Files.exists(validation/kvv-gtfs.zip)`; Test 2: keins | `validation/kvv-gtfs.zip` (nur Test 1) |
 | `generation/pipeline/GtaBehaviorTest.java` | GTA-Verhaltensquelle, 5 Tests: (1) deterministisches Layout LLM-Touren → lückenlose Legacy-`activity.csv` (gültige Aktivitätscodes, Startzeit in Wochen-Minuten, Vollzeit-Person hat WORK + HOME) — **ohne LLM**; (2) Live-LLM erzeugt Persona-Pläne; (3) Cache verhindert Zweit-Calls (`llmCalls()==0` im zweiten Lauf, identische Pläne); (4) What-If-Kontext liefert LLM-Begründungen; (5) `sameSeedIsReproducible`: gleicher Seed → identische `GtaWeek`-Pläne | Tests 2–5: `runner.isAvailable()` (lokales LLM/Ollama erreichbar); Test 1: keins | keine (Person-CSVs inline); ~2 min überliefert wegen Live-LLM (~30–40 s je Persona, `maxPersonas` begrenzt) |
@@ -70,15 +64,26 @@ fachliche Invarianten wichtigsten Klassen hervor.
 | `generation/pipeline/SumoRunnerTest.java` | Volle native SUMO-Kette (netconvert → Trips → duarouter → sumo) gegen echtes Rastatt-Demand-CSV, `maxTrips=2000`: Fahrzeuge/Routenlänge/Speed/Dauer > 0; **multimodal**: `carTrips`, `bikeTrips`, `walkTrips` je > 0; CO₂ (HBEFA) > 0 inkl. `pkw`-Anteil; `congestion.geojson` mit `LineString` + `relSpeed`; OD-Stau-Faktoren über 3 Zentroiden: routbare Paare > 0, jeder Faktor in [1,3]; wenn `planned-tours.csv` da: `deliveryTrips` > 0 und `lkw`-CO₂ > 0 | `runner.isAvailable()` (SUMO-Binaries/`SUMO_HOME`); `Files.exists(DEMAND_CSV)`; OSM ladbar (Cache oder Overpass) | `validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv`, optional `planned-tours.csv`, `validation/rastatt-test.osm` (**selbstheilend**: Cache-Miss → Overpass-Fetch → Cache neu geschrieben); ~45 s überliefert |
 | `generation/GenerationPipelineE2ETest.java` | Smoke der kompletten Pipeline, **komplett offline**: `useOsmData=false` (synthetische POIs), `useRealRouting=false` (Luftlinien-Matrizen), `behaviorSource="template"` (kein Gradle/LLM), 250 Personen, Timeout 6 min. Asserts: Job-State `DONE`, Kern-Artefakt je Stufe existiert (zones, person/household/activity, `CAR_TTC.mtx.bz2`, Legacy-Export, MobileCity-Shapefile-Quartett, `manifest.json`), keine Stufe `FAILED`, SUMO/LLM-Stufen `SKIPPED`. Mit lokalem `mobitopp-rastatt` zusätzlich: Simulation `DONE`, `kpis.json` + `demandsimulationResult.csv`. **Falle:** `scenario.id` MUSS manuell gesetzt werden — IDs vergibt sonst der Controller, `repo.save()` tut es nicht | Simulations-Asserts: `Files.exists(<projectDir>/gradlew)` (mobitopp-rastatt lokal); Rest gate-frei | keine externen (Temp-`dataDir`); ~4–7 s überliefert (ohne Simulation) |
 | `generation/pipeline/PtIntegrationTest.java` | Volle ÖV-Kette (Phase C): GTFS-Auto-Fetch aus Raw-Cache → Zuschnitt → `gtfs2pt.py` (Fahrplan-Infrastruktur, Fenster 6–9 Uhr — **Test-Override**; Betriebs-Default ist 6–10) → SumoRunner mit intermodaler Personen-Routung, `maxTrips=1500`. Asserts: `ptVehicles() > 0`, `ptRiders() > 0`, PKW/Rad weiterhin simuliert, mindestens eine `<ride>`-Etappe im `routes.rou.xml` | **Env-gated**: `SYNTHESIS_TRANSIT_VENV` gesetzt + existiert; alle drei Fixtures vorhanden; `sumo.isAvailable()`; `transit.isAvailable()` | `demandsimulationResult.csv`, `validation/rastatt-test.osm`, `validation/kvv-gtfs.zip`; ~23 min überliefert — deshalb Env-gated, nicht im Standard-Lauf |
+| `scenario/ComparisonControllerTest.java` | Vergleich liefert nur vorhandene Szenarien in Anfrage-Reihenfolge; `simulated=true` ausschließlich bei parsebarer `kpis.json`, beschädigtes JSON wird nicht als Simulationsergebnis ausgegeben | keine | keine (`@TempDir`) |
+
+Die fixture-freie Frontend-Suite läuft mit `cd frontend && npm test` über Angulars nativen
+Vitest-Runner (20 Tests, Stand 2026-08-11):
+
+| Klasse (unter `frontend/src/app/`) | Prüft |
+|---|---|
+| `app.component.spec.ts` | Anwendungsshell, Navigation und Router-Outlets werden gerendert |
+| `core/services/api.service.spec.ts` | Szenario-GET, Kodierung mehrerer Vergleichs-IDs und vollständiger Zonenvorschau-Request im API-Vertrag |
+| `features/comparison/comparison.component.spec.ts` | Initialladen und Rendern des migrierten Pickers, sichtbare Ladefehler ohne veraltete Daten, blockierte Doppelaufrufe im Ladezustand, Leerauswahl ohne API-Aufruf, exakte Tabellenspannen mit/ohne MiD-Spalte sowie gemischte simulierte/nicht simulierte Ergebnisse inklusive MiD-Referenz |
+| `features/studio/studio.component.spec.ts` | Rendern des migrierten Studio-Templates, Leaflet-Lebenszyklus, Save-Validierung, Polling-Abbruch und Timer-Cleanup sowie sichtbare Fehlerzustände für Szenarioliste, Defaults, Löschung, Upload-Status und das Entfernen aller vier Upload-Arten ohne Backend oder Netzwerk |
 
 Verifizierte Kommandos:
 
 ```bash
-cd backend && mvn -o test                       # 67 Tests, 6 umgebungsabhängige Skips (2026-07-28)
+cd backend && mvn -o test                       # 124 Testfälle, externe Tests ggf. geskippt
 mvn -o test -Dtest=SumoRunnerTest               # nur SUMO-Kette
 SUMO_HOME=… SYNTHESIS_TRANSIT_VENV=validation/transit-venv/bin/python \
   mvn -o test -Dtest=PtIntegrationTest          # voller ÖV-Test (~23 min überliefert)
-cd frontend && npx ng build                     # strict AOT = Frontend-Gate
+cd frontend && npm test && npm run build         # Vitest + Produktions-AOT = Frontend-Gate
 ```
 
 ## 3. Muster für neue Tests
@@ -127,22 +132,22 @@ Schwellen werden VOR dem Lauf festgelegt**, nie nachträglich ans Ergebnis angep
   `ModeChoiceCalibratorTest`); ~0,07 erreicht gilt in der echten Simulation als gut.
 - **Netz-Feedback:** Konvergenz bei Δ < 0,01 (MSA-Δ über Relationen, vgl. `FeedbackMathTest`).
 - **Plausibilitätsfenster trips/Person/Tag:** ~2,8–3,5, Referenz MiD 3,1.
-- **Merge-Gate:** aktuelle Suite vollständig grün (`cd backend && mvn -o test`) plus
-  `cd frontend && npx ng build` bei Frontend-Änderungen (Details → `synthesis-change-control`).
+- **Merge-Gate:** vollständige Suite grün (`cd backend && mvn -o test`) plus
+  `cd frontend && npm test && npm run build` bei Frontend-Änderungen
+  (Details → `synthesis-change-control`).
 - **OD-Stau-Faktoren:** in [1,3] (hart im `SumoRunnerTest` asserted).
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-07-28.** Ground Truth: Suite mit 25 Testklassen und 67 Tests frisch
-  ausgeführt (0 Fehler, 6 Skips); Fixture-Größen historisch per `ls` verifiziert
-  (kvv-gtfs.zip 121 613 482 Bytes
+- **Stand: 2026-08-11.** Die tragenden Testklassen unter `backend/src/test/java/`
+  wurden gelesen; Fixture-Größen per `ls` verifiziert (kvv-gtfs.zip 121 613 482 Bytes
   = 121 MB dezimal / 116 MiB, vom 2026-07-07 — andere Skills nennen dieselbe Datei
   „121 MB"). Laufzeiten und historische Zählwerte (10.966 Pakete, 141 Halte,
   498 Busse, RMSE ~0,07) sind **überliefert** aus Projekt-Doku/Commits, nicht in dieser
   Skill-Erstellung nachgemessen.
 - **Wartungspflicht:** Bei neuem Test → Tabelle in §2 ergänzen (Gates + Fixtures + Laufzeit).
   Bei neuem/entferntem Fixture → §4. Bei geänderter Schwelle → §5 mit Datum. Die
-  Testanzahl (67) und Skip-Semantik nach jeder Suite-Änderung gegen `mvn -o test` prüfen.
+  Testanzahl und Skip-Semantik nach jeder Suite-Änderung gegen `mvn -o test` prüfen.
 - **Volatil:** kvv-gtfs.zip-Größe/Datum, Laufzeiten (hardwareabhängig), mobitopp-rastatt-Outputs.
 - Geschwister-Skills: `synthesis-change-control`, `synthesis-diagnostics-and-tooling`,
   `synthesis-research-methodology`, `synthesis-build-and-env`, `synthesis-debugging-playbook`.

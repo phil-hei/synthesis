@@ -44,10 +44,10 @@ Zusatzregeln:
 - **„Läuft bei mir" zählt nicht.** Das ausgeführte Kommando plus die konkrete Zahl
   (Fahrzeuge, Trips, RMSE, Dateigröße) gehört in die Doku bzw. Commit-Message.
 
-## 2. Test-Inventar (Stand 2026-08-04)
+## 2. Test-Inventar (Stand 2026-08-11)
 
 Die Backend-Tests liegen unter `backend/src/test/java/de/synthesis/`. Suite-Lauf:
-`cd backend && mvn -o test` → 120 Testfälle, 6 umgebungsabhängig übersprungen
+`cd backend && mvn -o test` → 124 Testfälle, 6 umgebungsabhängig übersprungen
 (2026-08-04). Laufzeiten einzelner externer Tests sind **überliefert**: `SumoRunnerTest`
 ~45 s, `PtIntegrationTest` separat ~23 min.
 
@@ -67,7 +67,7 @@ Die Backend-Tests liegen unter `backend/src/test/java/de/synthesis/`. Suite-Lauf
 | `scenario/ComparisonControllerTest.java` | Vergleich liefert nur vorhandene Szenarien in Anfrage-Reihenfolge; `simulated=true` ausschließlich bei parsebarer `kpis.json`, beschädigtes JSON wird nicht als Simulationsergebnis ausgegeben | keine | keine (`@TempDir`) |
 
 Die fixture-freie Frontend-Suite läuft mit `cd frontend && npm test` über Angulars nativen
-Vitest-Runner (20 Tests, Stand 2026-08-04):
+Vitest-Runner (20 Tests, Stand 2026-08-11):
 
 | Klasse (unter `frontend/src/app/`) | Prüft |
 |---|---|
@@ -79,7 +79,7 @@ Vitest-Runner (20 Tests, Stand 2026-08-04):
 Verifizierte Kommandos:
 
 ```bash
-cd backend && mvn -o test                       # 120 Testfälle, externe Tests ggf. geskippt
+cd backend && mvn -o test                       # 124 Testfälle, externe Tests ggf. geskippt
 mvn -o test -Dtest=SumoRunnerTest               # nur SUMO-Kette
 SUMO_HOME=… SYNTHESIS_TRANSIT_VENV=validation/transit-venv/bin/python \
   mvn -o test -Dtest=PtIntegrationTest          # voller ÖV-Test (~23 min überliefert)
@@ -139,7 +139,7 @@ Schwellen werden VOR dem Lauf festgelegt**, nie nachträglich ans Ergebnis angep
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-04.** Die tragenden Testklassen unter `backend/src/test/java/`
+- **Stand: 2026-08-11.** Die tragenden Testklassen unter `backend/src/test/java/`
   wurden gelesen; Fixture-Größen per `ls` verifiziert (kvv-gtfs.zip 121 613 482 Bytes
   = 121 MB dezimal / 116 MiB, vom 2026-07-07 — andere Skills nennen dieselbe Datei
   „121 MB"). Laufzeiten und historische Zählwerte (10.966 Pakete, 141 Halte,

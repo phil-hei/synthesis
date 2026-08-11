@@ -59,9 +59,9 @@ Achtung: Das Javadoc an `run()` sagt „13 Pipeline-Stufen" — das ist veraltet
 | 8 | Legacy-Export | immer (mobiTopp-0.3.x-/logiTopp-Layout unter `legacy/`) | Lauf bricht ab |
 | 9 | MobileCity-Export (B) | SKIPPED wenn `mobilecity` nicht in `targets()` | Lauf bricht ab |
 | 10 | Manifest | immer (`manifest.json` inkl. `dataQuality`-Block) | Lauf bricht ab |
-| 11 | Simulation (logiTopp) (B) | SKIPPED wenn `logitopp` nicht in `targets()`, Simulation disabled oder `mobitopp-rastatt` nicht gefunden; optionale Kalibrierschleifen (`calibrateModeChoice`, `calibrateDistance`, `calibrateModeDistance`). `calibrateDistance` + `calibrateModeDistance` werden in dieser Reihenfolge komponiert; `calibrateModeDistance` ersetzt nur die reine `calibrateModeChoice`-Schleife | Lauf bricht ab |
+| 11 | Simulation (logiTopp) (B) | SKIPPED wenn `logitopp` nicht in `targets()`, Simulation disabled oder `mobitopp-rastatt` nicht gefunden; optional Kalibrierschleife (`calibrateModeChoice`) | Lauf bricht ab |
 | 12 | SUMO (Verkehr) (B) | SKIPPED wenn `sumo` nicht in `targets()`, SUMO nicht verfügbar, oder `simulation/results/demandsimulationResult.csv` fehlt (braucht Stufe 11) | ja: FAILED + message |
-| 13 | Netz-Feedback | SKIPPED wenn `population.sumoFeedback=false`, SUMO-Stage nicht DONE / `sumo/edgedata.xml` fehlt, `logitopp` nicht gewählt / `carTravelTimeMin` fehlt, oder Zonen > `synthesis.sumo.feedback-max-zones` (150). Re-Simulationen führen nur die per Szenario-Flag aktiven MNL-/Zielwahl-Kalibrierartefakte weiter; alte Dateien allein dürfen keinen Override aktivieren | ja: FAILED + message |
+| 13 | Netz-Feedback | SKIPPED wenn `population.sumoFeedback=false`, SUMO-Stage nicht DONE / `sumo/edgedata.xml` fehlt, `logitopp` nicht gewählt / `carTravelTimeMin` fehlt, oder Zonen > `synthesis.sumo.feedback-max-zones` (150) | ja: FAILED + message |
 | 14 | LLM-Moduswahl | SKIPPED wenn `population.llmModeChoice=false`, LLM nicht erreichbar, oder logiTopp-Trips fehlen | ja: FAILED + message |
 
 **Invariante (Status-Semantik):** Der Nutzer muss *bewusste Abwahl* (SKIPPED) von *Fehler*

@@ -45,8 +45,13 @@ public class SynthesisProperties {
 
     /** SUMO microscopic traffic simulation (Zielmodell Achse B). */
     public static class Sumo {
+        /**
+         * macOS-Framework über die versionsunabhängigen Symlinks des Installers
+         * (EclipseSUMO -> Versions/Current/EclipseSUMO). Bewusst ohne Versionsnummer,
+         * damit ein SUMO-Update den Pfad nicht bricht.
+         */
         private static final String MAC_FRAMEWORK =
-                "/Library/Frameworks/EclipseSUMO.framework/Versions/1.26.0/EclipseSUMO";
+                "/Library/Frameworks/EclipseSUMO.framework/EclipseSUMO";
 
         private boolean enabled = true;
         /** Verzeichnis mit sumo/netconvert/duarouter; Default aus $SUMO_HOME abgeleitet. */
@@ -56,7 +61,48 @@ public class SynthesisProperties {
 
         private static String defaultSumoHome() {
             String env = System.getenv("SUMO_HOME");
-            return env != null && !env.isBlank() ? env : MAC_FRAMEWORK + "/share/sumo";
+            return env != null && !env.isBlank()
+                    ? env
+                    : java.nio.file.Path.of(sumoRoot(), "share", "sumo").toString();
+        }
+
+        /**
+         * SUMO-Wurzelverzeichnis (enthält bin/ und share/sumo/), ohne feste Version:
+         * erst ein sumo auf dem PATH — das deckt Linux-Paketinstallationen und Homebrew
+         * mit ab —, sonst das macOS-Framework. Nur relevant, wenn $SUMO_HOME fehlt.
+         */
+        private static String sumoRoot() {
+            return rootOf(binaryOnPath(System.getenv("PATH"), "sumo"));
+        }
+
+        /** {@code <root>/bin/sumo} -> {@code <root>}; ohne brauchbaren Treffer das macOS-Framework. */
+        static String rootOf(java.nio.file.Path sumoBinary) {
+            if (sumoBinary != null && sumoBinary.getParent() != null
+                    && sumoBinary.getParent().getParent() != null) {
+                return sumoBinary.getParent().getParent().toString();
+            }
+            return MAC_FRAMEWORK;
+        }
+
+        /** Erster ausführbarer Treffer für {@code name} in {@code pathEnv}, Symlinks aufgelöst; sonst null. */
+        static java.nio.file.Path binaryOnPath(String pathEnv, String name) {
+            if (pathEnv == null || pathEnv.isBlank()) {
+                return null;
+            }
+            for (String entry : pathEnv.split(java.io.File.pathSeparator)) {
+                if (entry.isBlank()) {
+                    continue;
+                }
+                java.nio.file.Path candidate = java.nio.file.Path.of(entry, name);
+                if (java.nio.file.Files.isExecutable(candidate)) {
+                    try {
+                        return candidate.toRealPath();
+                    } catch (java.io.IOException e) {
+                        return candidate.toAbsolutePath();
+                    }
+                }
+            }
+            return null;
         }
 
         /** $SUMO_HOME/bin (Standard-Layout) oder $SUMO_HOME/../../bin (macOS-Framework). */
@@ -74,7 +120,7 @@ public class SynthesisProperties {
                 }
                 return direct.toString();
             }
-            return MAC_FRAMEWORK + "/bin";
+            return java.nio.file.Path.of(sumoRoot(), "bin").toString();
         }
         /** Simulierter Tag (0 = Montag) und Obergrenze der Fahrzeug-Trips (Performance). */
         private int day = 0;
@@ -230,7 +276,8 @@ public class SynthesisProperties {
         private static String defaultGtfs2pt() {
             String env = System.getenv("SUMO_HOME");
             String home = env != null && !env.isBlank()
-                    ? env : Sumo.MAC_FRAMEWORK + "/share/sumo";
+                    ? env
+                    : java.nio.file.Path.of(Sumo.sumoRoot(), "share", "sumo").toString();
             return java.nio.file.Path.of(home, "tools", "import", "gtfs", "gtfs2pt.py").toString();
         }
 

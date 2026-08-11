@@ -3,7 +3,7 @@ name: synthesis-change-control
 description: >
   Change-Control-Runbook für das SyntheSis-Repo: Wie Änderungen klassifiziert, abgesichert,
   committet und dokumentiert werden. Laden, WENN du (a) Code oder Doku ändern/committen/mergen
-  willst, (b) wissen musst, welche Gates (mvn -o test, npx ng build) vor einem Commit grün sein
+  willst, (b) wissen musst, welche Gates (mvn -o test, npm test, npm run build) vor einem Commit grün sein
   müssen, (c) ein neues Feature/Flag/Pipeline-Stufe planst, (d) ein externes Tool (SUMO, gtfs2pt,
   duarouter, Ollama, GraphHopper) integrieren willst, (e) git push / GitHub Desktop / GitLab-Remote
   Fragen hast, (f) unsicher bist, ob validation/ angefasst werden darf, oder (g) wissen musst,
@@ -64,11 +64,11 @@ baut oder fachlich modelliert.
 ```bash
 # Gate 1 – Backend-Testsuite (komplett, offline)
 cd backend && mvn -o test
-# Erwartung (Stand: 2026-07-08): 18 Tests grün; PtIntegrationTest wird ohne
-# gesetzte Env-Var SYNTHESIS_TRANSIT_VENV übersprungen – das ist normal.
+# Erwartung (Stand: 2026-08-11): 124 Testfälle grün; 6 umgebungsabhängige
+# Testfälle werden ohne externe Laufzeit/Env-Variablen übersprungen – das ist normal.
 
-# Gate 2 – Frontend strict-AOT-Build (fängt NG5002/TS2531, die ng serve NICHT fängt)
-cd frontend && npx ng build
+# Gate 2 – Frontend-Tests + strict-AOT-Build (fängt NG5002/TS2531, die ng serve NICHT fängt)
+cd frontend && npm test && npm run build
 ```
 
 Nützlich bei Maven-Fehlern („Unable to find a single main class"):
@@ -91,7 +91,7 @@ Klassifiziere JEDE Änderung zuerst; daraus folgt die Absicherung:
 | Klasse | Beispiel | Pflicht-Gates | Zusatzpflichten |
 |---|---|---|---|
 | **Doku-only** | Tippfehler, Abschnitt in `docs/` | keine (nur Konsistenz: Querverweise/README stimmen weiter) | – |
-| **Frontend-only** | Panel, Template, CSS | `cd frontend && npx ng build` | – |
+| **Frontend-only** | Panel, Template, CSS | `cd frontend && npm test && npm run build` | – |
 | **Backend-Refactoring, verhaltensgleich** | Umbau ohne Verhaltensänderung | `cd backend && mvn -o test` (komplett) | Verhaltensgleichheit ist BEHAUPTUNG, die Suite ist der Beweis. Vorbild: Commit `e4b6d64` (PipelineContext-Refactoring, „verhaltensgleich: komplette Testsuite inkl. E2E grün") |
 | **Neue Pipeline-Stufe / neues Feature-Flag** | neue Achse-B-Fähigkeit | beide Gates | Voller Zyklus: Spike → Flag `default=false` → Tests → E2E-Verifikation → Doku-Eintrag (siehe Nicht-Verhandelbare 3–5) |
 | **Externe-Tool-Integration** | neues SUMO-Tool, neues LLM | beide Gates | Spike-Pflicht über die GANZE Kette; Kapselung als Runner mit `isAvailable()`; graceful degradation: Stage `SKIPPED`, wenn das Tool fehlt (Muster: `TransitRunner.isAvailable()` in `backend/src/main/java/de/synthesis/generation/pipeline/TransitRunner.java`) |
@@ -111,7 +111,8 @@ Klassifiziere JEDE Änderung zuerst; daraus folgt die Absicherung:
 ### 2. Kein Merge/Commit ohne grüne Gates
 
 - **Regel:** Vor jedem Commit mit Code-Anteil: `cd backend && mvn -o test` UND
-  `cd frontend && npx ng build` (je nach Änderungsklasse, siehe Tabelle; im Zweifel beide).
+  `cd frontend && npm test` sowie `cd frontend && npm run build` (je nach Änderungsklasse,
+  siehe Tabelle; im Zweifel alle drei Gates).
 - **Rationale:** Der strict-AOT-Build fängt Fehlerklassen, die im Dev-Server unsichtbar bleiben.
 - **Vorfall (überliefert, 2026-07-02):** Typographische Anführungszeichen „…" in einem
   HTML-`title`-Attribut brachen den AOT-Build (NG5002) – im laufenden `ng serve` fiel nichts auf.
@@ -147,8 +148,7 @@ Klassifiziere JEDE Änderung zuerst; daraus folgt die Absicherung:
 - **Regel:** Neue experimentelle Fähigkeiten bekommen ein Flag in
   `backend/src/main/java/de/synthesis/scenario/Scenario.java` mit Default `false` und werden erst
   nach E2E-Verifikation + Doku-Eintrag befördert. Belegte Beispiele (Stand: 2026-07-08):
-  `calibrateModeChoice`, `calibrateDistance`, `calibrateModeDistance`, `llmModeChoice`,
-  `sumoFeedback`, `publicTransport` – alle `= false`.
+  `calibrateModeChoice`, `llmModeChoice`, `sumoFeedback`, `publicTransport` – alle `= false`.
 - **FAILED ≠ SKIPPED:** Optionale Pipeline-Stufen setzen bei **Fehlern** den Status `FAILED`,
   nicht `SKIPPED`. `SKIPPED` ist ausschließlich für bewusste Abwahl/fehlende Tools reserviert –
   der Nutzer muss beides unterscheiden können. Belegt als Kommentar in `GenerationService.java`:
@@ -174,13 +174,13 @@ Klassifiziere JEDE Änderung zuerst; daraus folgt die Absicherung:
   z. B. `SUMO: ÖV/Bus multimodal via GTFS + gtfs2pt.py (Achse B, Phase C)`).
 - **Body erklärt das WARUM** (nicht das Was – das zeigt der Diff), inkl. Verifikationsnachweis
   („Suite 18/18 grün" o. ä.).
-- **Abschluss bei KI-Beteiligung:** `Co-Authored-By: Claude <Modell> <noreply@anthropic.com>`
+- **Abschluss bei KI-Beteiligung:** `Co-Authored-By: Codex <Modell> <noreply@anthropic.com>`
   (Beleg: die jüngsten Commits im Log).
 
 ## Checkliste vor jedem Commit
 
 1. [ ] Änderungsklasse bestimmt (Tabelle oben)?
-2. [ ] Pflicht-Gates der Klasse grün (`mvn -o test` / `npx ng build`)?
+2. [ ] Pflicht-Gates der Klasse grün (`mvn -o test` / `npm test` / `npm run build`)?
 3. [ ] Bei neuem Feature: Flag in `Scenario.java` mit `default=false`? Fehlerpfad setzt `FAILED`,
    Tool-Abwesenheit `SKIPPED`?
 4. [ ] Bei externem Tool: Spike über die ganze Kette gelaufen? Runner mit `isAvailable()`?
