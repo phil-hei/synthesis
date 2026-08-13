@@ -1,2 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Vertrags-Patches byte-genau halten. Sie patchen CRLF-Quellen der KIT-Upstreams
+# und werden in legacy/logitopp-returns-v1/apply.sh per SHA-256 verifiziert;
+# eine LF-Normalisierung beim Checkout würde Hash-Guard und Patch zerstören.
+legacy/**/*.patch -text

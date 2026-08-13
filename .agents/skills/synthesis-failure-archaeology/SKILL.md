@@ -63,7 +63,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E20 | `b_tt_put` allein als Modus-Distanz-Kalibrierung | Kalibrierung | ENTSCHIEDEN |
 | E21 | `PUT_ACT`/`PUT_EGT` erreichen die Legacy-Moduswahl nicht | Legacy-Formate | BLOCKIERT |
 | E22 | `<1 km`-Kalibrierung bei grober Zonierung | Kalibrierung | ENTSCHIEDEN |
-| E23 | Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum | Infrastruktur | BLOCKIERT |
+| E23 | Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum | Infrastruktur | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -352,7 +352,7 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   präregistrieren. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Gemeinsame Kalibrierung mit Realrouting (2026-07-29)“.
 
-### E23 — Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum — BLOCKIERT
+### E23 — Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum — ENTSCHIEDEN
 
 - **Symptom/Frage:** Im präregistrierten 3.249-Zonen-A42 blieb die externe
   Simulation nach dem Legacy-Export länger als 31 Minuten bei Gradle
@@ -397,6 +397,26 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Bootstrap-Vertrag bleibt kaputt, `preflight.sh full` meldet weiterhin den
   fehlenden logiTopp-Harness-Vertrag, und A42/B42 bleibt gesperrt. Eine
   zurückkopierte Fixture ist ein Testeingang, kein Laufzeitvertrag.
+- **Auflösung (2026-08-13):** Der dokumentierte Reparaturweg war eine Sackgasse und
+  ist **nicht** zu versuchen: Die erwartete Baseline `fecda2bf…`/`7bc76816…` lässt
+  sich nicht rekonstruieren, weil der Altpatch mit `--ignore-space-change` angewandt
+  wurde und rückwärts scheitert; Stash und dangling Blobs existieren nicht. Der
+  Vertrag wurde deshalb auf den **Upstream-Stand** umgestellt statt auf einen
+  Zwischenstand. Zwei Root Causes kamen dabei heraus, die vorher niemand auf dem
+  Schirm hatte: (1) ein **Gradle-Wrapper-Upgrade 6.3 → 9.5.0**, das von keinem
+  Hash-Guard erfasst war — Upstream-Gradle 6.3 kann `SYNTHESIS_KIT_JAVA=25` gar
+  nicht bauen, der Vertrag konnte aus einem sauberen Clone also nie funktionieren;
+  (2) **58 gitignorierte Pflicht-Dateien** (42 DCML-generierte Klassen, 6 `.xmi`,
+  8 `.gen`, 2 Config-Varianten), ohne die der Harness nicht kompiliert, weil der
+  Vertrags-Build das Codegen-Plugin entfernt. Beides liegt jetzt versioniert in
+  `legacy/logitopp-returns-v1/` (strikte Patches + `harness-artifacts/` mit
+  SHA-256-Manifest). Belegt: `compileJava` des rekonstruierten Harness **3 s**
+  statt >31 min Hänger, `scripts/preflight.sh full` 0 Fehler.
+- **Regel für die Zukunft:** Keinen Patch mit `--ignore-space-change` in einen
+  Vertrag aufnehmen. Er ist nicht rückrechenbar und erzeugt genau diese Sackgasse.
+  Ebenso: Wenn eine Datei zum Bauen nötig ist, aber in der `.gitignore` des
+  Fremdrepos steht, gehört sie ins Vertrags-Artefaktbündel — sonst ist der
+  Bootstrap nur scheinbar reproduzierbar.
 
 ---
 

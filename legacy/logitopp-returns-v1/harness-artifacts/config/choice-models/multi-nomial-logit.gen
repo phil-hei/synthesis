@@ -1,0 +1,116 @@
+ProbabilityClass edu.kit.ifv.mobitopp.trb.simulation.modechoice.gen.MultiNomialLogit1Old
+
+Interface        edu.kit.ifv.mobitopp.simulation.modeChoice.ModeChoiceModel
+Signature        selectMode(edu.kit.ifv.mobitopp.simulation.Person person,
+              edu.kit.ifv.mobitopp.data.Zone origin,
+              edu.kit.ifv.mobitopp.data.Zone destination,
+              edu.kit.ifv.mobitopp.simulation.activityschedule.ActivityIfc previousActivity,
+              edu.kit.ifv.mobitopp.simulation.activityschedule.ActivityIfc nextActivity,
+              java.util.Set<edu.kit.ifv.mobitopp.simulation.Mode> choiceSet,
+              double randomNumber):edu.kit.ifv.mobitopp.simulation.Mode
+              
+UtilityClass     edu.kit.ifv.mobitopp.trb.simulation.modechoice.gen.MultiNomialLogit1UtilityFunctionOld
+HelperClass      edu.kit.ifv.mobitopp.trb.simulation.modechoice.gen.MultiNomialLogit1HelperOld
+
+root: {
+  <walk?U_walk>
+  <bike?U_bike>
+  <passenger?U_carp>
+  <card?U_card>
+  <pt?U_pt>
+  <taxi?U_taxi>
+  <cs_ff?U_cs_ff>
+  <cs_sb?U_cs_sb>
+  <bs?U_bs>
+  <rp?U_rp>
+}
+
+Pedestrian: U_walk = asc_ped
+           + age_0_17_on_asc_ped * [0 <= AGE <= 17]
+           + age_18_29_on_asc_ped * [18 <= AGE <= 29]
+           + age_50_59_on_asc_ped * [50 <= AGE <= 59]
+           + age_60_69_on_asc_ped * [60 <= AGE <= 69]
+           + age_70_100_on_asc_ped * [70 <= AGE <= 100]
+           + beruft_on_asc_ped *[(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL)>0]
+           + female_on_asc_ped *[GENDER==2] 
+           + inc_high_on_asc_ped  * [4<= ECONOMICAL_STATUS <=5]
+           + zk_on_asc_ped       * HAS_COMMUTER_TICKET
+           + b_tt_ped * TRAVEL_TIME_PEDESTRIAN
+
+Bike: U_bike = asc_bike
+           + age_0_17_on_asc_bike * [0 <= AGE <= 17]
+           + age_18_29_on_asc_bike * [18 <= AGE <= 29]
+           + age_50_59_on_asc_bike * [50 <= AGE <= 59]
+           + age_60_69_on_asc_bike * [60 <= AGE <= 69]
+           + age_70_100_on_asc_bike * [70 <= AGE <= 100]
+           + beruft_on_asc_bike * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL)>0]
+           + female_on_asc_bike * [GENDER==2] 
+           + inc_high_on_asc_bike  * [4<= ECONOMICAL_STATUS <=5]
+           + zk_on_asc_bike       * HAS_COMMUTER_TICKET
+           + b_tt_bike * TRAVEL_TIME_BIKE
+
+Car: U_card = asc_car_d 
+           + age_0_17_on_asc_car_d * [0 <= AGE <= 17]
+           + age_18_29_on_asc_car_d * [18 <= AGE <= 29]
+           + age_50_59_on_asc_car_d * [50 <= AGE <= 59]
+           + age_60_69_on_asc_car_d * [60 <= AGE <= 69]
+           + age_70_100_on_asc_car_d * [70 <= AGE <= 100]
+           + beruft_on_asc_car_d * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL)>0]
+           + female_on_asc_car_d * [GENDER==2] 
+           + inc_high_on_asc_car_d  * [4<= ECONOMICAL_STATUS <=5]
+           + zk_on_asc_car_d        * HAS_COMMUTER_TICKET
+           + b_tt_car_d * TRAVEL_TIME_CAR 
+           + (b_cost_car_d + age_0_17_on_b_cost_car_d * [0 <= AGE <= 17]
+           + age_18_29_on_b_cost_car_d * [18 <= AGE <= 29]
+           + age_50_59_on_b_cost_car_d * [50 <= AGE <= 59]
+           + age_60_69_on_b_cost_car_d * [60 <= AGE <= 69]
+           + age_70_100_on_b_cost_car_d * [70 <= AGE <= 100]
+           + beruft_on_b_cost_car_d    * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL)>0]
+           + female_on_b_cost_car_d * [GENDER==2]  
+           + inc_high_on_b_cost_car_d  * [4<= ECONOMICAL_STATUS <=5]
+           + zk_on_b_cost_car_d        * HAS_COMMUTER_TICKET)* TRAVEL_COST_CAR   
+
+Passenger: U_carp = asc_car_p
+           + age_0_17_on_asc_car_p * [0 <= AGE <= 17]
+           + age_18_29_on_asc_car_p * [18 <= AGE <= 29]
+           + age_50_59_on_asc_car_p * [50 <= AGE <= 59]
+           + age_60_69_on_asc_car_p * [60 <= AGE <= 69]
+           + age_70_100_on_asc_car_p * [70 <= AGE <= 100]
+           + beruft_on_asc_car_p * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL)>0]
+           + female_on_asc_car_p * [GENDER==2] 
+           + inc_high_on_asc_car_p  * [4<= ECONOMICAL_STATUS <=5]
+           + zk_on_asc_car_p        * HAS_COMMUTER_TICKET
+           + b_tt_car_p * TRAVEL_TIME_CAR
+
+PublicTransport: U_pt = asc_put
+           + age_0_17_on_asc_put * [0 <= AGE <= 17]
+           + age_18_29_on_asc_put * [18 <= AGE <= 29]
+           + age_50_59_on_asc_put * [50 <= AGE <= 59]
+           + age_60_69_on_asc_put * [60 <= AGE <= 69]
+           + age_70_100_on_asc_put * [70 <= AGE <= 100]
+           + beruft_on_asc_put * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL)>0]
+           + female_on_asc_put * [GENDER==2]
+           + inc_high_on_asc_put  * [4<= ECONOMICAL_STATUS <=5]
+           + zk_on_asc_put        * HAS_COMMUTER_TICKET
+           + b_tt_put * TRAVEL_TIME_PUBLICTRANSPORT 
+           + b_acc_put * (ACCESS_TIME_PUBLICTRANSPORT + EGRESS_TIME_PUBLICTRANSPORT)
+           + b_u_put * TRANSFER_PUBLICTRANSPORT
+           + (b_cost_put + age_0_17_on_b_cost_put * [0 <= AGE <= 17]
+             + age_18_29_on_b_cost_put * [18 <= AGE <= 29]
+             + age_50_59_on_b_cost_put * [50 <= AGE <= 59]
+             + age_60_69_on_b_cost_put * [60 <= AGE <= 69]
+             + age_70_100_on_b_cost_put * [70 <= AGE <= 100]
+             + beruft_on_b_cost_put    * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL)>0]
+             + female_on_b_cost_put * [GENDER==2]  
+             + inc_high_on_b_cost_put  * [4<= ECONOMICAL_STATUS <=5]
+             + zk_on_b_cost_put        * HAS_COMMUTER_TICKET) * TRAVEL_COST_PUBLICTRANSPORT
+
+Taxi: U_taxi = deactivated
+
+Carsharing_FreeFloating: U_cs_ff = deactivated
+
+Carsharing_Station: U_cs_sb = deactivated
+
+BikeSharing: U_bs = deactivated
+
+RidePooling: U_rp = deactivated

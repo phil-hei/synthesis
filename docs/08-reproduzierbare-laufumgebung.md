@@ -16,7 +16,7 @@ Speichergründen eigene Prozesse.
 | Java/Node/Python/SUMO/Ollama | `runtime/versions.env` |
 | KIT-Clones und Commits | `runtime/kit-sources.env` |
 | Transit-Python-Pakete | `runtime/transit-requirements.txt` |
-| logiTopp-/Retouren-Patch | `legacy/logitopp-returns-v1/` |
+| logiTopp-/Retouren-Patch | `legacy/logitopp-returns-v1/` (Patches + `harness-artifacts/`) |
 | actiTopp-CLI-Adapter | `legacy/actitopp-synthesis-v1/` |
 
 ## Kommandos
@@ -49,6 +49,30 @@ Die bisherigen portablen Backend-/Frontend-Jobs bleiben unverändert. Zusätzlic
 existiert der manuelle beziehungsweise per `RUN_FULL_INTEGRATION=true` aktivierbare
 Job `full-runtime-tests`. Er verlangt einen Shell-Runner mit Tag
 `synthesis-runtime`, auf dem `scripts/preflight.sh full` erfolgreich ist.
+
+## KIT-Vertrag: Ausgangspunkt ist Upstream (seit 2026-08-13)
+
+`legacy/logitopp-returns-v1/apply.sh` setzt auf dem **Upstream-Stand der gepinnten
+Commits** auf, nicht auf einem lokal gewachsenen Zwischenstand. Der Vertrag besteht aus
+drei Teilen:
+
+| Teil | Inhalt |
+|---|---|
+| `mobitopp-rastatt.patch`, `logitopp.patch` | Upstream → Vertragszustand, **strikt** (ohne `--ignore-space-change`), inkl. Binär-Diff des Gradle-Wrapper-Jars |
+| `harness-artifacts/` | 58 Dateien, die im Harness gitignoriert, zum Kompilieren aber zwingend sind: 42 DCML-generierte Klassen, 6 `.xmi`-Modelle, 8 `.gen`, 2 Config-Varianten — mit `manifest.sha256` |
+| Hash-Guards in `apply.sh` | Je Repo Upstream- **oder** bereits installierter Vertragszustand; danach Verifikation von Nach-Zustand und Artefakt-Manifest |
+
+Zwei Punkte, die dabei nicht offensichtlich sind: Der Vertrag enthält ein
+**Gradle-Wrapper-Upgrade 6.3 → 9.5.0** — Upstream-Gradle 6.3 kann `SYNTHESIS_KIT_JAVA=25`
+nicht bauen. Und der Vertrags-Build entfernt das Codegen-Plugin, weshalb die aus den
+`.xmi` erzeugten Klassen als Artefakte mitgeliefert werden müssen statt generiert zu
+werden. Beides war vor 2026-08-13 unversioniert und machte den Bootstrap nur scheinbar
+reproduzierbar (Befund: `docs/05-validierung.md`, Abschnitt „Bootstrap-Vertrag
+rekonstruiert").
+
+**Nicht aufweichen:** Patches für diesen Vertrag niemals mit `--ignore-space-change`
+erzeugen oder anwenden — solche Patches sind nicht rückrechenbar, und genau daran ist
+die Vorversion gescheitert.
 
 ## Abnahmekriterium
 

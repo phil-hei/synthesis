@@ -354,7 +354,8 @@ in den genannten Größenordnungen.
 | `SUMO_HOME` fehlt in der JVM-Umgebung | SUMO-Stufe SKIPPED trotz Installation | Variable in der startenden Shell/IDE-Run-Config setzen (Schritt 2) |
 | actitoppNG-Lizenzwiderspruch | LICENSE-Datei = GPL vs. POM = MIT | Kein Setup-Blocker, aber **vor jeder Weitergabe/Veröffentlichung mit dem KIT klären** (aus der Projekthistorie überliefert; vor Weitergabe verifizieren) |
 | Gradle bleibt bei `compileJava` ohne CPU stehen | `DirectorySnapshotter`/`fdopendir` hängt in einem gitignorierten KIT-Quellbaum; selbst `find`/`du` blockieren dort | Lokalen Zustand **nicht löschen**: Prozess kontrolliert stoppen, Quellbaum erhalten/wegkopieren und erst dann mit `scripts/bootstrap-runtime.sh kit` aus dem gepinnten Vertrag rekonstruieren; siehe Failure-Archäologie E23 |
-| Frischer `mobitopp-rastatt`-Clone scheitert am logiTopp-Hash-Guard | Upstream-`build.gradle` hat `6a23e17a…` (188 CRLF-Zeilen), `legacy/logitopp-returns-v1/apply.sh` erwartet `fecda2bf…` (60 Zeilen) | Hash-Guard **nicht umgehen**. Der Bootstrap benötigt zuerst einen versionierten, getesteten Transformationsschritt vom echten Upstream zum Vertrags-Baseline; siehe E23 |
+| Frischer `mobitopp-rastatt`-Clone scheitert am logiTopp-Hash-Guard | **Behoben seit 2026-08-13.** Der Vertrag setzt jetzt auf dem Upstream-Stand auf (`6a23e17a…`) statt auf einem nicht rekonstruierbaren Zwischenstand | `sh legacy/logitopp-returns-v1/apply.sh` bzw. `scripts/bootstrap-runtime.sh kit` läuft auf einem frischen Clone durch; siehe E23 |
+| Harness kompiliert nicht: fehlende `…modechoice.gen`-Klassen | Der Vertrags-Build entfernt das DCML-Codegen-Plugin, und `**/gen/`, `**/generated/`, `*.xmi` stehen in der `.gitignore` des Harness — ein frischer Clone hat sie nicht | Nicht von Hand nachbauen: `apply.sh` installiert sie aus `legacy/logitopp-returns-v1/harness-artifacts/` und prüft sie gegen `manifest.sha256` |
 
 ## Schritt 8: Verifikations-Matrix
 

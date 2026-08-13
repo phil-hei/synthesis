@@ -697,6 +697,47 @@ reproduzierbaren Bootstrap gewertet werden. Nebenbefund: Mit kaltem Plan-Cache
 entfallen 2.389 s der 43 min allein auf `GtaBehaviorTest` (isoliert mit warmem
 Cache: 53 s).
 
+### Bootstrap-Vertrag rekonstruiert (2026-08-13) — E23 aufgelöst
+
+**Befund**: Die dokumentierte Reparatur — ein versionierter Transformationsschritt
+zur erwarteten Baseline `fecda2bf…` — ist **nicht durchführbar**. Der Altpatch
+wurde mit `--ignore-space-change` angewandt und ist damit vorwärts verlustbehaftet:
+strikt rückwärts scheitert er (`patch does not apply`, `SimulatorBuilder.java:307`).
+Für `build.gradle` ließ sich die Baseline zufällig exakt zurückrechnen, für
+`SimulatorBuilder.java` (erwartet `7bc76816…`) nicht. Im Backup-Repo existieren
+weder Stash noch dangling Blobs, nur der Clone-Reflog-Eintrag — der Zwischenstand
+ist unwiederbringlich. Derselbe Phantom-Vorzustand steckte auch im logiTopp-Teil
+des Vertrags (erwartet `84e8499d…`, Upstream liefert `f363ac01…`).
+
+**Zweiter Befund**: Der Vertrag umfasste nie den vollständigen Umbau. Upstream →
+Vertragszustand sind **elf** getrackte Dateien, darunter ein **Gradle-Wrapper-Upgrade
+6.3 → 9.5.0**, das von keinem Hash-Guard erfasst war. Das ist nicht kosmetisch:
+Upstream pinnt Gradle 6.3, `runtime/versions.env` pinnt `SYNTHESIS_KIT_JAVA=25`.
+Ein Bootstrap, der Upstream getreu wiederherstellt, erzeugt einen Harness, der
+überhaupt nicht baut. Hinzu kommen **58 gitignorierte Pflicht-Dateien** (42
+DCML-generierte Klassen, 6 `.xmi`-Modelle, 8 `.gen`, 2 Config-Varianten): Die
+`.gitignore` des Harness schließt `**/gen/`, `**/generated/`, `*.xmi` und `*p.yaml`
+aus, während der Vertrags-Build das Codegen-Plugin entfernt („die generierten
+Klassen sind committed"). Zehn nicht-generierte Harness-Dateien — darunter
+`SimulatorBuilder.java` selbst — referenzieren diese Pakete. Ohne sie kompiliert
+nichts.
+
+**Konsequenz**: Der Vertrag wurde auf den Upstream-Stand umgestellt statt auf einen
+nicht rekonstruierbaren Zwischenstand. `legacy/logitopp-returns-v1/` enthält jetzt
+zwei strikte Patches (Upstream → Vertragszustand, ohne `--ignore-space-change`,
+inkl. Binär-Diff des Wrapper-Jars) plus `harness-artifacts/` mit den 58
+Pflicht-Dateien und einem SHA-256-Manifest. `apply.sh` prüft je Repo entweder den
+Upstream- oder den bereits installierten Vertragszustand, patcht strikt,
+installiert die Artefakte und verifiziert Nach-Zustand und Manifest.
+
+**Evidenz**: Aus einem frischen Upstream-Clone erzeugt der Weg alle fünf
+Vertrags-Hashes byte-exakt; der getrackte Baum ist identisch zum Backup.
+`compileJava` des rekonstruierten Harness: **BUILD SUCCESSFUL in 3 s** — dieselbe
+Stufe, an der E23 über 31 Minuten hing. Idempotenz (zweiter Lauf), Mischfall
+(frischer Harness + bereits gepatchtes logiTopp) und Manipulationserkennung
+(verändertes Artefakt → Abbruch) sind einzeln geprüft. Nach der echten
+Installation meldet `scripts/preflight.sh full` erstmals **0 Fehler, 0 Hinweise**.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

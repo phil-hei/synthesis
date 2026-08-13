@@ -1,0 +1,93 @@
+ProbabilityClass edu.kit.ifv.mobitopp.populationsynthesis.carownership.generated.NumberOfCarsSelector
+
+Interface        edu.kit.ifv.mobitopp.populationsynthesis.carownership.NumberOfCarsSelector
+Signature        calculateNumberOfCarsFor(edu.kit.ifv.mobitopp.populationsynthesis.HouseholdForSetup household):int
+							
+UtilityClass     edu.kit.ifv.mobitopp.populationsynthesis.carownership.generated.NumberOfCarsSelectorUtilityFunction
+HelperClass      edu.kit.ifv.mobitopp.populationsynthesis.carownership.generated.NumberOfCarsSelectorHelper
+
+root: {
+		<Zero?U_zero>
+		car? {<One?U_one>
+				two_more_car? {<Two?U_two>
+								<Three?U_three>
+								<Four?U_Four>
+		}}}
+
+
+Zero: U_zero  = asc_0_mu + asc_0_sig * DRAW
+
+One: U_one     =  asc_1_mu + asc_1_sig * DRAW  
+					+  b_hh_size_1_on_1*[HOUSEHOLD_SIZE == 1]
+					+  b_hh_size_2_on_1*[HOUSEHOLD_SIZE == 2]
+					+  b_hh_size_4_on_1*[HOUSEHOLD_SIZE >= 4]
+                    + b_income_low_on_1*[1 <= HOUSEHOLD_ECONOMICAL_STATUS <= 2]
+					+ b_income_high_on_1*[4 <= HOUSEHOLD_ECONOMICAL_STATUS <= 5]
+                    + b_person_age_0_9_on_1*  [(HOUSEHOLD_NUMBER_OF_BETWEEN_0_9 + HOUSEHOLD_NUMBER_OF_NOT_SIMULATED_CHILDREN) >=1]
+					+ b_person_age_10_17_on_1*[HOUSEHOLD_NUMBER_OF_BETWEEN_10_17 >=1] 
+                    + b_person_working_1_on_1*[HOUSEHOLD_NUMBER_OF_PERSON_WORKING==1]
+					+ b_person_working_2_on_1*[HOUSEHOLD_NUMBER_OF_PERSON_WORKING==1]
+                    + b_license_1_on_1*[HOUSEHOLD_DRIVING_LICENSE == 1]
+					+ b_license_2_on_1*[HOUSEHOLD_DRIVING_LICENSE == 2]
+					+ b_license_3_on_1*[HOUSEHOLD_DRIVING_LICENSE == 3]
+					+ b_license_4_on_1*[HOUSEHOLD_DRIVING_LICENSE >= 4]
+                    + b_shared_flat_on_1* IS_HOUSEHOLD_FLAT
+					+ b_hh_retired_on_1*  IS_HOUSEHOLD_ONLY_RETIRED
+					+ b_hh_unemployed_on_1* IS_HOUSEHOLD_ONLY_UNEMPLOYED
+                 
+                  
+
+
+Two: U_two  = asc_2_mu + asc_2_sig * DRAW  
+					+  b_hh_size_1_on_2*[HOUSEHOLD_SIZE == 1]
+					+  b_hh_size_2_on_2*[HOUSEHOLD_SIZE == 2]
+					+  b_hh_size_4_on_2*[HOUSEHOLD_SIZE >= 4]
+                    + b_income_low_on_2*[1 <= HOUSEHOLD_ECONOMICAL_STATUS <= 2]
+					+ b_income_high_on_2*[4 <= HOUSEHOLD_ECONOMICAL_STATUS <= 5]
+                    + b_person_age_0_9_on_2*  [(HOUSEHOLD_NUMBER_OF_BETWEEN_0_9 + HOUSEHOLD_NUMBER_OF_NOT_SIMULATED_CHILDREN) >=1]
+					+ b_person_age_10_17_on_2*[HOUSEHOLD_NUMBER_OF_BETWEEN_10_17 >=1] 
+                    + b_person_working_1_on_2*[HOUSEHOLD_NUMBER_OF_PERSON_WORKING==1]
+					+ b_person_working_2_on_2*[HOUSEHOLD_NUMBER_OF_PERSON_WORKING==1]
+                    + b_license_1_on_2*[HOUSEHOLD_DRIVING_LICENSE == 1]
+					+ b_license_2_on_2*[HOUSEHOLD_DRIVING_LICENSE == 2]
+					+ b_license_3_on_2*[HOUSEHOLD_DRIVING_LICENSE == 3]
+					+ b_license_4_on_2*[HOUSEHOLD_DRIVING_LICENSE >= 4]
+                    + b_shared_flat_on_2* [HOUSEHOLD_NUMBER_OF_STUDENT_TERTIARY >= 3 || HOUSEHOLD_NUMBER_OF_STUDENT_TERTIARY == HOUSEHOLD_SIZE]
+					+ b_hh_retired_on_2*  IS_HOUSEHOLD_ONLY_RETIRED
+					+ b_hh_unemployed_on_2* IS_HOUSEHOLD_ONLY_UNEMPLOYED
+					
+Three: U_three  = asc_3_mu + asc_3_sig * DRAW  
+					+  b_hh_size_1_on_3*[HOUSEHOLD_SIZE == 1]
+					+  b_hh_size_2_on_3*[HOUSEHOLD_SIZE == 2]
+					+  b_hh_size_4_on_3*[HOUSEHOLD_SIZE >= 4]
+                    + b_income_low_on_3*[1 <= HOUSEHOLD_ECONOMICAL_STATUS <= 2]
+					+ b_income_high_on_3*[4 <= HOUSEHOLD_ECONOMICAL_STATUS <= 5]
+                    + b_person_age_0_9_on_3*  [(HOUSEHOLD_NUMBER_OF_BETWEEN_0_9 + HOUSEHOLD_NUMBER_OF_NOT_SIMULATED_CHILDREN) >=1]
+					+ b_person_age_10_17_on_3*[HOUSEHOLD_NUMBER_OF_BETWEEN_10_17 >=1] 
+                    + b_person_working_1_on_3*[HOUSEHOLD_NUMBER_OF_PERSON_WORKING==1]
+					+ b_person_working_2_on_3*[HOUSEHOLD_NUMBER_OF_PERSON_WORKING==1]
+                    + b_license_1_on_3*[HOUSEHOLD_DRIVING_LICENSE == 1]
+					+ b_license_2_on_3*[HOUSEHOLD_DRIVING_LICENSE == 2]
+					+ b_license_3_on_3*[HOUSEHOLD_DRIVING_LICENSE == 3]
+					+ b_license_4_on_3*[HOUSEHOLD_DRIVING_LICENSE >= 4]
+                    + b_shared_flat_on_3  * IS_HOUSEHOLD_FLAT
+					+ b_hh_retired_on_3   * IS_HOUSEHOLD_ONLY_RETIRED
+					+ b_hh_unemployed_on_3* IS_HOUSEHOLD_ONLY_UNEMPLOYED
+					
+Four: U_four  = asc_4 
+					+  b_hh_size_1_on_4*[HOUSEHOLD_SIZE == 1]
+					+  b_hh_size_2_on_4*[HOUSEHOLD_SIZE == 2]
+					+  b_hh_size_4_on_4*[HOUSEHOLD_SIZE >= 4]
+                    + b_income_low_on_4*[1 <= HOUSEHOLD_ECONOMICAL_STATUS <= 2]
+					+ b_income_high_on_4*[4 <= HOUSEHOLD_ECONOMICAL_STATUS <= 5]
+                    + b_person_age_0_9_on_4*  [(HOUSEHOLD_NUMBER_OF_BETWEEN_0_9 + HOUSEHOLD_NUMBER_OF_NOT_SIMULATED_CHILDREN) >=1]
+					+ b_person_age_10_17_on_4*[HOUSEHOLD_NUMBER_OF_BETWEEN_10_17 >=1] 
+                    + b_person_working_1_on_4*[HOUSEHOLD_NUMBER_OF_PERSON_WORKING==1]
+					+ b_person_working_2_on_4*[HOUSEHOLD_NUMBER_OF_PERSON_WORKING==1]
+                    + b_license_1_on_4*[HOUSEHOLD_DRIVING_LICENSE == 1]
+					+ b_license_2_on_4*[HOUSEHOLD_DRIVING_LICENSE == 2]
+					+ b_license_3_on_4*[HOUSEHOLD_DRIVING_LICENSE == 3]
+					+ b_license_4_on_4*[HOUSEHOLD_DRIVING_LICENSE >= 4]
+                    + b_shared_flat_on_4  * IS_HOUSEHOLD_FLAT
+					+ b_hh_retired_on_4   * IS_HOUSEHOLD_ONLY_RETIRED
+					+ b_hh_unemployed_on_4* IS_HOUSEHOLD_ONLY_UNEMPLOYED

@@ -1,0 +1,52 @@
+ProbabilityClass edu.kit.ifv.mobitopp.populationsynthesis.transitpassownership.generated.TPOwnershipSelector
+
+Interface        edu.kit.ifv.mobitopp.populationsynthesis.transitpassownership.TPOwnershipSelector
+Signature        calculateTPOwnershipFor(edu.kit.ifv.mobitopp.simulation.Person person):int
+							
+UtilityClass     edu.kit.ifv.mobitopp.populationsynthesis.transitpassownership.generated.TPOwnershipSelectorUtilityFunction
+HelperClass      edu.kit.ifv.mobitopp.populationsynthesis.transitpassownership.generated.TPOwnershipSelectorHelper
+
+
+
+root: {
+	<Transit_pass?U_transit_pass>
+	<No_Transit_pass?U_no_transit_pass>
+}
+
+
+Transit_pass: U_transit_pass    =  asc_Ticket
+									+ b_hhgro_2*[HOUSEHOLD_SIZE == 2]
+									+ b_hhgro_3*[HOUSEHOLD_SIZE == 3]
+									+ b_hhgro_4*[HOUSEHOLD_SIZE == 4]
+									+ b_hhgro_5*[HOUSEHOLD_SIZE == 5]
+									+ b_hhgro_6*[HOUSEHOLD_SIZE == 6]
+									+ b_hhgro_7*[HOUSEHOLD_SIZE == 7]
+									+ b_hhgro_8*[8 <= HOUSEHOLD_SIZE <= 20]
+									+ b_weibl*[GENDER==2]
+									+ b_alter1a* [0 <= AGE <= 9]
+									+ b_alter1b* [10 <= AGE <= 17]
+									+ b_alter3* [30 <= AGE <= 39]
+									+ b_alter4* [40 <= AGE <= 49]
+									+ b_alter5* [50 <= AGE <= 59]
+									+ b_alter6* [60 <= AGE <= 69]
+									+ b_alter7* [70 <= AGE <= 79]
+									+ b_alter8* [80 <= AGE]
+									+ b_nofspkw * [HAS_DRIVING_LICENSE == 0]
+									+ b_pkwhh1*[HOUSEHOLD_NUMBER_OF_OWNED_CARS == 1]
+									+ b_pkwhh2 *[HOUSEHOLD_NUMBER_OF_OWNED_CARS == 2]
+									+ b_pkwhh3*[HOUSEHOLD_NUMBER_OF_OWNED_CARS == 3]
+									+ b_pkwhh4*[HOUSEHOLD_NUMBER_OF_OWNED_CARS >= 4]
+									+ b_schueler* IS_EMPLOYMENT_STUDENT_PRIMARY
+									+ b_schueler* IS_EMPLOYMENT_STUDENT_SECONDARY
+									+ b_student * IS_EMPLOYMENT_STUDENT_TERTIARY
+									+ b_home * IS_EMPLOYMENT_HOMEKEEPER
+									+ b_parttime * IS_EMPLOYMENT_PARTTIME
+									+ b_EINKO2*[750 <= INCOME < 1500]
+									+ b_EINKO3*[1500 <= INCOME < 2250]
+									+ b_EINKO4*[2250 <= INCOME < 3000]
+									+ b_EINKO5*[3000 <= INCOME < 4000]
+									+ b_EINKO6*[4000 <= INCOME]
+									+ b_p05* HOUSEHOLD_NUMBER_OF_NOT_SIMULATED_CHILDREN 
+									+ b_p617* HOUSEHOLD_NUMBER_OF_BETWEEN_6_17
+							
+No_Transit_pass: U_no_transit_pass  = 0

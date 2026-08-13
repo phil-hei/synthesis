@@ -630,6 +630,14 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   127/0/0 ohne Skip. Das berührt weder Hash-Guard noch Bootstrap-Vertrag: E23 und die
   A42/B42-Sperre bleiben unverändert offen (Details in
   [docs/05-validierung.md](05-validierung.md), Abschnitt „Großraum × feine Zonierung").
+  **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
+  jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
+  `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum
+  gegen den gepinnten Runtime-Vertrag rekonstruiert" erfüllt und **A42 darf wiederholt
+  werden**. Die Präregistrierung bleibt unverändert gültig: erst ein vollständiges A42,
+  dann B42, Seeds 43/44 und Multi-Band-Regler weiterhin erst nach dem Mechanik-Gate
+  (Befund: [docs/05-validierung.md](05-validierung.md), Abschnitt „Bootstrap-Vertrag
+  rekonstruiert").
 - **⛔ Legacy-ÖV-Zugang/-Abgang nicht angeschlossen (2026-07-28):**
   SyntheSis schreibt `PUT_ACT`/`PUT_EGT` mit je sechs Minuten, der externe
   `MultiNomialLogit1HelperOldImpl` gibt Zugang und Abgang jedoch hart als `0.0`

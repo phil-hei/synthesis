@@ -1,0 +1,170 @@
+ProbabilityClass edu.kit.ifv.mobitopp.simulation.modechoice.gen.GeneratedMixedModeChoice
+
+Interface        edu.kit.ifv.mobitopp.simulation.modeChoice.ModeChoiceModel
+Signature        selectMode(edu.kit.ifv.mobitopp.simulation.Person person >,
+              edu.kit.ifv.mobitopp.data.Zone origin >,
+              edu.kit.ifv.mobitopp.data.Zone destination >,
+              edu.kit.ifv.mobitopp.simulation.activityschedule.ActivityIfc previousActivity,
+              edu.kit.ifv.mobitopp.simulation.activityschedule.ActivityIfc nextActivity,
+              java.util.Set<edu.kit.ifv.mobitopp.simulation.Mode> choiceSet,
+              double randomNumber):edu.kit.ifv.mobitopp.simulation.Mode
+              
+UtilityClass     edu.kit.ifv.mobitopp.simulation.modechoice.gen.GeneratedMixedUtilityFunction
+HelperClass      edu.kit.ifv.mobitopp.simulation.modechoice.gen.MixedModeChoiceHelper
+
+root: {
+  <walk?U_walk>
+  <bike?U_bike>
+  <passenger?U_carp>
+  <card?U_card>
+  <pt?U_pt>
+  <taxi?U_taxi>
+  <cs_ff?U_cs_ff>
+  <cs_sb?U_cs_sb>
+  <bs?U_bs>
+  <rp?U_rp>
+}
+
+Pedestrian: U_walk = (PREF_PED  
+                     + (B_TT_PED			
+						//+ b_tt_arbeit_ped * IS_ACTIVITY_TYPE_WORK
+						+ b_tt_dienst_ped * IS_ACTIVITY_TYPE_BUSINESS
+						+ b_tt_ausb_ped   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+						//+ b_tt_eink_ped  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+						+ b_tt_freiz_ped * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+						//+ b_tt_service_ped * IS_ACTIVITY_TYPE_SERVICE
+					) * TRAVEL_TIME_PEDESTRIAN
+					+ asc_shift_relief_high_ped * [RELIEF >= 250]
+				    + b_arbeit_ped * IS_ACTIVITY_TYPE_WORK
+				    + b_dienst_ped * IS_ACTIVITY_TYPE_BUSINESS
+				    + b_ausb_ped   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+				    + b_eink_ped  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+				    + b_freiz_ped * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+				    + b_service_ped * IS_ACTIVITY_TYPE_SERVICE
+					+ b_arbwo_ped * IS_WEEKDAY
+					+ b_mode_bef_ped * IS_PREV_MODE_PEDESTRIAN)
+
+           
+Bike: U_bike = (PREF_BIKE  
+                + (-exp(B_TT_BIKE			
+					//+ b_tt_arbeit_bike * IS_ACTIVITY_TYPE_WORK
+					+ b_tt_dienst_bike * IS_ACTIVITY_TYPE_BUSINESS
+					//+ b_tt_ausb_bike   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+					//+ b_tt_eink_bike  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+					+ b_tt_freiz_bike * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+					//+ b_tt_service_bike * IS_ACTIVITY_TYPE_SERVICE
+					)) * TRAVEL_TIME_BIKE
+			    + asc_shift_relief_high_bike * [RELIEF >= 250]
+				+ b_arbeit_bike * IS_ACTIVITY_TYPE_WORK
+				+ b_dienst_bike * IS_ACTIVITY_TYPE_BUSINESS
+				+ b_ausb_bike   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+				+ b_eink_bike  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+				+ b_freiz_bike * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+				+ b_service_bike * IS_ACTIVITY_TYPE_SERVICE
+				+ b_arbwo_bike * IS_WEEKDAY
+				+ b_mode_bef_bike * IS_PREV_MODE_BIKE)                       
+
+        
+Car: U_card = (PREF_CAR_D 
+				+ (b_cost + b_inc_high_on_b_cost * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5])* (TRAVEL_COST_CAR + parking_cost_ph * NEXT_ACTIVITY_DURATION * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS +IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT + IS_ACTIVITY_TYPE_SERVICE + IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP)>0] * [ZONE_ID_DESTINATION < 3000] + parking_cost_ph * NEXT_ACTIVITY_DURATION * 0.5 * [(IS_ACTIVITY_TYPE_WORK)>0]* [ZONE_ID_DESTINATION < 3000]) 
+				+ (-exp(B_TT_CAR_D			
+					//+ b_tt_arbeit_car_d * IS_ACTIVITY_TYPE_WORK
+					//+ b_tt_dienst_car_d * IS_ACTIVITY_TYPE_BUSINESS
+					//+ b_tt_ausb_car_d   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+					//+ b_tt_eink_car_d  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+					//+ b_tt_freiz_car_d * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+					//+ b_tt_service_car_d * IS_ACTIVITY_TYPE_SERVICE
+					))* TRAVEL_TIME_CAR
+				+ asc_shift_relief_high_car_d * [RELIEF >= 250]
+				+ b_arbeit_car_d * IS_ACTIVITY_TYPE_WORK
+				+ b_dienst_car_d * IS_ACTIVITY_TYPE_BUSINESS
+				+ b_ausb_car_d   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+				+ b_eink_car_d  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+				+ b_freiz_car_d * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+				+ b_service_car_d * IS_ACTIVITY_TYPE_SERVICE
+				+ b_park_car_d * PARKING_STRESS ^ elasticity_parken
+				+ b_arbwo_car_d * IS_WEEKDAY)
+
+Passenger: U_carp = (PREF_CAR_P
+				+  (-exp(B_TT_CAR_P			
+					//+ b_tt_arbeit_car_p * IS_ACTIVITY_TYPE_WORK
+					//+ b_tt_dienst_car_p * IS_ACTIVITY_TYPE_BUSINESS
+					//+ b_tt_ausb_car_p   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+					//+ b_tt_eink_car_p  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+					+ b_tt_freiz_car_p * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+					//+ b_tt_service_car_p * IS_ACTIVITY_TYPE_SERVICE
+					)) * TRAVEL_TIME_CAR
+				+ asc_shift_relief_high_car_p * [RELIEF >= 250]
+				+ b_arbeit_car_p * IS_ACTIVITY_TYPE_WORK
+				+ b_dienst_car_p * IS_ACTIVITY_TYPE_BUSINESS
+				+ b_ausb_car_p   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+				+ b_eink_car_p  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+				+ b_freiz_car_p * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+				+ b_service_car_p * IS_ACTIVITY_TYPE_SERVICE
+				+ b_home_car_p * IS_ACTIVITY_TYPE_HOME
+				+ b_arbwo_car_p * IS_WEEKDAY
+				)
+
+
+PublicTransport: U_pt = (PREF_PUT 
+				+ (b_cost_put + b_inc_high_on_b_cost_put * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5])*  TRAVEL_COST_PUBLICTRANSPORT 
+				+ (-exp(B_TT_PUT			
+					+ b_tt_arbeit_put * IS_ACTIVITY_TYPE_WORK
+					//+ b_tt_dienst_put * IS_ACTIVITY_TYPE_BUSINESS
+					+ b_tt_ausb_put   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+					//+ b_tt_eink_put  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+					//+ b_tt_freiz_put * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+					+ b_tt_service_put * IS_ACTIVITY_TYPE_SERVICE
+					))	* TRAVEL_TIME_PUBLICTRANSPORT
+				+ b_u_put * TRANSFER_PUBLICTRANSPORT
+				+ b_logsum_acc_put / 2 * exp(elasticity_acc_put * LOGSUM_ACC_PUT)
+				+ b_logsum_acc_put / 2 * exp(elasticity_acc_put * LOGSUM_EGR_PUT)
+				+ asc_shift_relief_high_put * [RELIEF >= 250]
+				+ b_arbeit_put * IS_ACTIVITY_TYPE_WORK
+				+ b_dienst_put * IS_ACTIVITY_TYPE_BUSINESS
+				+ b_ausb_putd   * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+				+ b_eink_put  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+				+ b_freiz_put * [(IS_ACTIVITY_TYPE_LEISURE_INDOOR + IS_ACTIVITY_TYPE_LEISURE_OUTDOOR + IS_ACTIVITY_TYPE_LEISURE_OTHER + IS_ACTIVITY_TYPE_PTIVATE_VISIT)>0] 
+				+ b_service_put * IS_ACTIVITY_TYPE_SERVICE
+				+ b_home_put * IS_ACTIVITY_TYPE_HOME
+				+ b_arbwo_put * IS_WEEKDAY
+				+ b_mode_bef_put * IS_PREV_MODE_PUBLICTRANSPORT)	
+
+
+Taxi: U_taxi =  (PREF_TAXI
+				+ (b_cost_put + b_inc_high_on_b_cost_put * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5])* TRAVEL_COST_TAXI
+				+ B_TT_TAXI * TRAVEL_TIME_TAXI
+				)
+
+
+Carsharing_FreeFloating: U_cs_ff = (PREF_CS_FF
+				+ (b_cost_put + b_inc_high_on_b_cost_put * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5])* TRAVEL_COST_CARSHARING_FREE
+				+ B_TT_CS_FF * TRAVEL_TIME_CARSHARING_FREE
+				+ b_arbeit_cs * IS_ACTIVITY_TYPE_WORK
+				)
+
+
+
+Carsharing_Station: U_cs_sb =  (PREF_CS_SB
+				+ (b_cost_put + b_inc_high_on_b_cost_put * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5])* TRAVEL_COST_CARSHARING_STATION
+				+ B_TT_CS_SB * TRAVEL_TIME_CARSHARING_STATION
+				+ b_arbeit_cs * IS_ACTIVITY_TYPE_WORK
+				+ b_logsum_acc_cs * (LOGSUM_ACC_CS)
+				)
+
+BikeSharing: U_bs = (PREF_BS
+				+ (b_cost_put + b_inc_high_on_b_cost_put * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5])* TRAVEL_COST_BIKESHARING
+				+ B_TT_BS * TRAVEL_TIME_BIKESHARING
+				+ b_arbeit_bs * IS_ACTIVITY_TYPE_WORK
+				+ b_ausb_bs  * [(IS_ACTIVITY_TYPE_EDUCATION_PRIMARY + IS_ACTIVITY_TYPE_EDUCATION_SECONDARY + IS_ACTIVITY_TYPE_EDUCATION_TERTIARY + IS_ACTIVITY_TYPE_EDUCATION + IS_ACTIVITY_TYPE_EDUCATION_OCCUP) >0]
+				+ b_eink_bs  * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+				)
+
+RidePooling: U_rp = (PREF_RP
+				+ (b_cost_put + b_inc_high_on_b_cost_put * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5])* TRAVEL_COST_RIDE_POOLING
+				+ B_TT_RP * TRAVEL_TIME_RIDE_POOLING
+				+ b_zz_rp * ACCESS_TIME_RIDE_POOLING
+				+ b_wz_rp * WAITING_TIME_RIDE_POOLING
+				+ b_arbeit_rp * IS_ACTIVITY_TYPE_WORK
+				+ b_eink_rp   * [(IS_ACTIVITY_TYPE_SHOPPING_DAILY + IS_ACTIVITY_TYPE_SHOPPING_OTHER + IS_ACTIVITY_TYPE_PRIVATE_BUSINESS)>0]
+				)

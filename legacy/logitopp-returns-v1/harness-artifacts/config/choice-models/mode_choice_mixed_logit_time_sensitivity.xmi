@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="ASCII"?>
+<codeGen:ModelDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:codeGen="http://www.kit.edu/ifv/codegen/CodeGen" probabClassName="edu.kit.ifv.mobitopp.simulation.modechoice.sensitivity.gen.TimeSensitivity" utilClassName="edu.kit.ifv.mobitopp.simulation.modechoice.sensitivity.gen.TimeSensitivityUtilityFunction" helperClassName="edu.kit.ifv.mobitopp.simulation.modechoice.sensitivity.gen.TimeSensitivityHelper">
+  <interface pType="edu.kit.ifv.mobitopp.simulation.modechoice.PersonChangerFunction"/>
+  <signature name="calculateSensitivity" returnType="double">
+    <parameters pType="edu.kit.ifv.mobitopp.populationsynthesis.PersonBuilder" name="person" logging=">"/>
+    <parameters pType="java.util.Map" name="draws">
+      <genericParams pType="edu.kit.ifv.mobitopp.simulation.Mode"/>
+      <genericParams pType="java.lang.Double"/>
+    </parameters>
+  </signature>
+  <probab xsi:type="codeGen:Nest" name="root" type=":">
+    <childern xsi:type="codeGen:Alternative" name="walk" type="?" function="//@util.0"/>
+    <childern xsi:type="codeGen:Alternative" name="bike" type="?" function="//@util.1"/>
+    <childern xsi:type="codeGen:Alternative" name="passenger" type="?" function="//@util.2"/>
+    <childern xsi:type="codeGen:Alternative" name="card" type="?" function="//@util.3"/>
+    <childern xsi:type="codeGen:Alternative" name="pt" type="?" function="//@util.4"/>
+    <childern xsi:type="codeGen:Alternative" name="taxi" type="?" function="//@util.5"/>
+    <childern xsi:type="codeGen:Alternative" name="cs_ff" type="?" function="//@util.6"/>
+    <childern xsi:type="codeGen:Alternative" name="cs_sb" type="?" function="//@util.7"/>
+    <childern xsi:type="codeGen:Alternative" name="bs" type="?" function="//@util.9"/>
+    <childern xsi:type="codeGen:Alternative" name="rp" type="?" function="//@util.8"/>
+  </probab>
+  <util category="Pedestrian" name="U_tt_ped">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="b_tt_ped"/>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="age_0_17_on_b_tt_ped"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                      <left xsi:type="codeGen:NumberLiteral"/>
+                      <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                      <right xsi:type="codeGen:NumberLiteral" value="17"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="age_18_29_on_b_tt_ped"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                    <left xsi:type="codeGen:NumberLiteral" value="18"/>
+                    <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                    <right xsi:type="codeGen:NumberLiteral" value="29"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="age_50_59_on_b_tt_ped"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                  <left xsi:type="codeGen:NumberLiteral" value="50"/>
+                  <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                  <right xsi:type="codeGen:NumberLiteral" value="59"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="age_60_69_on_b_tt_ped"/>
+            <right xsi:type="codeGen:Delta">
+              <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                <left xsi:type="codeGen:NumberLiteral" value="60"/>
+                <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                <right xsi:type="codeGen:NumberLiteral" value="69"/>
+              </sub>
+            </right>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="age_70_100_on_b_tt_ped"/>
+          <right xsi:type="codeGen:Delta">
+            <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+              <left xsi:type="codeGen:NumberLiteral" value="70"/>
+              <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+              <right xsi:type="codeGen:NumberLiteral" value="100"/>
+            </sub>
+          </right>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="beruft_on_b_tt_ped"/>
+        <right xsi:type="codeGen:Delta">
+          <sub xsi:type="codeGen:RelExpression" type=">">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_FULLTIME"/>
+                <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_PARTTIME"/>
+              </left>
+              <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_MARGINAL"/>
+            </left>
+            <right xsi:type="codeGen:NumberLiteral"/>
+          </sub>
+        </right>
+      </right>
+    </formula>
+  </util>
+  <util category="Bike" name="U_tt_bike">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_tt_bike_mu"/>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_tt_bike_sig"/>
+                    <right xsi:type="codeGen:ConstantLiteral" value="DRAW_TIME_BIKE"/>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="age_0_17_on_b_tt_bike"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                      <left xsi:type="codeGen:NumberLiteral"/>
+                      <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                      <right xsi:type="codeGen:NumberLiteral" value="17"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="age_18_29_on_b_tt_bike"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                    <left xsi:type="codeGen:NumberLiteral" value="18"/>
+                    <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                    <right xsi:type="codeGen:NumberLiteral" value="29"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="age_50_59_on_b_tt_bike"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                  <left xsi:type="codeGen:NumberLiteral" value="50"/>
+                  <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                  <right xsi:type="codeGen:NumberLiteral" value="59"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="age_60_69_on_b_tt_bike"/>
+            <right xsi:type="codeGen:Delta">
+              <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                <left xsi:type="codeGen:NumberLiteral" value="60"/>
+                <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                <right xsi:type="codeGen:NumberLiteral" value="69"/>
+              </sub>
+            </right>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="age_70_100_on_b_tt_bike"/>
+          <right xsi:type="codeGen:Delta">
+            <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+              <left xsi:type="codeGen:NumberLiteral" value="70"/>
+              <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+              <right xsi:type="codeGen:NumberLiteral" value="100"/>
+            </sub>
+          </right>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="beruft_on_b_tt_bike"/>
+        <right xsi:type="codeGen:Delta">
+          <sub xsi:type="codeGen:RelExpression" type=">">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_FULLTIME"/>
+                <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_PARTTIME"/>
+              </left>
+              <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_MARGINAL"/>
+            </left>
+            <right xsi:type="codeGen:NumberLiteral"/>
+          </sub>
+        </right>
+      </right>
+    </formula>
+  </util>
+  <util category="Passenger" name="U_tt_car_p">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_tt_car_p_mu"/>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_tt_car_p_sig"/>
+                    <right xsi:type="codeGen:ConstantLiteral" value="DRAW_TIME_PASSENGER"/>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="age_0_17_on_b_tt_car_p"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                      <left xsi:type="codeGen:NumberLiteral"/>
+                      <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                      <right xsi:type="codeGen:NumberLiteral" value="17"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="age_18_29_on_b_tt_car_p"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                    <left xsi:type="codeGen:NumberLiteral" value="18"/>
+                    <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                    <right xsi:type="codeGen:NumberLiteral" value="29"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="age_50_59_on_b_tt_car_p"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                  <left xsi:type="codeGen:NumberLiteral" value="50"/>
+                  <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                  <right xsi:type="codeGen:NumberLiteral" value="59"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="age_60_69_on_b_tt_car_p"/>
+            <right xsi:type="codeGen:Delta">
+              <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                <left xsi:type="codeGen:NumberLiteral" value="60"/>
+                <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                <right xsi:type="codeGen:NumberLiteral" value="69"/>
+              </sub>
+            </right>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="age_70_100_on_b_tt_car_p"/>
+          <right xsi:type="codeGen:Delta">
+            <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+              <left xsi:type="codeGen:NumberLiteral" value="70"/>
+              <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+              <right xsi:type="codeGen:NumberLiteral" value="100"/>
+            </sub>
+          </right>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="beruft_on_b_tt_car_p"/>
+        <right xsi:type="codeGen:Delta">
+          <sub xsi:type="codeGen:RelExpression" type=">">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_FULLTIME"/>
+                <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_PARTTIME"/>
+              </left>
+              <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_MARGINAL"/>
+            </left>
+            <right xsi:type="codeGen:NumberLiteral"/>
+          </sub>
+        </right>
+      </right>
+    </formula>
+  </util>
+  <util category="Car" name="U_tt_car_d">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_tt_car_d_mu"/>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_tt_car_d_sig"/>
+                    <right xsi:type="codeGen:ConstantLiteral" value="DRAW_TIME_CAR"/>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="age_0_17_on_b_tt_car_d"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                      <left xsi:type="codeGen:NumberLiteral"/>
+                      <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                      <right xsi:type="codeGen:NumberLiteral" value="17"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="age_18_29_on_b_tt_car_d"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                    <left xsi:type="codeGen:NumberLiteral" value="18"/>
+                    <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                    <right xsi:type="codeGen:NumberLiteral" value="29"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="age_50_59_on_b_tt_car_d"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                  <left xsi:type="codeGen:NumberLiteral" value="50"/>
+                  <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                  <right xsi:type="codeGen:NumberLiteral" value="59"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="age_60_69_on_b_tt_car_d"/>
+            <right xsi:type="codeGen:Delta">
+              <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                <left xsi:type="codeGen:NumberLiteral" value="60"/>
+                <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                <right xsi:type="codeGen:NumberLiteral" value="69"/>
+              </sub>
+            </right>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="age_70_100_on_b_tt_car_d"/>
+          <right xsi:type="codeGen:Delta">
+            <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+              <left xsi:type="codeGen:NumberLiteral" value="70"/>
+              <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+              <right xsi:type="codeGen:NumberLiteral" value="100"/>
+            </sub>
+          </right>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="beruft_on_b_tt_car_d"/>
+        <right xsi:type="codeGen:Delta">
+          <sub xsi:type="codeGen:RelExpression" type=">">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_FULLTIME"/>
+                <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_PARTTIME"/>
+              </left>
+              <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_MARGINAL"/>
+            </left>
+            <right xsi:type="codeGen:NumberLiteral"/>
+          </sub>
+        </right>
+      </right>
+    </formula>
+  </util>
+  <util category="PublicTransport" name="U_tt_put">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_tt_put_mu"/>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_tt_put_sig"/>
+                    <right xsi:type="codeGen:ConstantLiteral" value="DRAW_TIME_PUBLICTRANSPORT"/>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="age_0_17_on_b_tt_put"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                      <left xsi:type="codeGen:NumberLiteral"/>
+                      <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                      <right xsi:type="codeGen:NumberLiteral" value="17"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="age_18_29_on_b_tt_put"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                    <left xsi:type="codeGen:NumberLiteral" value="18"/>
+                    <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                    <right xsi:type="codeGen:NumberLiteral" value="29"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="age_50_59_on_b_tt_put"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                  <left xsi:type="codeGen:NumberLiteral" value="50"/>
+                  <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                  <right xsi:type="codeGen:NumberLiteral" value="59"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="age_60_69_on_b_tt_put"/>
+            <right xsi:type="codeGen:Delta">
+              <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                <left xsi:type="codeGen:NumberLiteral" value="60"/>
+                <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+                <right xsi:type="codeGen:NumberLiteral" value="69"/>
+              </sub>
+            </right>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="age_70_100_on_b_tt_put"/>
+          <right xsi:type="codeGen:Delta">
+            <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+              <left xsi:type="codeGen:NumberLiteral" value="70"/>
+              <var xsi:type="codeGen:ConstantLiteral" value="AGE"/>
+              <right xsi:type="codeGen:NumberLiteral" value="100"/>
+            </sub>
+          </right>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="beruft_on_b_tt_put"/>
+        <right xsi:type="codeGen:Delta">
+          <sub xsi:type="codeGen:RelExpression" type=">">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_FULLTIME"/>
+                <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_PARTTIME"/>
+              </left>
+              <right xsi:type="codeGen:ConstantLiteral" value="IS_EMPLOYMENT_MARGINAL"/>
+            </left>
+            <right xsi:type="codeGen:NumberLiteral"/>
+          </sub>
+        </right>
+      </right>
+    </formula>
+  </util>
+  <util category="Taxi" name="U_tt_taxi">
+    <formula xsi:type="codeGen:ConstantLiteral" value="b_tt_taxi"/>
+  </util>
+  <util category="Carsharing_FreeFloating" name="U_tt_cs_ff">
+    <formula xsi:type="codeGen:ConstantLiteral" value="b_tt_cs"/>
+  </util>
+  <util category="Carsharing_Station" name="U_tt_cs_sb">
+    <formula xsi:type="codeGen:ConstantLiteral" value="b_tt_cs"/>
+  </util>
+  <util category="RidePooling" name="U_tt_rp">
+    <formula xsi:type="codeGen:ConstantLiteral" value="b_tt_rp"/>
+  </util>
+  <util category="BikeSharing" name="U_tt_bs">
+    <formula xsi:type="codeGen:ConstantLiteral" value="b_tt_bs"/>
+  </util>
+</codeGen:ModelDefinition>

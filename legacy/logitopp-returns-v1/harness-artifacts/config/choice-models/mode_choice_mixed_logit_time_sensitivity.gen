@@ -1,0 +1,78 @@
+ProbabilityClass edu.kit.ifv.mobitopp.simulation.modechoice.sensitivity.gen.TimeSensitivity
+
+Interface edu.kit.ifv.mobitopp.simulation.modechoice.PersonChangerFunction
+Signature calculateSensitivity(edu.kit.ifv.mobitopp.populationsynthesis.PersonBuilder person >, 
+                  java.util.Map<edu.kit.ifv.mobitopp.simulation.Mode, java.lang.Double> draws
+                  ):double
+              
+UtilityClass     edu.kit.ifv.mobitopp.simulation.modechoice.sensitivity.gen.TimeSensitivityUtilityFunction
+HelperClass      edu.kit.ifv.mobitopp.simulation.modechoice.sensitivity.gen.TimeSensitivityHelper
+
+root: {
+  <walk?U_tt_ped>
+  <bike?U_tt_bike>
+  <passenger?U_tt_car_p>
+  <card?U_tt_car_d>
+  <pt?U_tt_put>
+  <taxi?U_tt_taxi>
+  <cs_ff?U_tt_cs_ff>
+  <cs_sb?U_tt_cs_sb>
+  <bs?U_tt_bs>
+  <rp?U_tt_rp>
+}
+
+Pedestrian:  U_tt_ped = (b_tt_ped
+						+ age_0_17_on_b_tt_ped  * [0 <= AGE <= 17]
+						+ age_18_29_on_b_tt_ped  * [18 <= AGE <= 29]
+						+ age_50_59_on_b_tt_ped  * [50 <= AGE <= 59]
+						+ age_60_69_on_b_tt_ped  * [60 <= AGE <= 69]
+						+ age_70_100_on_b_tt_ped  * [70 <= AGE <= 100]
+						+ beruft_on_b_tt_ped   * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) > 0 ]
+						)
+
+Bike: U_tt_bike =     (b_tt_bike_mu + b_tt_bike_sig * DRAW_TIME_BIKE
+						+ age_0_17_on_b_tt_bike  * [0 <= AGE <= 17]
+						+ age_18_29_on_b_tt_bike  * [18 <= AGE <= 29]
+						+ age_50_59_on_b_tt_bike  * [50 <= AGE <= 59]
+						+ age_60_69_on_b_tt_bike  * [60 <= AGE <= 69]
+						+ age_70_100_on_b_tt_bike  * [70 <= AGE <= 100]
+						+ beruft_on_b_tt_bike   * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) > 0 ]
+						)
+  
+Passenger: U_tt_car_p = (b_tt_car_p_mu + b_tt_car_p_sig * DRAW_TIME_PASSENGER
+						+ age_0_17_on_b_tt_car_p  * [0 <= AGE <= 17]
+						+ age_18_29_on_b_tt_car_p  * [18 <= AGE <= 29]
+						+ age_50_59_on_b_tt_car_p  * [50 <= AGE <= 59]
+						+ age_60_69_on_b_tt_car_p  * [60 <= AGE <= 69]
+						+ age_70_100_on_b_tt_car_p  * [70 <= AGE <= 100]
+						+ beruft_on_b_tt_car_p   * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) > 0 ]
+						)
+  
+Car: U_tt_car_d = (b_tt_car_d_mu + b_tt_car_d_sig * DRAW_TIME_CAR
+						+ age_0_17_on_b_tt_car_d  * [0 <= AGE <= 17]
+						+ age_18_29_on_b_tt_car_d  * [18 <= AGE <= 29]
+						+ age_50_59_on_b_tt_car_d  * [50 <= AGE <= 59]
+						+ age_60_69_on_b_tt_car_d  * [60 <= AGE <= 69]
+						+ age_70_100_on_b_tt_car_d  * [70 <= AGE <= 100]
+						+ beruft_on_b_tt_car_d   * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) > 0 ]
+						)
+  
+PublicTransport: U_tt_put = (b_tt_put_mu + b_tt_put_sig * DRAW_TIME_PUBLICTRANSPORT
+						+ age_0_17_on_b_tt_put  * [0 <= AGE <= 17]
+						+ age_18_29_on_b_tt_put  * [18 <= AGE <= 29]
+						+ age_50_59_on_b_tt_put  * [50 <= AGE <= 59]
+						+ age_60_69_on_b_tt_put  * [60 <= AGE <= 69]
+						+ age_70_100_on_b_tt_put  * [70 <= AGE <= 100]
+						+ beruft_on_b_tt_put   * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) > 0 ]
+						)
+
+Taxi: U_tt_taxi = b_tt_taxi                    
+
+Carsharing_FreeFloating:  U_tt_cs_ff = b_tt_cs
+
+Carsharing_Station:  U_tt_cs_sb = b_tt_cs
+
+RidePooling: U_tt_rp = b_tt_rp
+
+BikeSharing: U_tt_bs = b_tt_bs
+              

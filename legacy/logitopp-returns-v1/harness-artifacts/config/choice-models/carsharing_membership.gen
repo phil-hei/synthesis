@@ -1,0 +1,38 @@
+ProbabilityClass edu.kit.ifv.mobitopp.populationsynthesis.mobilityprovider.carsharing.generated.CarSharingMembership
+
+Interface        edu.kit.ifv.mobitopp.populationsynthesis.carownership.MobilityProviderCustomerModel
+Signature        estimateCustomership(edu.kit.ifv.mobitopp.populationsynthesis.PersonBuilder person):boolean
+							
+UtilityClass     edu.kit.ifv.mobitopp.populationsynthesis.mobilityprovider.carsharing.generated.CarSharingMembershipUtilityFunction
+HelperClass      edu.kit.ifv.mobitopp.populationsynthesis.mobilityprovider.carsharing.generated.CarSharingMembershipHelper
+
+
+
+root: {
+	<Cs_member?U_cs_member>
+	<No_cs_member?U_no_cs_member>
+}
+
+
+Cs_member:  U_cs_member    =  asc_cs
+			  + b_hhgro_1 * [HOUSEHOLD_SIZE == 1]
+              + b_hhgro_2 * [HOUSEHOLD_SIZE == 2]
+              + b_hhgro_3 * [HOUSEHOLD_SIZE == 3]
+              + b_female  * [GENDER==2]
+              + b_alter_18_29 * [18 <= AGE <= 29]
+              + b_alter_30_39 * [30 <= AGE <= 39]
+              + b_alter_40_49 * [40 <= AGE <= 49]
+              + b_alter_50_59 * [50 <= AGE <= 59]
+              + b_anzauto_1 *[HOUSEHOLD_NUMBER_OF_OWNED_CARS == 1]
+              + b_anzauto_2 *[HOUSEHOLD_NUMBER_OF_OWNED_CARS >= 2]
+              + b_taetigkeit_1 * [(IS_EMPLOYMENT_FULLTIME + IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) >0]
+              + b_taetigkeit_2 * [(IS_EMPLOYMENT_STUDENT + IS_EMPLOYMENT_STUDENT_PRIMARY + IS_EMPLOYMENT_STUDENT_SECONDARY + IS_EMPLOYMENT_STUDENT_TERTIARY + IS_EMPLOYMENT_EDUCATION) >0]
+              + b_taetigkeit_3 * IS_EMPLOYMENT_HOMEKEEPER
+			  + b_zeitkarte    * HAS_COMMUTER_TICKET
+			  + b_parken       * PARKEN ^ elasticity_parken
+			  + b_cs_cars      * CS_DENSITY 
+			  + b_oek_2        * [HOUSEHOLD_ECONOMICAL_STATUS ==3]
+			  + b_oek_3        * [HOUSEHOLD_ECONOMICAL_STATUS ==4]
+			  + b_oek_3        * [HOUSEHOLD_ECONOMICAL_STATUS ==5]
+							
+No_cs_member:  U_no_cs_member  =  0

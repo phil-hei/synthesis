@@ -1,0 +1,156 @@
+ProbabilityClass edu.kit.ifv.mobitopp.simulation.modechoice.preference.gen.ModePreference
+
+Interface        edu.kit.ifv.mobitopp.simulation.modechoice.PersonChangerFunction
+Signature        calculateSensitivity(edu.kit.ifv.mobitopp.populationsynthesis.PersonBuilder person >, 
+                  java.util.Map<edu.kit.ifv.mobitopp.simulation.Mode, java.lang.Double> draws
+                  ):double
+              
+UtilityClass     edu.kit.ifv.mobitopp.simulation.modechoice.preference.gen.ModePreferenceUtilityFunction
+HelperClass      edu.kit.ifv.mobitopp.simulation.modechoice.preference.gen.ModePreferenceHelper
+
+root: {
+  <walk?Asc_ped>
+  <bike?Asc_bike>
+  <passenger?Asc_car_p>
+  <card?Asc_car_d>
+  <pt?Asc_put>
+  <cs_sb?Asc_cs_sb>
+  <cs_ff?Asc_cs_ff>
+  <rp?Asc_rp>
+  <taxi?Asc_taxi>
+  <bs?Asc_bs>
+}
+
+Bike: Asc_bike = ( asc_bike_mu + asc_bike_sig * DRAW_PREF_BIKE             
+			+ age_0_17_on_asc_bike * [0 <= AGE <= 17]
+           + age_18_29_on_asc_bike * [18 <= AGE <= 29]
+           + age_50_59_on_asc_bike * [50 <= AGE <= 59]
+           + age_60_69_on_asc_bike * [60 <= AGE <= 69]
+           + age_70_100_on_asc_bike * [70 <= AGE <= 100]
+           + beruft_on_asc_bike * [(IS_EMPLOYMENT_FULLTIME +IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) >0 ]
+		   + student_on_asc_bike * [(IS_EMPLOYMENT_STUDENT + IS_EMPLOYMENT_STUDENT_PRIMARY + IS_EMPLOYMENT_STUDENT_SECONDARY + IS_EMPLOYMENT_STUDENT_TERTIARY + IS_EMPLOYMENT_EDUCATION) > 0]
+           + female_on_asc_bike * [GENDER==2]
+		   + inc_low_on_asc_bike * [1 <= HOUSEHOLD_ECONOMICAL_STATUS <= 2]
+           + inc_high_on_asc_bike  * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5]
+           + zk_on_asc_bike       * HAS_COMMUTER_TICKET
+		   + csmit_on_asc_bike     * HAS_MEMBERSHIP_CS
+		   + pkw_0_on_asc_bike     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==0]
+		   + pkw_1_on_asc_bike     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==1]
+		   + ebike_on_asc_bike     * HAS_E_BIKE
+		   + hhgr_2_on_asc_bike    * [HOUSEHOLD_SIZE == 2]
+		   + hhgr_34_on_asc_bike    * [HOUSEHOLD_SIZE >= 3])
+  
+Passenger: Asc_car_p = (asc_car_p_mu + asc_car_p_sig * DRAW_PREF_PASSENGER
+           + age_0_17_on_asc_car_p * [0 <= AGE <= 17]
+           + age_18_29_on_asc_car_p * [18 <= AGE <= 29]
+           + age_50_59_on_asc_car_p * [50 <= AGE <= 59]
+           + age_60_69_on_asc_car_p * [60 <= AGE <= 69]
+           + age_70_100_on_asc_car_p * [70 <= AGE <= 100]
+           + beruft_on_asc_car_p * [(IS_EMPLOYMENT_FULLTIME +IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) >0 ]
+		   + student_on_asc_car_p * [(IS_EMPLOYMENT_STUDENT + IS_EMPLOYMENT_STUDENT_PRIMARY + IS_EMPLOYMENT_STUDENT_SECONDARY + IS_EMPLOYMENT_STUDENT_TERTIARY + IS_EMPLOYMENT_EDUCATION) > 0]
+           + female_on_asc_car_p * [GENDER==2] 
+		   + inc_low_on_asc_car_p * [1 <= HOUSEHOLD_ECONOMICAL_STATUS <= 2]
+           + inc_high_on_asc_car_p  * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5]
+           + zk_on_asc_car_p        * HAS_COMMUTER_TICKET
+		   + csmit_on_asc_car_p     * HAS_MEMBERSHIP_CS
+		   + pkw_0_on_asc_car_p     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==0]
+		   + pkw_1_on_asc_car_p     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==1]
+		   + hhgr_2_on_asc_car_p    * [HOUSEHOLD_SIZE == 2]
+		   + hhgr_34_on_asc_car_p    * [HOUSEHOLD_SIZE >= 3])
+  
+Car: Asc_car_d = (asc_car_d_mu +  asc_car_d_sig* DRAW_PREF_CAR
+           + age_0_17_on_asc_car_d * [0 <= AGE <= 17]
+           + age_18_29_on_asc_car_d * [18 <= AGE <= 29]
+           + age_50_59_on_asc_car_d * [50 <= AGE <= 59]
+           + age_60_69_on_asc_car_d * [60 <= AGE <= 69]
+           + age_70_100_on_asc_car_d * [70 <= AGE <= 100]
+           + beruft_on_asc_car_d * [(IS_EMPLOYMENT_FULLTIME +IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) >0 ]
+		   + student_on_asc_car_d * [(IS_EMPLOYMENT_STUDENT + IS_EMPLOYMENT_STUDENT_PRIMARY + IS_EMPLOYMENT_STUDENT_SECONDARY + IS_EMPLOYMENT_STUDENT_TERTIARY + IS_EMPLOYMENT_EDUCATION) > 0]
+           + female_on_asc_car_d * [GENDER==2] 
+		   + inc_low_on_asc_car_d   * [1 <= HOUSEHOLD_ECONOMICAL_STATUS <= 2]
+           + inc_high_on_asc_car_d  * [4<= HOUSEHOLD_ECONOMICAL_STATUS <=5]
+		   + csmit_on_asc_car_d     * HAS_MEMBERSHIP_CS
+           + zk_on_asc_car_d        * HAS_COMMUTER_TICKET
+		   + pkw_0_on_asc_car_d     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==0]
+		   + pkw_1_on_asc_car_d     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==1]
+		   + hhgr_2_on_asc_car_d    * [HOUSEHOLD_SIZE == 2]
+		   + hhgr_34_on_asc_car_d    * [HOUSEHOLD_SIZE >= 3]
+		   )
+  
+PublicTransport: Asc_put = (asc_put_mu + asc_put_sig * DRAW_PREF_PUBLICTRANSPORT
+           + age_0_17_on_asc_put * [0 <= AGE <= 17]
+           + age_18_29_on_asc_put * [18 <= AGE <= 29]
+           + age_50_59_on_asc_put * [50 <= AGE <= 59]
+           + age_60_69_on_asc_put * [60 <= AGE <= 69]
+           + age_70_100_on_asc_put * [70 <= AGE <= 100]
+           + beruft_on_asc_put * [(IS_EMPLOYMENT_FULLTIME +IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) >0 ]
+		   + student_on_asc_put * [(IS_EMPLOYMENT_STUDENT + IS_EMPLOYMENT_STUDENT_PRIMARY + IS_EMPLOYMENT_STUDENT_SECONDARY + IS_EMPLOYMENT_STUDENT_TERTIARY + IS_EMPLOYMENT_EDUCATION) > 0]
+           + female_on_asc_put * [GENDER==2]
+		   + inc_low_on_asc_put   * [1 <= HOUSEHOLD_ECONOMICAL_STATUS <= 2]
+           + inc_high_on_asc_put  * [4 <= HOUSEHOLD_ECONOMICAL_STATUS <= 5]
+           + zk_on_asc_put        * HAS_COMMUTER_TICKET
+		   + csmit_on_asc_put     * HAS_MEMBERSHIP_CS
+		   + pkw_0_on_asc_put     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==0]
+		   + pkw_1_on_asc_put     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==1]
+		   + hhgr_2_on_asc_put    * [HOUSEHOLD_SIZE == 2]
+		   + hhgr_34_on_asc_put    * [HOUSEHOLD_SIZE >= 3]
+		   )
+                     
+Carsharing_Station: Asc_cs_sb = (asc_cs_sb_mu + (asc_cs_sb_sig + csmit_on_sig_cs * HAS_MEMBERSHIP_CS)* DRAW_PREF_CS_SB
+           + age_18_29_on_asc_cs * [18 <= AGE <= 29]
+           + age_50_59_on_asc_cs * [50 <= AGE <= 59]
+           + beruft_on_asc_cs_sb * [(IS_EMPLOYMENT_FULLTIME +IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) >0 ]
+           + female_on_asc_cs * [GENDER==2]
+		   + csmit_on_asc_cs     * HAS_MEMBERSHIP_CS
+		   + pkw_0_on_asc_cs     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==0]
+		   + pkw_1_on_asc_cs     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==1]
+		   + hhgr_2_on_asc_cs    * [HOUSEHOLD_SIZE == 2]
+		   + hhgr_34_on_asc_cs    * [HOUSEHOLD_SIZE >= 3]
+		   )
+		   
+Carsharing_FreeFloating: Asc_cs_ff = (asc_cs_ff 
+           + age_18_29_on_asc_cs * [18 <= AGE <= 29]
+           + age_50_59_on_asc_cs * [50 <= AGE <= 59]
+           + female_on_asc_cs * [GENDER==2]
+		   + csmit_on_asc_cs     * HAS_MEMBERSHIP_CS
+		   + pkw_0_on_asc_cs     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==0]
+		   + pkw_1_on_asc_cs     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==1]
+		   + hhgr_2_on_asc_cs    * [HOUSEHOLD_SIZE == 2]
+		   + hhgr_34_on_asc_cs    * [HOUSEHOLD_SIZE >= 3]
+		   )
+               
+RidePooling: Asc_rp = (asc_rp
+		   + age_18_29_on_asc_rp * [18 <= AGE <= 29]
+           + age_50_59_on_asc_rp * [50 <= AGE <= 59]
+		   + age_60_69_on_asc_rp * [60 <= AGE <= 69]
+		   + beruft_on_asc_rp * [(IS_EMPLOYMENT_FULLTIME +IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) >0 ]
+		   + student_on_asc_rp * [(IS_EMPLOYMENT_STUDENT + IS_EMPLOYMENT_STUDENT_PRIMARY + IS_EMPLOYMENT_STUDENT_SECONDARY + IS_EMPLOYMENT_STUDENT_TERTIARY + IS_EMPLOYMENT_EDUCATION) > 0]
+		   )
+              
+Pedestrian: Asc_ped = ( asc_ped_mu + asc_ped_sig * DRAW_PREF_PEDESTRIAN           
+			+ age_0_17_on_asc_ped * [0 <= AGE <= 17]
+           + age_18_29_on_asc_ped * [18 <= AGE <= 29]
+           + age_50_59_on_asc_ped * [50 <= AGE <= 59]
+           + age_60_69_on_asc_ped * [60 <= AGE <= 69]
+           + age_70_100_on_asc_ped * [70 <= AGE <= 100]
+           + beruft_on_asc_ped * [(IS_EMPLOYMENT_FULLTIME +IS_EMPLOYMENT_PARTTIME + IS_EMPLOYMENT_MARGINAL) >0 ]
+		   + student_on_asc_ped * [(IS_EMPLOYMENT_STUDENT + IS_EMPLOYMENT_STUDENT_PRIMARY + IS_EMPLOYMENT_STUDENT_SECONDARY + IS_EMPLOYMENT_STUDENT_TERTIARY + IS_EMPLOYMENT_EDUCATION) > 0]
+           + female_on_asc_ped *[GENDER==2] 
+		   + inc_low_on_asc_ped   * [1 <= HOUSEHOLD_ECONOMICAL_STATUS <= 2]
+           + inc_high_on_asc_ped  * [4 <= HOUSEHOLD_ECONOMICAL_STATUS <= 5]
+           + zk_on_asc_ped       * HAS_COMMUTER_TICKET
+		   + csmit_on_asc_ped     * HAS_MEMBERSHIP_CS
+		   + pkw_0_on_asc_ped     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==0]
+		   + pkw_1_on_asc_ped     * [HOUSEHOLD_NUMBER_OF_OWNED_CARS==1]
+		   + hhgr_2_on_asc_ped    * [HOUSEHOLD_SIZE == 2]
+		   + hhgr_34_on_asc_ped    * [HOUSEHOLD_SIZE >= 3]
+		   )
+
+Taxi: Asc_taxi = (asc_taxi
+				+ age_0_17_on_asc_taxi * [0 <= AGE <= 17])
+
+BikeSharing: Asc_bs = (asc_bs
+				+ age_18_29_on_asc_bs * [18 <= AGE <= 29]
+		        + hhgr_2_on_asc_bs    * [HOUSEHOLD_SIZE == 2]
+		        + hhgr_34_on_asc_bs    * [HOUSEHOLD_SIZE >= 3]
+				+ female_on_asc_bs *[GENDER==2])

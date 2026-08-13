@@ -1,0 +1,42 @@
+dataSource: !file
+  demandDataFolder: output/rastatt/demand-data
+  matrixConfigurationFile: data/rastatt/matrices/analysis/matrix-configuration.yaml
+  attractivityDataFile: data/rastatt/zoneproperties/analysis/Attractivities.csv
+  zonePropertiesDataFile: data/rastatt/zoneproperties/analysis/zoneproperties.csv
+  parkingFacilitiesDataFile: data/rastatt/zoneproperties/analysis/parkingFacilities.csv
+  bikeSharingPropertiesDataFile: data/rastatt/zoneproperties/analysis/bikesharing-properties.csv
+  carSharingStationsDataFile: data/rastatt/zoneproperties/analysis/carsharing-stations.csv
+  carSharingFreeFloatingDataFile: data/rastatt/zoneproperties/analysis/carsharing-free-floating.csv
+  carSharingPropertiesDataFile: data/rastatt/zoneproperties/analysis/carsharing-properties.csv
+  #charging: unlimited
+  defaultChargingPower: config/shared/parameters/ChargingPower.txt
+  zoneRepositoryFolder: output/rastatt/zone-repository/
+days: 7
+destinationChoice:
+  base: config/shared/parameters/destination_choice_utility_calculation_parameters.txt
+  business: config/shared/parameters/destination_choice_parameters_BUSINESS.txt
+  leisure: config/shared/parameters/destination_choice_parameters_LEISURE.txt
+  service: config/shared/parameters/destination_choice_parameters_SERVICE.txt
+  shopping: config/shared/parameters/destination_choice_parameters_SHOPPING.txt  
+modeChoice:
+  main: config/shared/parameters/mode_choice_main_parameters.txt
+  modePreferencesSeed: 42
+  travelTimeSensitivitySeed: 42
+  preferencesFile: output/rastatt/results/simulation/preferences.csv
+  travelTimeSensitivitiesFile: output/rastatt/results/simulation/travel-time-sensitivities.csv
+fractionOfPopulation: 1
+#numberOfZones: 1174
+resultFolder: output/rastatt/results/simulation
+seed: 12345
+visumFile: data/rastatt/rastatt.net.bz2
+visumToMobitopp:
+  carTransportSystemCode: CAR
+  ptTransportSystemCode: PUTW
+  individualWalkTransportSystemCode: FUSS
+  ptWalkTransportSystemCode: F
+experimental:
+  writeMatrices: false
+  dayMatrices: true
+  hourMatrices: false
+#  parameter1: 1
+#  parameter2: 2

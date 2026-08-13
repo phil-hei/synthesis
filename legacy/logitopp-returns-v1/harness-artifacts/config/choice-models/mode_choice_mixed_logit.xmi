@@ -1,0 +1,1119 @@
+<?xml version="1.0" encoding="ASCII"?>
+<codeGen:ModelDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:codeGen="http://www.kit.edu/ifv/codegen/CodeGen" probabClassName="edu.kit.ifv.mobitopp.simulation.modechoice.gen.GeneratedMixedModeChoice" utilClassName="edu.kit.ifv.mobitopp.simulation.modechoice.gen.GeneratedMixedUtilityFunction" helperClassName="edu.kit.ifv.mobitopp.simulation.modechoice.gen.MixedModeChoiceHelper">
+  <interface pType="edu.kit.ifv.mobitopp.simulation.modeChoice.ModeChoiceModel"/>
+  <signature name="selectMode" returnType="edu.kit.ifv.mobitopp.simulation.Mode">
+    <parameters pType="edu.kit.ifv.mobitopp.simulation.Person" name="person" logging=">"/>
+    <parameters pType="edu.kit.ifv.mobitopp.data.Zone" name="origin" logging=">"/>
+    <parameters pType="edu.kit.ifv.mobitopp.data.Zone" name="destination" logging=">"/>
+    <parameters pType="edu.kit.ifv.mobitopp.simulation.activityschedule.ActivityIfc" name="previousActivity"/>
+    <parameters pType="edu.kit.ifv.mobitopp.simulation.activityschedule.ActivityIfc" name="nextActivity"/>
+    <parameters pType="java.util.Set" name="choiceSet">
+      <genericParams pType="edu.kit.ifv.mobitopp.simulation.Mode"/>
+    </parameters>
+    <parameters pType="double" name="randomNumber"/>
+  </signature>
+  <probab xsi:type="codeGen:Nest" name="root" type=":">
+    <childern xsi:type="codeGen:Alternative" name="walk" type="?" function="//@util.0"/>
+    <childern xsi:type="codeGen:Alternative" name="bike" type="?" function="//@util.1"/>
+    <childern xsi:type="codeGen:Alternative" name="passenger" type="?" function="//@util.3"/>
+    <childern xsi:type="codeGen:Alternative" name="card" type="?" function="//@util.2"/>
+    <childern xsi:type="codeGen:Alternative" name="pt" type="?" function="//@util.4"/>
+    <childern xsi:type="codeGen:Alternative" name="taxi" type="?" function="//@util.5"/>
+    <childern xsi:type="codeGen:Alternative" name="cs_ff" type="?" function="//@util.6"/>
+    <childern xsi:type="codeGen:Alternative" name="cs_sb" type="?" function="//@util.7"/>
+    <childern xsi:type="codeGen:Alternative" name="bs" type="?" function="//@util.8"/>
+    <childern xsi:type="codeGen:Alternative" name="rp" type="?" function="//@util.9"/>
+  </probab>
+  <util category="Pedestrian" name="U_walk">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="PREF_PED"/>
+                        <right xsi:type="codeGen:MulTerm" type="*">
+                          <left xsi:type="codeGen:AddTerm" type="+">
+                            <left xsi:type="codeGen:AddTerm" type="+">
+                              <left xsi:type="codeGen:AddTerm" type="+">
+                                <left xsi:type="codeGen:ConstantLiteral" value="B_TT_PED"/>
+                                <right xsi:type="codeGen:MulTerm" type="*">
+                                  <left xsi:type="codeGen:ConstantLiteral" value="b_tt_dienst_ped"/>
+                                  <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_BUSINESS"/>
+                                </right>
+                              </left>
+                              <right xsi:type="codeGen:MulTerm" type="*">
+                                <left xsi:type="codeGen:ConstantLiteral" value="b_tt_ausb_ped"/>
+                                <right xsi:type="codeGen:Delta">
+                                  <sub xsi:type="codeGen:RelExpression" type=">">
+                                    <left xsi:type="codeGen:AddTerm" type="+">
+                                      <left xsi:type="codeGen:AddTerm" type="+">
+                                        <left xsi:type="codeGen:AddTerm" type="+">
+                                          <left xsi:type="codeGen:AddTerm" type="+">
+                                            <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_PRIMARY"/>
+                                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_SECONDARY"/>
+                                          </left>
+                                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_TERTIARY"/>
+                                        </left>
+                                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION"/>
+                                      </left>
+                                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_OCCUP"/>
+                                    </left>
+                                    <right xsi:type="codeGen:NumberLiteral"/>
+                                  </sub>
+                                </right>
+                              </right>
+                            </left>
+                            <right xsi:type="codeGen:MulTerm" type="*">
+                              <left xsi:type="codeGen:ConstantLiteral" value="b_tt_freiz_ped"/>
+                              <right xsi:type="codeGen:Delta">
+                                <sub xsi:type="codeGen:RelExpression" type=">">
+                                  <left xsi:type="codeGen:AddTerm" type="+">
+                                    <left xsi:type="codeGen:AddTerm" type="+">
+                                      <left xsi:type="codeGen:AddTerm" type="+">
+                                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_INDOOR"/>
+                                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OUTDOOR"/>
+                                      </left>
+                                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OTHER"/>
+                                    </left>
+                                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PTIVATE_VISIT"/>
+                                  </left>
+                                  <right xsi:type="codeGen:NumberLiteral"/>
+                                </sub>
+                              </right>
+                            </right>
+                          </left>
+                          <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_PEDESTRIAN"/>
+                        </right>
+                      </left>
+                      <right xsi:type="codeGen:MulTerm" type="*">
+                        <left xsi:type="codeGen:ConstantLiteral" value="asc_shift_relief_high_ped"/>
+                        <right xsi:type="codeGen:Delta">
+                          <sub xsi:type="codeGen:RelExpression" type=">=">
+                            <left xsi:type="codeGen:ConstantLiteral" value="RELIEF"/>
+                            <right xsi:type="codeGen:NumberLiteral" value="250"/>
+                          </sub>
+                        </right>
+                      </right>
+                    </left>
+                    <right xsi:type="codeGen:MulTerm" type="*">
+                      <left xsi:type="codeGen:ConstantLiteral" value="b_arbeit_ped"/>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+                    </right>
+                  </left>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_dienst_ped"/>
+                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_BUSINESS"/>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_ausb_ped"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:RelExpression" type=">">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:AddTerm" type="+">
+                          <left xsi:type="codeGen:AddTerm" type="+">
+                            <left xsi:type="codeGen:AddTerm" type="+">
+                              <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_PRIMARY"/>
+                              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_SECONDARY"/>
+                            </left>
+                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_TERTIARY"/>
+                          </left>
+                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION"/>
+                        </left>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_OCCUP"/>
+                      </left>
+                      <right xsi:type="codeGen:NumberLiteral"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="b_eink_ped"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:RelExpression" type=">">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_DAILY"/>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_OTHER"/>
+                      </left>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PRIVATE_BUSINESS"/>
+                    </left>
+                    <right xsi:type="codeGen:NumberLiteral"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="b_freiz_ped"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:RelExpression" type=">">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_INDOOR"/>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OUTDOOR"/>
+                      </left>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OTHER"/>
+                    </left>
+                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PTIVATE_VISIT"/>
+                  </left>
+                  <right xsi:type="codeGen:NumberLiteral"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="b_service_ped"/>
+            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SERVICE"/>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="b_arbwo_ped"/>
+          <right xsi:type="codeGen:ConstantLiteral" value="IS_WEEKDAY"/>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="b_mode_bef_ped"/>
+        <right xsi:type="codeGen:ConstantLiteral" value="IS_PREV_MODE_PEDESTRIAN"/>
+      </right>
+    </formula>
+  </util>
+  <util category="Bike" name="U_bike">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="PREF_BIKE"/>
+                        <right xsi:type="codeGen:MulTerm" type="*">
+                          <left xsi:type="codeGen:Negation" type="-">
+                            <sub xsi:type="codeGen:ExpFunction" type="exp">
+                              <sub xsi:type="codeGen:AddTerm" type="+">
+                                <left xsi:type="codeGen:AddTerm" type="+">
+                                  <left xsi:type="codeGen:ConstantLiteral" value="B_TT_BIKE"/>
+                                  <right xsi:type="codeGen:MulTerm" type="*">
+                                    <left xsi:type="codeGen:ConstantLiteral" value="b_tt_dienst_bike"/>
+                                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_BUSINESS"/>
+                                  </right>
+                                </left>
+                                <right xsi:type="codeGen:MulTerm" type="*">
+                                  <left xsi:type="codeGen:ConstantLiteral" value="b_tt_freiz_bike"/>
+                                  <right xsi:type="codeGen:Delta">
+                                    <sub xsi:type="codeGen:RelExpression" type=">">
+                                      <left xsi:type="codeGen:AddTerm" type="+">
+                                        <left xsi:type="codeGen:AddTerm" type="+">
+                                          <left xsi:type="codeGen:AddTerm" type="+">
+                                            <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_INDOOR"/>
+                                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OUTDOOR"/>
+                                          </left>
+                                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OTHER"/>
+                                        </left>
+                                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PTIVATE_VISIT"/>
+                                      </left>
+                                      <right xsi:type="codeGen:NumberLiteral"/>
+                                    </sub>
+                                  </right>
+                                </right>
+                              </sub>
+                            </sub>
+                          </left>
+                          <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_BIKE"/>
+                        </right>
+                      </left>
+                      <right xsi:type="codeGen:MulTerm" type="*">
+                        <left xsi:type="codeGen:ConstantLiteral" value="asc_shift_relief_high_bike"/>
+                        <right xsi:type="codeGen:Delta">
+                          <sub xsi:type="codeGen:RelExpression" type=">=">
+                            <left xsi:type="codeGen:ConstantLiteral" value="RELIEF"/>
+                            <right xsi:type="codeGen:NumberLiteral" value="250"/>
+                          </sub>
+                        </right>
+                      </right>
+                    </left>
+                    <right xsi:type="codeGen:MulTerm" type="*">
+                      <left xsi:type="codeGen:ConstantLiteral" value="b_arbeit_bike"/>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+                    </right>
+                  </left>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_dienst_bike"/>
+                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_BUSINESS"/>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_ausb_bike"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:RelExpression" type=">">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:AddTerm" type="+">
+                          <left xsi:type="codeGen:AddTerm" type="+">
+                            <left xsi:type="codeGen:AddTerm" type="+">
+                              <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_PRIMARY"/>
+                              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_SECONDARY"/>
+                            </left>
+                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_TERTIARY"/>
+                          </left>
+                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION"/>
+                        </left>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_OCCUP"/>
+                      </left>
+                      <right xsi:type="codeGen:NumberLiteral"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="b_eink_bike"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:RelExpression" type=">">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_DAILY"/>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_OTHER"/>
+                      </left>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PRIVATE_BUSINESS"/>
+                    </left>
+                    <right xsi:type="codeGen:NumberLiteral"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="b_freiz_bike"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:RelExpression" type=">">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_INDOOR"/>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OUTDOOR"/>
+                      </left>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OTHER"/>
+                    </left>
+                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PTIVATE_VISIT"/>
+                  </left>
+                  <right xsi:type="codeGen:NumberLiteral"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="b_service_bike"/>
+            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SERVICE"/>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="b_arbwo_bike"/>
+          <right xsi:type="codeGen:ConstantLiteral" value="IS_WEEKDAY"/>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="b_mode_bef_bike"/>
+        <right xsi:type="codeGen:ConstantLiteral" value="IS_PREV_MODE_BIKE"/>
+      </right>
+    </formula>
+  </util>
+  <util category="Car" name="U_card">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:AddTerm" type="+">
+                          <left xsi:type="codeGen:ConstantLiteral" value="PREF_CAR_D"/>
+                          <right xsi:type="codeGen:MulTerm" type="*">
+                            <left xsi:type="codeGen:AddTerm" type="+">
+                              <left xsi:type="codeGen:ConstantLiteral" value="b_cost"/>
+                              <right xsi:type="codeGen:MulTerm" type="*">
+                                <left xsi:type="codeGen:ConstantLiteral" value="b_inc_high_on_b_cost"/>
+                                <right xsi:type="codeGen:Delta">
+                                  <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                                    <left xsi:type="codeGen:NumberLiteral" value="4"/>
+                                    <var xsi:type="codeGen:ConstantLiteral" value="HOUSEHOLD_ECONOMICAL_STATUS"/>
+                                    <right xsi:type="codeGen:NumberLiteral" value="5"/>
+                                  </sub>
+                                </right>
+                              </right>
+                            </left>
+                            <right xsi:type="codeGen:AddTerm" type="+">
+                              <left xsi:type="codeGen:AddTerm" type="+">
+                                <left xsi:type="codeGen:ConstantLiteral" value="TRAVEL_COST_CAR"/>
+                                <right xsi:type="codeGen:MulTerm" type="*">
+                                  <left xsi:type="codeGen:MulTerm" type="*">
+                                    <left xsi:type="codeGen:MulTerm" type="*">
+                                      <left xsi:type="codeGen:ConstantLiteral" value="parking_cost_ph"/>
+                                      <right xsi:type="codeGen:ConstantLiteral" value="NEXT_ACTIVITY_DURATION"/>
+                                    </left>
+                                    <right xsi:type="codeGen:Delta">
+                                      <sub xsi:type="codeGen:RelExpression" type=">">
+                                        <left xsi:type="codeGen:AddTerm" type="+">
+                                          <left xsi:type="codeGen:AddTerm" type="+">
+                                            <left xsi:type="codeGen:AddTerm" type="+">
+                                              <left xsi:type="codeGen:AddTerm" type="+">
+                                                <left xsi:type="codeGen:AddTerm" type="+">
+                                                  <left xsi:type="codeGen:AddTerm" type="+">
+                                                    <left xsi:type="codeGen:AddTerm" type="+">
+                                                      <left xsi:type="codeGen:AddTerm" type="+">
+                                                        <left xsi:type="codeGen:AddTerm" type="+">
+                                                          <left xsi:type="codeGen:AddTerm" type="+">
+                                                            <left xsi:type="codeGen:AddTerm" type="+">
+                                                              <left xsi:type="codeGen:AddTerm" type="+">
+                                                                <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_DAILY"/>
+                                                                <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_OTHER"/>
+                                                              </left>
+                                                              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PRIVATE_BUSINESS"/>
+                                                            </left>
+                                                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_INDOOR"/>
+                                                          </left>
+                                                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OUTDOOR"/>
+                                                        </left>
+                                                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OTHER"/>
+                                                      </left>
+                                                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PTIVATE_VISIT"/>
+                                                    </left>
+                                                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SERVICE"/>
+                                                  </left>
+                                                  <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_PRIMARY"/>
+                                                </left>
+                                                <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_SECONDARY"/>
+                                              </left>
+                                              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_TERTIARY"/>
+                                            </left>
+                                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION"/>
+                                          </left>
+                                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_OCCUP"/>
+                                        </left>
+                                        <right xsi:type="codeGen:NumberLiteral"/>
+                                      </sub>
+                                    </right>
+                                  </left>
+                                  <right xsi:type="codeGen:Delta">
+                                    <sub xsi:type="codeGen:RelExpression" type="&lt;">
+                                      <left xsi:type="codeGen:ConstantLiteral" value="ZONE_ID_DESTINATION"/>
+                                      <right xsi:type="codeGen:NumberLiteral" value="3000"/>
+                                    </sub>
+                                  </right>
+                                </right>
+                              </left>
+                              <right xsi:type="codeGen:MulTerm" type="*">
+                                <left xsi:type="codeGen:MulTerm" type="*">
+                                  <left xsi:type="codeGen:MulTerm" type="*">
+                                    <left xsi:type="codeGen:MulTerm" type="*">
+                                      <left xsi:type="codeGen:ConstantLiteral" value="parking_cost_ph"/>
+                                      <right xsi:type="codeGen:ConstantLiteral" value="NEXT_ACTIVITY_DURATION"/>
+                                    </left>
+                                    <right xsi:type="codeGen:DoubleLiteral" value="0.5"/>
+                                  </left>
+                                  <right xsi:type="codeGen:Delta">
+                                    <sub xsi:type="codeGen:RelExpression" type=">">
+                                      <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+                                      <right xsi:type="codeGen:NumberLiteral"/>
+                                    </sub>
+                                  </right>
+                                </left>
+                                <right xsi:type="codeGen:Delta">
+                                  <sub xsi:type="codeGen:RelExpression" type="&lt;">
+                                    <left xsi:type="codeGen:ConstantLiteral" value="ZONE_ID_DESTINATION"/>
+                                    <right xsi:type="codeGen:NumberLiteral" value="3000"/>
+                                  </sub>
+                                </right>
+                              </right>
+                            </right>
+                          </right>
+                        </left>
+                        <right xsi:type="codeGen:MulTerm" type="*">
+                          <left xsi:type="codeGen:Negation" type="-">
+                            <sub xsi:type="codeGen:ExpFunction" type="exp">
+                              <sub xsi:type="codeGen:ConstantLiteral" value="B_TT_CAR_D"/>
+                            </sub>
+                          </left>
+                          <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_CAR"/>
+                        </right>
+                      </left>
+                      <right xsi:type="codeGen:MulTerm" type="*">
+                        <left xsi:type="codeGen:ConstantLiteral" value="asc_shift_relief_high_car_d"/>
+                        <right xsi:type="codeGen:Delta">
+                          <sub xsi:type="codeGen:RelExpression" type=">=">
+                            <left xsi:type="codeGen:ConstantLiteral" value="RELIEF"/>
+                            <right xsi:type="codeGen:NumberLiteral" value="250"/>
+                          </sub>
+                        </right>
+                      </right>
+                    </left>
+                    <right xsi:type="codeGen:MulTerm" type="*">
+                      <left xsi:type="codeGen:ConstantLiteral" value="b_arbeit_car_d"/>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+                    </right>
+                  </left>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_dienst_car_d"/>
+                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_BUSINESS"/>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_ausb_car_d"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:RelExpression" type=">">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:AddTerm" type="+">
+                          <left xsi:type="codeGen:AddTerm" type="+">
+                            <left xsi:type="codeGen:AddTerm" type="+">
+                              <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_PRIMARY"/>
+                              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_SECONDARY"/>
+                            </left>
+                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_TERTIARY"/>
+                          </left>
+                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION"/>
+                        </left>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_OCCUP"/>
+                      </left>
+                      <right xsi:type="codeGen:NumberLiteral"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="b_eink_car_d"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:RelExpression" type=">">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_DAILY"/>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_OTHER"/>
+                      </left>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PRIVATE_BUSINESS"/>
+                    </left>
+                    <right xsi:type="codeGen:NumberLiteral"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="b_freiz_car_d"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:RelExpression" type=">">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_INDOOR"/>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OUTDOOR"/>
+                      </left>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OTHER"/>
+                    </left>
+                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PTIVATE_VISIT"/>
+                  </left>
+                  <right xsi:type="codeGen:NumberLiteral"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="b_service_car_d"/>
+            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SERVICE"/>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="b_park_car_d"/>
+          <right xsi:type="codeGen:ExpTerm" type="^">
+            <left xsi:type="codeGen:ConstantLiteral" value="PARKING_STRESS"/>
+            <right xsi:type="codeGen:ConstantLiteral" value="elasticity_parken"/>
+          </right>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="b_arbwo_car_d"/>
+        <right xsi:type="codeGen:ConstantLiteral" value="IS_WEEKDAY"/>
+      </right>
+    </formula>
+  </util>
+  <util category="Passenger" name="U_carp">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="PREF_CAR_P"/>
+                        <right xsi:type="codeGen:MulTerm" type="*">
+                          <left xsi:type="codeGen:Negation" type="-">
+                            <sub xsi:type="codeGen:ExpFunction" type="exp">
+                              <sub xsi:type="codeGen:AddTerm" type="+">
+                                <left xsi:type="codeGen:ConstantLiteral" value="B_TT_CAR_P"/>
+                                <right xsi:type="codeGen:MulTerm" type="*">
+                                  <left xsi:type="codeGen:ConstantLiteral" value="b_tt_freiz_car_p"/>
+                                  <right xsi:type="codeGen:Delta">
+                                    <sub xsi:type="codeGen:RelExpression" type=">">
+                                      <left xsi:type="codeGen:AddTerm" type="+">
+                                        <left xsi:type="codeGen:AddTerm" type="+">
+                                          <left xsi:type="codeGen:AddTerm" type="+">
+                                            <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_INDOOR"/>
+                                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OUTDOOR"/>
+                                          </left>
+                                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OTHER"/>
+                                        </left>
+                                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PTIVATE_VISIT"/>
+                                      </left>
+                                      <right xsi:type="codeGen:NumberLiteral"/>
+                                    </sub>
+                                  </right>
+                                </right>
+                              </sub>
+                            </sub>
+                          </left>
+                          <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_CAR"/>
+                        </right>
+                      </left>
+                      <right xsi:type="codeGen:MulTerm" type="*">
+                        <left xsi:type="codeGen:ConstantLiteral" value="asc_shift_relief_high_car_p"/>
+                        <right xsi:type="codeGen:Delta">
+                          <sub xsi:type="codeGen:RelExpression" type=">=">
+                            <left xsi:type="codeGen:ConstantLiteral" value="RELIEF"/>
+                            <right xsi:type="codeGen:NumberLiteral" value="250"/>
+                          </sub>
+                        </right>
+                      </right>
+                    </left>
+                    <right xsi:type="codeGen:MulTerm" type="*">
+                      <left xsi:type="codeGen:ConstantLiteral" value="b_arbeit_car_p"/>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+                    </right>
+                  </left>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_dienst_car_p"/>
+                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_BUSINESS"/>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_ausb_car_p"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:RelExpression" type=">">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:AddTerm" type="+">
+                          <left xsi:type="codeGen:AddTerm" type="+">
+                            <left xsi:type="codeGen:AddTerm" type="+">
+                              <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_PRIMARY"/>
+                              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_SECONDARY"/>
+                            </left>
+                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_TERTIARY"/>
+                          </left>
+                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION"/>
+                        </left>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_OCCUP"/>
+                      </left>
+                      <right xsi:type="codeGen:NumberLiteral"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="b_eink_car_p"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:RelExpression" type=">">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_DAILY"/>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_OTHER"/>
+                      </left>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PRIVATE_BUSINESS"/>
+                    </left>
+                    <right xsi:type="codeGen:NumberLiteral"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="b_freiz_car_p"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:RelExpression" type=">">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_INDOOR"/>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OUTDOOR"/>
+                      </left>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OTHER"/>
+                    </left>
+                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PTIVATE_VISIT"/>
+                  </left>
+                  <right xsi:type="codeGen:NumberLiteral"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="b_service_car_p"/>
+            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SERVICE"/>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="b_home_car_p"/>
+          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_HOME"/>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="b_arbwo_car_p"/>
+        <right xsi:type="codeGen:ConstantLiteral" value="IS_WEEKDAY"/>
+      </right>
+    </formula>
+  </util>
+  <util category="PublicTransport" name="U_pt">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:AddTerm" type="+">
+                          <left xsi:type="codeGen:AddTerm" type="+">
+                            <left xsi:type="codeGen:AddTerm" type="+">
+                              <left xsi:type="codeGen:AddTerm" type="+">
+                                <left xsi:type="codeGen:AddTerm" type="+">
+                                  <left xsi:type="codeGen:ConstantLiteral" value="PREF_PUT"/>
+                                  <right xsi:type="codeGen:MulTerm" type="*">
+                                    <left xsi:type="codeGen:AddTerm" type="+">
+                                      <left xsi:type="codeGen:ConstantLiteral" value="b_cost_put"/>
+                                      <right xsi:type="codeGen:MulTerm" type="*">
+                                        <left xsi:type="codeGen:ConstantLiteral" value="b_inc_high_on_b_cost_put"/>
+                                        <right xsi:type="codeGen:Delta">
+                                          <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                                            <left xsi:type="codeGen:NumberLiteral" value="4"/>
+                                            <var xsi:type="codeGen:ConstantLiteral" value="HOUSEHOLD_ECONOMICAL_STATUS"/>
+                                            <right xsi:type="codeGen:NumberLiteral" value="5"/>
+                                          </sub>
+                                        </right>
+                                      </right>
+                                    </left>
+                                    <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_COST_PUBLICTRANSPORT"/>
+                                  </right>
+                                </left>
+                                <right xsi:type="codeGen:MulTerm" type="*">
+                                  <left xsi:type="codeGen:Negation" type="-">
+                                    <sub xsi:type="codeGen:ExpFunction" type="exp">
+                                      <sub xsi:type="codeGen:AddTerm" type="+">
+                                        <left xsi:type="codeGen:AddTerm" type="+">
+                                          <left xsi:type="codeGen:AddTerm" type="+">
+                                            <left xsi:type="codeGen:ConstantLiteral" value="B_TT_PUT"/>
+                                            <right xsi:type="codeGen:MulTerm" type="*">
+                                              <left xsi:type="codeGen:ConstantLiteral" value="b_tt_arbeit_put"/>
+                                              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+                                            </right>
+                                          </left>
+                                          <right xsi:type="codeGen:MulTerm" type="*">
+                                            <left xsi:type="codeGen:ConstantLiteral" value="b_tt_ausb_put"/>
+                                            <right xsi:type="codeGen:Delta">
+                                              <sub xsi:type="codeGen:RelExpression" type=">">
+                                                <left xsi:type="codeGen:AddTerm" type="+">
+                                                  <left xsi:type="codeGen:AddTerm" type="+">
+                                                    <left xsi:type="codeGen:AddTerm" type="+">
+                                                      <left xsi:type="codeGen:AddTerm" type="+">
+                                                        <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_PRIMARY"/>
+                                                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_SECONDARY"/>
+                                                      </left>
+                                                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_TERTIARY"/>
+                                                    </left>
+                                                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION"/>
+                                                  </left>
+                                                  <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_OCCUP"/>
+                                                </left>
+                                                <right xsi:type="codeGen:NumberLiteral"/>
+                                              </sub>
+                                            </right>
+                                          </right>
+                                        </left>
+                                        <right xsi:type="codeGen:MulTerm" type="*">
+                                          <left xsi:type="codeGen:ConstantLiteral" value="b_tt_service_put"/>
+                                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SERVICE"/>
+                                        </right>
+                                      </sub>
+                                    </sub>
+                                  </left>
+                                  <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_PUBLICTRANSPORT"/>
+                                </right>
+                              </left>
+                              <right xsi:type="codeGen:MulTerm" type="*">
+                                <left xsi:type="codeGen:ConstantLiteral" value="b_u_put"/>
+                                <right xsi:type="codeGen:ConstantLiteral" value="TRANSFER_PUBLICTRANSPORT"/>
+                              </right>
+                            </left>
+                            <right xsi:type="codeGen:MulTerm" type="*">
+                              <left xsi:type="codeGen:MulTerm" type="/">
+                                <left xsi:type="codeGen:ConstantLiteral" value="b_logsum_acc_put"/>
+                                <right xsi:type="codeGen:NumberLiteral" value="2"/>
+                              </left>
+                              <right xsi:type="codeGen:ExpFunction" type="exp">
+                                <sub xsi:type="codeGen:MulTerm" type="*">
+                                  <left xsi:type="codeGen:ConstantLiteral" value="elasticity_acc_put"/>
+                                  <right xsi:type="codeGen:ConstantLiteral" value="LOGSUM_ACC_PUT"/>
+                                </sub>
+                              </right>
+                            </right>
+                          </left>
+                          <right xsi:type="codeGen:MulTerm" type="*">
+                            <left xsi:type="codeGen:MulTerm" type="/">
+                              <left xsi:type="codeGen:ConstantLiteral" value="b_logsum_acc_put"/>
+                              <right xsi:type="codeGen:NumberLiteral" value="2"/>
+                            </left>
+                            <right xsi:type="codeGen:ExpFunction" type="exp">
+                              <sub xsi:type="codeGen:MulTerm" type="*">
+                                <left xsi:type="codeGen:ConstantLiteral" value="elasticity_acc_put"/>
+                                <right xsi:type="codeGen:ConstantLiteral" value="LOGSUM_EGR_PUT"/>
+                              </sub>
+                            </right>
+                          </right>
+                        </left>
+                        <right xsi:type="codeGen:MulTerm" type="*">
+                          <left xsi:type="codeGen:ConstantLiteral" value="asc_shift_relief_high_put"/>
+                          <right xsi:type="codeGen:Delta">
+                            <sub xsi:type="codeGen:RelExpression" type=">=">
+                              <left xsi:type="codeGen:ConstantLiteral" value="RELIEF"/>
+                              <right xsi:type="codeGen:NumberLiteral" value="250"/>
+                            </sub>
+                          </right>
+                        </right>
+                      </left>
+                      <right xsi:type="codeGen:MulTerm" type="*">
+                        <left xsi:type="codeGen:ConstantLiteral" value="b_arbeit_put"/>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+                      </right>
+                    </left>
+                    <right xsi:type="codeGen:MulTerm" type="*">
+                      <left xsi:type="codeGen:ConstantLiteral" value="b_dienst_put"/>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_BUSINESS"/>
+                    </right>
+                  </left>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_ausb_putd"/>
+                    <right xsi:type="codeGen:Delta">
+                      <sub xsi:type="codeGen:RelExpression" type=">">
+                        <left xsi:type="codeGen:AddTerm" type="+">
+                          <left xsi:type="codeGen:AddTerm" type="+">
+                            <left xsi:type="codeGen:AddTerm" type="+">
+                              <left xsi:type="codeGen:AddTerm" type="+">
+                                <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_PRIMARY"/>
+                                <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_SECONDARY"/>
+                              </left>
+                              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_TERTIARY"/>
+                            </left>
+                            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION"/>
+                          </left>
+                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_OCCUP"/>
+                        </left>
+                        <right xsi:type="codeGen:NumberLiteral"/>
+                      </sub>
+                    </right>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_eink_put"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:RelExpression" type=">">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:AddTerm" type="+">
+                          <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_DAILY"/>
+                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_OTHER"/>
+                        </left>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PRIVATE_BUSINESS"/>
+                      </left>
+                      <right xsi:type="codeGen:NumberLiteral"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="b_freiz_put"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:RelExpression" type=">">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:AddTerm" type="+">
+                        <left xsi:type="codeGen:AddTerm" type="+">
+                          <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_INDOOR"/>
+                          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OUTDOOR"/>
+                        </left>
+                        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_LEISURE_OTHER"/>
+                      </left>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PTIVATE_VISIT"/>
+                    </left>
+                    <right xsi:type="codeGen:NumberLiteral"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="b_service_put"/>
+              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SERVICE"/>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="b_home_put"/>
+            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_HOME"/>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="b_arbwo_put"/>
+          <right xsi:type="codeGen:ConstantLiteral" value="IS_WEEKDAY"/>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="b_mode_bef_put"/>
+        <right xsi:type="codeGen:ConstantLiteral" value="IS_PREV_MODE_PUBLICTRANSPORT"/>
+      </right>
+    </formula>
+  </util>
+  <util category="Taxi" name="U_taxi">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:ConstantLiteral" value="PREF_TAXI"/>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:ConstantLiteral" value="b_cost_put"/>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="b_inc_high_on_b_cost_put"/>
+              <right xsi:type="codeGen:Delta">
+                <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                  <left xsi:type="codeGen:NumberLiteral" value="4"/>
+                  <var xsi:type="codeGen:ConstantLiteral" value="HOUSEHOLD_ECONOMICAL_STATUS"/>
+                  <right xsi:type="codeGen:NumberLiteral" value="5"/>
+                </sub>
+              </right>
+            </right>
+          </left>
+          <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_COST_TAXI"/>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="B_TT_TAXI"/>
+        <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_TAXI"/>
+      </right>
+    </formula>
+  </util>
+  <util category="Carsharing_FreeFloating" name="U_cs_ff">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:ConstantLiteral" value="PREF_CS_FF"/>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:ConstantLiteral" value="b_cost_put"/>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="b_inc_high_on_b_cost_put"/>
+                <right xsi:type="codeGen:Delta">
+                  <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                    <left xsi:type="codeGen:NumberLiteral" value="4"/>
+                    <var xsi:type="codeGen:ConstantLiteral" value="HOUSEHOLD_ECONOMICAL_STATUS"/>
+                    <right xsi:type="codeGen:NumberLiteral" value="5"/>
+                  </sub>
+                </right>
+              </right>
+            </left>
+            <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_COST_CARSHARING_FREE"/>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="B_TT_CS_FF"/>
+          <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_CARSHARING_FREE"/>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="b_arbeit_cs"/>
+        <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+      </right>
+    </formula>
+  </util>
+  <util category="Carsharing_Station" name="U_cs_sb">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:ConstantLiteral" value="PREF_CS_SB"/>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="b_cost_put"/>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_inc_high_on_b_cost_put"/>
+                  <right xsi:type="codeGen:Delta">
+                    <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                      <left xsi:type="codeGen:NumberLiteral" value="4"/>
+                      <var xsi:type="codeGen:ConstantLiteral" value="HOUSEHOLD_ECONOMICAL_STATUS"/>
+                      <right xsi:type="codeGen:NumberLiteral" value="5"/>
+                    </sub>
+                  </right>
+                </right>
+              </left>
+              <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_COST_CARSHARING_STATION"/>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="B_TT_CS_SB"/>
+            <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_CARSHARING_STATION"/>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="b_arbeit_cs"/>
+          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="b_logsum_acc_cs"/>
+        <right xsi:type="codeGen:ConstantLiteral" value="LOGSUM_ACC_CS"/>
+      </right>
+    </formula>
+  </util>
+  <util category="BikeSharing" name="U_bs">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:ConstantLiteral" value="PREF_BS"/>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:ConstantLiteral" value="b_cost_put"/>
+                  <right xsi:type="codeGen:MulTerm" type="*">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_inc_high_on_b_cost_put"/>
+                    <right xsi:type="codeGen:Delta">
+                      <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                        <left xsi:type="codeGen:NumberLiteral" value="4"/>
+                        <var xsi:type="codeGen:ConstantLiteral" value="HOUSEHOLD_ECONOMICAL_STATUS"/>
+                        <right xsi:type="codeGen:NumberLiteral" value="5"/>
+                      </sub>
+                    </right>
+                  </right>
+                </left>
+                <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_COST_BIKESHARING"/>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="B_TT_BS"/>
+              <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_BIKESHARING"/>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="b_arbeit_bs"/>
+            <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="b_ausb_bs"/>
+          <right xsi:type="codeGen:Delta">
+            <sub xsi:type="codeGen:RelExpression" type=">">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:AddTerm" type="+">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:AddTerm" type="+">
+                      <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_PRIMARY"/>
+                      <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_SECONDARY"/>
+                    </left>
+                    <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_TERTIARY"/>
+                  </left>
+                  <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION"/>
+                </left>
+                <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_EDUCATION_OCCUP"/>
+              </left>
+              <right xsi:type="codeGen:NumberLiteral"/>
+            </sub>
+          </right>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="b_eink_bs"/>
+        <right xsi:type="codeGen:Delta">
+          <sub xsi:type="codeGen:RelExpression" type=">">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_DAILY"/>
+                <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_OTHER"/>
+              </left>
+              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PRIVATE_BUSINESS"/>
+            </left>
+            <right xsi:type="codeGen:NumberLiteral"/>
+          </sub>
+        </right>
+      </right>
+    </formula>
+  </util>
+  <util category="RidePooling" name="U_rp">
+    <formula xsi:type="codeGen:AddTerm" type="+">
+      <left xsi:type="codeGen:AddTerm" type="+">
+        <left xsi:type="codeGen:AddTerm" type="+">
+          <left xsi:type="codeGen:AddTerm" type="+">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="PREF_RP"/>
+                <right xsi:type="codeGen:MulTerm" type="*">
+                  <left xsi:type="codeGen:AddTerm" type="+">
+                    <left xsi:type="codeGen:ConstantLiteral" value="b_cost_put"/>
+                    <right xsi:type="codeGen:MulTerm" type="*">
+                      <left xsi:type="codeGen:ConstantLiteral" value="b_inc_high_on_b_cost_put"/>
+                      <right xsi:type="codeGen:Delta">
+                        <sub xsi:type="codeGen:Interval" lower="&lt;=" upper="&lt;=">
+                          <left xsi:type="codeGen:NumberLiteral" value="4"/>
+                          <var xsi:type="codeGen:ConstantLiteral" value="HOUSEHOLD_ECONOMICAL_STATUS"/>
+                          <right xsi:type="codeGen:NumberLiteral" value="5"/>
+                        </sub>
+                      </right>
+                    </right>
+                  </left>
+                  <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_COST_RIDE_POOLING"/>
+                </right>
+              </left>
+              <right xsi:type="codeGen:MulTerm" type="*">
+                <left xsi:type="codeGen:ConstantLiteral" value="B_TT_RP"/>
+                <right xsi:type="codeGen:ConstantLiteral" value="TRAVEL_TIME_RIDE_POOLING"/>
+              </right>
+            </left>
+            <right xsi:type="codeGen:MulTerm" type="*">
+              <left xsi:type="codeGen:ConstantLiteral" value="b_zz_rp"/>
+              <right xsi:type="codeGen:ConstantLiteral" value="ACCESS_TIME_RIDE_POOLING"/>
+            </right>
+          </left>
+          <right xsi:type="codeGen:MulTerm" type="*">
+            <left xsi:type="codeGen:ConstantLiteral" value="b_wz_rp"/>
+            <right xsi:type="codeGen:ConstantLiteral" value="WAITING_TIME_RIDE_POOLING"/>
+          </right>
+        </left>
+        <right xsi:type="codeGen:MulTerm" type="*">
+          <left xsi:type="codeGen:ConstantLiteral" value="b_arbeit_rp"/>
+          <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_WORK"/>
+        </right>
+      </left>
+      <right xsi:type="codeGen:MulTerm" type="*">
+        <left xsi:type="codeGen:ConstantLiteral" value="b_eink_rp"/>
+        <right xsi:type="codeGen:Delta">
+          <sub xsi:type="codeGen:RelExpression" type=">">
+            <left xsi:type="codeGen:AddTerm" type="+">
+              <left xsi:type="codeGen:AddTerm" type="+">
+                <left xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_DAILY"/>
+                <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_SHOPPING_OTHER"/>
+              </left>
+              <right xsi:type="codeGen:ConstantLiteral" value="IS_ACTIVITY_TYPE_PRIVATE_BUSINESS"/>
+            </left>
+            <right xsi:type="codeGen:NumberLiteral"/>
+          </sub>
+        </right>
+      </right>
+    </formula>
+  </util>
+</codeGen:ModelDefinition>
