@@ -575,6 +575,54 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   unberührt. Ein MobileCity-only-Gegenlauf mit demselben historischen Flag
   endet weiterhin `DONE`. Backend-Suite 69 Tests grün (6 erwartete Skips),
   Angular-Strict-AOT-Build grün.
+- **🧪 Folgeexperiment „Großraum × feine Zonierung" präregistriert (2026-08-11):**
+  **Hypothese:** Ein ca. 55 × 55 km großer Raum erzeugt das bislang fehlende lange Ende,
+  während ein 1-km-INSPIRE-Gitter den intrazonalen Pkw-Wert mit ca. 0,70 km im kalibrierten
+  `<1 km`-Band hält. Damit sind Gebietsgröße und `b_intrazonal` erstmals gleichzeitig
+  identifizierbar. A/B unterscheiden sich ausschließlich durch
+  `population.calibrateDistance`; Region, 1-km-Zonierung, Population, Matrizen und Seed
+  bleiben identisch. **Vorab-Ziele:** Distanzband-RMSE sinkt gegenüber A um mindestens
+  0,02 und auf höchstens 0,08; `<1 km` liegt in B bei 19–23 %, `>=20 km` bei mindestens
+  8 %; Modal-RMSE verschlechtert sich höchstens 0,02 und Wege/Person·Tag bleiben in
+  [3,0; 3,4]. Das Promotions-Gate bleibt unverändert strenger (Distanzband-RMSE ≤0,05
+  über Seeds 42/43/44).
+  **Stop-Gate 1 – Ressourcen:** zunächst nur Zonierung plus Luftlinienmatrizen mit
+  `synthesis.max-zones=3600`, 2.000 Personen, Template-Verhalten und Seed 42. Das
+  1-km-Gitter muss 3.000–3.600 Zonen liefern, ohne automatische Vergröberung und ohne
+  OOM; Laufzeit, Peak-RSS und Matrixgrößen werden notiert. Bei OOM, mehr als 30 Minuten
+  Matrixlauf oder mehr als 8 GiB Matrixartefakten wird kein logiTopp-Lauf gestartet.
+  **Stop-Gate 2 – Mechanik:** erst danach ein seed-identisches A42/B42 auf denselben
+  Matrizen. Bei `<1 km` ohne Bewegung in Richtung 21 % oder Distanzband-RMSE ohne
+  Verbesserung um mindestens 0,02 werden Seeds 43/44 nicht gestartet. Besteht B42,
+  folgt die Drei-Seed-/Realrouting-Wiederholung; ein Multi-Band-Regler wird erst nach
+  bestätigter Hebelelastizität entworfen.
+  **Vorprüfung:** Die präregistrierte Bbox 48,613/7,825–49,107/8,575 ergibt exakt
+  **3.249 Zonen**, **10.556.001 OD-Zellen je Matrix** und **0,70389 km** intrazonale
+  Pkw-Distanz. `GenerationServiceCalibrationTest.fineLargeAreaKeepsDistanceCalibrationObservable`
+  fixiert Region, 1-km-Raster, 3.600-Zonen-Limit und Beobachtbarkeits-Guard.
+  **Stop-Gate 1 bestanden (2026-08-11):** Drei isolierte Wiederholungen erzeugten jeweils
+  alle 13 Luftlinienmatrizen in **90,608 s**, **93,252 s** und **94,148 s**. Der intern
+  gemessene Java-Heap-Peak lag bei **1.376,9 MiB**, ein vollständiger Matrixsatz bei
+  **215.640 KiB**; `CAR_DIS` ließ sich als `$V;D3` mit 3.249 Netzobjekten zurücklesen.
+  Damit wurden weder das 30-Minuten- noch das 8-GiB-Abbruchkriterium berührt.
+  **Stop-Gate 2 unentscheidbar (2026-08-11):** A42 erreichte mit 2.000 Personen,
+  56.859 Template-Aktivitäten und denselben 3.249 Zonen den Simulationsexport; der
+  Matrixschritt dauerte rund **122 s**, der Legacy-Export **13:08 min**. Danach blieb
+  Gradle länger als 31 Minuten in `compileJava` beim Quellbaum-Snapshot unter
+  `validation/mobitopp-rastatt/.../populationsynthesis/mobilityprovider` hängen
+  (`UnixNativeDispatcher.fdopendir`/`DirectorySnapshotter`). logiTopp startete nicht,
+  B42 wurde regelkonform nicht gestartet und der isolierte Prozess kontrolliert beendet.
+  Das ist ein lokaler Runtime-/Dateisystemblocker, kein Negativbefund zur Distanzhypothese.
+  Vor einer Wiederholung muss der gitignorierte KIT-Quellbaum unter Erhalt seines lokalen
+  Zustands gegen den gepinnten Runtime-Vertrag rekonstruiert werden; bis dahin bleiben
+  Seeds 43/44 und ein Multi-Band-Regler gesperrt.
+  **Rekonstruktions-Update:** Der frische Harness-Clone beseitigt den blockierenden
+  `mobilityprovider`-Pfad, offenbart aber eine Lücke im Bootstrap-Vertrag: Upstream
+  `build.gradle` hat Hash `6a23e17a…`, der logiTopp-Installer verlangt vor dem Patch
+  `fecda2bf…`; kein versionierter Schritt erzeugt diesen Zwischenstand. Außerdem ist
+  der bestehende actiTopp-Clone beim Gradle-Dateihashing auffällig langsam. Der alte
+  Harness bleibt als `mobitopp-rastatt.backup-20260811-e23` erhalten; Hash-Guards wurden
+  nicht umgangen und A42 bleibt bis zur reproduzierbaren Runtime-Reparatur gesperrt.
 - **⛔ Legacy-ÖV-Zugang/-Abgang nicht angeschlossen (2026-07-28):**
   SyntheSis schreibt `PUT_ACT`/`PUT_EGT` mit je sechs Minuten, der externe
   `MultiNomialLogit1HelperOldImpl` gibt Zugang und Abgang jedoch hart als `0.0`

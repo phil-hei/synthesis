@@ -353,6 +353,8 @@ in den genannten Größenordnungen.
 | `mvn -o` bei leerem Cache | Offline-Build schlägt fehl | Erster Lauf online (Schritt 1) |
 | `SUMO_HOME` fehlt in der JVM-Umgebung | SUMO-Stufe SKIPPED trotz Installation | Variable in der startenden Shell/IDE-Run-Config setzen (Schritt 2) |
 | actitoppNG-Lizenzwiderspruch | LICENSE-Datei = GPL vs. POM = MIT | Kein Setup-Blocker, aber **vor jeder Weitergabe/Veröffentlichung mit dem KIT klären** (aus der Projekthistorie überliefert; vor Weitergabe verifizieren) |
+| Gradle bleibt bei `compileJava` ohne CPU stehen | `DirectorySnapshotter`/`fdopendir` hängt in einem gitignorierten KIT-Quellbaum; selbst `find`/`du` blockieren dort | Lokalen Zustand **nicht löschen**: Prozess kontrolliert stoppen, Quellbaum erhalten/wegkopieren und erst dann mit `scripts/bootstrap-runtime.sh kit` aus dem gepinnten Vertrag rekonstruieren; siehe Failure-Archäologie E23 |
+| Frischer `mobitopp-rastatt`-Clone scheitert am logiTopp-Hash-Guard | Upstream-`build.gradle` hat `6a23e17a…` (188 CRLF-Zeilen), `legacy/logitopp-returns-v1/apply.sh` erwartet `fecda2bf…` (60 Zeilen) | Hash-Guard **nicht umgehen**. Der Bootstrap benötigt zuerst einen versionierten, getesteten Transformationsschritt vom echten Upstream zum Vertrags-Baseline; siehe E23 |
 
 ## Schritt 8: Verifikations-Matrix
 
@@ -393,7 +395,8 @@ Speicherbedarf eine eigene fachliche Abnahme.
   Python 3.14), Ollama-Setup
   (brew 0.32.8, pull 4,7 GB; M5/Metal bestätigt), KVV-GTFS-curl (121 MB),
   `GenerationPipelineE2ETest` 4/4, `PtIntegrationTest` vollständig in 143,9 s,
-  echter actiTopp-Smoke in 4,3 s sowie die gesamte Backend-Suite 126/126 ohne Skip.
+  echter actiTopp-Smoke in 4,3 s sowie die gesamte Backend-Suite mit 127 Tests,
+  0 Fehlern und 7 erwarteten Skips.
 - Als „aus der Projekthistorie überliefert, verifizieren" markiert: Rolle des JDK 11 in
   `validation/tools/`, actitoppNG-Lizenzlage, Linux-Installationswege.
 - Volatil (bei Nutzung > ~3 Monate nach diesem Stand prüfen): SUMO-Version/Framework-Pfad

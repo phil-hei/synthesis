@@ -625,6 +625,48 @@ Auflösungsmeldung fehl, statt acht wirkungslose logiTopp-Läufe auszuführen.
 Eine neue Kampagne benötigt feinere Zonen oder eine separat hergeleitete
 Distanzrepräsentation/Zielgröße.
 
+### Großraum × feine Zonierung (2026-08-11) — Ressourcen bestanden, Mechanik unentscheidbar
+
+**Befund:** Das präregistrierte 1-km-INSPIRE-Gitter für die Bbox
+48,613/7,825–49,107/8,575 erzeugt exakt **3.249 Zonen** und hält den
+intrazonalen Pkw-Wert mit **0,70389 km** im beobachtbaren `<1 km`-Band. Drei
+isolierte Läufe schrieben jeweils alle 13 Luftlinienmatrizen in **90,608 s**,
+**93,252 s** und **94,148 s**. Der intern gemessene Java-Heap-Peak betrug
+**1.376,9 MiB**, der vollständige Matrixsatz **215.640 KiB**. Stop-Gate 1 ist
+damit bestanden.
+
+**Evidenz:** A42 erreichte anschließend mit 2.000 Personen, 56.859
+Template-Aktivitäten und 3.249 Zonen den Legacy-Simulationsexport. Nach rund
+122 s Matrixlauf und 13:08 min Legacy-Export blieb der externe Gradle-Build
+länger als 31 Minuten in `compileJava` hängen. Ein Thread-Dump zeigte
+`UnixNativeDispatcher.fdopendir` über `DirectorySnapshotter`; `lsof` lokalisierte
+den Snapshot im gitignorierten Quellbaum
+`validation/mobitopp-rastatt/src/main/java/edu/kit/ifv/mobitopp/populationsynthesis/mobilityprovider`.
+logiTopp startete nicht. Der konfigurierte 30-Minuten-Timeout beendete den
+blockierten Wrapper nicht zuverlässig; der isolierte Lauf wurde kontrolliert
+gestoppt und B42 nicht gestartet.
+
+**Konsequenz:** Stop-Gate 2 ist **unentscheidbar**, nicht gescheitert. Es gibt
+noch kein A/B-Ergebnis zur Distanzhypothese. Vor dem nächsten A42 muss der lokale
+KIT-Quellbaum unter Erhalt seines Zustands gegen den gepinnten Runtime-Vertrag
+rekonstruiert werden. Erst nach einem vollständigen A42 darf B42 starten; Seeds
+43/44 und Multi-Band-Regler bleiben bis zum vorab definierten Mechanik-Gate aus.
+
+**Rekonstruktionsbefund (2026-08-11):** Der alte Harness wurde verlustfrei nach
+`validation/mobitopp-rastatt.backup-20260811-e23` verschoben und der gepinnte
+Commit `8ba241b6d1cd` frisch geklont. Der zuvor blockierte `mobilityprovider`-Pfad
+ist danach sofort lesbar (8 KiB). Der vollständige Bootstrap ist trotzdem noch
+nicht reproduzierbar: Der frische Clone liefert für `build.gradle` den Hash
+`6a23e17a…` und 188 CRLF-Zeilen, während
+`legacy/logitopp-returns-v1/apply.sh` vor dem Patch zwingend `fecda2bf…`
+erwartet. Dieser Vorzustand wird vom Bootstrap-Skript nicht hergestellt. Zudem
+blieb der Vertrags-Smoke im bestehenden `validation/actitoppNG` beim regulären
+Gradle-Dateihashing auffällig langsam. Deshalb wurde weder der Hash-Guard
+umgangen noch A42 gestartet. Nächster Reparaturschritt ist eine gesicherte
+Rekonstruktion aller verbleibenden KIT-Clones plus ein explizit versionierter
+Transformationsschritt vom echten mobiTopp-Upstream zum erwarteten
+logiTopp-Vertrags-Baseline.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

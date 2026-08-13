@@ -47,7 +47,7 @@ Zusatzregeln:
 ## 2. Test-Inventar (Stand 2026-08-11)
 
 Die Backend-Tests liegen unter `backend/src/test/java/de/synthesis/`. Suite-Lauf:
-`scripts/verify.sh core` → 126 Testfälle, bei laufendem Ollama nur die beiden explizit
+`scripts/verify.sh core` → 127 Testfälle, bei laufendem Ollama nur die beiden explizit
 Env-gesteuerten Integrationstests übersprungen (2026-08-11). Ohne externe Laufzeit
 können sieben Tests sauber übersprungen werden. `scripts/verify.sh full` aktiviert
 actiTopp und PT; der vollständige Lauf bestand am 2026-08-11 ohne Skip.
@@ -64,6 +64,7 @@ actiTopp und PT; der vollständige Lauf bestand am 2026-08-11 ohne Skip.
 | `generation/pipeline/LlmModeChoiceTest.java` | GTA-3c-Moduswahl gegen Live-LLM: 3 Trips in 3 Distanzbändern → Modal-Split je Modus in [0,1], Summe 1±0,02; gleicher Seed (77) reproduziert den Split exakt | `isAvailable()` (lokales LLM) | keine (Demand-CSV inline) |
 | `generation/pipeline/ActitoppRunnerTest.java` | Verhindert die frühere falsche Verfügbarkeitsmeldung: actiTopp gilt nur mit Gradle-Wrapper, `runSynthesis`-Task, Runner-Quelle und passendem Vertragsmarker als verfügbar | keine | keine (`@TempDir`) |
 | `generation/pipeline/ActitoppIntegrationTest.java` | Startet den echten gepinnten actiTopp-Adapter mit drei Personen und prüft nichtleere, zeitlich gültige Aktivitätspläne | **Env-gated:** `SYNTHESIS_RUN_ACTITOPP_TEST=true`; gültiger actiTopp-Vertrag | temporäre Personen-CSV; lokales `validation/actitoppNG`; 4,3 s auf dem M5 |
+| `generation/GenerationServiceCalibrationTest.java` | Auswahl aktiver Kalibrier-Overrides und Beobachtbarkeits-Guard der `<1 km`-Distanzkalibrierung; der Großraum-Spike fixiert zusätzlich 1-km-INSPIRE-Auflösung, 3.000–3.600 Zonen und Zulassung durch den Guard | keine | keine |
 | `generation/pipeline/SumoRunnerTest.java` | Volle native SUMO-Kette (netconvert → Trips → duarouter → sumo) gegen echtes Rastatt-Demand-CSV, `maxTrips=2000`: Fahrzeuge/Routenlänge/Speed/Dauer > 0; **multimodal**: `carTrips`, `bikeTrips`, `walkTrips` je > 0; CO₂ (HBEFA) > 0 inkl. `pkw`-Anteil; `congestion.geojson` mit `LineString` + `relSpeed`; OD-Stau-Faktoren über 3 Zentroiden: routbare Paare > 0, jeder Faktor in [1,3]; wenn `planned-tours.csv` da: `deliveryTrips` > 0 und `lkw`-CO₂ > 0 | `runner.isAvailable()` (SUMO-Binaries/`SUMO_HOME`); `Files.exists(DEMAND_CSV)`; OSM ladbar (Cache oder Overpass) | `validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv`, optional `planned-tours.csv`, `validation/rastatt-test.osm` (**selbstheilend**: Cache-Miss → Overpass-Fetch → Cache neu geschrieben); ~45 s überliefert |
 | `generation/GenerationPipelineE2ETest.java` | Smoke der kompletten Pipeline, **komplett offline**: `useOsmData=false` (synthetische POIs), `useRealRouting=false` (Luftlinien-Matrizen), `behaviorSource="template"` (kein Gradle/LLM), 250 Personen, Timeout 6 min. Asserts: Job-State `DONE`, Kern-Artefakt je Stufe existiert (zones, person/household/activity, `CAR_TTC.mtx.bz2`, Legacy-Export, MobileCity-Shapefile-Quartett, `manifest.json`), keine Stufe `FAILED`, SUMO/LLM-Stufen `SKIPPED`. Mit lokalem `mobitopp-rastatt` zusätzlich: Simulation `DONE`, `kpis.json` + `demandsimulationResult.csv`. **Falle:** `scenario.id` MUSS manuell gesetzt werden — IDs vergibt sonst der Controller, `repo.save()` tut es nicht | Simulations-Asserts: `Files.exists(<projectDir>/gradlew)` (mobitopp-rastatt lokal); Rest gate-frei | keine externen (Temp-`dataDir`); ~4–7 s überliefert (ohne Simulation) |
 | `generation/pipeline/PtIntegrationTest.java` | Volle ÖV-Kette (Phase C): GTFS-Auto-Fetch aus Raw-Cache → Zuschnitt → `gtfs2pt.py` (Fahrplan-Infrastruktur, Fenster 6–9 Uhr — **Test-Override**; Betriebs-Default ist 6–10) → SumoRunner mit intermodaler Personen-Routung, `maxTrips=1500`. Asserts: `ptVehicles() > 0`, `ptRiders() > 0`, PKW/Rad weiterhin simuliert, mindestens eine `<ride>`-Etappe im `routes.rou.xml` | **Env-gated**: `SYNTHESIS_TRANSIT_VENV` gesetzt + existiert; alle drei Fixtures vorhanden; `sumo.isAvailable()`; `transit.isAvailable()` | `demandsimulationResult.csv`, `validation/rastatt-test.osm`, `validation/kvv-gtfs.zip`; 143,9 s auf dem M5 am 2026-08-11 — deshalb Env-gated, nicht im Standard-Lauf |
@@ -82,7 +83,7 @@ Vitest-Runner (20 Tests, Stand 2026-08-11):
 Verifizierte Kommandos:
 
 ```bash
-scripts/verify.sh core                           # 126 Testfälle, externe Tests ggf. geskippt
+scripts/verify.sh core                           # 127 Testfälle, externe Tests ggf. geskippt
 scripts/verify.sh full                           # komplette technische Laufzeitabnahme
 cd backend && mvn -o test                        # reiner Backend-Lauf
 mvn -o test -Dtest=SumoRunnerTest               # nur SUMO-Kette

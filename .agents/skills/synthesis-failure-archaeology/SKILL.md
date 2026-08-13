@@ -23,7 +23,7 @@ Sackgasse, verworfene Lösung und jedes Rollback, jeweils als **Symptom → Root
 Status → Was du stattdessen tust**. Bevor du einen "naheliegenden" Ansatz umsetzt, prüfe hier,
 ob er schon einmal gescheitert ist — und warum.
 
-**Stand: 2026-07-28.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
+**Stand: 2026-08-11.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
 und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzahlen sind
 überlieferte Werte vom jeweils genannten Datum, keine aktuellen Messungen.
 
@@ -63,6 +63,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E20 | `b_tt_put` allein als Modus-Distanz-Kalibrierung | Kalibrierung | ENTSCHIEDEN |
 | E21 | `PUT_ACT`/`PUT_EGT` erreichen die Legacy-Moduswahl nicht | Legacy-Formate | BLOCKIERT |
 | E22 | `<1 km`-Kalibrierung bei grober Zonierung | Kalibrierung | ENTSCHIEDEN |
+| E23 | Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum | Infrastruktur | BLOCKIERT |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -350,6 +351,39 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Zonen wählen oder Distanzrepräsentation/Zielgröße separat herleiten und
   präregistrieren. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Gemeinsame Kalibrierung mit Realrouting (2026-07-29)“.
+
+### E23 — Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum — BLOCKIERT
+
+- **Symptom/Frage:** Im präregistrierten 3.249-Zonen-A42 blieb die externe
+  Simulation nach dem Legacy-Export länger als 31 Minuten bei Gradle
+  `compileJava` stehen; logiTopp erzeugte keine Ergebnisdatei.
+- **Befund:** Der Gradle-Daemon verbrauchte kaum CPU. Ein Thread-Dump zeigte
+  `UnixNativeDispatcher.fdopendir` über `DirectorySnapshotter`; `lsof`
+  lokalisierte den aktiven Quellsnapshot unter
+  `validation/mobitopp-rastatt/src/main/java/edu/kit/ifv/mobitopp/populationsynthesis/mobilityprovider`.
+  Selbst einfache Verzeichnisabfragen auf diesem gitignorierten Teilbaum
+  blockierten. Der vorherige 13-Matrix-Spike war dreimal in unter 95 Sekunden
+  und mit 1.376,9 MiB Heap erfolgreich; Matrixskalierung und OOM sind daher
+  nicht die Ursache.
+- **Verworfener Scheinfix:** Nicht den Lauf weiter warten lassen, B42 parallel
+  starten oder `validation/` ungeprüft löschen. Der konfigurierte 30-Minuten-
+  Timeout terminierte den im Dateisystemaufruf blockierten Wrapper nicht
+  zuverlässig.
+- **Status/Regel:** A42/B42 ist **unentscheidbar**. Den lokalen Zustand zuerst
+  erhalten, dann `mobitopp-rastatt` aus dem gepinnten Runtime-Vertrag mit
+  `scripts/bootstrap-runtime.sh kit` rekonstruieren und A42 wiederholen. B42,
+  weitere Seeds und Reglerentwicklung bleiben bis zu einem vollständigen A42
+  gesperrt. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Großraum × feine Zonierung (2026-08-11)“.
+- **Rekonstruktions-Nachtrag (2026-08-11):** Der frische Harness-Clone macht den
+  problematischen Pfad wieder sofort lesbar, reicht aber nicht für einen
+  reproduzierbaren Bootstrap. Upstream-`build.gradle` (`6a23e17a…`, 188 CRLF-
+  Zeilen) entspricht nicht dem vom logiTopp-Vertragsinstaller vorausgesetzten
+  Vorzustand (`fecda2bf…`, 60 Zeilen); der notwendige Transformationsschritt ist
+  nicht versioniert. Parallel bleibt der bestehende actiTopp-Clone beim
+  Gradle-Dateihashing auffällig langsam. Hash-Guards nicht umgehen: verbleibende
+  KIT-Clones gesichert rekonstruieren und die fehlende Baseline-Transformation
+  zuerst als prüfbaren Vertrag ergänzen.
 
 ---
 

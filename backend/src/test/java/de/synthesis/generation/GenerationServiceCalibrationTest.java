@@ -1,6 +1,7 @@
 package de.synthesis.generation;
 
 import de.synthesis.generation.pipeline.GridZoning;
+import de.synthesis.generation.pipeline.InspireGridZoning;
 import de.synthesis.generation.pipeline.Zone;
 import de.synthesis.scenario.Scenario;
 import org.junit.jupiter.api.Test;
@@ -102,6 +103,28 @@ class GenerationServiceCalibrationTest {
         scenario.targetModels = List.of("logitopp");
         assertDoesNotThrow(() -> GenerationService.requireObservableDistanceCalibration(
                 scenario, gridZones(2300), false));
+    }
+
+    @Test
+    void fineLargeAreaKeepsDistanceCalibrationObservable() {
+        Scenario scenario = new Scenario();
+        scenario.population.calibrateDistance = true;
+
+        Scenario.Region region = new Scenario.Region();
+        region.minLat = 48.613;
+        region.minLon = 7.825;
+        region.maxLat = 49.107;
+        region.maxLon = 8.575;
+
+        int resolution = InspireGridZoning.pickResolution(region, 1000, 3600);
+        List<Zone> zones = InspireGridZoning.generate(region, resolution, 3600);
+
+        assertEquals(1000, resolution,
+                "55-km-Großraum muss für den Spike im beobachtbaren 1-km-Raster bleiben");
+        assertEquals(3249, zones.size(),
+                "präregistrierte Region muss ein stabiles 57×57-INSPIRE-Gitter liefern");
+        assertDoesNotThrow(() -> GenerationService.requireObservableDistanceCalibration(
+                scenario, zones, true));
     }
 
     private static List<Zone> gridZones(double cellSizeMeters) {
