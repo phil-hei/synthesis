@@ -623,6 +623,13 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   der bestehende actiTopp-Clone beim Gradle-Dateihashing auffällig langsam. Der alte
   Harness bleibt als `mobitopp-rastatt.backup-20260811-e23` erhalten; Hash-Guards wurden
   nicht umgangen und A42 bleibt bis zur reproduzierbaren Runtime-Reparatur gesperrt.
+  **Testabdeckung wiederhergestellt (2026-08-13):** Der Re-Clone hatte nebenbei die
+  Demand-Fixture dreier Testklassen entfernt (`SumoRunnerTest`, `PtIntegrationTest`,
+  Teilfall `LogitoppDemandAdapterTest` — still SKIPPED). Nach bit-identischem
+  Zurückkopieren zweier Ergebnisdateien aus dem Backup läuft die Backend-Suite wieder
+  127/0/0 ohne Skip. Das berührt weder Hash-Guard noch Bootstrap-Vertrag: E23 und die
+  A42/B42-Sperre bleiben unverändert offen (Details in
+  [docs/05-validierung.md](05-validierung.md), Abschnitt „Großraum × feine Zonierung").
 - **⛔ Legacy-ÖV-Zugang/-Abgang nicht angeschlossen (2026-07-28):**
   SyntheSis schreibt `PUT_ACT`/`PUT_EGT` mit je sechs Minuten, der externe
   `MultiNomialLogit1HelperOldImpl` gibt Zugang und Abgang jedoch hart als `0.0`

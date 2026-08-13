@@ -396,7 +396,9 @@ Speicherbedarf eine eigene fachliche Abnahme.
   (brew 0.32.8, pull 4,7 GB; M5/Metal bestätigt), KVV-GTFS-curl (121 MB),
   `GenerationPipelineE2ETest` 4/4, `PtIntegrationTest` vollständig in 143,9 s,
   echter actiTopp-Smoke in 4,3 s sowie die gesamte Backend-Suite mit 127 Tests,
-  0 Fehlern und 7 erwarteten Skips.
+  0 Fehlern und 7 erwarteten Skips. Am 2026-08-13 lief dieselbe Suite mit allen
+  Runtimes (`SUMO_HOME`, Transit-venv, actiTopp-Env, laufender Ollama) und
+  zurückgeholter Demand-Fixture **127/0/0 ohne jeden Skip** in 43:07 min.
 - Als „aus der Projekthistorie überliefert, verifizieren" markiert: Rolle des JDK 11 in
   `validation/tools/`, actitoppNG-Lizenzlage, Linux-Installationswege.
 - Volatil (bei Nutzung > ~3 Monate nach diesem Stand prüfen): SUMO-Version/Framework-Pfad

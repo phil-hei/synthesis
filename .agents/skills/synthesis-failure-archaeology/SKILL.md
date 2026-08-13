@@ -384,6 +384,19 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Gradle-Dateihashing auffällig langsam. Hash-Guards nicht umgehen: verbleibende
   KIT-Clones gesichert rekonstruieren und die fehlende Baseline-Transformation
   zuerst als prüfbaren Vertrag ergänzen.
+- **Fixture-Folgewirkung (2026-08-13):** Der Re-Clone nahm auch die Ergebnisdateien
+  des alten Harness mit. Dadurch gingen `SumoRunnerTest`, `PtIntegrationTest` und
+  ein Teilfall von `LogitoppDemandAdapterTest` **still in SKIPPED** — sie hängen an
+  `validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv`
+  (und optional `planned-tours.csv`), nicht am Vertrag. Wer nach einem Re-Clone nur
+  auf „Suite grün" schaut, hält den Verlust der SUMO-/ÖV-Abdeckung für Normalzustand.
+  Diese Abhängigkeit ist von E23 trennbar: Beide Dateien lassen sich bit-identisch
+  aus `mobitopp-rastatt.backup-20260811-e23` zurückkopieren (SHA-256 `35a4cc63…`
+  bzw. `e4f2eb9f…`), danach 127 Tests, 0 Fehler, 0 Skips. **Kein Hash-Guard wird
+  dabei berührt** — aber das ist ausdrücklich **kein** Fix für E23: Der
+  Bootstrap-Vertrag bleibt kaputt, `preflight.sh full` meldet weiterhin den
+  fehlenden logiTopp-Harness-Vertrag, und A42/B42 bleibt gesperrt. Eine
+  zurückkopierte Fixture ist ein Testeingang, kein Laufzeitvertrag.
 
 ---
 

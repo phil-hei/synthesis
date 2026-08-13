@@ -44,13 +44,24 @@ Zusatzregeln:
 - **„Läuft bei mir" zählt nicht.** Das ausgeführte Kommando plus die konkrete Zahl
   (Fahrzeuge, Trips, RMSE, Dateigröße) gehört in die Doku bzw. Commit-Message.
 
-## 2. Test-Inventar (Stand 2026-08-11)
+## 2. Test-Inventar (Stand 2026-08-13)
 
 Die Backend-Tests liegen unter `backend/src/test/java/de/synthesis/`. Suite-Lauf:
 `scripts/verify.sh core` → 127 Testfälle, bei laufendem Ollama nur die beiden explizit
 Env-gesteuerten Integrationstests übersprungen (2026-08-11). Ohne externe Laufzeit
 können sieben Tests sauber übersprungen werden. `scripts/verify.sh full` aktiviert
-actiTopp und PT; der vollständige Lauf bestand am 2026-08-11 ohne Skip.
+actiTopp und PT; der vollständige Lauf bestand am 2026-08-13 mit **127 Tests,
+0 Fehlern und 0 Skips** in 43:07 min (davon 2.389 s allein `GtaBehaviorTest` mit
+kaltem Plan-Cache).
+
+**Falle nach einem Re-Clone von `mobitopp-rastatt`:** `SumoRunnerTest`,
+`PtIntegrationTest` und ein Teilfall von `LogitoppDemandAdapterTest` hängen an
+`validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv`
+(SUMO zusätzlich optional an `planned-tours.csv`, das erst die Logistik-Asserts
+`deliveryTrips() > 0` und Lkw-CO₂ scharf schaltet). Ein frischer Clone bringt diese
+Ergebnisdateien nicht mit — die drei Klassen gehen dann **still in SKIPPED**, ohne
+dass SUMO, ÖV oder Adapter defekt wären. Immer die Skip-Zahl gegen den erwarteten
+Stand prüfen, nicht nur „0 Fehler". Siehe E23 in `synthesis-failure-archaeology`.
 
 | Klasse (Pfad relativ zu `backend/src/test/java/de/synthesis/`) | Prüft | Gates (`assumeTrue`) | Fixtures |
 |---|---|---|---|

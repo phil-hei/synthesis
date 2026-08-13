@@ -667,6 +667,36 @@ Rekonstruktion aller verbleibenden KIT-Clones plus ein explizit versionierter
 Transformationsschritt vom echten mobiTopp-Upstream zum erwarteten
 logiTopp-Vertrags-Baseline.
 
+**Fixture-Folgewirkung und Teil-Wiederherstellung (2026-08-13):** Der Re-Clone nahm
+nicht nur den Vertrag mit, sondern auch die Ergebnisdateien des alten Harness — und
+damit die Eingabe-Fixture dreier Testklassen. `SumoRunnerTest`, `PtIntegrationTest`
+und ein Teilfall von `LogitoppDemandAdapterTest` gingen daraufhin still in SKIPPED,
+obwohl SUMO, ÖV-Kette und Legacy-Adapter selbst intakt waren. **Befund**: Die
+Fixture-Abhängigkeit ist von E23 trennbar — sie hängt am Ergebnisartefakt
+`output/synthesis/results/`, nicht am Vertrag oder am Hash-Guard. Zurückkopiert
+wurden aus `mobitopp-rastatt.backup-20260811-e23` ausschließlich die beiden
+referenzierten Dateien, bit-identisch geprüft: `demandsimulationResult.csv`
+(19.112.725 B, SHA-256 `35a4cc63…`) und `planned-tours.csv` (737.385 B,
+`e4f2eb9f…`); der 403 MiB große Rest des `output/`-Baums blieb im Backup.
+**Evidenz**: `SumoRunnerTest` 26,0 s statt SKIPPED, `PtIntegrationTest` 124,9 s
+statt SKIPPED, `LogitoppDemandAdapterTest` 4/4 statt 3/4. Die volle Backend-Suite
+lief anschließend mit **127 Tests, 0 Fehlern und 0 Skips** in 43:07 min
+(`SUMO_HOME`, `SYNTHESIS_TRANSIT_VENV`, `SYNTHESIS_RUN_ACTITOPP_TEST` und ein
+laufender Ollama gesetzt). `scripts/preflight.sh full` fiel von zwei auf einen
+Fehler. `planned-tours.csv` ist dabei nicht kosmetisch: erst damit ist `tours` in
+`SumoRunnerTest` non-null und die Logistik-Asserts (`deliveryTrips() > 0`,
+Lkw-CO₂ > 0) laufen wirklich mit.
+
+**Konsequenz**: Die technische Abnahme ist wieder vollständig belegt, E23 selbst
+bleibt davon **unberührt und offen**. `scripts/bootstrap-runtime.sh kit` scheitert
+weiterhin am `build.gradle`-Hash (`6a23e17a…` vs. erwartet `fecda2bf…`),
+`preflight.sh full` meldet weiterhin „FEHLT logiTopp-Harness-Vertrag", und A42/B42
+bleibt gesperrt. Eine zurückkopierte Fixture ist ein Testeingang, kein
+rekonstruierter Laufzeitvertrag — sie darf nicht als Beleg für einen
+reproduzierbaren Bootstrap gewertet werden. Nebenbefund: Mit kaltem Plan-Cache
+entfallen 2.389 s der 43 min allein auf `GtaBehaviorTest` (isoliert mit warmem
+Cache: 53 s).
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
