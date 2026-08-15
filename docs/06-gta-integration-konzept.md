@@ -647,6 +647,51 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   ≤0,05. Die Regel bleibt unangetastet — ein zweiter Anlauf braucht eine **neue**
   Präregistrierung mit an A42b geeichten Schwellen. Details:
   [docs/05-validierung.md](05-validierung.md), Abschnitt „Großraum-A/B durchgeführt".
+- **🧪 Folgeexperiment „Distanz-Abklingen" präregistriert (2026-08-15):**
+  **Hypothese (ein Mechanismus):** Der nach der `b_intrazonal`-Kalibrierung verbleibende
+  Distanzfehler ist **kein Band-Zuordnungsfehler, sondern ein Distanz-Abklingfehler**: Die
+  Reisezeit-Betas der Zielwahl (`b_tt_*` in
+  `destination_choice_utility_calculation_parameters.txt`) bestrafen entfernte Ziele so
+  stark, dass Masse in 1–5 km liegen bleibt, statt 5–20 km zu erreichen.
+  **Belegende Residualstruktur (B42, gemessen):** Überschuss `1–2 km` +7,73 pp und
+  `2–5 km` +3,22 pp ergeben **+10,95 pp**; Defizit `5–10 km` −1,23, `10–20 km` −4,01 und
+  `>=20 km` −5,70 ergeben **−10,94 pp**. Die Bilanz gleicht sich bis auf 0,01 pp aus — die
+  Masse muss weit wandern, nicht ins Nachbarband. Derselbe Mechanismus erklärt die
+  Negativbefunde: `<1 km` traf punktgenau (eine Stellgröße, ein Ziel, wohlgestellt),
+  `>=20 km` ist in A42b und B42 **exakt identisch** (7,30 %), weil `b_intrazonal` das
+  lange Ende gar nicht erreicht. Er sagt vorher, was **nicht** wirkt: ein zusätzlicher
+  Band-Bonus `b_1_2` verschöbe nur nach `2–5 km`, das bereits +3,22 pp über MiD liegt.
+  Damit weicht diese Präregistrierung bewusst von der in `synthesis-distanz-kampagne`
+  vorgemerkten Multi-Band-Reihenfolge ab; `b_0_1`/`b_1_2` bleiben Rückfalloption.
+  **Stellgröße:** additiver Positivterm auf `b_tt_car_d`, `b_tt_car_p`, `b_tt_ped`,
+  `b_tt_bike`, `b_tt_put` (Format: `b_tt_car_d = -0.0688 -0.05 +X`), über den bestehenden
+  `destinationChoiceDir`-Override.
+  **Stop-Gate 1 – Elastizität (Zahlen vorab):** Dosis-Wirkungs-Sonde mit X ∈ {+0,01;
+  +0,03; +0,06} auf dem **wiederverwendeten** Legacy-Export von A42b (nur EIN Unterschied),
+  Seed 42, gemessen per `distance_profile.py`. **Vorhersage:** `>=10 km`-Anteil steigt
+  monoton von 16,29 %; bei X=+0,06 mindestens 20 %. Bricht die Monotonie oder bleibt die
+  Änderung unter 1 pp, gilt der Hebel als unwirksam → Stop, Rückfall auf `b_1_2`.
+  **Stop-Gate 2 – A/B, Schwellen an A42b/B42 geeicht:** seed-identisches **C42**
+  (`calibrateDistance=true`, Betas unverändert = B42-Konfiguration) gegen **D42**
+  (zusätzlich bester X-Wert aus Gate 1), beide **in derselben Backend-Session** (E24).
+  | Kriterium | Schwelle | Referenz |
+  |---|---|---|
+  | Distanzband-RMSE | **≤ 0,035** | A42b 0,0582 · B42 0,0448 |
+  | `>=10 km` (Mechanismus) | **≥ 20 %** | beide Arme 16,3 % |
+  | `<1 km` (Nichtregression) | bleibt 19–23 % | B42 20,99 % |
+  | `1–2 km` | ≤ 18 % | B42 21,73 % |
+  | Modal-RMSE | ≤ +0,02 gegen C42 | A42b 0,0982 · B42 0,1031 |
+  | Wege/Person·Tag | [3,0; 3,4] | beide 3,07 |
+  **Bewusst gestrichen:** das frühere `>=20 km ≥ 8 %`-Kriterium. Es war in beiden Armen
+  identisch (7,30 %) und misst Gebietsgröße statt Regler; ersetzt durch das
+  `>=10 km`-Mechanismuskriterium. **Absolut statt relativ:** Die Schwelle ist als fester
+  Zielwert gesetzt, nicht als Delta gegen den Kontrollarm — genau daran scheiterte B42
+  formal, obwohl das Niveau gut war.
+  **Seed-Protokoll:** zuerst Seed 42; die Drei-Seed-Wiederholung (42/43/44) startet erst,
+  wenn Gate 2 vollständig besteht. **Vorbedingung je Lauf:** `populationDistribution` und
+  `counts.households` beider Manifeste vergleichen (E24), sonst ist der Lauf ungültig.
+  **Beförderung** erst nach zugewiesenem Widerlegungsversuch in einer zweiten Session
+  (`synthesis-research-methodology`, Abschnitt 4).
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum
