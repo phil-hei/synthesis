@@ -738,6 +738,55 @@ Stufe, an der E23 über 31 Minuten hing. Idempotenz (zweiter Lauf), Mischfall
 (verändertes Artefakt → Abbruch) sind einzeln geprüft. Nach der echten
 Installation meldet `scripts/preflight.sh full` erstmals **0 Fehler, 0 Hinweise**.
 
+### Großraum-A/B durchgeführt (2026-08-15) — Stop-Gate 2 nach Vorab-Regel nicht bestanden
+
+Das präregistrierte A/B lief erstmals vollständig durch. Die Läufe liegen unter
+`backend/data/scenarios/`: **A42 `6fb122a7`** (ungültig, siehe unten), **B42
+`71720d5c`**, **A42b `7d6101af`** (gültiger A-Arm). Die logiTopp-Stufe, an der E23
+über 31 Minuten hing, brauchte 102–392 s.
+
+**Befund 1 — stiller Konfundierer**: A42 und B42 waren *nicht* vergleichbar. In A42
+lief die Overpass-Abfrage nach Siedlungs-`place`-Nodes ins Timeout (OSM-Stufe
+297,4 s) und fiel auf POI-Dichte zurück; B42 erhielt 868 Siedlungen. Ergebnis:
+`dataQuality.populationDistribution` **`poi-density` vs. `osm-places`**, 2.000 vs.
+1.595 Haushalte — also unterschiedliche Wohnstandorte, die Zielgröße des
+Experiments. Die Stufe blieb dabei **DONE**, der Fallback stand nur als Feld im
+Manifest. Konsequenz: A42 wird als ungültig geführt, nicht gelöscht. Der A-Arm wurde
+als A42b in derselben Backend-Session wie B42 wiederholt (prozessweite
+OSM-Memoisierung); danach unterscheiden sich die Manifeste in **genau einem**
+inhaltlichen Feld, `population.calibrateDistance`.
+
+**Befund 2 — Ergebnis des gültigen Kontrasts** (A42b → B42):
+
+| Vorab-Kriterium | Schwelle | Ergebnis | |
+|---|---|---|---|
+| Distanzband-RMSE sinkt gegen A | ≥ 0,02 | 0,0582 → 0,0448 = **0,0134** | ❌ |
+| Distanzband-RMSE absolut | ≤ 0,08 | 0,0448 | ✅ |
+| `<1 km` | 19–23 % | 15,81 % → **20,99 %** | ✅ |
+| `>=20 km` | ≥ 8 % | 7,30 % | ❌ |
+| Modal-RMSE-Verschlechterung | ≤ +0,02 | +0,0049 | ✅ |
+| Wege/Person·Tag | [3,0; 3,4] | 3,07 | ✅ |
+
+**Entscheidung nach Vorab-Regel: Seeds 43/44 werden nicht gestartet.** Die Regel
+greift über die Oder-Bedingung — das `<1 km`-Band hat sich klar bewegt (Ziel 21 %
+punktgenau in 2 Kalibrier-Iterationen, `b_intrazonal`-Δ 0,85), aber die
+RMSE-Verbesserung bleibt unter 0,02.
+
+**Befund 3 — Mechanik des Hebels**: `calibrateDistance` nimmt die kurzen Wege aus
+den **mittleren** Bändern, nicht aus dem langen Ende: `1–2 km` −2,6 pp, `2–5 km`
+−1,5 pp, während `>=20 km` in beiden Armen bei **exakt 7,30 %** liegt. Der Hebel ist
+damit besser konditioniert als angenommen. Das verfehlte `>=20 km`-Kriterium misst
+folglich nicht den Hebel, sondern Region und Aufbau — es ist in A und B identisch.
+
+**Konsequenz**: Der Stopp ist regelkonform, sagt aber mehr über die Präregistrierung
+als über den Regler. Die relative Schwelle (A − 0,02) unterstellte ein schwächeres A;
+tatsächlich erreicht B mit 0,0448 absolut bereits ein Niveau unter der
+Promotions-Schwelle ≤0,05. Die Regel wird **nicht** nachträglich aufgeweicht. Ein
+zweiter Anlauf braucht eine **neue** Präregistrierung mit an A42b geeichten
+Schwellen und einem Distanzband-Kriterium, das den Hebel tatsächlich abbildet.
+Vorbedingung für jede weitere Kampagne: `populationDistribution` vor dem Vergleich
+prüfen, nicht hinterher im Manifest entdecken.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

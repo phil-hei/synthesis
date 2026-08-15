@@ -630,6 +630,23 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   127/0/0 ohne Skip. Das berührt weder Hash-Guard noch Bootstrap-Vertrag: E23 und die
   A42/B42-Sperre bleiben unverändert offen (Details in
   [docs/05-validierung.md](05-validierung.md), Abschnitt „Großraum × feine Zonierung").
+  **❌ Stop-Gate 2 nicht bestanden (2026-08-15):** Das A/B lief erstmals vollständig
+  durch (logiTopp-Stufe 102–392 s statt >31 min Hänger). Der erste A-Arm war durch
+  einen stillen Overpass-Fallback konfundiert (`poi-density` statt `osm-places`,
+  2.000 statt 1.595 Haushalte, Stufe trotzdem DONE) und wurde als A42b in derselben
+  Backend-Session wiederholt; danach unterscheiden sich die Manifeste in genau einem
+  Feld. Gültiges Ergebnis A42b → B42: Distanzband-RMSE **0,0582 → 0,0448**
+  (Verbesserung 0,0134, gefordert ≥0,02 → verfehlt), `<1 km` **15,81 → 20,99 %**
+  (Ziel 19–23 % erreicht, 2 Kalibrier-Iterationen), Modal-RMSE +0,0049,
+  Wege/Person·Tag 3,07. Nach Vorab-Regel werden **Seeds 43/44 nicht gestartet**.
+  Mechanisch ist der Hebel besser als erwartet: Er speist die kurzen Wege aus den
+  mittleren Bändern (`1–2 km` −2,6 pp, `2–5 km` −1,5 pp), während `>=20 km` in beiden
+  Armen bei exakt 7,30 % liegt — das verfehlte `>=20 km`-Kriterium misst also nicht
+  den Regler. Gestoppt wird an der **relativen** Schwelle, die ein schwächeres A
+  unterstellte; absolut liegt B mit 0,0448 bereits unter der Promotions-Schwelle
+  ≤0,05. Die Regel bleibt unangetastet — ein zweiter Anlauf braucht eine **neue**
+  Präregistrierung mit an A42b geeichten Schwellen. Details:
+  [docs/05-validierung.md](05-validierung.md), Abschnitt „Großraum-A/B durchgeführt".
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

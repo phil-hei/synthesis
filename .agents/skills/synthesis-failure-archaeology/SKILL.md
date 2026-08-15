@@ -64,6 +64,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E21 | `PUT_ACT`/`PUT_EGT` erreichen die Legacy-Moduswahl nicht | Legacy-Formate | BLOCKIERT |
 | E22 | `<1 km`-Kalibrierung bei grober Zonierung | Kalibrierung | ENTSCHIEDEN |
 | E23 | Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum | Infrastruktur | ENTSCHIEDEN |
+| E24 | Stiller OSM-Fallback konfundiert A/B-Vergleiche | Infrastruktur | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -417,6 +418,29 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Ebenso: Wenn eine Datei zum Bauen nötig ist, aber in der `.gitignore` des
   Fremdrepos steht, gehört sie ins Vertrags-Artefaktbündel — sonst ist der
   Bootstrap nur scheinbar reproduzierbar.
+
+### E24 — Stiller OSM-Fallback konfundiert A/B-Vergleiche — ENTSCHIEDEN
+
+- **Symptom/Frage:** Zwei Läufe desselben präregistrierten Szenarios, die sich nur in
+  einem Flag unterscheiden sollten, lieferten unterschiedliche Haushaltszahlen
+  (2.000 vs. 1.595).
+- **Befund:** Die Overpass-Abfrage nach Siedlungs-`place`-Nodes lief im ersten Lauf
+  ins Timeout (OSM-Stufe 297,4 s statt 22,4 s) und fiel auf POI-Dichte zurück. Die
+  Pipeline behandelt das als Erfolg: Stufe **DONE**, kein FAILED, kein SKIPPED — der
+  Unterschied steht ausschließlich als `dataQuality.populationDistribution`
+  (`poi-density` vs. `osm-places`) im Manifest. Damit unterscheiden sich die
+  Wohnstandorte, also genau die Größe, die Wegdistanzen bestimmt.
+- **Warum das gefährlich ist:** Der Fallback ist als Robustheitsmaßnahme richtig und
+  soll bleiben. Für einen A/B-Vergleich macht er aber aus einem Ein-Faktor-Kontrast
+  unbemerkt einen Zwei-Faktor-Kontrast. Wer nur auf „beide Läufe DONE" schaut, wertet
+  Kriterien auf einem ungültigen Test aus.
+- **Was du stattdessen tust:** Vor jedem A/B-Vergleich `dataQuality.populationDistribution`
+  **und** `counts.households` beider Manifeste vergleichen; abweichende Arme sind
+  ungültig, nicht interpretierbar. Beide Arme möglichst in **derselben
+  Backend-Session** fahren — der OSM-Fetch ist prozessweit memoisiert (siehe E13),
+  ein Wiederholungslauf bekommt dann garantiert dieselben Daten. Ungültige Läufe
+  markieren, nicht löschen. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Großraum-A/B durchgeführt (2026-08-15)".
 
 ---
 
