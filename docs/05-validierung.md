@@ -787,6 +787,88 @@ Schwellen und einem Distanzband-Kriterium, das den Hebel tatsächlich abbildet.
 Vorbedingung für jede weitere Kampagne: `populationDistribution` vor dem Vergleich
 prüfen, nicht hinterher im Manifest entdecken.
 
+### Distanz-Abkling-Sonde (2026-08-15) — Stop-Gate 1 bestanden, Mechanismus bestätigt
+
+Elastizitäts-Sonde der präregistrierten Kampagne „Distanz-Abklingen": additiver
+Positivterm X auf `b_tt_car_d`, `b_tt_car_p`, `b_tt_put`, `b_tt_ped`, `b_tt_bike`
+in `destination_choice_utility_calculation_parameters.txt`, über den
+`destinationChoice:`-Override gegen den **wiederverwendeten Legacy-Export von A42b**
+(Szenario `7d6101af`) — pro Lauf genau ein Unterschied, logiTopp je ~58 s.
+
+**Harness-Validierung**: X=0 reproduziert A42b exakt (43.045 Trips, Ø 6,22 km, alle
+sechs Bänder auf 0,1 pp). Die Sonde misst damit ausschließlich den Parameter.
+
+| X | Ø km | `<1` | `1–2` | `2–5` | `5–10` | `10–20` | `>20` | `>=10 km` | Band-RMSE |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 6,22 | 15,8 | 24,3 | 27,8 | 15,5 | 9,3 | 7,3 | **16,57 %** | 0,0582 |
+| +0,01 | 6,35 | 15,2 | 23,0 | 28,5 | 16,3 | 9,7 | 7,3 | **17,01 %** | 0,0559 |
+| +0,03 | 6,67 | 13,6 | 20,9 | 28,7 | 18,3 | 11,0 | 7,5 | **18,47 %** | 0,0540 |
+| +0,06 | 7,41 | 11,3 | 16,7 | 27,9 | 22,0 | 14,1 | 8,0 | **22,09 %** | 0,0560 |
+
+**Befund**: Die Vorhersage („`>=10 km` steigt monoton, bei X=+0,06 mindestens 20 %")
+trifft zu — **Stop-Gate 1 bestanden**. Der Mechanismus ist bestätigt: Die Masse wandert
+weit (`1–2 km` −7,6 pp gegen `5–10 km` +6,5 pp und `10–20 km` +4,8 pp), nicht ins
+Nachbarband. Damit war die Residualbilanz aus B42 (+10,95 pp Überschuss 1–5 km gegen
+−10,94 pp Defizit ab 5 km) die richtige Diagnose.
+
+**Drei Nebenbefunde**: (1) `>20 km` bewegt sich kaum (7,3 → 8,0 %) — das ganz lange Ende
+bleibt ein Gebietsgrößen-Limit, für Zielwahl-Parameter unerreichbar. (2) Der Hebel
+beschädigt das Nahband (`<1 km` 15,8 → 11,3 %); deshalb fährt Gate 2 `calibrateDistance`
+in **beiden** Armen als Gegensteuerung. (3) Das Sonden-RMSE ist **nicht monoton**
+(Optimum bei X=+0,03), weil ohne Nahband-Regler der `<1 km`-Einbruch bestraft wird —
+für die Dosiswahl mit Kalibrierung ist dieses Ranking irreführend.
+
+**Dosiswahl X=+0,06**: nicht nach RMSE, sondern nach dem präregistrierten
+Mechanismuskriterium `>=10 km ≥ 20 %` — das erreicht nur diese Dosis (+0,03 liefert
+18,47 %). Die Wahl ist damit durch die Vorab-Schwelle bestimmt, nicht nachträglich gesetzt.
+
+**Korrektur zur Präregistrierung**: Dort steht als Ausgangswert 16,29 % (der Wert von
+B42). Die Sonde läuft auf dem A42b-Export mit 16,57 %. Die absolute Schwelle ≥20 % ist
+davon unberührt.
+
+**Werkzeug-Befund**: Der `ParameterEvaluator` lehnt vorzeichenlose Zusatzterme ab
+(`Cannot parse parameter:  -0.0688 -0.05 0.01`). Angehängte additive Terme brauchen ein
+explizites `+` oder `-`; die bisherige Kampagnen-Doku zeigt nur negative Beispiele.
+
+### Distanz-Abkling-A/B (2026-08-15) — Stop-Gate 2 bestanden (Seed 42)
+
+Seed-identisches A/B in **einer** Backend-Session: **C42 `36b1fb61`** (Kontrolle,
+`calibrateDistance=true`, Betas unverändert) gegen **D42 `90e250ae`** (zusätzlich
+`b_tt_*` +0,06). Die E24-Vorbedingung ist erfüllt — beide Manifeste sind bis auf
+id/Name/Zeitstempel **identisch** (`osm-places`, 1.595 Haushalte); der Beta-Patch ist
+kein Manifest-Feld, daher ist die Differenz dort nicht sichtbar und wurde über den
+Kalibrier-Startwert verifiziert (D42 startet bei 11,3 % — exakt dem Sondenwert für
+X=+0,06). C42 reproduziert B42 exakt (gleiche Trajektorie 15,8 → 21,0 %, 43.046 Wege).
+
+| Kriterium (vorab) | Schwelle | C42 | D42 | |
+|---|---|---|---|---|
+| Distanzband-RMSE | ≤ 0,035 | 0,0448 | **0,0258** | ✅ |
+| `>=10 km` | ≥ 20 % | 16,28 % | **20,70 %** | ✅ |
+| `<1 km` | 19–23 % | 20,99 % | 21,34 % | ✅ |
+| `1–2 km` | ≤ 18 % | 21,73 % | **13,75 %** | ✅ |
+| Modal-RMSE | ≤ +0,02 | 0,1031 | 0,1094 (+0,0063) | ✅ |
+| Wege/Person·Tag | [3,0; 3,4] | 3,07 | 3,07 | ✅ |
+
+**Befund**: Alle sechs Vorab-Kriterien bestanden. Der Distanzband-RMSE fällt auf
+**0,0258** und unterbietet damit auch die Promotions-Schwelle ≤0,05 deutlich. Das
+`1–2 km`-Band, zuvor mit +7,73 pp der dominante Residualbeitrag (49,7 %), trifft mit
+13,75 % praktisch den MiD-Wert 14 %. Ø-Distanz 6,08 → 6,93 km.
+
+**Konsequenz**: Der Mechanismus „Distanz-Abklingfehler" ist damit auf Seed 42 bestätigt
+— die Kombination aus `b_tt_*`-Anpassung (langes Ende) und `b_intrazonal` (Nahband)
+löst beide Marginalen gleichzeitig, was `b_intrazonal` allein nicht konnte. Die
+Drei-Seed-Wiederholung (43/44) ist nach Vorab-Regel freigegeben.
+
+**Zwei offene Punkte vor jeder Beförderung**: (1) `>=20 km` bleibt mit 7,89 % gegen MiD
+13 % der neue dominante Residualbeitrag — das ist die Gebietsgrößen-Grenze, die die
+Sonde vorhergesagt hat und die Zielwahl-Parameter nicht erreichen. (2) **Der
+`b_tt_*`-Override hat kein Szenario-Flag.** D42 entstand durch temporäres Patchen von
+`config/shared/parameters/destination_choice_utility_calculation_parameters.txt`
+(Pristine-Stand danach per Hash verifiziert wiederhergestellt). Für eine Beförderung
+muss dieser Hebel denselben versionierten Weg bekommen wie `calibrateDistance` —
+sonst ist das Ergebnis nicht reproduzierbar konfigurierbar. Zusätzlich steht der
+zugewiesene Widerlegungsversuch in einer zweiten Session aus.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

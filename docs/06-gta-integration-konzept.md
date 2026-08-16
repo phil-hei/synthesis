@@ -692,6 +692,25 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   `counts.households` beider Manifeste vergleichen (E24), sonst ist der Lauf ungültig.
   **Beförderung** erst nach zugewiesenem Widerlegungsversuch in einer zweiten Session
   (`synthesis-research-methodology`, Abschnitt 4).
+  **✅ Stop-Gate 1 bestanden (2026-08-15):** Dosis-Sonde auf dem A42b-Export, logiTopp je
+  ~58 s. `>=10 km` steigt monoton 16,57 → 17,01 → 18,47 → **22,09 %**; Vorhersage
+  getroffen. Mechanismus bestätigt — die Masse wandert weit (`1–2 km` −7,6 pp gegen
+  `5–10 km` +6,5 und `10–20 km` +4,8), nicht ins Nachbarband. Harness validiert: X=0
+  reproduziert A42b auf 0,1 pp. Dosiswahl **X=+0,06** nach dem Mechanismuskriterium
+  `>=10 km ≥ 20 %`, das nur diese Dosis erreicht — nicht nach dem Sonden-RMSE, das ohne
+  Nahband-Regler bei X=+0,03 optimiert.
+  **✅ Stop-Gate 2 bestanden (2026-08-15, Seed 42):** C42 `36b1fb61` gegen D42
+  `90e250ae`, Manifeste bis auf id/Name/Zeit identisch. Alle sechs Vorab-Kriterien
+  erfüllt: Distanzband-RMSE **0,0448 → 0,0258** (Schwelle ≤0,035, unterbietet auch die
+  Promotions-Schwelle ≤0,05), `>=10 km` 16,28 → **20,70 %**, `1–2 km` 21,73 → **13,75 %**
+  (MiD 14 %), `<1 km` 21,34 %, Modal-RMSE +0,0063, Wege/Person·Tag 3,07. Ø-Distanz
+  6,08 → 6,93 km. Drei-Seed-Wiederholung (43/44) damit freigegeben.
+  **Vor Beförderung offen:** `>=20 km` bleibt bei 7,89 % gegen MiD 13 % (Gebietsgrößen-
+  Grenze, von Zielwahl-Parametern unerreichbar — wie die Sonde vorhersagte), und der
+  `b_tt_*`-Hebel hat **kein Szenario-Flag**: D42 entstand über ein temporäres Patchen der
+  Shared-Parameterdatei mit anschließend hash-verifizierter Wiederherstellung. Details:
+  [docs/05-validierung.md](05-validierung.md), Abschnitte „Distanz-Abkling-Sonde" und
+  „Distanz-Abkling-A/B".
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum
