@@ -937,6 +937,43 @@ patchen. Es addiert exakt `+0,06` auf die fünf bestätigten `b_tt_*`-Parameter 
 Produktdefault ist damit ausdrücklich noch nicht befördert: Das `>20 km`-Band bleibt in
 D43 mit 8,10 % unter dem MiD-Anteil 13 %, und ein Mehrregionen-Beleg steht aus.
 
+### Mehrregionen-Transferprobe Freiburg (2026-08-17) — präregistriert, Ergebnis offen
+
+**Hypothese vor dem ersten Lauf:** Der auf drei Seeds im Großraum Rastatt bestätigte
+Term `b_tt_* +0,06` verschiebt auch in einem disjunkten Untersuchungsraum Wegemasse aus
+dem Band `1–2 km` nach `>=10 km`; die nachgelagerte `b_intrazonal`-Kalibrierung stellt
+das `<1 km`-Band wieder her. Geprüft wird Seed 42 in einem etwa 30×30-km-Ausschnitt um
+Freiburg (`47.85–48.12 N`, `7.70–8.10 E`) mit 1-km-INSPIRE-Zellen, 2.000 Personen,
+Template-Verhalten, Luftlinienmatrizen und Zielmodell logiTopp. Kontrolle T-C42 und
+Behandlung T-D42 unterscheiden sich ausschließlich in
+`population.correctDistanceDecay=false→true`; `calibrateDistance=true` gilt in beiden
+Armen.
+
+**Eingabevertrag:** Beide Arme erhalten byte-identisch denselben validierten
+`uploads/osm-data.json`-Snapshot. Vor der Auswertung müssen Snapshot- und
+`attractivities.csv`-SHA-256 übereinstimmen; zusätzlich werden Zonen, Personen,
+Aktivitäten, Matrizen und der Legacy-Demand-Vertrag gehasht. Die tatsächliche
+INSPIRE-Auflösung muss 1 km und der kleinste intrazonale Pkw-Matrixwert `<1 km` sein.
+Eine Abweichung macht den Kontrast **unentscheidbar**, nicht negativ.
+
+| Vorab-Kriterium | Schwelle für T-D42 |
+|---|---:|
+| Distanzband-RMSE absolut | `<= 0,05` |
+| Distanzband-RMSE gegen T-C42 | Verbesserung `>= 0,01` |
+| `>=10 km` | `>=20 %` und Zunahme `>=3 pp` |
+| `<1 km` | `19–23 %` |
+| `1–2 km` | `<=18 %` |
+| Modal-RMSE-Verschlechterung | `<= +0,02` |
+| Wege/Person·Tag | `[3,0; 3,4]` |
+
+**Stop-Regel:** Verfehlt T-D42 eines der sieben Kriterien, werden Seeds 43/44 nicht
+gestartet und der Transfer gilt als nicht bestätigt. Besteht T-D42 alle Kriterien,
+werden zwei weitere Seeds auf demselben eingefrorenen OSM-Snapshot freigegeben; erst
+danach ist ein Mehrregionen-Claim zulässig. Der Anteil `>20 km` wird separat gegen MiD
+13 % berichtet, ist wegen des endlichen Zuschnitts aber kein nachträglich veränderbares
+Gate dieser Mechanismusprobe. Ein Produktdefault bleibt unabhängig vom Ein-Seed-Ergebnis
+gesperrt.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
