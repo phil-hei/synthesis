@@ -1796,6 +1796,65 @@ bleiben unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/`;
 Produktcode und `validation/` sind unverändert.
 
+#### Freiburg-Langwegmassenverteilung (2026-08-17) — präregistriert
+
+**Forensik und binäre Frage vor dem Lauf:** CE-000 belegt eine mittlere
+Langweg-Wahrscheinlichkeitsmasse von 2,3376 %, aber noch nicht, ob die
+Nichtlinearität überwiegend zwischen Aktivitätstypen oder innerhalb derselben
+Aktivitätstypen entsteht. Ist die LT-135-Unterwirkung Ausdruck eines breiten,
+innerhalb der Zwecke heterogenen Niedrigmassenregimes, statt nur eines
+unterschiedlichen Mittelwerts je Zweck?
+
+Der einmalige Arm **PD-000** verwendet exakt den CE-000-Stand: Freiburg,
+Seed 42, J-0895-Zielwahlparameter, Basis-MNL, Helper `DISTANCE / 1000` und
+keinen Langwegbonus. Die verhaltensneutrale Instrumentierung summiert je freier
+Entscheidung die MNL-Wahrscheinlichkeit `p` aller `DISTANCE > 20 km`-Zonen und
+ordnet sie vor der Auswahl genau einer festen Klasse zu:
+
+1. `p < 0,0001` (`<0,01 %`),
+2. `0,0001 <= p < 0,001` (`0,01–<0,1 %`),
+3. `0,001 <= p < 0,01` (`0,1–<1 %`),
+4. `0,01 <= p < 0,05` (`1–<5 %`),
+5. `0,05 <= p < 0,10` (`5–<10 %`),
+6. `p >= 0,10` (`>=10 %`).
+
+Je Klasse und Aktivitätstyp werden nur Anzahl und Summe von `p` ausgegeben;
+zusätzlich `sum(p²)` für die vorab festgelegte Varianzzerlegung. Es gibt weder
+Per-Decision-Log noch Cross-run-Join. Mit Gesamtmittel `m`, Typmittel `m_g` und
+Typumfang `n_g` gilt `SST = sum(p²) - n*m²`,
+`SSB = sum(n_g*(m_g-m)²)`, `SSW = SST-SSB`; der Within-Anteil ist
+`SSW/SST`.
+
+**Technische Gates vor Interpretation:** Externer Lauf EXIT 0, kein Fallback
+und keine Exception, genau eine Abschlusszeile, 19.138 freie Entscheidungen,
+keine ungültige Wahrscheinlichkeit und maximale Summenabweichung `<=1e-9`.
+Alle sechs Klassen summieren sich exakt auf 19.138 Entscheidungen; ihre
+Massen summieren sich bis `1e-9` auf die Gesamtmasse. Der Demand-SHA-256 muss
+J-RAW erneut byteidentisch als `a58fac01…c7a9de` reproduzieren; Gesamtmasse und
+Aktivitätstypbilanz müssen CE-000 bis auf Gleitkomma-Additionsreihenfolge
+(`<=1e-9`) entsprechen.
+
+**Vorab fixierte Mechanik-Gates:**
+
+1. Mindestens **50 %** aller freien Entscheidungen liegen im breiten
+   Niedrigmassenbereich `p < 1 %` (Klassen 1–3).
+2. Mindestens **50 %** der Gesamtvarianz von `p` entsteht **innerhalb** der
+   Aktivitätstypen (`SSW/SST >= 0,50`).
+
+`SHOPPING_OTHER` sowie Anzahl und Massenanteil jeder Klasse werden vollständig
+berichtet, aber nicht post hoc gegatet. Bestehen beide Gates, ist ein bloß
+zweckspezifischer konstanter Bonus als nächste hinreichende Erklärung
+verworfen; ein weiterer Mechanismus müsste die innerhalb der Zwecke variierende
+Ausgangslage explizit abbilden. Besteht nur Gate 1, ist ein zweckspezifischer
+Mechanismus weiter prüfbar. Scheitert Gate 1, wird das breite
+Niedrigmassenregime verworfen und die verbleibende CE-Differenz muss ohne neue
+Dosis auf endogene Choice-Set-Folgen untersucht werden.
+
+**Stop-Regel:** Genau ein PD-000-Lauf mit Seed 42. Keine Bonuskonstante,
+Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. Ein technisches
+Scheitern macht PD-000 unentscheidbar. Unabhängig vom Mechanikurteil werden aus
+diesem Ein-Seed-Lauf weder Parameter abgeleitet noch Defaults geändert.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
