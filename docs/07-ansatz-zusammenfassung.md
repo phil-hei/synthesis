@@ -179,7 +179,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   dagegen 42,5757 %. **93,2080 % der Varianz entstehen innerhalb** der
   Aktivitätstypen, nur 6,7920 % zwischen ihnen. Ein konstanter Zweckbonus ist
   keine hinreichende Strukturerklärung; die nächste Diagnose muss die
-  Ausgangszonenkomponente innerhalb der Zwecke zerlegen. Eine neue Dosis bleibt
+  Ausgangszonenkomponente innerhalb der Zwecke zerlegen. OZ-000 deckt dafür
+  mit wiederholt belegten Zellen 77,0613 % der Entscheidungen ab, widerlegt
+  Geografie aber als dominanten Mechanismus: Ausgangszellen erklären nur
+  **20,0786 % statt mindestens 70 %**, 79,9214 % bleiben innerhalb gleicher
+  Zweck-Zonen-Zellen. Der nächste Same-run-Beleg muss deshalb Personen-/
+  Modusverfügbarkeits- oder situative Merkmale prüfen. Eine neue Dosis bleibt
   gesperrt.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte

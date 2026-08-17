@@ -126,6 +126,15 @@ also nicht als Beschreibung der Einzelfallverteilung behandelt werden. Vor
 einem gruppenspezifischen Regler erst prüfen, ob `SSB/SST` überhaupt substanziell
 ist.
 
+**Sparse-cell-Schutz bei verschachtelter Zerlegung (OZ-000, 2026-08-17):** Eine
+feinere Gruppierung kann durch Singletons scheinbar perfekt erklären. Deshalb
+die Mindestzellgröße vorab fixieren, Abdeckung als technischen Gate behandeln
+und nur innerhalb der abgedeckten Population neu zentrieren. OZ-000 nutzte
+`n>=5`: 1.293 Zellen deckten 77,0613 % ab, erklärten aber nur 20,0786 % der
+Within-Zweck-SSE. Immer `SSW_purpose = SSB_subgroup + SSW_cell` numerisch
+reconciliieren und den Rest innerhalb gleicher Zellen berichten; sonst wird
+feine Granularität mit echter Erklärung verwechselt.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner

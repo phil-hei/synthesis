@@ -900,6 +900,16 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Ein konstanter Zweckbonus ist keine hinreichende Strukturerklärung. Keine
   Dosis oder Produktänderung; als nächster Same-run-Kandidat darf nur die
   Ausgangszonenkomponente innerhalb der Zwecke zerlegt werden.
+  **❌ Ausgangsgeografie nicht dominant (2026-08-17):** OZ-000 reproduziert
+  PD-/J-RAW erneut byteidentisch und zerlegt ausschließlich die 1.293
+  `(Zweck, Ausgangszone)`-Zellen mit mindestens fünf Beobachtungen. Die
+  Abdeckung 14.748/19.138 = 77,0613 % besteht den technischen Gate, doch
+  Ausgangszellen erklären nur **20,0786 % statt mindestens 70 %** der
+  Within-Zweck-Varianz; 79,9214 % bleiben innerhalb identischer Zellen. Bei
+  SHOPPING_DAILY, dem größten Varianztreiber, sind es nur 9,54 %.
+  **Entscheidung:** keine geografische Folgesonde oder Dosis. Die nächste
+  zulässige Same-run-Diagnose muss Personen-/Modusverfügbarkeit oder andere
+  situative Merkmale innerhalb gleicher Zweck-Zonen-Zellen prüfen.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

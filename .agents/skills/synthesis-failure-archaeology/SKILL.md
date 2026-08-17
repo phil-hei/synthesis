@@ -74,6 +74,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E31 | Aktivitätsnachbarschaft als Langweg-Dosisformel | Kalibrierung | ENTSCHIEDEN |
 | E32 | Binäre Choice-Set-Eligibility als Unterwirkungsursache | Kalibrierung | ENTSCHIEDEN |
 | E33 | Aktivitätstypmittel als Erklärung der Langwegmassen-Heterogenität | Kalibrierung | ENTSCHIEDEN |
+| E34 | Ausgangszelle als dominante Within-Zweck-Erklärung | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -677,6 +678,26 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   zulässige Same-run-Spike muss vorab die Ausgangszonenkomponente innerhalb der
   Zwecke zerlegen. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Langwegmassenverteilung (2026-08-17)".
+
+### E34 — Ausgangszelle als dominante Within-Zweck-Erklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt die vorherige Zone mindestens 70 % der von PD-000
+  lokalisierten Within-Zweck-Varianz der Langwegmasse?
+- **Evidenz:** OZ-000 ist technisch gültig und erneut byteidentisch zu J-RAW.
+  Um sparse-cell-Überanpassung zu begrenzen, waren nur 1.293
+  `(Aktivitätstyp, Ausgangszone)`-Zellen mit `n>=5` zugelassen; sie decken
+  14.748/19.138 = 77,0613 % ab. Von ihrer Within-Zweck-SSE 50,3748793 liegen
+  10,1145501 zwischen Ausgangszellen und 40,2603292 innerhalb identischer
+  Zellen: **20,0786 % erklärt, 79,9214 % Rest**.
+- **Warum verworfen:** Der vorab gesetzte 70-%-Gate wird weit verfehlt. Bei
+  SHOPPING_DAILY, dem größten absoluten Varianztreiber, erklärt die Zone nur
+  9,54 %. Höhere Anteile bei einzelnen Freizeitzwecken ändern das
+  Gesamturteil nicht.
+- **Status/Regel:** Keine geografische Folgesonde, Dosis oder
+  Produktimplementierung. Der nächste Same-run-Spike muss Personen-/
+  Modusverfügbarkeits- oder situative Merkmale innerhalb identischer
+  Zweck-Zonen-Zellen vorab zerlegen. Evidenz: `docs/05-validierung.md`,
+  Abschnitt „Freiburg-Ausgangszonenzerlegung (2026-08-17)".
 
 ---
 

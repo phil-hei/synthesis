@@ -404,6 +404,17 @@ Zweckbonus ist keine hinreichende Strukturerklärung; keine Dosis. Der nächste
 zulässige Same-run-Spike muss die Ausgangszonenkomponente innerhalb der Zwecke
 vorab zerlegen.
 
+**❌ Ausgangsgeografie nicht dominant (2026-08-17):** Der präregistrierte
+OZ-000-Lauf reproduziert PD-/J-RAW byteidentisch. 1.293 wiederholt belegte
+`(Aktivitätstyp, Ausgangszone)`-Zellen mit `n>=5` decken 14.748/19.138 =
+77,0613 % der freien Entscheidungen ab. Sie erklären aber nur **20,0786 %**
+statt des vorab geforderten Minimums 70 % der Within-Zweck-Varianz;
+79,9214 % bleiben innerhalb gleicher Zellen. SHOPPING_DAILY dominiert die
+absolute Streuung, sein Zonenanteil beträgt nur 9,54 %. **Regel:** keine
+geografische Folgesonde oder Dosis. Nächster zulässiger Same-run-Spike nur mit
+vorab fixierten Personen-/Modusverfügbarkeits- oder situativen Merkmalen
+innerhalb identischer Zweck-Zonen-Zellen.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

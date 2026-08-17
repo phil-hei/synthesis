@@ -159,6 +159,14 @@ der Varianz liegen innerhalb** statt zwischen Aktivitätstypen. Ein konstanter
 Zweckbonus erklärt die Struktur daher nicht hinreichend; die nächste zulässige
 Diagnose zerlegt verhaltensneutral die Ausgangszonenkomponente innerhalb der
 Zwecke. Dosis und Produktänderung bleiben gesperrt.
+Diese Zerlegung scheitert anschließend als Erklärung: OZ-000 deckt mit
+`n>=5`-Zellen 77,0613 % der freien Entscheidungen ab, aber Ausgangszellen
+erklären nur **20,0786 %** statt mindestens 70 % der Within-Zweck-Varianz;
+79,9214 % verbleiben innerhalb identischer Zweck-Zonen-Zellen. Besonders bei
+SHOPPING_DAILY sind es trotz größter absoluter Streuung nur 9,54 %. Der nächste
+zulässige Same-run-Beleg muss daher Personen-/Modusverfügbarkeits- oder andere
+situative Merkmale prüfen. Eine geografische Folgesonde, Dosis und
+Produktänderung bleiben gesperrt.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

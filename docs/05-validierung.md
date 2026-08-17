@@ -1960,6 +1960,45 @@ Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. Ein technische
 Scheitern macht OZ-000 unentscheidbar. Auch ein bestandener Gate liefert nur
 eine Mechanismusrichtung, keinen Parameter oder Default.
 
+**Ausführung:** OZ-000 kompiliert mit JDK 25; die Utility bleibt mit
+`5b13ad11…9f454c` byteidentisch zu CE-/PD-000 und enthält keinen Bonus. Der
+externe Lauf endet mit EXIT 0 und `BUILD SUCCESSFUL in 15s`. Genau eine
+Abschlusszeile reproduziert alle 19.138 Entscheidungen, Gesamtmasse,
+`sum(p²)`, Klassen und Aktivitätstypaggregate von PD-000 exakt; der Demand-Hash
+ist erneut J-RAW `a58fac01…c7a9de`. Es gibt keine ungültige Wahrscheinlichkeit,
+Exception oder Fallback; die maximale Summenabweichung bleibt `3,55e-15`.
+
+Die 3.259 beobachteten Zweck-Ausgangszonen-Zellen enthalten 646 Singletons.
+Wie vorab fixiert, gehen nur die 1.293 Zellen mit `n >=5` in die Zerlegung ein.
+Sie decken **14.748/19.138 = 77,0613 %** ab und bestehen damit den technischen
+75-%-Gate. Für diese Entscheidungen gilt exakt:
+
+| Komponente | SSE | Anteil der Within-Zweck-SSE |
+|---|---:|---:|
+| gesamte Within-Zweck-Varianz | 50,37487925 | 100 % |
+| zwischen Ausgangszellen desselben Zwecks | 10,11455006 | **20,0786 %** |
+| innerhalb identischer Zweck-Ausgangszonen-Zellen | 40,26032918 | **79,9214 %** |
+
+Die Varianzidentität hat Abweichung 0. Der Ausgangszonenanteil variiert nach
+Zweck: SERVICE 9,80 %, PRIVATE_VISIT 35,42 %, SHOPPING_DAILY 9,54 %,
+SHOPPING_OTHER 69,95 %, LEISURE_INDOOR 54,51 % und LEISURE_OUTDOOR 61,94 %.
+Die größte absolute Within-SSE liegt bei SHOPPING_DAILY (34,7104); gerade dort
+erklärt die Ausgangszelle nur 9,54 %, sodass sie das Gesamtergebnis dominiert.
+
+**Urteil gegen die Vorab-Regel:** Das Mechanik-Gate scheitert mit **20,0786 %
+statt mindestens 70 %** deutlich. Ausgangsgeografie beeinflusst einzelne
+Zwecke, ist aber keine dominante Erklärung des breiten Freiburg-
+Niedrigmassenregimes. Fast vier Fünftel der Varianz bleiben sogar bei gleichem
+Zweck und gleicher Ausgangszone innerhalb der wiederholt belegten Zellen.
+
+**Entscheidung nach Stop-Regel:** Keine geografische Folgesonde, Dosis, Seeds,
+Modalkalibrierung oder Produktänderung. Der nächste zulässige Same-run-
+Mechanikkandidat muss vorab Personen-/Modusverfügbarkeits- oder andere
+situative Merkmale innerhalb identischer Zweck-Ausgangszonen-Zellen zerlegen.
+OZ-000 liefert weder einen Parameter noch einen Default. Rohlog, Quellhashes
+und maschinenlesbare Evidenz bleiben unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/oz-000/`.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
