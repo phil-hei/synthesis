@@ -1589,6 +1589,47 @@ erhalten. Der nächste zulässige Anlauf muss vorab einen semantisch stabilen
 Wegschlüssel ausgeben oder Entscheidungsweg und Distanz innerhalb desselben
 Simulationslaufs gemeinsam protokollieren.
 
+#### Freiburg-Wegeexpositionsmarginalen (2026-08-17) — präregistriert
+
+**Abgrenzung und binäre Frage vor der Auswertung:** Das PX-135-Ergebnis verbietet
+eine Ersatzpaarung über einen nachträglich gewählten Schlüssel, nicht aber den
+Vergleich von bereits im selben Lauf gemeinsam protokollierter Aktivitätsnähe
+und Distanz. Lokalisiert ein unabhängiger Marginalvergleich der J-RAW- und
+LT-135-Gruppen den Langwegeffekt, ohne irgendeinen Cross-run-Join?
+
+Die einmalige read-only Analyse **PM-135** klassifiziert jede CSV separat mit
+unverändertem Codevertrag: FREE = `6/12/41/42/51/52`; direkt exponiert bei
+FREE-`activityType`, folgeexponiert bei FREE-`previousActivityType`, insgesamt
+exponiert bei mindestens einer Bedingung. Sie aggregiert je Lauf Anzahl,
+`>20 km`-Anzahl/-Anteil und mittlere Distanz für `directAndFollow`,
+`directOnly`, `followOnly`, `unexposed` sowie die exponierte Vereinigung. Es
+werden keine Zeilen zwischen Läufen gepaart und keine neuen Simulationen
+gestartet.
+
+**Technische Gates:** Eingabe-Hashes bleiben `a58fac01…c7a9de` und
+`b13e675e…e6bb57`; alle `legId == 0`-Zeilen sind genau einem bekannten
+Zielpfad zugeordnet. J-RAW reproduziert HOME 18.722, FIXED 5.129 und FREE
+19.138; LT-135 hat je Zielpfad und je Expositionsgruppe höchstens eine Zeile
+Abweichung, entsprechend seiner insgesamt einen fehlenden Zeile. Scheitert
+dies, sind die Marginalen nicht vergleichbar.
+
+**Unverändert aus der PX-135-Präregistrierung übernommene Mechanik-Gates:**
+
+1. Der exponierte J-RAW-Anteil liegt in `[65;85] %`.
+2. Mindestens 99 % des positiven globalen J-RAW→LT-135-Deltas in der Anzahl
+   `>20 km`-Wege entfällt auf die exponierte Marginale; die absolute Änderung
+   des nicht exponierten `>20 km`-Anteils beträgt höchstens 0,1 pp.
+3. In der exponierten Marginale steigt der `>20 km`-Anteil um mindestens 5 pp.
+   Untergruppen werden berichtet, aber nicht nachträglich gegatet.
+
+**Stop-Regel:** Genau eine separate Aggregation der zwei bestehenden CSVs, kein
+Join, keine Dosis, Simulation, Modalkalibrierung oder Seed-Variation. Scheitert
+ein technisches Gate, ist PM-135 unentscheidbar. Scheitert ein Mechanik-Gate,
+ist die einfache Aktivitätsnachbarschaft als hinreichende Erklärung verworfen.
+Bestehen alle Gates, ist die Wirkungskette nur auf diesem Seed marginal
+lokalisiert; ein bedingter Mechanismus benötigt weiterhin eine eigene
+Präregistrierung und einen Widerlegungsversuch.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
