@@ -1054,6 +1054,41 @@ Offset ist für Freiburg strukturell unzureichend. Der nächste Forschungshebel 
 die fünf Koeffizienten trennen oder regional/hierarchisch parametrisieren; weitere
 Seeds werden nicht gestartet.
 
+#### Freiburg-Split-Sonde (2026-08-17) — präregistriert
+
+**Hypothese vor dem ersten Lauf:** Das verbleibende Fernwegdefizit lässt sich dem
+motorisierten Individualverkehr zuordnen, ohne die bereits schwache ÖV-Zeitstrafe
+weiter abzubauen. Auf dem eingefrorenen T-C42-Legacy-Export bleiben deshalb
+`b_tt_put`, `b_tt_ped` und `b_tt_bike` auf dem produktiven Offset `+0,06`; nur
+`b_tt_car_d` und `b_tt_car_p` erhalten höhere Gesamtoffsets. Alle Arme verwenden
+Seed 42, denselben produktiven `SimulationRunner` und anschließend dieselbe
+`b_intrazonal`-Kalibrierung auf 21 % Nahwege.
+
+| Arm | `car_d`/`car_p` | `put`/`ped`/`bike` | resultierende Koeffizienten `car_d` / `car_p` / `put` |
+|---|---:|---:|---:|
+| PC-0060 (Harness-Kontrolle) | `+0,060` | `+0,060` | `-0,0588` / `-0,0881` / `-0,0306` |
+| PC-0090 | `+0,090` | `+0,060` | `-0,0288` / `-0,0581` / `-0,0306` |
+| PC-0115 | `+0,115` | `+0,060` | `-0,0038` / `-0,0331` / `-0,0306` |
+
+`PC-0115` ist die vorab definierte Obergrenze: Ein größerer Pkw-Gesamtoffset
+würde zuerst `b_tt_car_d=-0,1188` nichtnegativ machen. Gegenüber PC-0060 wird
+`>=10 km` für PC-0090 bei mindestens 16 % und für PC-0115 bei mindestens 20 %
+erwartet; die Wirkung muss mit der Dosis monoton steigen. Weil der ÖV-Koeffizient
+unverändert bleibt, soll der globale ÖV-Anteil höchstens 26 % betragen. Diese
+ÖV-Marke ist eine zusätzliche Mechanismusdiagnose; die sieben bereits festgelegten
+Transferkriterien bleiben unverändert das Entscheidungs-Gate und werden jeweils
+gegen PC-0060 ausgewertet.
+
+**Ablauf- und Stop-Regel:** Zuerst laufen PC-0060 und PC-0090. Steigt `>=10 km`
+nicht oder verschlechtert sich der Modal-RMSE um mehr als 0,02, ist die Split-
+Hypothese widerlegt und PC-0115 wird nicht gestartet. Besteht PC-0090 alle sieben
+Transferkriterien, ist er als kleinste Dosis Kandidat für eine separat
+präregistrierte Mehrseed-Prüfung; PC-0115 entfällt. Andernfalls wird PC-0115 nur
+freigegeben, wenn die Fernwegwirkung in der vorhergesagten Richtung liegt und die
+Modal-Schutzschwelle hält. Verfehlt auch PC-0115 `>=10 km >=20 %` oder
+Distanzband-RMSE `<=0,05`, ist auch die getrennte Pkw-Korrektur an ihrer
+sign-erhaltenden Grenze verworfen; größere Dosen und weitere Seeds bleiben gesperrt.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
