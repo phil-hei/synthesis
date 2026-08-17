@@ -380,6 +380,18 @@ aber: exponiert nur 2,854→7,036 %, also +4,182 statt ≥5 pp. **Regel:** keine
 höhere Konstante. Vor einem neuen bedingten Mechanismus die Eligibility freier
 Choice-Sets für vorhandene `>20 km`-Alternativen same-run messen.
 
+**❌ Binäre Choice-Set-Ineligibility widerlegt (2026-08-17):** Commit `f8064f6`
+präregistrierte CE-000/CE-135 mit festen Same-run-Gates. Beide Läufe enden EXIT
+0, reproduzieren J-RAW/LT-135 byteidentisch und zählen je 19.138 freie
+Entscheidungen. **Alle 19.138 sind langweg-eligible**, womit das erwartete
+Fenster `[65;85] %` scheitert. Die Wahrscheinlichkeitsevidenz besteht dagegen:
+CE-000-Masse 2,3376 % gegen 2,3722 % Auswahl, CE-135-Masse 7,0603 % gegen
+6,8868 % Auswahl; der exakte CE-000-`+1,35`-Kontrafakt 6,6643 % weicht nur
+0,3960 pp von CE-135 ab. `SHOPPING_OTHER` hat trotz 100 % Eligibility nur
+0,0156 % Basismasse. **Regel:** keine neue Dosis. Nächster zulässiger Schritt
+ist eine neue Präregistrierung fester Klassen für die Verteilung der
+per-Choice-Set-Langwegmasse nach Aktivitätstyp; keine Produktänderung.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

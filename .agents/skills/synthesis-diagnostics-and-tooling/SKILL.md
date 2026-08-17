@@ -104,6 +104,17 @@ dadurch war die Aussage „alle 1.480 zusätzlichen Langwege liegen in der
 exponierten Marginale" belastbar, aber keine Aussage darüber, welcher einzelne
 Weg wechselte.
 
+**Choice-Set-Diagnose (CE-000/CE-135, 2026-08-17):** Eine binäre Aussage
+„mindestens eine Fernalternative vorhanden" kann trotz 100 % Eligibility
+praktisch bedeutungslos sein. Maßgeblich ist die Summe der MNL-
+Wahrscheinlichkeiten aller Fernalternativen je Entscheidung. Der Mittelwert
+dieser Masse muss erst gegen den tatsächlich gewählten Anteil validiert werden;
+danach ist ein Nutzenkontrafakt je Choice-Set zu transformieren und erst dann zu
+mitteln. Die Transformation eines bereits aggregierten Anteils überschätzte im
+Freiburg-Fall den Effekt (`8,5698 %` homogen gegenüber `6,6643 %` als Mittel
+der Einzelkontrafakte). Aggregiere deshalb nie vor einer nichtlinearen
+Logit-Transformation.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner

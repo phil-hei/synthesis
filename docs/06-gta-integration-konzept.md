@@ -874,6 +874,21 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   mindestens +5 pp. Wirkungskette lokalisiert, hinreichende Dosisformel
   verworfen; nächster Spike muss die `>20 km`-Eligibility der freien
   Choice-Sets messen, nicht den Bonus erhöhen.
+  **❌ Binäre Choice-Set-Ineligibility widerlegt (2026-08-17):** Commit
+  `f8064f6` präregistrierte CE-000/CE-135 als verhaltensneutrale Same-run-
+  Messung. Beide Demand-Hashes reproduzieren J-RAW beziehungsweise LT-135
+  byteidentisch; alle technischen Gates bestehen. Entgegen dem erwarteten
+  Fenster `[65;85] %` enthalten **100 %** der 19.138 freien Entscheidungen
+  mindestens eine attraktive `>20 km`-Alternative mit positiver
+  MNL-Wahrscheinlichkeit. Die Wahrscheinlichkeitsmessung erklärt die
+  Unterwirkung dennoch: CE-000 misst 2,3376 % Langwegmasse, der exakte
+  je-Choice-Set-`+1,35`-Kontrafakt 6,6643 % und CE-135 tatsächlich 7,0603 %;
+  die reale Auswahl liegt bei 2,3722/6,8868 %. Damit scheitert nicht die
+  Verfügbarkeit, sondern die homogene Transformation eines aggregierten
+  Anteils. Besonders `SHOPPING_OTHER` ist trotz 100 % Eligibility mit nur
+  0,0156 % Basismasse praktisch fernzielblind. **Entscheidung:** keine neue
+  Dosis oder Produktänderung; als Nächstes darf nur die Verteilung der
+  per-Choice-Set-Basismasse vorab klassifiziert werden.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

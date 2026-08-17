@@ -165,7 +165,15 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   oder als Folgeweg exponierten Wegen; 7.600 nicht exponierte Wege bleiben
   exakt unverändert. Der exponierte Langanteil steigt jedoch nur
   2,854→7,036 % (+4,182 statt vorab mindestens +5 pp). Vor einer neuen Dosis
-  muss deshalb die `>20 km`-Eligibility der freien Choice-Sets gemessen werden.
+  wurde deshalb die `>20 km`-Eligibility der freien Choice-Sets gemessen. Beide
+  Instrumentierungsarme reproduzieren ihre Demand-Hashes byteidentisch und
+  finden **100 %** statt erwarteter 65–85 % Eligibility unter allen 19.138
+  freien Entscheidungen. Die exakte per-Choice-Set-Umschichtung erklärt die
+  Dämpfung: CE-000 hat 2,3376 % Langwegmasse, sein `+1,35`-Kontrafakt 6,6643 %
+  und CE-135 tatsächlich 7,0603 %. `SHOPPING_OTHER` bleibt trotz vollständiger
+  Eligibility mit 0,0156 % Basismasse praktisch fernzielblind. Nicht
+  Verfügbarkeit, sondern heterogene Wahrscheinlichkeitsmasse ist damit der
+  nächste Diagnosegegenstand; eine neue Dosis bleibt gesperrt.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-

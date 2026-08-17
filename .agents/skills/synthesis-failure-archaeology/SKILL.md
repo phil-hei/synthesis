@@ -72,6 +72,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E29 | Direkter Langwegbonus aus Gesamt-Log-Odds | Kalibrierung | ENTSCHIEDEN |
 | E30 | `tripId` als Cross-run-Wegschlüssel | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | E31 | Aktivitätsnachbarschaft als Langweg-Dosisformel | Kalibrierung | ENTSCHIEDEN |
+| E32 | Binäre Choice-Set-Eligibility als Unterwirkungsursache | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -632,6 +633,29 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   welcher Anteil freier Choice-Sets überhaupt attraktive `>20 km`-Alternativen
   enthält. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Wegeexpositionsmarginalen (2026-08-17)".
+
+### E32 — Binäre Choice-Set-Eligibility als Unterwirkungsursache — ENTSCHIEDEN
+
+- **Frage:** Fehlen einem wesentlichen Teil der freien Entscheidungen überhaupt
+  zweckspezifisch attraktive `>20 km`-Alternativen mit positiver
+  MNL-Wahrscheinlichkeit, sodass dies die Unterwirkung von `+1,35` erklärt?
+- **Evidenz:** Die in Commit `f8064f6` präregistrierten CE-000/CE-135-Läufe
+  bestehen alle technischen Gates und reproduzieren J-RAW/LT-135 byteidentisch.
+  Entgegen dem Fenster `[65;85] %` sind **19.138 von 19.138** freien
+  Entscheidungen eligible. Die mittlere MNL-Masse stimmt mit der realen
+  Auswahl überein (CE-000 2,3376 % vs. 2,3722 %; CE-135 7,0603 % vs.
+  6,8868 %). Der exakt je Basis-Choice-Set berechnete `+1,35`-Kontrafakt
+  6,6643 % liegt nur 0,3960 pp von der wirklichen CE-135-Masse entfernt.
+- **Root Cause:** Die homogene Logit-Transformation des aggregierten
+  J-RAW-Anteils ignoriert die starke Heterogenität der einzelnen
+  Ausgangsmassen. Binäre Verfügbarkeit ist zu grob; bei `SHOPPING_OTHER`
+  beträgt die Basismasse trotz 100 % Eligibility nur 0,0156 %.
+- **Status/Regel:** Choice-Set-Ineligibility ist als Erklärung verworfen. Keine
+  neue Bonusdosis, Seeds oder Produktimplementierung. Vor einem weiteren
+  Mechanismus darf nur die per-Choice-Set-Massenverteilung in neu
+  präregistrierten festen Klassen gemessen werden. Evidenz:
+  `docs/05-validierung.md`, Abschnitt „Freiburg-Choice-Set-Eligibility
+  (2026-08-17)".
 
 ---
 

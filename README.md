@@ -142,8 +142,15 @@ join-freier Marginalvergleich lokalisiert den Effekt anschließend exakt:
 zusätzlichen `>20 km`-Wege entstehen dort, und 7.600 nicht exponierte Wege
 bleiben unverändert. Der exponierte Langanteil steigt aber nur
 2,854→7,036 %, also +4,182 statt des vorab geforderten Minimums +5 pp.
-Choice-Set-Eligibility muss vor einer neuen Dosis gemessen werden; bloßes
-Hochskalieren bleibt gesperrt.
+Die anschließende Same-run-Choice-Set-Messung reproduziert beide Demand-Hashes
+byteidentisch und widerlegt fehlende Fernalternativen: **Alle 19.138 freien
+Entscheidungen sind eligible**, nicht die erwarteten 65–85 %. Entscheidend ist
+stattdessen die heterogene MNL-Masse. CE-000 misst 2,3376 %; der exakte
+je-Choice-Set-`+1,35`-Kontrafakt 6,6643 % liegt nur 0,3960 pp von der wirklichen
+CE-135-Masse 7,0603 % entfernt. Bei `SHOPPING_OTHER` stehen trotz 100 %
+Eligibility nur 0,0156 % Basismasse auf Fernzielen. Eine neue Dosis bleibt
+gesperrt; der nächste Beleg muss diese Wahrscheinlichkeitsverteilung vorab und
+verhaltensneutral klassifizieren.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

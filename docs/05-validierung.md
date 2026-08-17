@@ -1743,6 +1743,59 @@ aber nicht in eine neue Dosis umgerechnet. Auch bei vollständigem Bestehen ist
 nur der Mechanismus dieses Freiburg-Seeds erklärt; ein Produktvertrag bleibt
 bis zu einer neuen Mehrregionen-Präregistrierung gesperrt.
 
+**Ausführung:** Ein erster CE-000-Preflight endete vor jeder Modellentscheidung,
+weil der flüchtige `/tmp/synthesis-legacy`-Input des alten Laufs bereits
+bereinigt war; er geht nicht in die Auswertung ein. Die erfolgreiche
+Wiederholung band die persistente, mit FD-000 identische Legacy-Basis ein.
+CE-000 und CE-135 kompilierten mit JDK 25 und endeten extern mit EXIT 0. Je Arm
+existiert genau eine Abschlusszeile, es gibt keine ungültige Wahrscheinlichkeit,
+keinen Fallback und keine Exception. Die maximale Abweichung der
+Wahrscheinlichkeitssumme von 1 beträgt `3,55e-15` beziehungsweise `5,22e-15`.
+CE-000 reproduziert J-RAW mit SHA-256 `a58fac01…c7a9de`, CE-135 LT-135 mit
+`b13e675e…e6bb57` byteidentisch; damit bestehen alle technischen Gates.
+
+| Arm | freie Entscheidungen | eligible | mittlere Langwegmasse | tatsächlich gewählt | Abweichung Auswahl−Masse | CE-000-Kontrafakt |
+|---|---:|---:|---:|---:|---:|---:|
+| CE-000 | 19.138 | **100,00 %** | 2,3376 % | 2,3722 % (454) | +0,0347 pp | **6,6643 %** |
+| CE-135 | 19.138 | **100,00 %** | 7,0603 % | 6,8868 % (1.318) | −0,1735 pp | berichtet |
+
+Beide Auswahl-gegen-Masse-Gates bestehen deutlich unter 0,5 pp. Auch die
+CE-000-Kontrafaktmasse liegt nur **0,3960 pp** unter der wirklichen
+CE-135-Masse und besteht den 1,0-pp-Gate. Die Anzahl aller Kandidaten ist in
+beiden Armen 8.252.855; die Anzahl der Langalternativen unterscheidet sich
+geringfügig (3.510.014/3.512.432), weil frühere Zielziehungen die späteren
+Ausgangszonen endogen verändern.
+
+| freier Aktivitätstyp | n | CE-000-Masse | exakter `+1,35`-Kontrafakt | CE-135-Masse | CE-135 gewählt |
+|---|---:|---:|---:|---:|---:|
+| SERVICE | 3.445 | 1,1532 % | 3,7201 % | 4,2716 % | 3,6575 % |
+| PRIVATE_VISIT | 2.594 | 4,0185 % | 12,4289 % | 12,4455 % | 11,7965 % |
+| SHOPPING_DAILY | 6.726 | 1,1289 % | 1,8437 % | 2,6781 % | 2,6464 % |
+| SHOPPING_OTHER | 1.229 | **0,0156 %** | **0,0600 %** | 0,0606 % | 0,0814 % |
+| LEISURE_INDOOR | 2.857 | 4,5844 % | 13,6604 % | 13,6714 % | 14,0707 % |
+| LEISURE_OUTDOOR | 2.287 | 4,2109 % | 13,5472 % | 13,5439 % | 13,3362 % |
+
+**Urteil gegen die Vorab-Regel:** Das primäre Eligibility-Fenster `[65;85] %`
+scheitert mit **100 %** eindeutig. Fehlende attraktive Fernalternativen erklären
+die Unterwirkung nicht; jede freie Entscheidung ist langweg-eligible. Erklärt
+wird sie stattdessen durch die stark heterogene Ausgangswahrscheinlichkeitsmasse:
+Die homogene Transformation eines Gesamtanteils (8,5698 %) ist nicht gleich
+dem Mittel der je Choice-Set transformierten Wahrscheinlichkeiten (6,6643 %).
+`SHOPPING_OTHER` zeigt die Grenze des binären Eligibility-Begriffs besonders
+klar: alle Entscheidungen sind eligible, ihre mittlere Basismasse beträgt aber
+nur 0,0156 %.
+
+**Entscheidung nach Stop-Regel:** Keine neue Dosis, Seeds, Modalkalibrierung
+oder Produktänderung. Strukturelle Choice-Set-Ineligibility ist verworfen; der
+bekannte `+1,35`-Effekt ist auf dem Freiburg-Seed durch per-Choice-Set-
+Wahrscheinlichkeitsmasse aggregiert erklärbar. Der nächste zulässige
+Mechanikschritt ist eine separat präregistrierte, verhaltensneutrale Verteilung
+dieser Basismasse über feste Klassen und Aktivitätstypen — nicht das
+Hochskalieren des Bonus. Rohlogs, Quellsnapshots und maschinenlesbare Evidenz
+bleiben unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/`;
+Produktcode und `validation/` sind unverändert.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
