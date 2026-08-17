@@ -1516,6 +1516,57 @@ erhalten. Der nächste zulässige Spike muss verhaltensneutral den jeweiligen
 Entscheidungsweg direkt mit der tatsächlich gewählten Distanz verknüpfen; erst
 danach darf ein bedingter Langwegmechanismus neu präregistriert werden.
 
+#### Freiburg-Wegeexpositionsanalyse (2026-08-17) — präregistriert
+
+**Hypothese und binäre Frage vor der Auswertung:** Eine freie Zielwahl verändert
+nicht nur den Weg **zur** gewählten Aktivität, sondern auch den anschließenden
+Weg **von** diesem Ort, häufig zurück nach HOME. Lokalisiert die direkte
+Nachbarschaft zu einer freien Aktivität den LT-135-Langwegeffekt vollständig?
+Wenn ja, müssen mindestens 99 % der zusätzlichen `>20 km`-Wege in der
+exponierten Gruppe liegen, während die nicht exponierte Gruppe im Langband um
+höchstens 0,1 Prozentpunkte driftet.
+
+Die einmalige, read-only Analyse **PX-135** paart die bereits erzeugten
+J-RAW- und LT-135-Demand-CSVs über `(tripId, legId)`; es gibt keinen neuen
+Simulationslauf. Der aus FD-000 bestätigte Zielpfad wird ausschließlich aus den
+Legacy-Aktivitätscodes rekonstruiert: HOME = `7`, FIXED =
+`1/31/32/33`, FREE = `6/12/41/42/51/52`. Ein Weg ist **direkt exponiert**, wenn
+sein `activityType` FREE ist, **folgeexponiert**, wenn sein
+`previousActivityType` FREE ist, und insgesamt exponiert, wenn mindestens eine
+der beiden Bedingungen gilt. Alle Kennzahlen verwenden nur `legId == 0`.
+
+**Technische Gates vor Interpretation:**
+
+1. Beide Dateien haben eindeutige `(tripId, legId)`-Schlüssel; mindestens
+   99,9 % der J-RAW-Wege lassen sich paaren. Aktivitäts- und
+   Vorgängeraktivitätscode sind in mindestens 99,9 % der Paare identisch.
+2. Die J-RAW-Zielklassifikation reproduziert exakt die FD-000-Bilanz:
+   HOME 18.722, FIXED 5.129, FREE 19.138, gesamt 42.989.
+3. Die Analyse verändert keine Eingabe; J-RAW und LT-135 behalten ihre
+   dokumentierten SHA-256-Hashes. Das Skript schreibt nur eine neue
+   `summary.json` in den gitignorierten Kampagnenordner.
+
+**Mechanik-Gates — alle vorab fixiert:**
+
+1. Der Anteil exponierter J-RAW-Wege liegt in `[65;85] %`; Anker ist die
+   unabhängige Näherung `1-(1-0,4452)^2 = 69,2 %` für direkte oder
+   Folgeexposition.
+2. Mindestens 99 % des positiven J-RAW→LT-135-Deltas in der Anzahl
+   `>20 km`-Wege entfällt auf exponierte Wege. Für nicht exponierte Wege liegt
+   die absolute Änderung des `>20 km`-Anteils bei höchstens 0,1 pp.
+3. Innerhalb der exponierten Gruppe steigt der `>20 km`-Anteil um mindestens
+   5 pp. Direkt- und Folgeexposition sowie Überschneidungen werden getrennt
+   berichtet; für diese Untergruppen gelten keine nachträglichen Gates.
+
+**Stop-Regel:** Genau eine Auswertung der vorhandenen zwei CSVs, keine neue
+Dosis, Simulation, Modalkalibrierung oder Seed-Variation. Scheitert ein
+technisches Gate, ist PX-135 unentscheidbar. Scheitert ein Mechanik-Gate, ist
+die einfache Nachbarschaftserklärung widerlegt und der direkte Bonuspfad bleibt
+gestoppt. Bestehen alle Gates, ist nur die räumliche Wirkungskette auf diesem
+Seed lokalisiert; eine konditionierte Dosis braucht anschließend eine eigene
+Präregistrierung und darf die hier gemessenen Untergruppen nicht nachträglich
+neu zuschneiden.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
