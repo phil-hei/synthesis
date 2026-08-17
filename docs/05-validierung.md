@@ -866,10 +866,11 @@ Sonde vorhergesagt hat und die Zielwahl-Parameter nicht erreichen. (2) **Der
 `config/shared/parameters/destination_choice_utility_calculation_parameters.txt`
 (Pristine-Stand danach per Hash verifiziert wiederhergestellt). Für eine Beförderung
 muss dieser Hebel denselben versionierten Weg bekommen wie `calibrateDistance` —
-sonst ist das Ergebnis nicht reproduzierbar konfigurierbar. Zusätzlich steht der
-zugewiesene Widerlegungsversuch in einer zweiten Session aus.
+sonst ist das Ergebnis nicht reproduzierbar konfigurierbar. Der zugewiesene
+Widerlegungsversuch in einer zweiten Session ist mit der unten dokumentierten,
+eingefrorenen Seed-43-Wiederholung abgeschlossen.
 
-### Drei-Seed-Wiederholung (2026-08-16) — zwei Seeds gültig, Seed 43 unentscheidbar
+### Drei-Seed-Wiederholung (2026-08-16/17) — Gate mit eingefrorenem Seed 43 bestanden
 
 Nachgefahren wurden C/D für Seeds 43 und 44 in **einer** Backend-Session, dazu zwei
 Wiederholungsläufe zur Ursachenklärung. Ergebnis der gültigen Kontraste:
@@ -877,12 +878,11 @@ Wiederholungsläufe zur Ursachenklärung. Ergebnis der gültigen Kontraste:
 | Seed | C-RMSE | D-RMSE | C `>=10 km` | D `>=10 km` | C `1–2 km` | D `1–2 km` | Status |
 |---|---|---|---|---|---|---|---|
 | 42 | 0,0448 | **0,0258** | 16,28 % | 20,70 % | 21,73 % | 13,75 % | gültig |
-| 43 | 0,0439 | 0,0229 | 16,38 % | 21,61 % | 21,32 % | 12,72 % | **ungültig** |
+| 43 | 0,0439 | **0,0240** | 16,39 % | 21,04 % | 21,32 % | 13,53 % | gültig (eingefrorener Export) |
 | 44 | 0,0408 | **0,0245** | 17,12 % | 21,48 % | 20,94 % | 12,90 % | gültig |
 
 Alle sechs Vorab-Kriterien sind in allen drei Seeds erfüllt, die Promotions-Schwelle
-≤0,05 wird mit max. 0,0258 klar unterboten. **Das Drei-Seed-Gate ist trotzdem nicht
-abgeschlossen**, weil Seed 43 keinen Ein-Faktor-Kontrast darstellt.
+≤0,05 wird mit max. 0,0258 klar unterboten. **Das Drei-Seed-Gate ist abgeschlossen.**
 
 **Befund (Ursache, forensisch geklärt)**: Bei Seed 43 unterscheiden sich die
 `attractivities.csv` der beiden Arme; `zones.csv` ist in allen Läufen byte-identisch.
@@ -902,9 +902,9 @@ Lauf, sondern gelegentlich einer — und die Pipeline meldet das nicht: beide St
 bleiben DONE, `dataQuality.populationDistribution` steht in beiden Armen auf
 `osm-places`.
 
-**Konsequenz für die Kampagne**: Zwei gültige Seeds (42, 44) bestehen alle Kriterien;
-Seed 43 ist **unentscheidbar, nicht negativ**, und wurde in zwei Anläufen nicht
-gültig. Eine belastbare Drei-Seed-Aussage verlangt zuvor eine stabile OSM-Eingabe.
+**Konsequenz für die Kampagne bis 2026-08-16**: Zwei gültige Seeds (42, 44) bestanden
+alle Kriterien; der damalige Seed 43 war **unentscheidbar, nicht negativ**. Eine
+belastbare Drei-Seed-Aussage verlangte eine stabile gemeinsame Eingabe.
 
 **Konsequenz fürs System** (wichtiger als das Kampagnenergebnis): Ein A/B war nur dann
 ein Ein-Faktor-Kontrast, wenn beide Arme zufällig dieselbe Overpass-Antwort erhielten.
@@ -914,8 +914,24 @@ schreibt unter `inputProvenance` sowohl Quelle und SHA-256 dieses Snapshots als 
 den SHA-256 der tatsächlich erzeugten `zone-repository/attractivities.csv`. Der
 Offline-E2E-Test führt die Pipeline mit einem Snapshot aus und prüft beide 64-stelligen
 Hashes. Damit kann die Kampagne identische Eingaben erzwingen und nach einem Neustart
-belegen. **Noch offen:** Snapshot für C43/D43 erzeugen, beiden Armen zuweisen und den
-ungültigen Seed-43-Kontrast wiederholen; erst dieser Lauf schließt das Drei-Seed-Gate.
+belegen.
+
+**✅ Gültige Seed-43-Wiederholung (2026-08-17):** Da alle erreichbaren Overpass-Endpunkte
+beim Erzeugen des historischen Snapshots mit demselben Dispatcher-Timeout antworteten,
+wurde kein unvollständiger Snapshot akzeptiert. Stattdessen liefen C43 und D43 direkt auf
+demselben bereits vollständig erzeugten C43-Legacy-Export. Beide Arme verweisen damit
+bytegleich auf Bevölkerung, Aktivitäten, Matrizen und Logistik; der einzige inhaltliche
+Unterschied ist der vorab definierte additive Term `+0,06` auf allen fünf `b_tt_*`-Werten
+in D43. C43 reproduziert 43.084 Wege und RMSE 0,043898. D43 konvergiert nach zwei
+`b_intrazonal`-Iterationen (10,8→22,1 %) auf 43.076 Wege und RMSE **0,024046**.
+
+Die sechs Vorab-Gates bestehen: `>=10 km` **21,04 %**, `<1 km` **22,15 %**,
+`1–2 km` **13,53 %**, Modal-RMSE **0,102→0,108** (Δ +0,006) und
+**3,077 Wege/Person·Tag**. Gegenüber der Kontrolle steigt die mittlere Weglänge
+**6,19→7,00 km**. Der Ein-Faktor-Kontrast schließt damit Seed 43 und das
+Drei-Seed-Gate. Nicht befördert ist weiterhin ein Produktdefault: Der `b_tt_*`-Hebel
+besitzt noch kein versioniertes Szenario-Flag, und das `>20 km`-Band bleibt in D43 mit
+8,10 % unter dem MiD-Anteil 13 %.
 
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 

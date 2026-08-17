@@ -250,8 +250,16 @@ Distanzband-RMSE verschlechterte sich 0,1343→0,3072, Joint-RMSE
 heilen. **Regel:** Vor jeder Kampagne prüfen, ob der intrazonale Pkw-Matrixwert
 im kalibrierten Band liegt. Der Produktcode erzwingt dies nun fail-fast; bei
 `>=1 km` Zellgröße verkleinern oder die Distanzrepräsentation/Zielgröße
-methodisch neu präregistrieren. Seeds 43/44 nicht nachholen, solange diese
-Voraussetzung fehlt.
+methodisch neu präregistrieren.
+
+**✅ Distanz-Abklingen über drei Seeds bestätigt (2026-08-17):** Der kombinierte
+Hebel `b_tt_* +0,06` plus nachgelagerter `b_intrazonal`-Kalibrierung erreicht für
+Seeds 42/43/44 Distanzband-RMSE 0,0258/0,0240/0,0245 und besteht alle
+vorregistrierten Schutzgates. Seed 43 wurde nach einem ungültigen Live-Overpass-A/B
+als strikter Ein-Faktor-Kontrast auf demselben eingefrorenen Legacy-Export wiederholt
+(43.084/43.076 Wege; D43: `<1 km` 22,15 %, `1–2 km` 13,53 %, `>=10 km` 21,04 %,
+Modal-RMSE-Delta +0,006). Kein Default-Flip: Der `b_tt_*`-Hebel ist noch kein
+versioniertes Szenario-Flag; `>20 km` bleibt unter MiD.
 
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
@@ -284,7 +292,7 @@ Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `M
 | Frage „wurde X schon probiert?" | synthesis-failure-archaeology |
 | Prozess-/Evidenzfragen | synthesis-research-methodology |
 
-## Provenienz & Wartung (Stand: 2026-07-29)
+## Provenienz & Wartung (Stand: 2026-08-17)
 
 Verifiziert am 2026-07-10: Parameterdateien + Inhalte (ls/cat oben), `destinationChoice:`-
 Verdrahtung (grep in SimulationRunner.java Z. 106–114), Baseline-Messung (distance_profile.py,

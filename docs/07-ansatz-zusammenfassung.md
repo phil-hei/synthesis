@@ -124,11 +124,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 - **GTA trifft die MiD-Wegehäufigkeit** (~3,1 Wege/Person·Tag) nach Prompt-Tuning.
 - **GTA + Kalibrierung sind kombinierbar:** Kalibrierung halbiert den Modal-Split-Fehler auf
   GTA-Output (RMSE 0,16 → 0,07).
-- **Ehrlicher Distanz-Befund:** Mit dem amtlichen `<1 km`-Ziel 21 % regelt die
-  Nahdistanz-Kalibrierung über drei Seeds reproduzierbar in die richtige Richtung
-  (15,2–16,1 % → 19,5–20,2 %) und verbessert den Sechs-Band-RMSE je Seed um
-  0,0095–0,0109. Der Beförderungs-Gate ≤0,05 bleibt mit B-RMSE 0,0912–0,0946 unerreicht,
-  weil Fernwege fehlen; das Flag bleibt opt-in.
+- **Distanz-Abklingfehler über drei Seeds bestätigt:** Der kombinierte Eingriff aus
+  `b_tt_* +0,06` für das lange Ende und `b_intrazonal` für das Nahband erreicht bei
+  Seeds 42/43/44 einen Distanzband-RMSE von 0,0258/0,0240/0,0245 und besteht alle
+  vorregistrierten Gates. Seed 43 wurde als strikter Ein-Faktor-Kontrast auf demselben
+  eingefrorenen Legacy-Export wiederholt. Eine Produktbeförderung steht noch aus:
+  Der `b_tt_*`-Hebel ist nicht als Szenario-Flag versioniert, und `>20 km` bleibt unter MiD.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-
   Gemeindeziele bedingt auf bereits gewählte Außenbeziehungen. In einem demografisch bytegleich
