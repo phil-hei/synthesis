@@ -753,6 +753,19 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   `SimulationRunnerTest`; Backend 135 Tests, 0 Fehler, 7 umgebungsbedingte Skips,
   Frontend 21/21 und Angular-AOT-Build grün. Das Flag bleibt opt-in, bis `>20 km` und
   Mehrregionen-Transfer belegt sind.
+  **❌ Mehrregionen-Transferprobe Freiburg gestoppt (2026-08-17):** Die Schwellen
+  wurden vor dem Lauf in Commit `bc9a19a` festgeschrieben. T-C42 `01b40fea` und
+  T-D42 `798bc6fc` verwendeten byte-identische OSM-, Attraktivitäts-, Populations-,
+  Matrix-, Logistik- und Legacy-Eingaben; einziger Unterschied war das produktive
+  Flag `correctDistanceDecay`. Die Richtung transferiert (`>=10 km`
+  10,16→14,00 %, `1–2 km` 18,35→11,90 %, Ø 4,58→5,38 km), die feste Dosis
+  `+0,06` aber nicht: Distanzband-RMSE **0,0611→0,0644** statt Verbesserung,
+  absolutes Fernweg-Gate 20 % verfehlt und `>20 km` nur 2,11→2,42 % gegen MiD
+  13 %. Vier Schutzkriterien bestehen, drei Primärkriterien scheitern; Seeds 43/44
+  wurden gemäß Stop-Regel nicht gestartet. **Konsequenz:** kein universeller
+  Transferwert, kein Default-Flip. Ein weiterer Anlauf muss regionale Elastizität
+  beziehungsweise hierarchische Parameter neu präregistrieren (vollständiger Befund:
+  [docs/05-validierung.md](05-validierung.md)).
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

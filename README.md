@@ -104,7 +104,9 @@ kalibriert ist. Details, Messwerte und Ausbau-Gates:
 Für logiTopp stehen experimentelle, standardmäßig deaktivierte Kalibrierungen bereit.
 „Distanz-Abklingen korrigieren" legt den über drei Seeds bestätigten festen Term
 `b_tt_* +0,06` szenariogebunden ab; zusammen mit der Nahdistanz-Kalibrierung trifft er
-die vorregistrierten Sechs-Band-Gates, bleibt mangels Mehrregionen-Beleg aber opt-in.
+die vorregistrierten Sechs-Band-Gates im Großraum Rastatt. Eine streng isolierte
+Freiburg-Probe bestätigte zwar die Wirkungsrichtung, verwarf `+0,06` aber als
+universellen Transferwert; das Flag bleibt deshalb opt-in.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

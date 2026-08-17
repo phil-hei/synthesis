@@ -937,7 +937,7 @@ patchen. Es addiert exakt `+0,06` auf die fünf bestätigten `b_tt_*`-Parameter 
 Produktdefault ist damit ausdrücklich noch nicht befördert: Das `>20 km`-Band bleibt in
 D43 mit 8,10 % unter dem MiD-Anteil 13 %, und ein Mehrregionen-Beleg steht aus.
 
-### Mehrregionen-Transferprobe Freiburg (2026-08-17) — präregistriert, Ergebnis offen
+### Mehrregionen-Transferprobe Freiburg (2026-08-17) — Stop-Gate verfehlt
 
 **Hypothese vor dem ersten Lauf:** Der auf drei Seeds im Großraum Rastatt bestätigte
 Term `b_tt_* +0,06` verschiebt auch in einem disjunkten Untersuchungsraum Wegemasse aus
@@ -973,6 +973,40 @@ danach ist ein Mehrregionen-Claim zulässig. Der Anteil `>20 km` wird separat ge
 13 % berichtet, ist wegen des endlichen Zuschnitts aber kein nachträglich veränderbares
 Gate dieser Mechanismusprobe. Ein Produktdefault bleibt unabhängig vom Ein-Seed-Ergebnis
 gesperrt.
+
+**Eingabeprüfung bestanden:** T-C42 `01b40fea` und T-D42 `798bc6fc` verwendeten
+denselben validierten OSM-Snapshot (24.117 Elemente, 23.944 POIs, 174 bevölkerte
+Siedlungsknoten; SHA-256 `380c1060…5774b`) und denselben
+`attractivities.csv`-Hash (`54f20a89…b4b13`). `diff -rq` blieb für Uploads,
+Zonen, Population, Matrizen, Logistik und den vollständigen Legacy-Export leer.
+Beide Arme erzeugten 1.024 interne 1-km-Zellen plus acht Außenbeziehungszonen,
+2.000 Personen, 1.251 Haushalte und 56.996 Aktivitäten; `CAR_DIS` bildet
+intrazonal 703,890 m ab. Der einzige Parameterunterschied im Simulationspfad ist
+der protokollierte Term `+0,06` auf den fünf `b_tt_*`-Werten von T-D42.
+
+| Vorab-Kriterium | T-C42 | T-D42 | |
+|---|---:|---:|---|
+| Distanzband-RMSE absolut `<=0,05` | 0,0611 | **0,0644** | ❌ |
+| RMSE-Verbesserung `>=0,01` | – | **-0,0033** | ❌ |
+| `>=10 km`: `>=20 %` und `>=+3 pp` | 10,16 % | **14,00 %** (+3,84 pp) | ❌ absolut |
+| `<1 km` in 19–23 % | 21,40 % | **20,34 %** | ✅ |
+| `1–2 km <=18 %` | 18,35 % | **11,90 %** | ✅ |
+| Modal-RMSE-Verschlechterung `<=+0,02` | 0,099697 | **0,101357** (+0,001661) | ✅ |
+| Wege/Person·Tag in [3,0; 3,4] | 3,07 | **3,07** | ✅ |
+
+**Befund:** Die Mechanismusrichtung transferiert, die feste Dosis nicht. T-D42
+verschiebt wie vorhergesagt Masse aus `1–2 km` nach `5–10 km` und `10–20 km`;
+die mittlere Weglänge steigt **4,58→5,38 km** und die Nahkalibrierung stellt
+`<1 km` in zwei Iterationen wieder her. Dennoch endet `>=10 km` bei nur 14,00 %,
+der Distanzband-RMSE verschlechtert sich, und `>20 km` bewegt sich lediglich
+**2,11→2,42 %** gegen MiD 13 %.
+
+**Konsequenz nach Vorab-Regel:** Seeds 43/44 wurden nicht gestartet. Der auf
+Rastatt geschätzte Term `+0,06` ist kein regionsunabhängiger Kalibrierwert;
+`correctDistanceDecay` bleibt opt-in und der Default-Flip gesperrt. Ein nächster
+Anlauf braucht eine neue Präregistrierung für eine regionale Elastizitäts-Sonde
+beziehungsweise einen hierarchisch oder regional parametrisierten Hebel — keine
+Wiederholung derselben universellen Dosis.
 
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 

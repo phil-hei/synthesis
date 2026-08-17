@@ -23,7 +23,7 @@ Sackgasse, verworfene Lösung und jedes Rollback, jeweils als **Symptom → Root
 Status → Was du stattdessen tust**. Bevor du einen "naheliegenden" Ansatz umsetzt, prüfe hier,
 ob er schon einmal gescheitert ist — und warum.
 
-**Stand: 2026-08-11.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
+**Stand: 2026-08-17.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
 und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzahlen sind
 überlieferte Werte vom jeweils genannten Datum, keine aktuellen Messungen.
 
@@ -65,6 +65,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E22 | `<1 km`-Kalibrierung bei grober Zonierung | Kalibrierung | ENTSCHIEDEN |
 | E23 | Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum | Infrastruktur | ENTSCHIEDEN |
 | E24 | Stiller OSM-Fallback konfundiert A/B-Vergleiche | Infrastruktur | ENTSCHIEDEN |
+| E25 | `b_tt_* +0,06` als universeller Regionaltransfer | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -451,6 +452,29 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   nichts — nur der Hash-Vergleich entscheidet. Der saubere Weg für Kampagnen ist, die
   OSM-Eingabe einmal einzufrieren und allen Armen als Datei vorzugeben. Evidenz:
   `docs/05-validierung.md`, Abschnitt „Drei-Seed-Wiederholung (2026-08-16)".
+
+### E25 — `b_tt_* +0,06` als universeller Regionaltransfer — ENTSCHIEDEN
+
+- **Symptom/Frage:** Der feste Term bestand im Großraum Rastatt alle Gates über
+  Seeds 42/43/44. Ist `+0,06` deshalb ein regionsunabhängiger Produktwert?
+- **Evidenz:** Nein. Die vorab festgeschriebene Freiburg-Probe T-C42/T-D42
+  verwendete byte-identische OSM-, Attraktivitäts-, Populations-, Matrix-,
+  Logistik- und Legacy-Eingaben. Der produktive Flag-Wechsel verschob die Verteilung
+  in der erwarteten Richtung (`1–2 km` 18,35→11,90 %, `>=10 km`
+  10,16→14,00 %, Ø 4,58→5,38 km), verschlechterte aber den Distanzband-RMSE
+  **0,0611→0,0644**. Das absolute 20-%-Fernweg-Gate scheiterte; `>20 km` stieg
+  nur 2,11→2,42 % gegen MiD 13 %. Drei von sieben Vorab-Kriterien scheiterten.
+- **Root Cause:** Bestätigt ist die Mechanik des Reisezeit-Beta-Hebels, nicht die
+  Übertragbarkeit seiner Dosis. Ausgangsverteilung, Gebietsgeometrie und
+  Attraktivitätsstruktur unterscheiden sich regional; ein fester additiver Term
+  kann deshalb dieselbe Richtung bei falscher Zielgröße liefern.
+- **Status/Regel:** Seeds 43/44 wurden nach Stop-Regel nicht gestartet;
+  `correctDistanceDecay` bleibt opt-in. `+0,06` nicht als universellen Default
+  befördern und dieselbe Freiburg-Serie nicht ohne neue Hypothese wiederholen.
+  Stattdessen regionale Elastizität separat präregistrieren oder einen
+  hierarchisch/regional parametrisierten Hebel untersuchen. Evidenz:
+  `docs/05-validierung.md`, Abschnitt „Mehrregionen-Transferprobe Freiburg
+  (2026-08-17)"; Schwellen vorab in Commit `bc9a19a`.
 
 ---
 

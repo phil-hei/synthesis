@@ -264,6 +264,19 @@ inzwischen einen szenariogebundenen Parameterstand mit dem festen Term `+0,06` u
 komponiert ihn vor `calibrateDistance`, Modus-Kalibrierungen und Netz-Feedback;
 `>20 km` bleibt unter MiD und der Mehrregionen-Beleg steht aus.
 
+**❌ Universelle Dosis in Freiburg widerlegt (2026-08-17):** Die vorab in
+Commit `bc9a19a` festgelegte Transferprobe verwendete in T-C42/T-D42 byte-identische
+OSM-, Attraktivitäts-, Populations-, Matrix-, Logistik- und Legacy-Eingaben; der
+einzige Unterschied war `correctDistanceDecay=false→true`. Die Wirkungsrichtung
+transferiert (`1–2 km` 18,35→11,90 %, `>=10 km` 10,16→14,00 %, Ø
+4,58→5,38 km), aber der feste Rastatt-Term `+0,06` nicht als Kalibrierwert:
+Distanzband-RMSE 0,0611→0,0644, absolutes Fernweg-Gate 20 % verfehlt und
+`>20 km` nur 2,11→2,42 %. Nahband, Modal-Schutz und Wegefrequenz blieben intakt.
+Stop-Regel: keine Seeds 43/44. **Regel:** `+0,06` nicht als universellen Wert
+befördern oder in Freiburg bloß wiederholen; nächster zulässiger Anlauf ist eine
+separat präregistrierte regionale Elastizitäts-Sonde beziehungsweise ein
+hierarchisch/regional parametrisierter Hebel. Das Produktflag bleibt opt-in.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

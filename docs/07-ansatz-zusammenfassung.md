@@ -130,7 +130,10 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   vorregistrierten Gates. Seed 43 wurde als strikter Ein-Faktor-Kontrast auf demselben
   eingefrorenen Legacy-Export wiederholt. Der `b_tt_*`-Hebel ist als
   `correctDistanceDecay=false` szenariogebunden und mit der Nahkalibrierung komponierbar.
-  Ein Default-Flip steht aus: `>20 km` bleibt unter MiD, der Mehrregionen-Beleg fehlt.
+  Eine bytegleich isolierte Freiburg-Probe bestätigte die Richtung, verwarf die feste
+  Dosis aber als universellen Transferwert (Distanzband-RMSE 0,0611→0,0644;
+  `>=10 km` nur 14,00 %). Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und
+  der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-
   Gemeindeziele bedingt auf bereits gewählte Außenbeziehungen. In einem demografisch bytegleich
