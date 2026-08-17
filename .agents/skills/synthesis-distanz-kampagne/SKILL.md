@@ -350,6 +350,16 @@ zweite Bonusdosis, Seeds oder Modalkalibrierung. Vor einem neuen Langwegspike
 zuerst den Anteil frei gewählter Zielentscheidungen messen und den Mechanismus
 darauf bedingt präregistrieren; bloßes Hochskalieren ist gesperrt.
 
+**✅ Freizielanteil verhaltensneutral gemessen (2026-08-17):** Commit `c2b283b`
+präregistrierte FD-000 mit dem festen Erklärungsfenster `[30;45] %`. Der externe
+Harness lief EXIT 0 und klassifiziert bei byteidentischem J-RAW-Demand alle
+42.989 Zielentscheidungen: HOME 18.722, FIXED 5.129, freie Utility-Pfade 19.138
+= **44,52 %**. Der Bypass ist damit als wesentlicher Verdünnungsmechanismus
+gestützt, die Quote liegt aber 7,41 pp über dem LT-135-Wirkungsverhältnis
+37,11 %. **Regel:** keine neue Bonusdosis. Zuerst Entscheidungsweg und gewählte
+Distanz in einem eigenen verhaltensneutralen Spike direkt verknüpfen; erst dann
+einen bedingten Mechanismus präregistrieren.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

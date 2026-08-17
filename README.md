@@ -127,8 +127,13 @@ J-RAW-Log-Odds abgeleiteter Direktbonus `+1,35` verbessert anschließend
 `>20 km` 3,73→7,17 % und den Band-RMSE 0,0551→0,0427, verfehlt aber das
 präregistrierte Langweg-Gate von mindestens +5 pp. HOME- und Fixziele umgehen
 die Zielwahl-Utility, wodurch die Gesamtmengen-Dosis den End-to-End-Effekt
-überschätzt. Der nächste Spike muss daher zuerst den Anteil frei gewählter Ziele
-messen; eine bloße höhere Bonusdosis ist gesperrt.
+überschätzt. Eine verhaltensneutrale Nachmessung klassifiziert exakt alle
+42.989 Ziele und findet **44,52 % freie Zielentscheidungen** (HOME 43,55 %,
+Fixziele 11,93 %); das Demand-CSV bleibt byteidentisch. Das vorab gesetzte
+30–45-%-Erklärungsfenster besteht, die Quote liegt aber 7,41 pp über dem
+LT-135-Wirkungsverhältnis. Vor jeder neuen Dosis muss deshalb Entscheidungsweg
+und gewählte Distanz direkt verknüpft werden; bloßes Hochskalieren bleibt
+gesperrt.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

@@ -150,8 +150,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   Gesamt-Log-Odds abgeleiteter Direktbonus `+1,35` verbessert `>20 km`
   3,73→7,17 % und den Band-RMSE 0,0551→0,0427, verfehlt aber den
   präregistrierten Mindestzuwachs +5 pp. HOME- und personengebundene Fixziele
-  umgehen die Zielwahl-Utility; vor einer neuen Dosis muss deshalb der Anteil
-  frei gewählter Zielentscheidungen explizit gemessen werden.
+  umgehen die Zielwahl-Utility. Eine byteidentische Instrumentierungsprobe
+  ordnet alle 42.989 Ziele genau einem Pfad zu und misst 44,52 % freie
+  Zielentscheidungen (HOME 43,55 %, Fixziele 11,93 %). Das besteht das vorab
+  fixierte 30–45-%-Erklärungsfenster, liegt aber 7,41 pp über dem beobachteten
+  Bonus-Wirkungsverhältnis. Vor einer neuen Dosis müssen Entscheidungsweg und
+  tatsächlich gewählte Distanz deshalb direkt verknüpft werden.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-

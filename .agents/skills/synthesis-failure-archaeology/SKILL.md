@@ -573,11 +573,17 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Fixziele jedoch vor dem Utility-Aufruf zurück. Der Bonus wirkt nur auf freie
   Zielentscheidungen und wird in der Gesamtmarginale verdünnt.
 - **Status/Regel:** Der `ModeChoiceCalibrator` wurde nach Stop-Regel nicht
-  gestartet. Keine zweite Bonusdosis, Seeds oder Produktimplementierung; ein
-  neuer Versuch muss zuerst den Anteil freier Zielentscheidungen messen und
-  einen bedingten Langwegmechanismus neu präregistrieren. Eine bloße
-  Nachskalierung von `+1,35` ist gesperrt. Evidenz: `docs/05-validierung.md`,
-  Abschnitt „Freiburg-Langweg-Nutzenbonusspike (2026-08-17)".
+  gestartet. Die in Commit `c2b283b` präregistrierte FD-000-Nachmessung zählt
+  bei byteidentischem J-RAW-Demand 19.138 von 42.989 Entscheidungen als frei
+  (**44,52 %**; HOME 43,55 %, FIXED 11,93 %) und besteht damit das feste
+  `[30;45] %`-Erklärungsfenster. Der Bypass ist als wesentliche Verdünnung
+  gestützt, erklärt die Unterwirkung aber noch nicht vollständig: Die Quote
+  liegt 7,41 pp über dem LT-135-Wirkungsverhältnis 37,11 %. Keine zweite
+  Bonusdosis, Seeds oder Produktimplementierung; der nächste Spike muss den
+  Entscheidungsweg direkt mit der gewählten Distanz verknüpfen. Eine bloße
+  Nachskalierung von `+1,35` bleibt gesperrt. Evidenz:
+  `docs/05-validierung.md`, Abschnitte „Freiburg-Langweg-Nutzenbonusspike" und
+  „Freiburg-Freiziel-Instrumentierung (2026-08-17)".
 
 ---
 

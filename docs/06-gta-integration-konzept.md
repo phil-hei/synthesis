@@ -840,6 +840,17 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   nicht gestartet; keine zweite Dosis, Seeds oder Produktänderung. Ein neuer
   Versuch muss den Anteil freier Zielentscheidungen zuerst messen und bedingt
   modellieren, statt den Bonus nachträglich hochzuskalieren.
+  **✅ Freizielanteil verhaltensneutral gemessen (2026-08-17):** Commit
+  `c2b283b` fixierte vorab ein Erklärungsfenster von `[30;45] %`. Der isolierte
+  FD-000-Harness zählt bei byteidentischem J-RAW-Demand exakt 42.989
+  Zielentscheidungen: HOME 18.722 (43,55 %), Fixziele 5.129 (11,93 %) und
+  freie Utility-Pfade 19.138 (**44,52 %**); der externe Lauf endet mit EXIT 0,
+  das Log bleibt frei von Fallback und Exception. Damit ist der Bypass als
+  wesentlicher Verdünnungsmechanismus gestützt, aber nicht als vollständige
+  Dosisformel: Die Quote liegt 7,41 pp über dem LT-135-Wirkungsverhältnis
+  37,11 %. **Entscheidung:** kein Bonus-Retry. Vor einer neuen Dosis muss ein
+  eigener Spike Entscheidungsweg und tatsächlich gewählte Distanz direkt
+  verknüpfen; Produktcode und `validation/` bleiben unverändert.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

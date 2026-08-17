@@ -1481,6 +1481,41 @@ Produktänderung braucht eine eigene Präregistrierung mit direkter Verknüpfung
 zwischen Entscheidungsweg und gewählter Distanz, Seeds 43/44, zweiter Region
 und zugewiesenem Widerlegungsversuch.
 
+**Ausführung:** Der isolierte FD-000-Harness kompilierte mit dem bestehenden
+JDK-25-Vertrag in 3 s und bestand den externen Lauf mit EXIT 0
+(`BUILD SUCCESSFUL in 16s`, logiTopp rund 13 s). Personen-, Utility-, Helper-,
+Basis-MNL- und alle fünf Zielwahlparameter-Hashes entsprechen dem eingefrorenen
+bonusfreien Stand. Genau eine Abschlusszeile ist parsebar; das Log enthält
+weder Fallback noch Exception. Das erzeugte Demand-CSV ist mit SHA-256
+`a58fac01…c7a9de` byteidentisch zu J-RAW.
+
+| Entscheidungsweg | Anzahl | Anteil an 42.989 |
+|---|---:|---:|
+| HOME | 18.722 | 43,55 % |
+| FIXED | 5.129 | 11,93 % |
+| FREE_MAPPED | 19.138 | **44,52 %** |
+| FREE_DEFAULT | 0 | 0,00 % |
+| **Bilanz** | **42.989** | **100,00 %** |
+
+Die FIXED-Ziele zerfallen in WORK 3.870, EDUCATION_PRIMARY 536,
+EDUCATION_SECONDARY 415 und EDUCATION_TERTIARY 308. Die freien Entscheidungen
+entfallen auf SERVICE 3.445, PRIVATE_VISIT 2.594, SHOPPING_DAILY 6.726,
+SHOPPING_OTHER 1.229, LEISURE_INDOOR 2.857 und LEISURE_OUTDOOR 2.287. Damit
+entspricht die Zählung exakt einer Zielentscheidung je J-RAW-Weg.
+
+**Urteil gegen die Vorab-Regel:** Alle technischen Gates und das feste
+Erklärungsfenster `[30;45] %` bestehen. Der Freizielanteil 44,52 % stützt den
+HOME-/Fixziel-Bypass als wesentlichen Verdünnungsmechanismus, liegt jedoch
+7,41 Prozentpunkte über dem beobachteten LT-135-Wirkungsverhältnis 37,11 %.
+Die Beteiligungsquote allein ist deshalb keine hinreichende Dosisformel.
+
+**Entscheidung nach Stop-Regel:** Kein Bonus-Retry, keine Modalkalibrierung,
+Seeds oder Produktänderung. Der Rohstand bleibt unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/free-destination-instrumentation/`
+erhalten. Der nächste zulässige Spike muss verhaltensneutral den jeweiligen
+Entscheidungsweg direkt mit der tatsächlich gewählten Distanz verknüpfen; erst
+danach darf ein bedingter Langwegmechanismus neu präregistriert werden.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
