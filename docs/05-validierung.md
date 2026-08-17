@@ -1904,6 +1904,62 @@ Aktivitätstyps. Sie muss vorab klären, ob Geografie/Erreichbarkeit die
 Rohlog, Quellhashes und maschinenlesbare Klassenbilanz bleiben unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/pd-000/`.
 
+#### Freiburg-Ausgangszonenzerlegung (2026-08-17) — präregistriert
+
+**Forensik und binäre Frage vor dem Lauf:** PD-000 lokalisiert 93,2080 % der
+Langwegmassenvarianz innerhalb der Aktivitätstypen. Die nächstliegende
+Same-run-Erklärung ist die Ausgangsgeografie: Für denselben Zweck ändert die
+vorherige Zone, wie viele und wie gut erreichbare Fernziele relativ zu nahen
+Zielen im Logit stehen. Erklärt die Ausgangszone einen dominanten Anteil dieser
+Within-Zweck-Varianz, oder bleibt die Streuung selbst bei gleicher Zone
+überwiegend personen-/situationsabhängig?
+
+Der einmalige Arm **OZ-000** verwendet PD-000 unverändert: Freiburg, Seed 42,
+J-0895-Zielwahlparameter, Basis-MNL, Helper `DISTANCE / 1000`, kein
+Langwegbonus. Zusätzlich zu den bereits validierten PD-Aggregaten werden für
+jede Zelle `(nextActivity.activityType(), previousActivity.zone().getId())`
+nur `n`, `sum(p)` und `sum(p²)` threadsicher akkumuliert. Es gibt kein
+Per-Decision-Log und keinen Cross-run-Join.
+
+Um eine durch Einzelbeobachtungen künstlich hohe Erklärung zu verhindern,
+fließen ausschließlich vorab als **wiederholt** definierte Zellen mit `n >=5`
+in den Mechanik-Gate ein. Die Schwelle wurde auf reine Größenforensik des
+bereits bestehenden J-RAW-Demand-CSV gestützt, ohne Wahrscheinlichkeitswerte zu
+sehen: 1.293 solcher `(Aktivitätstyp, sourceZone)`-Zellen decken
+14.748/19.138 = 77,0613 % der freien Wege ab; 646 von insgesamt 3.259 Zellen
+sind Singletons.
+
+Für die abgedeckten Entscheidungen werden je Aktivitätstyp neue Mittelwerte
+gebildet. `SSW_purpose` ist deren gesamte Within-Zweck-SSE. Die Komponente
+zwischen den Ausgangszellen desselben Zwecks ist
+`SSB_origin = sum_c(n_c*(m_c-m_g)²)`; der Rest innerhalb gleicher Zellen ist
+`SSW_cell = sum_c(sum(p²)_c-n_c*m_c²)`. Es muss bis `1e-9` gelten:
+`SSW_purpose = SSB_origin + SSW_cell`.
+
+**Technische Gates vor Interpretation:** Externer Lauf EXIT 0, kein Fallback
+und keine Exception, genau eine Abschlusszeile, CE-/PD-Bilanz mit 19.138 freien
+Entscheidungen, keine ungültige Wahrscheinlichkeit, maximale Summenabweichung
+`<=1e-9` und byteidentischer J-RAW-Demand-Hash `a58fac01…c7a9de`. Gesamtmasse,
+`sum(p²)`, sechs Klassen und Aktivitätstypaggregate stimmen bis `1e-9` mit
+PD-000 überein. Alle Zellzahlen summieren sich auf 19.138; die `n>=5`-Abdeckung
+beträgt mindestens **75 %**, und die Varianzidentität hält bis `1e-9`.
+
+**Vorab fixiertes Mechanik-Gate:** Die Ausgangszellen erklären mindestens
+**70 %** der Within-Zweck-Varianz der abgedeckten Entscheidungen:
+`SSB_origin / SSW_purpose >=0,70`.
+
+Besteht der Gate, ist Ausgangsgeografie/Erreichbarkeit der dominante nächste
+Mechanismus; ein weiterer Diagnosepfad müsste dann vorab eine kontinuierliche
+geografische Größe statt Zonen-IDs prüfen. Scheitert er, wird die
+Ausgangszonenerklärung verworfen und der Rest innerhalb identischer
+Zweck-Zonen-Zellen muss vor einem neuen Mechanismus auf Personen-/
+Verfügbarkeitsmerkmale zerlegt werden.
+
+**Stop-Regel:** Genau ein OZ-000-Lauf, nur Seed 42. Keine Bonuskonstante,
+Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. Ein technisches
+Scheitern macht OZ-000 unentscheidbar. Auch ein bestandener Gate liefert nur
+eine Mechanismusrichtung, keinen Parameter oder Default.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
