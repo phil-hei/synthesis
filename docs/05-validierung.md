@@ -1385,6 +1385,51 @@ nur der externe Mechanismus auf einem eingefrorenen Freiburg-Seed bestätigt;
 ein versionierter opt-in Produktvertrag benötigt eine neue Präregistrierung mit
 Seeds 43/44, zweiter Region und zugewiesenem Widerlegungsversuch.
 
+**Ausführung:** Der isolierte Quellpatch unterscheidet sich von der korrigierten
+Kilometer-Runtime ausschließlich durch die Konstante `LONG_DISTANCE_BONUS = 1.35`
+und deren Dummy `[DISTANCE > 20]`; Utility-SHA-256
+`842abe1f…4009e`, Helper weiter `31f23b3c…118c7a`. Die fünf bereits
+kalibrierten J-0895-Zielwahlparameter und der Personen-Hash
+`9dda440f…fca90` sind unverändert. Zwei Compile-Aufrufe waren vor dem Modelllauf
+wegen Sandbox-Zugriff auf `~/.gradle` beziehungsweise fehlender expliziter
+JDK-25-Übergabe unentscheidbar; derselbe Harness kompilierte danach mit dem
+bestehenden Toolchain-Vertrag erfolgreich in 948 ms. Der externe logiTopp-Lauf
+bestand mit EXIT 0 in 13 s; sein Run-Log enthält weder Fallback noch Exception.
+Der temporäre JUnit-Harness meldete anschließend erwartungsgemäß einen roten
+Mechanik-Gate und wurde entfernt.
+
+| Kennzahl | J-RAW | LT-135 | Vorab-Gate |
+|---|---:|---:|---:|
+| Wege | 42.989 | 42.988 | stabil |
+| Wege/Person·Tag | 3,0706 | 3,0706 | ✅ `[3,0; 3,4]` |
+| `<1 km` | 21,38 % | **20,75 %** | ✅ `[19; 23] %` |
+| `1–2 km` | 14,12 % | **13,94 %** | ✅ `[12; 16] %` |
+| `2–5 km` | 19,96 % | 19,52 % | berichtet |
+| `5–10 km` | 24,85 % | 23,72 % | berichtet |
+| `10–20 km` | 15,96 % | 14,89 % | berichtet |
+| `>20 km` | **3,73 %** | **7,17 %** | ❌ Δ +3,44 pp statt ≥5 pp; ❌ `[10; 16] %` |
+| `>=10 km` | 19,69 % | **22,06 %** | ✅ mindestens 20 % |
+| Ø Weglänge | 6,024 km | **6,600 km** | berichtet |
+| Distanzband-RMSE | 0,055140 | **0,042661** | ✅ höchstens 0,05 |
+| ÖV-Anteil | 27,42 % | 29,47 % | Diagnose vor Schutz |
+| Modal-RMSE | 0,113275 | 0,122338 | Diagnose vor Schutz |
+
+**Urteil gegen die Vorab-Regel:** Der direkte Bonus wirkt mechanisch und besteht
+alle allgemeinen Distanz-Schutzgates, erreicht aber nur rund 37 % des naiv
+vorhergesagten Langband-Zuwachses (3,44 statt 9,27 pp). Die Log-Odds-Herleitung
+über alle End-to-End-Wege war als Dosismodell falsch: Der externe
+`FixedLocationDestinationChoice` gibt HOME-Ziele und personengebundene Fixziele
+zurück, bevor `DestinationChoiceUtilityFunction` aufgerufen wird. Der Bonus kann
+also nur den frei gewählten Teil der Wege umschichten; sein Effekt wird in der
+Gesamtmarginale verdünnt.
+
+**Entscheidung nach Stop-Regel:** Kein Modalkalibrator, keine zweite Bonusdosis,
+keine Seeds und kein Produktvertrag. Der vollständige Rohstand bleibt unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/long-tail-utility-spike/`
+erhalten. Ein neuer Versuch muss zunächst den Anteil frei gewählter
+Zielentscheidungen explizit messen und einen daran bedingten Langwegmechanismus
+präregistrieren; eine bloße Nachskalierung von `+1,35` wäre ein verbotener Retry.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

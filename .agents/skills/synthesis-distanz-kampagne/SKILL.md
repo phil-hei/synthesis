@@ -337,6 +337,19 @@ ASC-Regler nahezu invariant. Trotzdem verfehlen beide Stände `>=10 km >=20 %`
 Produktimplementierung. Der nächste Mechanismus muss das `>20 km`-Band direkt
 adressieren und vorab eigene Distanz-/Modal-Schutzgates bekommen.
 
+**❌ Direkter Langwegbonus aus Gesamt-Log-Odds gestoppt (2026-08-17):** Commit
+`a949eb2` fixierte ohne Raster `+1,35` Nutzenpunkte für frei gewählte Ziele über
+20 km. LT-135 wirkt in der vollständigen Kette und verbessert `>20 km`
+3,73→7,17 %, `>=10 km` 19,69→22,06 % sowie Distanzband-RMSE
+0,055140→0,042661; Kurzband und Wegefrequenz bestehen. Der Langweg-Gate
+scheitert dennoch mit +3,44 statt mindestens +5 pp und 7,17 statt `[10;16] %`.
+Die Dosisprognose war falsch konditioniert: `FixedLocationDestinationChoice`
+umgeht die Utility für HOME- und personengebundene Fixziele, sodass die
+Gesamtmengen-Log-Odds den End-to-End-Effekt überschätzen. **Regel:** keine
+zweite Bonusdosis, Seeds oder Modalkalibrierung. Vor einem neuen Langwegspike
+zuerst den Anteil frei gewählter Zielentscheidungen messen und den Mechanismus
+darauf bedingt präregistrieren; bloßes Hochskalieren ist gesperrt.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

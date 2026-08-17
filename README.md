@@ -122,7 +122,13 @@ Eine unabhängige Joint-Sonde trifft mit der daraus abgeleiteten Einzeldosis das
 `1–2 km`-Ziel (14,12 %) und korrigiert den Modal-RMSE 0,1133→0,0176. Sie wird
 trotzdem nicht befördert: `>=10 km` bleibt bei 19,68 % und der Distanzband-RMSE
 bei 0,0553 statt höchstens 0,05. Offen ist nun ein eigener Langwegmechanismus,
-nicht weiteres Kurzband- oder Modal-Tuning.
+nicht weiteres Kurzband- oder Modal-Tuning. Ein analytisch aus den gesamten
+J-RAW-Log-Odds abgeleiteter Direktbonus `+1,35` verbessert anschließend
+`>20 km` 3,73→7,17 % und den Band-RMSE 0,0551→0,0427, verfehlt aber das
+präregistrierte Langweg-Gate von mindestens +5 pp. HOME- und Fixziele umgehen
+die Zielwahl-Utility, wodurch die Gesamtmengen-Dosis den End-to-End-Effekt
+überschätzt. Der nächste Spike muss daher zuerst den Anteil frei gewählter Ziele
+messen; eine bloße höhere Bonusdosis ist gesperrt.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

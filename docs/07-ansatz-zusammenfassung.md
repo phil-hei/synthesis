@@ -146,7 +146,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   unabhängige Joint-Komposition trifft anschließend das `1–2 km`-Ziel mit
   14,08 % und senkt den Modal-RMSE 0,1133→0,0176, scheitert aber weiter am
   Langende (`>20 km` 3,70 %; Distanzband-RMSE 0,0553 statt ≤0,05). Der nächste
-  Hebel muss deshalb eigenständig Fernwege adressieren.
+  Hebel muss deshalb eigenständig Fernwege adressieren. Ein aus den J-RAW-
+  Gesamt-Log-Odds abgeleiteter Direktbonus `+1,35` verbessert `>20 km`
+  3,73→7,17 % und den Band-RMSE 0,0551→0,0427, verfehlt aber den
+  präregistrierten Mindestzuwachs +5 pp. HOME- und personengebundene Fixziele
+  umgehen die Zielwahl-Utility; vor einer neuen Dosis muss deshalb der Anteil
+  frei gewählter Zielentscheidungen explizit gemessen werden.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-

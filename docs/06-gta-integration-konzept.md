@@ -826,6 +826,20 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Produktimplementierung. Der nächste Versuch braucht einen separat
   präregistrierten Langwegmechanismus; Runtime, Defaults und `validation/`
   bleiben unverändert.
+  **❌ Direkter Langweg-Nutzenbonus unterdosiert (2026-08-17):** Commit
+  `a949eb2` leitete aus J-RAW ohne Raster `+1,35` Nutzenpunkte für jede frei
+  gewählte Zielalternative über 20 km ab. Der isolierte End-to-End-Harness lief
+  mit EXIT 0 und verbessert `>20 km` **3,73→7,17 %**, `>=10 km`
+  19,69→22,06 % sowie Distanzband-RMSE 0,055140→0,042661. Kurzband und
+  Wegefrequenz bleiben in ihren Schutzfenstern. Das feste Mechanik-Gate
+  scheitert trotzdem doppelt: nur +3,44 statt mindestens +5 pp und 7,17 statt
+  `[10; 16] %`. **Root Cause der Fehlprognose:**
+  `FixedLocationDestinationChoice` umgeht die gepatchte Utility für HOME- und
+  personengebundene Fixziele; eine Gesamtmengen-Log-Odds-Dosis überschätzt
+  deshalb den Effekt auf alle Wege. **Entscheidung:** Der Modalkalibrator wurde
+  nicht gestartet; keine zweite Dosis, Seeds oder Produktänderung. Ein neuer
+  Versuch muss den Anteil freier Zielentscheidungen zuerst messen und bedingt
+  modellieren, statt den Bonus nachträglich hochzuskalieren.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

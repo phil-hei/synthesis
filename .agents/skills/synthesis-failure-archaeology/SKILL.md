@@ -69,6 +69,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E26 | Pkw-spezifischer `b_tt`-Split in Freiburg | Kalibrierung | ENTSCHIEDEN |
 | E27 | `b_0_1`/`b_1_2` gegen Meter statt Kilometer | Legacy/Kalibrierung | BLOCKIERT |
 | E28 | Kurzband + ASC-Modalschutz in Freiburg | Kalibrierung | ENTSCHIEDEN |
+| E29 | Direkter Langwegbonus aus Gesamt-Log-Odds | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -554,6 +555,29 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   gemeinsame `b_tt`-Offsets, Pkw-Splits und Kurzband-Scans sind durch E25–E28
   ausgeschöpft. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Joint-Kompositionssonde (2026-08-17)".
+
+### E29 — Direkter Langwegbonus aus Gesamt-Log-Odds — ENTSCHIEDEN
+
+- **Frage:** Kann ein analytisch aus J-RAW `>20 km` 3,73 % und MiD 13 %
+  abgeleiteter Nutzenbonus `logit(0,13)-logit(0,0373119)=+1,35` das Langband
+  ohne Parameterscan direkt herstellen?
+- **Evidenz:** Der in Commit `a949eb2` präregistrierte, isolierte Harness bestand
+  den externen Lauf mit EXIT 0. `>20 km` steigt **3,73→7,17 %** und damit nur
+  +3,44 statt mindestens +5 pp; das absolute Gate `[10;16] %` scheitert.
+  Zugleich bestehen die übrigen Schutzwerte: `<1 km` 20,75 %, `1–2 km`
+  13,94 %, `>=10 km` 22,06 %, Distanzband-RMSE 0,042661 und 3,0706
+  Wege/Person·Tag.
+- **Root Cause der Fehlprognose:** Die Gesamtmengen-Log-Odds-Rechnung setzt
+  voraus, dass alle End-to-End-Ziele dieselbe gepatchte MNL-Utility durchlaufen.
+  `FixedLocationDestinationChoice` gibt HOME-Ziele und personengebundene
+  Fixziele jedoch vor dem Utility-Aufruf zurück. Der Bonus wirkt nur auf freie
+  Zielentscheidungen und wird in der Gesamtmarginale verdünnt.
+- **Status/Regel:** Der `ModeChoiceCalibrator` wurde nach Stop-Regel nicht
+  gestartet. Keine zweite Bonusdosis, Seeds oder Produktimplementierung; ein
+  neuer Versuch muss zuerst den Anteil freier Zielentscheidungen messen und
+  einen bedingten Langwegmechanismus neu präregistrieren. Eine bloße
+  Nachskalierung von `+1,35` ist gesperrt. Evidenz: `docs/05-validierung.md`,
+  Abschnitt „Freiburg-Langweg-Nutzenbonusspike (2026-08-17)".
 
 ---
 
