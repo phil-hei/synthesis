@@ -1261,6 +1261,42 @@ statt angenommene Elastizität in einer unabhängigen Präregistrierung verwende
 und zugleich alle Distanz- und Modal-Schutzgates adressieren; dieser Spike allein
 rechtfertigt weder ein neues Szenario-Flag noch einen Default- oder Runtime-Wechsel.
 
+#### Freiburg-Joint-Kompositionssonde (2026-08-17) — präregistriert
+
+**Hypothese und Dosis vor dem Lauf:** Die korrigierte KM-000-Baseline enthält
+9,67 % Wege im `1–2 km`-Band; `b_1_2 +0,50` erhöhte es auf 12,09 %. Die lokal
+gemessene Elastizität beträgt damit `(0,1209−0,0967)/0,50 = 0,0484` je
+Koeffizienteneinheit. Für das MiD-Ziel 14 % folgt ohne Raster oder Nachjustierung
+`(0,14−0,0967)/0,0484 = 0,8946`, vorab gerundet auf **`b_1_2 +0,895`**.
+
+Der einmalige Arm **J-0895** verwendet weiterhin den eingefrorenen
+Freiburg-Seed-42-Legacy-Export, die isolierte Helper-Korrektur
+`DISTANCE / 1000`, `b_tt_car_d/car_p +0,09`, alle übrigen `b_tt_* +0,06` und
+die produktive `<1 km`-Kalibrierung auf 21 %. Es wird kein weiterer
+Zielwahlparameter verändert. Danach kalibriert der produktive
+`ModeChoiceCalibrator` ausschließlich die MNL-ASCs gegen
+Fuß/Rad/Pkw/Mitfahrer/ÖV = 22/11/43/14/10 %, mit unveränderten Defaults von
+höchstens acht Iterationen und RMSE-Toleranz 0,02. **J-RAW** bezeichnet den
+Stand mit Basis-MNL, **J-MOD** denselben Zielwahlstand nach diesem Modalschutz.
+
+**Vorab-Gates — alle müssen bestehen:**
+
+1. Eingaben tragen weiter den Legacy-Personen-Hash `9dda440f…fca90`, der
+   Helper den SHA-256 `31f23b3c…118c7a`; kein Fallback und keine Exception.
+2. Der erste Basis-MNL-Lauf des Modalkalibrators reproduziert J-RAW bytegleich.
+3. J-RAW und J-MOD halten `<1 km` in `[19; 23] %`, `1–2 km` in `[12; 16] %`,
+   `>=10 km` bei mindestens 20 % und Wege/Person·Tag in `[3,0; 3,4]`.
+4. Der Distanzband-RMSE liegt in beiden Ständen bei höchstens 0,05.
+5. J-MOD senkt den Modal-RMSE gegenüber J-RAW um mindestens 0,02 auf höchstens
+   0,08; sein ÖV-Anteil liegt gemäß Kalibrator-Toleranz in `[8; 12] %`.
+
+**Stop-Regel:** J-RAW und J-MOD werden genau einmal ausgeführt; ein verfehltes
+Gate wird weder durch eine zweite `b_1_2`-Dosis noch durch geänderte Schwellen
+repariert. Bei mindestens einem Fehlschlag: keine Seeds, kein Produktvertrag und
+kein neues Szenario-Flag. Bestehen alle Gates, ist nur die Komposition auf dem
+eingefrorenen Seed 42 bestätigt; Seeds 43/44 und eine zweite Region benötigen
+eine neue Präregistrierung. `validation/` bleibt in jedem Fall unverändert.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
