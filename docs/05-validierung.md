@@ -1567,6 +1567,28 @@ Seed lokalisiert; eine konditionierte Dosis braucht anschließend eine eigene
 Präregistrierung und darf die hier gemessenen Untergruppen nicht nachträglich
 neu zuschneiden.
 
+**Ausführung:** Die einmalige read-only Auswertung verwendete unverändert die
+fixierten J-RAW-/LT-135-Hashes `a58fac01…c7a9de` und
+`b13e675e…e6bb57`. Beide Dateien haben eindeutige `(tripId, legId)`-Schlüssel;
+42.988 von 42.989 J-RAW-Zeilen finden numerisch ein LT-135-Gegenstück
+(99,9977 %), und die J-RAW-Zielklassifikation reproduziert HOME 18.722,
+FIXED 5.129 und FREE 19.138 exakt.
+
+**Urteil am technischen Gate — unentscheidbar:** Nur 15.982 der 42.988
+scheinbaren Paare (**37,18 %**) behalten Ziel- und Vorgängeraktivitätscode;
+gefordert waren mindestens 99,9 %. `tripId` bezeichnet zwischen den beiden
+kontrafaktischen Simulationsläufen also nicht stabil denselben Weg, obwohl die
+Schlüsselmengen fast vollständig überlappen. Die im Roh-`summary.json`
+nachgelagert ausgegebenen Expositionsgruppen werden deshalb ausdrücklich nicht
+interpretiert; die Mechanik-Gates wurden nicht bewertet.
+
+**Entscheidung nach Stop-Regel:** Kein alternativer Post-hoc-Join, keine Dosis
+und kein weiterer Lauf. Evidenz und Skript bleiben unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/free-destination-instrumentation/path-exposure-analysis/`
+erhalten. Der nächste zulässige Anlauf muss vorab einen semantisch stabilen
+Wegschlüssel ausgeben oder Entscheidungsweg und Distanz innerhalb desselben
+Simulationslaufs gemeinsam protokollieren.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

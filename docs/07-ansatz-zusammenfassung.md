@@ -155,7 +155,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   Zielentscheidungen (HOME 43,55 %, Fixziele 11,93 %). Das besteht das vorab
   fixierte 30–45-%-Erklärungsfenster, liegt aber 7,41 pp über dem beobachteten
   Bonus-Wirkungsverhältnis. Vor einer neuen Dosis müssen Entscheidungsweg und
-  tatsächlich gewählte Distanz deshalb direkt verknüpft werden.
+  tatsächlich gewählte Distanz deshalb direkt verknüpft werden. Eine
+  Cross-run-Paarung über `(tripId, legId)` ist dafür ungeeignet: Nur 37,18 %
+  der fast vollständig numerisch gepaarten Wege behalten ihre Aktivitätscodes.
+  Der nächste Beleg braucht einen stabilen semantischen Wegschlüssel oder eine
+  Same-run-Instrumentierung; die Gruppenwerte des Fehlversuchs werden nicht
+  interpretiert.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-

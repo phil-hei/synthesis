@@ -132,8 +132,12 @@ die Zielwahl-Utility, wodurch die Gesamtmengen-Dosis den End-to-End-Effekt
 Fixziele 11,93 %); das Demand-CSV bleibt byteidentisch. Das vorab gesetzte
 30–45-%-Erklärungsfenster besteht, die Quote liegt aber 7,41 pp über dem
 LT-135-Wirkungsverhältnis. Vor jeder neuen Dosis muss deshalb Entscheidungsweg
-und gewählte Distanz direkt verknüpft werden; bloßes Hochskalieren bleibt
-gesperrt.
+und gewählte Distanz direkt verknüpft werden. Eine erste read-only Paarung über
+`(tripId, legId)` ist unentscheidbar: Trotz 42.988 numerischer Treffer stimmen
+die Aktivitätscodes nur in 37,18 % statt mindestens 99,9 % überein; `tripId` ist
+zwischen Läufen kein stabiler Wegschlüssel. Benötigt wird deshalb eine
+Same-run-Instrumentierung oder ein vorab stabilisierter Schlüssel; bloßes
+Hochskalieren bleibt gesperrt.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

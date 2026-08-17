@@ -360,6 +360,15 @@ gestützt, die Quote liegt aber 7,41 pp über dem LT-135-Wirkungsverhältnis
 Distanz in einem eigenen verhaltensneutralen Spike direkt verknüpfen; erst dann
 einen bedingten Mechanismus präregistrieren.
 
+**❌ Cross-run-Paarung per `tripId` unentscheidbar (2026-08-17):** Commit
+`1b8ec51` präregistrierte PX-135 als read-only Join von J-RAW und LT-135 über
+`(tripId, legId)`. 42.988 von 42.989 Schlüsseln überlappen, aber nur 15.982
+Paare (**37,18 %**) behalten Ziel- und Vorgängeraktivität statt ≥99,9 %.
+`tripId` ist zwischen kontrafaktischen Läufen semantisch instabil; alle
+nachgelagerten Gruppenwerte sind nicht interpretierbar. **Regel:** kein
+alternativer Post-hoc-Join. Nächster Anlauf nur mit Same-run-Protokoll von
+Entscheidungsweg + Distanz oder einem vorab bewiesenen stabilen Wegschlüssel.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

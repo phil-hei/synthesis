@@ -851,6 +851,17 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   37,11 %. **Entscheidung:** kein Bonus-Retry. Vor einer neuen Dosis muss ein
   eigener Spike Entscheidungsweg und tatsächlich gewählte Distanz direkt
   verknüpfen; Produktcode und `validation/` bleiben unverändert.
+  **❌ Cross-run-Wegepaarung unentscheidbar (2026-08-17):** Commit `1b8ec51`
+  präregistrierte PX-135 als einmalige read-only Paarung von J-RAW und LT-135
+  über `(tripId, legId)`. Die Hashes bleiben unverändert, beide Schlüsselräume
+  sind eindeutig und 42.988 von 42.989 J-RAW-Zeilen finden numerisch ein
+  Gegenstück. Das entscheidende Semantik-Gate scheitert jedoch hart: Nur
+  15.982 Paare (**37,18 %**) behalten Ziel- und Vorgängeraktivitätscode statt
+  mindestens 99,9 %. `tripId` ist damit zwischen kontrafaktischen Läufen kein
+  stabiler Wegschlüssel; Gruppenkennzahlen werden nicht interpretiert und kein
+  alternativer Post-hoc-Join versucht. **Lösungsweg:** Entscheidungsweg und
+  gewählte Distanz im selben Lauf protokollieren oder vorab einen stabilen
+  semantischen Schlüssel ausgeben. Keine neue Dosis oder Produktänderung.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

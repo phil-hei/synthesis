@@ -70,6 +70,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E27 | `b_0_1`/`b_1_2` gegen Meter statt Kilometer | Legacy/Kalibrierung | BLOCKIERT |
 | E28 | Kurzband + ASC-Modalschutz in Freiburg | Kalibrierung | ENTSCHIEDEN |
 | E29 | Direkter Langwegbonus aus Gesamt-Log-Odds | Kalibrierung | ENTSCHIEDEN |
+| E30 | `tripId` als Cross-run-Wegschlüssel | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -584,6 +585,30 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Nachskalierung von `+1,35` bleibt gesperrt. Evidenz:
   `docs/05-validierung.md`, Abschnitte „Freiburg-Langweg-Nutzenbonusspike" und
   „Freiburg-Freiziel-Instrumentierung (2026-08-17)".
+
+### E30 — `tripId` als Cross-run-Wegschlüssel — ENTSCHIEDEN
+
+- **Frage:** Lassen sich J-RAW und LT-135 über `(tripId, legId)` semantisch
+  paaren, um die Distanzwirkung einer freien Zielwahl auf Hin- und Folgeweg zu
+  lokalisieren?
+- **Evidenz:** Die in Commit `1b8ec51` präregistrierte PX-135-Auswertung findet
+  eindeutige Schlüssel und 42.988 numerische Gegenstücke für 42.989
+  J-RAW-Wege. Das vorgeschaltete Semantik-Gate scheitert trotzdem: Nur 15.982
+  Paare (**37,18 %**) haben denselben Ziel- und Vorgängeraktivitätscode statt
+  mindestens 99,9 %. Fast vollständige ID-Überlappung ist hier also ein
+  irreführendes Scheinsignal.
+- **Root Cause:** `tripId` verhält sich empirisch als laufslokale Weg-ID, nicht
+  als stabiler fachlicher Schlüssel: Dieselben Nummern bezeichnen in den beiden
+  Läufen überwiegend verschiedene Aktivitäten. Die interne Vergabelogik wurde
+  für dieses Urteil nicht weiter aufgelöst; die beobachtete Semantik reicht aus,
+  um den Join zu verwerfen.
+- **Status/Regel:** PX-135 ist unentscheidbar; seine nachgelagerten
+  Gruppenkennzahlen werden nicht interpretiert und es gibt keinen alternativen
+  Post-hoc-Join. Cross-run-Vergleiche benötigen einen vorab bewiesenen stabilen
+  semantischen Schlüssel. Für den Langwegspike ist die sichere Alternative,
+  Entscheidungsweg und gewählte Distanz im selben Lauf gemeinsam zu
+  protokollieren. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Wegeexpositionsanalyse (2026-08-17)".
 
 ---
 

@@ -88,6 +88,14 @@ gegen die Rastatt-Datei UND gegen `SumoRunner.readCarTrips`/`LlmModeChoiceRunner
 Die Skripte lösen die Indizes über die Header-Namen auf (robust gegen
 Spaltenverschiebung) und fallen nur bei fehlendem Header auf 1/12/16 zurück.
 
+**Cross-run-Stolperfalle (PX-135, 2026-08-17):** `tripId` ist nur innerhalb
+eines Laufs eine Weg-ID, kein stabiler semantischer Schlüssel zwischen A/B-
+Läufen. J-RAW und LT-135 hatten 42.988 numerisch gemeinsame Schlüssel bei
+42.989/42.988 Wegen, aber nur **37,18 %** der vermeintlichen Paare behielten
+Ziel- und Vorgängeraktivitätscode. Deshalb Demand-CSVs nie allein über
+`(tripId, legId)` Cross-run-joinen; zuerst einen stabilen fachlichen Schlüssel
+beweisen oder die benötigten Größen im selben Lauf protokollieren.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
@@ -283,3 +291,6 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
   strukturgleiche Fixture, weil lokal kein Szenario mit kpis.json vorlag —
   sobald ein voller Lauf existiert, einmal gegen `backend/data/scenarios/<id>`
   laufen lassen und die Beispielausgabe hier ersetzen.
+- **Ergänzung 2026-08-17:** Die Cross-run-Instabilität von `tripId` wurde in
+  PX-135 gegen zwei echte Freiburg-Demand-CSVs mit fixierten Eingabe-Hashes
+  gemessen; Detailbefund E30 in `synthesis-failure-archaeology`.
