@@ -284,6 +284,13 @@
         }
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
+            title="Experimentell: schwächt das Zielwahl-Distanz-Abklingen mit dem über drei Seeds bestätigten festen Term +0,06 auf den fünf b_tt-Reisezeitparametern ab. Erzeugt keine zusätzlichen Simulationsläufe. Für das bestätigte Gesamtprofil mit der Distanz-Verteilung kombinieren.">
+            <input type="checkbox" [(ngModel)]="scenario.population.correctDistanceDecay">
+            Distanz-Abklingen korrigieren (experimentell)
+          </label>
+        }
+        @if (hasTarget('logitopp')) {
+          <label class="checkbox"
             title="Experimentell: kalibriert das globale ÖV-Niveau über asc_put und den ÖV-Anstieg bei Wegen ab 20 km getrennt über b_tt_put gegen MiD 2017. Mit der Distanz-Verteilung kombinierbar und läuft dann auf deren korrigierten Zielwahlparametern. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe.">
             <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeDistance"
               [disabled]="scenario.population.calibrateModeChoice">

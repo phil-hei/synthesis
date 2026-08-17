@@ -49,11 +49,12 @@ class GenerationServiceCalibrationTest {
         Files.createFile(simulationDir.resolve("mode_choice_calibrated.txt"));
         Files.createFile(simulationDir.resolve("mode_distance_calibrated.txt"));
         Files.createDirectories(simulationDir.resolve("dc-calibrated"));
+        Files.createDirectories(simulationDir.resolve("distance-decay-adjusted"));
 
         Scenario scenario = new Scenario();
 
         assertNull(GenerationService.modeChoiceCalibrationOverride(scenario, simulationDir));
-        assertNull(GenerationService.destinationChoiceCalibrationOverride(
+        assertNull(GenerationService.destinationChoiceOverride(
                 scenario, simulationDir));
     }
 
@@ -67,8 +68,39 @@ class GenerationServiceCalibrationTest {
 
         assertEquals(
                 destinationChoice,
-                GenerationService.destinationChoiceCalibrationOverride(
+                GenerationService.destinationChoiceOverride(
                         scenario, simulationDir));
+    }
+
+    @Test
+    void activeDistanceDecayCorrectionIsForwardedToNetworkFeedback() throws Exception {
+        Path simulationDir = Files.createDirectories(tempDir.resolve("simulation-corrected"));
+        Path corrected = Files.createDirectories(
+                simulationDir.resolve("distance-decay-adjusted"));
+        Scenario scenario = new Scenario();
+        scenario.population.correctDistanceDecay = true;
+
+        assertEquals(
+                corrected,
+                GenerationService.destinationChoiceOverride(
+                        scenario, simulationDir));
+    }
+
+    @Test
+    void distanceCalibrationWinsOverDistanceDecayBaseForNetworkFeedback() throws Exception {
+        Path simulationDir = Files.createDirectories(tempDir.resolve("simulation-combined"));
+        Path corrected = Files.createDirectories(
+                simulationDir.resolve("distance-decay-adjusted"));
+        Path calibrated = Files.createDirectories(simulationDir.resolve("dc-calibrated"));
+        Scenario scenario = new Scenario();
+        scenario.population.correctDistanceDecay = true;
+        scenario.population.calibrateDistance = true;
+
+        assertEquals(
+                calibrated,
+                GenerationService.destinationChoiceOverride(
+                        scenario, simulationDir));
+        assertTrue(Files.isDirectory(corrected));
     }
 
     @Test

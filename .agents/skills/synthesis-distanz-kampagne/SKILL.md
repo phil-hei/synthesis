@@ -259,7 +259,10 @@ vorregistrierten Schutzgates. Seed 43 wurde nach einem ungültigen Live-Overpass
 als strikter Ein-Faktor-Kontrast auf demselben eingefrorenen Legacy-Export wiederholt
 (43.084/43.076 Wege; D43: `<1 km` 22,15 %, `1–2 km` 13,53 %, `>=10 km` 21,04 %,
 Modal-RMSE-Delta +0,006). Kein Default-Flip: Der `b_tt_*`-Hebel ist noch kein
-versioniertes Szenario-Flag; `>20 km` bleibt unter MiD.
+Produktiv-Default. Das opt-in-Flag `population.correctDistanceDecay=false` erzeugt
+inzwischen einen szenariogebundenen Parameterstand mit dem festen Term `+0,06` und
+komponiert ihn vor `calibrateDistance`, Modus-Kalibrierungen und Netz-Feedback;
+`>20 km` bleibt unter MiD und der Mehrregionen-Beleg steht aus.
 
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →

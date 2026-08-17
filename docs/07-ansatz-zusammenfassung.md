@@ -128,8 +128,9 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   `b_tt_* +0,06` für das lange Ende und `b_intrazonal` für das Nahband erreicht bei
   Seeds 42/43/44 einen Distanzband-RMSE von 0,0258/0,0240/0,0245 und besteht alle
   vorregistrierten Gates. Seed 43 wurde als strikter Ein-Faktor-Kontrast auf demselben
-  eingefrorenen Legacy-Export wiederholt. Eine Produktbeförderung steht noch aus:
-  Der `b_tt_*`-Hebel ist nicht als Szenario-Flag versioniert, und `>20 km` bleibt unter MiD.
+  eingefrorenen Legacy-Export wiederholt. Der `b_tt_*`-Hebel ist als
+  `correctDistanceDecay=false` szenariogebunden und mit der Nahkalibrierung komponierbar.
+  Ein Default-Flip steht aus: `>20 km` bleibt unter MiD, der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-
   Gemeindeziele bedingt auf bereits gewählte Außenbeziehungen. In einem demografisch bytegleich

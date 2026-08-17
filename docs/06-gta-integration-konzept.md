@@ -732,7 +732,27 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   `UploadControllerTest` (validierter stabiler Uploadname) und der vollständige
   Offline-`GenerationPipelineE2ETest` mit echtem Snapshot-Pfad; Backend 130 Tests,
   0 Fehler, 7 umgebungsbedingte Skips, Frontend 21/21, Produktions-Audit ohne Befund
-  und Angular-AOT-Build grün. *Offen:* C43/D43 mit demselben Snapshot wiederholen.
+  und Angular-AOT-Build grün.
+  **✅ Drei-Seed-Gate abgeschlossen (2026-08-17):** Der Live-Abruf eines historischen
+  Snapshots blieb an allen erreichbaren Overpass-Endpunkten im Dispatcher-Timeout; ein
+  unvollständiger Snapshot wurde nicht akzeptiert. Als stärker isolierter Ersatz liefen
+  C43 und D43 auf demselben vollständigen C43-Legacy-Export. Einziger Unterschied war
+  `b_tt_* +0,06`; D43 konvergierte danach über `b_intrazonal` in zwei Iterationen.
+  Distanzband-RMSE **0,0439→0,0240**, `>=10 km` **16,39→21,04 %**, `1–2 km`
+  **21,32→13,53 %**, Modal-RMSE-Delta +0,006 und 3,077 Wege/Person·Tag. Damit bestehen
+  Seeds 42/43/44 alle sechs vorregistrierten Gates.
+  **✅ Distanz-Abkling-Hebel als Szenario-Flag umgesetzt (2026-08-17):**
+  `population.correctDistanceDecay` (Default `false`, Studio-Checkbox) erzeugt unter
+  `artifacts/simulation/distance-decay-adjusted/` eine szenariogebundene Kopie des
+  vollständigen Zielwahl-Dateivertrags und addiert den bestätigten Term `+0,06` auf
+  `b_tt_car_d`, `b_tt_car_p`, `b_tt_put`, `b_tt_ped` und `b_tt_bike`. Fehlende oder
+  doppelte Schlüssel brechen sichtbar ab; die geteilten Legacy-Parameter bleiben
+  unverändert. Der Stand wird auch als Basis für `calibrateDistance`, Modus-Kalibrierung
+  und Netz-Feedback verwendet. **Verifiziert:** echter Seed-43-logiTopp-Lauf oben sowie
+  `DestinationChoiceParameterAdjusterTest`, `GenerationServiceCalibrationTest` und
+  `SimulationRunnerTest`; Backend 135 Tests, 0 Fehler, 7 umgebungsbedingte Skips,
+  Frontend 21/21 und Angular-AOT-Build grün. Das Flag bleibt opt-in, bis `>20 km` und
+  Mehrregionen-Transfer belegt sind.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

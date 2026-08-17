@@ -23,6 +23,7 @@ import de.synthesis.generation.pipeline.LogisticsGenerator;
 import de.synthesis.generation.pipeline.MatrixGenerator;
 import de.synthesis.generation.pipeline.MobileCityExporter;
 import de.synthesis.generation.pipeline.DistanceCalibrator;
+import de.synthesis.generation.pipeline.DestinationChoiceParameterAdjuster;
 import de.synthesis.generation.pipeline.ModeChoiceCalibrator;
 import de.synthesis.generation.pipeline.ModeDistanceCalibrator;
 import de.synthesis.generation.pipeline.OverpassClient;
@@ -732,15 +733,28 @@ public class GenerationService {
             return;
         }
         job.log("Starte logiTopp-Wochensimulation (" + runner.projectDir().getFileName() + ")…");
+        Path baseDestinationChoice = runner.projectDir().resolve("config/shared/parameters");
+        Path destinationChoiceOverride = null;
+        if (scenario.population.correctDistanceDecay) {
+            destinationChoiceOverride = DestinationChoiceParameterAdjuster
+                    .applyDistanceDecayCorrection(
+                            baseDestinationChoice,
+                            artifacts.resolve("simulation").resolve("distance-decay-adjusted"));
+            baseDestinationChoice = destinationChoiceOverride;
+            job.log("Distanz-Abklingen korrigiert: +0,06 auf b_tt_car_d, b_tt_car_p, "
+                    + "b_tt_put, b_tt_ped und b_tt_bike");
+            job.summary.put("distanceDecayCorrection", true);
+            job.summary.put("distanceDecayOffset",
+                    DestinationChoiceParameterAdjuster.DISTANCE_DECAY_OFFSET);
+        }
         SimulationResultIngestor.Summary summary;
         if (scenario.population.calibrateModeDistance) {
             // Phase 1c: ÖV-Niveau (asc_put) und Fernweg-Schräge (b_tt_put) getrennt kalibrieren.
-            Path destinationChoiceOverride = null;
             if (scenario.population.calibrateDistance) {
                 job.log("Kombinierte Kalibrierung: zuerst Distanzmarginale, danach ÖV-Niveau "
                         + "und ÖV-Distanzschräge");
                 DistanceCalibrationOutcome distance = runDistanceCalibration(
-                        scenario, job, artifacts, runner);
+                        scenario, job, artifacts, runner, baseDestinationChoice);
                 destinationChoiceOverride = distance.parametersDir();
             }
             if (scenario.population.calibrateModeChoice) {
@@ -803,7 +817,8 @@ public class GenerationService {
                     Math.round(cal.finalBttPut() * 10_000) / 10_000.0);
             summary = last[0];
         } else if (scenario.population.calibrateDistance) {
-            summary = runDistanceCalibration(scenario, job, artifacts, runner).summary();
+            summary = runDistanceCalibration(
+                    scenario, job, artifacts, runner, baseDestinationChoice).summary();
         } else if (scenario.population.calibrateModeChoice) {
             // Phase 1: iterative ASC-Kalibrierung gegen MiD-Modal-Split (mehrere Sim-Läufe)
             Path baseMnl = runner.projectDir().resolve(
@@ -818,8 +833,10 @@ public class GenerationService {
                     properties.getSimulation().getCalibrationTolerance());
             job.log("Modal-Split-Kalibrierung gegen Ziel " + target + " (max. "
                     + properties.getSimulation().getCalibrationIterations() + " Iterationen)…");
+            Path correctedDestinationChoice = destinationChoiceOverride;
             ModeChoiceCalibrator.Result cal = calibrator.calibrate(mnl -> {
-                SimulationRunner.Result run = runner.run(scenario, artifacts, job::log, mnl);
+                SimulationRunner.Result run = runner.run(
+                        scenario, artifacts, job::log, mnl, correctedDestinationChoice);
                 last[0] = new SimulationResultIngestor(mapper)
                         .ingest(run.resultsDir(), artifacts, run.durationSeconds(),
                                 scenario.logistics.returns);
@@ -832,7 +849,8 @@ public class GenerationService {
             job.summary.put("calibrationRmse", Math.round(cal.finalRmse() * 1000) / 1000.0);
             summary = last[0];
         } else {
-            SimulationRunner.Result run = runner.run(scenario, artifacts, job::log);
+            SimulationRunner.Result run = runner.run(
+                    scenario, artifacts, job::log, null, destinationChoiceOverride);
             job.log("Simulation beendet nach " + run.durationSeconds() + " s, werte Ergebnisse aus…");
             summary = new SimulationResultIngestor(mapper)
                     .ingest(run.resultsDir(), artifacts, run.durationSeconds(),
@@ -864,8 +882,8 @@ public class GenerationService {
             Scenario scenario,
             GenerationJob job,
             Path artifacts,
-            SimulationRunner runner) throws Exception {
-        Path baseParams = runner.projectDir().resolve("config/shared/parameters");
+            SimulationRunner runner,
+            Path baseParams) throws Exception {
         Path dcDir = artifacts.resolve("simulation").resolve("dc-calibrated");
         SimulationResultIngestor.Summary[] last = {null};
         double targetNear = properties.getSimulation().getDistanceCalibrationTargetNearShare();
@@ -1027,7 +1045,7 @@ public class GenerationService {
             Path simulationDir = artifacts.resolve("simulation");
             Path modeChoiceOverride = modeChoiceCalibrationOverride(scenario, simulationDir);
             Path destinationChoiceOverride =
-                    destinationChoiceCalibrationOverride(scenario, simulationDir);
+                    destinationChoiceOverride(scenario, simulationDir);
             Path demandResult = artifacts.resolve("simulation").resolve("results")
                     .resolve("demandsimulationResult.csv");
             Path plannedTours = artifacts.resolve("simulation").resolve("results")
@@ -1137,12 +1155,15 @@ public class GenerationService {
         return null;
     }
 
-    /** Wie {@link #modeChoiceCalibrationOverride}, aber für den Zielwahl-Parameterstand. */
-    static Path destinationChoiceCalibrationOverride(Scenario scenario, Path simulationDir) {
+    /** Wählt nur den im aktuellen Szenario aktiven Zielwahl-Parameterstand. */
+    static Path destinationChoiceOverride(Scenario scenario, Path simulationDir) {
         Path destinationChoice = simulationDir.resolve("dc-calibrated");
-        return scenario.population.calibrateDistance && Files.isDirectory(destinationChoice)
-                ? destinationChoice
-                : null;
+        if (scenario.population.calibrateDistance && Files.isDirectory(destinationChoice)) {
+            return destinationChoice;
+        }
+        Path corrected = simulationDir.resolve("distance-decay-adjusted");
+        return scenario.population.correctDistanceDecay && Files.isDirectory(corrected)
+                ? corrected : null;
     }
 
     // --- Stufe 14: LLM-Moduswahl (GTA 3c) ------------------------------------------------------

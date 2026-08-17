@@ -49,6 +49,20 @@ class ComparisonControllerTest {
         assertFalse(result.get(0).path("simulated").asBoolean());
     }
 
+    @Test
+    void exposesDistanceDecayCorrectionAsComparisonParameter() {
+        TestContext context = context();
+        Scenario scenario = new Scenario();
+        scenario.id = "distance-decay";
+        scenario.name = "Distanz-Abklingen";
+        scenario.population.correctDistanceDecay = true;
+        context.repository().save(scenario);
+
+        ArrayNode result = context.controller().compare(List.of("distance-decay"));
+
+        assertTrue(result.get(0).path("params").path("correctDistanceDecay").asBoolean());
+    }
+
     private TestContext context() {
         SynthesisProperties properties = new SynthesisProperties();
         properties.setDataDir(dataDir.toString());

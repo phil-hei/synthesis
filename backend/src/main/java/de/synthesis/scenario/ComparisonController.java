@@ -49,6 +49,7 @@ public class ComparisonController {
         params.put("cellSizeMeters", scenario.zoning.cellSizeMeters);
         params.put("samplingFraction", scenario.population.samplingFraction);
         params.put("useRealRouting", scenario.population.useRealRouting);
+        params.put("correctDistanceDecay", scenario.population.correctDistanceDecay);
         params.put("parcelsPerPersonWeek", scenario.logistics.parcelsPerPersonWeek);
         params.put("returnsEnabled", scenario.logistics.returns.enabled);
         params.put("returnShare", scenario.logistics.returns.shareOfPrivateOrders);

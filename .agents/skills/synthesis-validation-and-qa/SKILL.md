@@ -44,10 +44,10 @@ Zusatzregeln:
 - **„Läuft bei mir" zählt nicht.** Das ausgeführte Kommando plus die konkrete Zahl
   (Fahrzeuge, Trips, RMSE, Dateigröße) gehört in die Doku bzw. Commit-Message.
 
-## 2. Test-Inventar (Stand 2026-08-13)
+## 2. Test-Inventar (Stand 2026-08-17)
 
 Die Backend-Tests liegen unter `backend/src/test/java/de/synthesis/`. Suite-Lauf:
-`scripts/verify.sh core` → 130 Testfälle, bei laufendem Ollama nur die beiden explizit
+`scripts/verify.sh core` → 135 Testfälle, bei laufendem Ollama nur die beiden explizit
 Env-gesteuerten Integrationstests übersprungen (2026-08-11). Ohne externe Laufzeit
 können sieben Tests sauber übersprungen werden. `scripts/verify.sh full` aktiviert
 actiTopp und PT; der vollständige Lauf bestand am 2026-08-13 mit **127 Tests,
@@ -67,6 +67,7 @@ Stand prüfen, nicht nur „0 Fehler". Siehe E23 in `synthesis-failure-archaeolo
 |---|---|---|---|
 | `generation/pipeline/FeedbackMathTest.java` | Reine Mathematik der MSA-Dämpfung: k=1 übernimmt Faktoren ungedämpft, konstante Faktoren → Δ=0 (Konvergenz), Oszillation 1↔2 wird Richtung Mittel gedämpft (Ergebnis in (1.3, 1.7)) | keine | keine |
 | `generation/pipeline/ModeChoiceCalibratorTest.java` | ASC-Kalibrierung gegen Fake-Sim (Softmax über die ASCs): RMSE sinkt und erreicht ≤0,02 in ≤10 Iterationen; Anker `asc_car_d` und `b_time` bleiben unverändert; Kommentarzeilen der MNL-Datei erhalten. Clamp-Test: ΔASC je Iteration auf ±1,5 begrenzt. **Clamp-Semantik:** die geschriebene Datei hält den Stand VOR dem letzten Update, daher Assert `(iterations-1) * 1.5` | keine | keine (MNL-Fixture inline als String) |
+| `generation/pipeline/DestinationChoiceParameterAdjusterTest.java` | Szenariogebundene Distanz-Abkling-Korrektur: exakt fünf bestätigte `b_tt_*`-Schlüssel erhalten `+0,06`, andere Betas und vier Zweck-Dateien bleiben unverändert, die Quelle bleibt unberührt; fehlende Pflichtschlüssel brechen vor dem Schreiben sichtbar ab | keine | keine (Zielwahl-Dateien inline in `@TempDir`) |
 | `generation/pipeline/ShapefileWriterTest.java` | Liest das geschriebene ESRI-Shapefile binär zurück: file code 9994, Version 1000, shape type 5 (Polygon), Bbox, Record-Struktur (Header BE / Inhalt LE), geschlossener 5-Punkte-Ring, `.shx`-Offsets, dBase-Feld exakt `districtID` mit Werten `SYN-001`/`SYN-002`, `.prj` enthält `WGS_1984` — das Format, das der MobileCity-/Takomat-Import erwartet | keine | keine |
 | `generation/pipeline/MobileCityExporterTest.java` | Emuliert unabhängig die gepaddete EpigeneCSV-Blocklogik und prüft `TECCarFleet.stock.total`: Basisjahr-Header, Pkw-Zählung über `car.ownerId` → `household.homeZone`, Mehrfach-Pkw und Ignorieren unbekannter Zonen | keine | keine (CSV-Fixtures inline im Temp-Verzeichnis) |
 | `generation/pipeline/GtfsCropperTest.java` | Bbox-Zuschnitt am echten KVV-Feed auf Rastatt: Halte/Trips/Routen > 0, Ergebnis < 1/20 der Feed-Größe, `shapes.txt` verworfen, **referenzielle Integrität** (jede trip_id/stop_id aus `stop_times.txt` existiert in `trips.txt`/`stops.txt`). Zweiter Test: Zeitfenster 6–10 Uhr reduziert die Trip-Zahl echt | `Files.exists(validation/kvv-gtfs.zip)` | `validation/kvv-gtfs.zip` |
@@ -80,10 +81,10 @@ Stand prüfen, nicht nur „0 Fehler". Siehe E23 in `synthesis-failure-archaeolo
 | `generation/GenerationPipelineE2ETest.java` | Smoke der kompletten Pipeline, **komplett offline**: validierter `osm-data.json`-Snapshot statt Live-Overpass, `useRealRouting=false` (Luftlinien-Matrizen), `behaviorSource="template"` (kein Gradle/LLM), 250 Personen, Timeout 6 min. Asserts: Job-State `DONE`, Kern-Artefakt je Stufe existiert, Manifest enthält Snapshot-/Attraktivitäts-SHA-256, keine Stufe `FAILED`, SUMO/LLM-Stufen `SKIPPED`. Mit lokalem `mobitopp-rastatt` zusätzlich: Simulation `DONE`, `kpis.json` + `demandsimulationResult.csv`. **Falle:** `scenario.id` MUSS manuell gesetzt werden — IDs vergibt sonst der Controller, `repo.save()` tut es nicht | Simulations-Asserts: `Files.exists(<projectDir>/gradlew)` (mobitopp-rastatt lokal); Rest gate-frei | keine externen (Snapshot inline im Temp-`dataDir`); ~4–7 s überliefert (ohne Simulation) |
 | `generation/pipeline/OsmDataSnapshotTest.java` | Parst POIs und bevölkerte `place`-Nodes gemeinsam aus einem Overpass-JSON-Snapshot, berechnet SHA-256 und weist einen Snapshot ohne verwertbare Elemente ab | keine | keine (JSON inline im Temp-Verzeichnis) |
 | `generation/pipeline/PtIntegrationTest.java` | Volle ÖV-Kette (Phase C): GTFS-Auto-Fetch aus Raw-Cache → Zuschnitt → `gtfs2pt.py` (Fahrplan-Infrastruktur, Fenster 6–9 Uhr — **Test-Override**; Betriebs-Default ist 6–10) → SumoRunner mit intermodaler Personen-Routung, `maxTrips=1500`. Asserts: `ptVehicles() > 0`, `ptRiders() > 0`, PKW/Rad weiterhin simuliert, mindestens eine `<ride>`-Etappe im `routes.rou.xml` | **Env-gated**: `SYNTHESIS_TRANSIT_VENV` gesetzt + existiert; alle drei Fixtures vorhanden; `sumo.isAvailable()`; `transit.isAvailable()` | `demandsimulationResult.csv`, `validation/rastatt-test.osm`, `validation/kvv-gtfs.zip`; 143,9 s auf dem M5 am 2026-08-11 — deshalb Env-gated, nicht im Standard-Lauf |
-| `scenario/ComparisonControllerTest.java` | Vergleich liefert nur vorhandene Szenarien in Anfrage-Reihenfolge; `simulated=true` ausschließlich bei parsebarer `kpis.json`, beschädigtes JSON wird nicht als Simulationsergebnis ausgegeben | keine | keine (`@TempDir`) |
+| `scenario/ComparisonControllerTest.java` | Vergleich liefert nur vorhandene Szenarien in Anfrage-Reihenfolge; `simulated=true` ausschließlich bei parsebarer `kpis.json`, beschädigtes JSON wird nicht als Simulationsergebnis ausgegeben; der experimentelle Distanz-Abkling-Hebel wird als Vergleichsparameter exponiert | keine | keine (`@TempDir`) |
 
 Die fixture-freie Frontend-Suite läuft mit `cd frontend && npm test` über Angulars nativen
-Vitest-Runner (20 Tests, Stand 2026-08-11):
+Vitest-Runner (21 Tests, Stand 2026-08-17):
 
 | Klasse (unter `frontend/src/app/`) | Prüft |
 |---|---|
@@ -157,7 +158,7 @@ Schwellen werden VOR dem Lauf festgelegt**, nie nachträglich ans Ergebnis angep
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-11.** Die tragenden Testklassen unter `backend/src/test/java/`
+- **Stand: 2026-08-17.** Die tragenden Testklassen unter `backend/src/test/java/`
   wurden gelesen; Fixture-Größen per `ls` verifiziert (kvv-gtfs.zip 121 613 482 Bytes
   = 121 MB dezimal / 116 MiB, vom 2026-07-07 — andere Skills nennen dieselbe Datei
   „121 MB"). Laufzeiten und historische Zählwerte (10.966 Pakete, 141 Halte,

@@ -76,6 +76,8 @@ class ScenarioControllerTest {
     void defaultsExposeDisabledReturnDemand() {
         Scenario defaults = controller.defaults();
 
+        assertFalse(defaults.population.correctDistanceDecay,
+                "Experimenteller Distanz-Abkling-Hebel muss standardmäßig aus sein");
         assertNotNull(defaults.logistics.returns);
         assertFalse(defaults.logistics.returns.enabled);
         assertEquals("exogenous-share", defaults.logistics.returns.model);

@@ -69,6 +69,8 @@ export interface Scenario {
     calibrateModeChoice: boolean;
     /** Distanz-Kalibrierung der Zielwahl (b_intrazonal → Ziel-<1km-Anteil), experimentell. */
     calibrateDistance: boolean;
+    /** Bestätigte Korrektur des Zielwahl-Distanz-Abklingens (b_tt_* +0,06), experimentell. */
+    correctDistanceDecay: boolean;
     /** Zwei-Hebel-Kalibrierung: ÖV-Niveau (asc_put) + Fernweg-Schräge (b_tt_put), experimentell. */
     calibrateModeDistance: boolean;
     /** Ziel-Modal-Split der Kalibrierung (Modus → Anteil), Default MiD. */

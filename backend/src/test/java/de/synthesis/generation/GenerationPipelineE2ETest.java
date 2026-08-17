@@ -65,6 +65,7 @@ class GenerationPipelineE2ETest {
         scenario.population.useRealRouting = false;  // offline: Luftlinien-Matrizen
         scenario.population.behaviorSource = "template"; // kein Gradle/LLM nötig
         scenario.population.calibrateModeChoice = false;
+        scenario.population.correctDistanceDecay = false;
         scenario.population.calibrateModeDistance = false;
         scenario.population.llmModeChoice = false;
         scenario.targetModels = new java.util.ArrayList<>(List.of("logitopp", "mobilecity"));

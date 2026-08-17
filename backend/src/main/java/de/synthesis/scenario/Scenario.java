@@ -97,6 +97,12 @@ public class Scenario {
          */
         public boolean calibrateDistance = false;
         /**
+         * Experimentelle Korrektur des Zielwahl-Distanz-Abklingens: addiert den über
+         * Seeds 42/43/44 bestätigten Term +0,06 auf die fünf b_tt_*-Reisezeit-Betas.
+         * Benötigt Ziel logiTopp; der Projekt-Standard wird nicht verändert.
+         */
+        public boolean correctDistanceDecay = false;
+        /**
          * Gemeinsame Modus-Distanz-Kalibrierung (experimentell): regelt das globale
          * ÖV-Niveau über asc_put und die Fernweg-Schräge über b_tt_put getrennt gegen
          * MiD 2017. Mehrere logiTopp-Läufe; benötigt genügend Wege ab 20 km.

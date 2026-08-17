@@ -213,7 +213,8 @@ function scenario(id: string): Scenario {
       useOsmData: false, useRealRouting: false, externalTrips: false,
       behaviorSource: 'template', gtaWhatIf: '', sumoFeedback: false,
       publicTransport: false, useKitPopulation: false, calibrateModeChoice: false,
-      calibrateDistance: false, calibrateModeDistance: false, calibrationTarget: {},
+      calibrateDistance: false, correctDistanceDecay: false,
+      calibrateModeDistance: false, calibrationTarget: {},
       llmModeChoice: false, carsPerHousehold: 1
     },
     logistics: {

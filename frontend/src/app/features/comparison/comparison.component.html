@@ -68,6 +68,15 @@
             }
           </tr>
           <tr>
+            <td>Distanz-Abklingen korrigiert</td>
+            @for (e of entries; track e) {
+              <td>{{ e.params.correctDistanceDecay ? 'ja' : 'nein' }}</td>
+            }
+            @if (mid) {
+              <td></td>
+            }
+          </tr>
+          <tr>
             <td>Pakete/Person·Woche</td>
             @for (e of entries; track e) {
               <td>{{ e.params.parcelsPerPersonWeek }}</td>

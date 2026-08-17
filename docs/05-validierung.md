@@ -929,9 +929,13 @@ Die sechs Vorab-Gates bestehen: `>=10 km` **21,04 %**, `<1 km` **22,15 %**,
 `1–2 km` **13,53 %**, Modal-RMSE **0,102→0,108** (Δ +0,006) und
 **3,077 Wege/Person·Tag**. Gegenüber der Kontrolle steigt die mittlere Weglänge
 **6,19→7,00 km**. Der Ein-Faktor-Kontrast schließt damit Seed 43 und das
-Drei-Seed-Gate. Nicht befördert ist weiterhin ein Produktdefault: Der `b_tt_*`-Hebel
-besitzt noch kein versioniertes Szenario-Flag, und das `>20 km`-Band bleibt in D43 mit
-8,10 % unter dem MiD-Anteil 13 %.
+Drei-Seed-Gate. **Technische Beförderung (2026-08-17):** Das opt-in-Flag
+`population.correctDistanceDecay=false` erzeugt nun pro Szenario einen Parameterstand
+unter `simulation/distance-decay-adjusted/`, statt die geteilten Legacy-Dateien zu
+patchen. Es addiert exakt `+0,06` auf die fünf bestätigten `b_tt_*`-Parameter und ist mit
+`calibrateDistance`, den Modus-Kalibrierungen und Netz-Feedback komponierbar. Ein
+Produktdefault ist damit ausdrücklich noch nicht befördert: Das `>20 km`-Band bleibt in
+D43 mit 8,10 % unter dem MiD-Anteil 13 %, und ein Mehrregionen-Beleg steht aus.
 
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 

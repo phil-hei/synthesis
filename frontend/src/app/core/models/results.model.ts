@@ -175,6 +175,7 @@ export interface ComparisonParams {
   cellSizeMeters: number;
   samplingFraction: number;
   useRealRouting: boolean;
+  correctDistanceDecay: boolean;
   parcelsPerPersonWeek: number;
   returnsEnabled: boolean;
   returnShare: number;
