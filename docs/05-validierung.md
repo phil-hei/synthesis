@@ -1336,6 +1336,55 @@ Ein neuer Anlauf muss einen eigenständigen Mechanismus für das `>20 km`-Band
 präregistrieren, statt Kurzband- oder Modalparameter weiter zu scannen; Runtime,
 Defaults und `validation/` bleiben unverändert.
 
+#### Freiburg-Langweg-Nutzenbonusspike (2026-08-17) — präregistriert
+
+**Forensik und binäre Frage vor dem Lauf:** Der verwendete generierte
+`DestinationChoiceUtilityFunction` enthält direkte Distanzdummies nur für
+`0–1 km` und `1–2 km`; ein unabhängiger Langwegterm fehlt. Die bisherigen
+`b_tt_*`-Hebel verändern dagegen gleichzeitig Bandform und Moduserreichbarkeit
+(E25–E28). Kann ein konstanter Nutzenbonus für jede Zielalternative mit
+`DISTANCE > 20 km` das fehlende MiD-Langband über die vollständige
+logiTopp-Kette erzeugen, ohne die bereits getroffenen Kurzband-, Distanz- und
+Modalgates zu zerstören?
+
+Der einmalige Arm **LT-135** verwendet den eingefrorenen J-0895-Stand mit
+Seed 42, Helper `DISTANCE / 1000`, den bereits kalibrierten Zielwahlparametern
+und unverändertem Basis-MNL. Ein isolierter, gitignorierter Harness-Klon ergänzt
+im Zielwahlnutzen ausschließlich
+`1,35 * [DISTANCE > 20]`; `validation/` und Produktcode bleiben unverändert.
+Die Dosis ist kein Rasterwert, sondern folgt vorab aus den J-RAW-Log-Odds:
+`logit(0,13) − logit(0,0373119) = 1,34946`, gerundet auf **`+1,35`**.
+Unter einer reinen MNL-Umschichtung sagt dies `>20 km ≈ 13,01 %`,
+`<1 km ≈ 19,32 %`, `1–2 km ≈ 12,76 %`, `>=10 km ≈ 27,42 %` und
+Distanzband-RMSE ≈ 0,0348 voraus; feste Ziele und nachgelagerte Modellschritte
+können den Istwert abweichen lassen.
+
+**Mechanik-Gates vor Modalschutz — alle müssen bestehen:**
+
+1. LT-135 nutzt weiter den Legacy-Personen-Hash `9dda440f…fca90`, dieselben
+   fünf Zielwahlparameterdateien wie J-RAW und einen dokumentierten
+   Harness-Quellhash; kein Fallback und keine Exception.
+2. Das Demand-CSV unterscheidet sich von J-RAW; `>20 km` steigt um mindestens
+   5 Prozentpunkte und liegt absolut in `[10; 16] %`.
+3. `<1 km` bleibt in `[19; 23] %`, `1–2 km` in `[12; 16] %`, `>=10 km`
+   bei mindestens 20 %, Distanzband-RMSE bei höchstens 0,05 und
+   Wege/Person·Tag in `[3,0; 3,4]`.
+
+Nur wenn alle drei Mechanik-Gates bestehen, wird auf demselben LT-135-Stand
+einmal der unveränderte produktive `ModeChoiceCalibrator` gegen
+Fuß/Rad/Pkw/Mitfahrer/ÖV = 22/11/43/14/10 % ausgeführt (höchstens acht
+Iterationen, Toleranz 0,02). Sein erster Basis-MNL-Lauf muss LT-135 bytegleich
+reproduzieren. **Schutzgates:** Der Endstand hält sämtliche Distanzgates aus
+Punkt 3 einschließlich `>20 km in [10; 16] %`; Modal-RMSE sinkt gegenüber
+LT-135 um mindestens 0,02 auf höchstens 0,08, und ÖV liegt in `[8; 12] %`.
+
+**Stop-Regel:** Genau eine Dosis und ein Seed. Scheitert ein Mechanik-Gate,
+entfällt die Modalkalibrierung. Scheitert danach ein Schutzgate, gibt es weder
+eine zweite Bonusdosis noch neue Schwellen. Auch bei vollständigem Erfolg ist
+nur der externe Mechanismus auf einem eingefrorenen Freiburg-Seed bestätigt;
+ein versionierter opt-in Produktvertrag benötigt eine neue Präregistrierung mit
+Seeds 43/44, zweiter Region und zugewiesenem Widerlegungsversuch.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
