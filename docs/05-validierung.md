@@ -1430,6 +1430,57 @@ erhalten. Ein neuer Versuch muss zunächst den Anteil frei gewählter
 Zielentscheidungen explizit messen und einen daran bedingten Langwegmechanismus
 präregistrieren; eine bloße Nachskalierung von `+1,35` wäre ein verbotener Retry.
 
+#### Freiburg-Freiziel-Instrumentierung (2026-08-17) — präregistriert
+
+**Hypothese und binäre Frage vor dem Lauf:** LT-135 erreichte mit +3,4429 pp nur
+`0,37105` des unter einer Gesamtmengen-Umschichtung vorhergesagten Zuwachses
+**+9,2788 pp**. Erklärt der Anteil der Zielentscheidungen, die
+`DestinationChoiceUtilityFunction` tatsächlich erreichen, diese Unterwirkung?
+Wenn der HOME-/Fixziel-Bypass der dominante Verdünnungsmechanismus ist, muss der
+gemessene Freizielanteil vorab in **`[30; 45] %`** liegen und damit das
+beobachtete Wirkungsverhältnis 37,1 % einschließen.
+
+Der einmalige Instrumentierungsarm **FD-000** verwendet weiter den eingefrorenen
+J-0895-Stand mit Seed 42, Legacy-Personen-Hash `9dda440f…fca90`, Helper
+`DISTANCE / 1000`, denselben fünf Zielwahlparameterdateien und unverändertem
+Basis-MNL. Er enthält **keinen** Langwegbonus. Eine isolierte, gitignorierte
+Kopie der korrigierten Kilometer-Runtime ergänzt ausschließlich threadsichere
+Zähler in `FixedLocationDestinationChoice`: `HOME`, personengebundenes
+`FIXED`, freies Ziel über ein zweckspezifisches Modell (`FREE_MAPPED`) und
+freies Ziel über das Default-Modell (`FREE_DEFAULT`), jeweils zusätzlich nach
+Aktivitätstyp. Genau eine Abschlusszeile mit dem Präfix
+`SYNTHESIS_DESTINATION_CHOICE_PATHS` macht die Zählung maschinenlesbar;
+Produktcode und `validation/` bleiben unverändert.
+
+**Gates in fester Reihenfolge:**
+
+1. Der externe logiTopp-Lauf endet mit EXIT 0; Personen-, Helper- und
+   Zielwahlparameter-Hashes stimmen mit J-RAW überein, Run-Log ohne Fallback
+   und Exception.
+2. Die Instrumentierung ist verhaltensneutral: Das erzeugte Demand-CSV ist
+   byteidentisch zu J-RAW, SHA-256
+   `a58fac01c5f1a2623c3cda600842de68749e1b5f2bfd3cb17c345398f6c7a9de`.
+3. Genau eine Abschlusszeile ist parsebar; ihre Bilanz erfüllt exakt
+   `TOTAL = HOME + FIXED + FREE_MAPPED + FREE_DEFAULT`. `TOTAL`, der
+   HOME-/Fixziel-Bypass und der Freizielpfad sind jeweils größer null. Der
+   Freizielanteil ist
+   `(FREE_MAPPED + FREE_DEFAULT) / TOTAL`; Aktivitätstypen und das Verhältnis
+   `TOTAL / 42.989 J-RAW-Wege` werden nur diagnostisch berichtet.
+4. Das Erklärungs-Gate besteht genau dann, wenn der Freizielanteil in
+   `[30; 45] %` liegt. Ein Wert außerhalb des Fensters widerlegt die Erklärung,
+   dass die LT-135-Unterwirkung allein hinreichend durch HOME-/Fixziel-Bypässe
+   verdünnt wurde.
+
+**Stop-Regel:** Genau ein Instrumentierungslauf, keine Bonusdosis, keine
+Modalkalibrierung und keine neuen Seeds. Scheitert eines der technischen Gates
+1–3, ist der Lauf unentscheidbar und die Erklärung wird nicht bewertet.
+Bestehen sie und Gate 4 scheitert, wird der direkte Langwegbonus-Pfad gestoppt
+und zunächst eine andere Ursache gesucht. Besteht Gate 4, ist nur die
+Verdünnungserklärung auf diesem Seed gestützt; jede bedingte Dosis oder
+Produktänderung braucht eine eigene Präregistrierung mit direkter Verknüpfung
+zwischen Entscheidungsweg und gewählter Distanz, Seeds 43/44, zweiter Region
+und zugewiesenem Widerlegungsversuch.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
