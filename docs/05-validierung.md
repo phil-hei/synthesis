@@ -1008,6 +1008,26 @@ Anlauf braucht eine neue Präregistrierung für eine regionale Elastizitäts-Son
 beziehungsweise einen hierarchisch oder regional parametrisierten Hebel — keine
 Wiederholung derselben universellen Dosis.
 
+#### Freiburg-Grenzsonde (2026-08-17) — präregistriert, Ergebnis offen
+
+**Frage vor dem ersten Lauf:** Kann eine stärkere gemeinsame Dosis das verfehlte
+`>=10-km`-Gate erreichen, solange alle fünf resultierenden Reisezeitkoeffizienten
+negativ bleiben? Auf dem eingefrorenen T-C42-Legacy-Export werden genau die Offsets
+`+0,075` und `+0,09` untersucht; jeder Arm erhält danach dieselbe
+`b_intrazonal`-Kalibrierung auf 21 % Nahwege. `+0,09` ist die vorab definierte
+Obergrenze, weil der kleinste Betrag der unveränderten Koeffizientensumme bei
+`b_tt_put=-0,0906` liegt. Größere gemeinsame Offsets würden mindestens einen
+Reisezeitkoeffizienten nichtnegativ machen und damit die fachliche Bedeutung des
+Nutzenterms umkehren.
+
+**Vorhersage und Entscheidung:** `>=10 km` muss von `+0,06` über `+0,075` bis
+`+0,09` monoton steigen. Erfüllt eine Dosis alle sieben oben festgelegten
+Transferkriterien, wird die kleinste bestehende Dosis Kandidat für eine neue
+Mehrseed-Prüfung. Bleibt selbst `+0,09` unter 20 % oder RMSE `>0,05`, ist der
+gemeinsame sign-erhaltende Offset für Freiburg strukturell unzureichend; dann
+werden weder größere Offsets noch weitere Seeds gestartet. Zulässiger Folgeschritt
+ist nur ein anders parametrisierter beziehungsweise hierarchischer Hebel.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
