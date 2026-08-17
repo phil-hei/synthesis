@@ -434,13 +434,23 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   soll bleiben. Für einen A/B-Vergleich macht er aber aus einem Ein-Faktor-Kontrast
   unbemerkt einen Zwei-Faktor-Kontrast. Wer nur auf „beide Läufe DONE" schaut, wertet
   Kriterien auf einem ungültigen Test aus.
-- **Was du stattdessen tust:** Vor jedem A/B-Vergleich `dataQuality.populationDistribution`
-  **und** `counts.households` beider Manifeste vergleichen; abweichende Arme sind
-  ungültig, nicht interpretierbar. Beide Arme möglichst in **derselben
-  Backend-Session** fahren — der OSM-Fetch ist prozessweit memoisiert (siehe E13),
-  ein Wiederholungslauf bekommt dann garantiert dieselben Daten. Ungültige Läufe
-  markieren, nicht löschen. Evidenz: `docs/05-validierung.md`, Abschnitt
+- **Was du stattdessen tust:** Vor jedem A/B-Vergleich die `attractivities.csv` beider
+  Arme **hashen** und vergleichen — das ist der belastbare Test. Manifest-Felder
+  (`dataQuality.populationDistribution`, `counts.households`) sind nur ein Vorfilter:
+  Sie fangen den groben Quellenwechsel, aber nicht jede Datenabweichung. Ungültige
+  Läufe markieren, nicht löschen. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Großraum-A/B durchgeführt (2026-08-15)".
+- **⚠ Korrektur (2026-08-16):** Der frühere Rat „beide Arme in derselben Backend-Session
+  fahren, dann sind die OSM-Daten garantiert gleich" ist **widerlegt**. Die
+  Memoisierung deckt die Overpass-Abfragen nicht zuverlässig: In einer einzigen Session
+  erhielten drei Läufe denselben Attraktivitäts-Hash, zwei weitere je einen anderen —
+  einmal mit 866 statt 868 Siedlungsknoten (Abfrage 50 s statt 8–10 s), einmal mit
+  gleicher Knotenzahl und trotzdem anderem Inhalt. **Die Knotenzahl belegt keine
+  Datengleichheit.** Die Pipeline meldet das nicht: Stufen bleiben DONE,
+  `populationDistribution` bleibt `osm-places`. Gleiche Session hilft, garantiert aber
+  nichts — nur der Hash-Vergleich entscheidet. Der saubere Weg für Kampagnen ist, die
+  OSM-Eingabe einmal einzufrieren und allen Armen als Datei vorzugeben. Evidenz:
+  `docs/05-validierung.md`, Abschnitt „Drei-Seed-Wiederholung (2026-08-16)".
 
 ---
 

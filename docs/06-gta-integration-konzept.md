@@ -711,6 +711,16 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Shared-Parameterdatei mit anschließend hash-verifizierter Wiederherstellung. Details:
   [docs/05-validierung.md](05-validierung.md), Abschnitte „Distanz-Abkling-Sonde" und
   „Distanz-Abkling-A/B".
+  **⚠ Drei-Seed-Wiederholung (2026-08-16) — zwei von drei Seeds gültig:** Seeds 43/44
+  nachgefahren. Alle sechs Kriterien sind in allen drei Seeds erfüllt (D-RMSE
+  0,0258 / 0,0229 / 0,0245, Promotions-Schwelle ≤0,05 klar unterboten), aber **Seed 43
+  ist kein Ein-Faktor-Kontrast**: Die `attractivities.csv` der beiden Arme weichen ab,
+  bei byte-identischer `zones.csv`. Ursache ist eine instabile Overpass-Antwort, nicht
+  Nichtdeterminismus im Code — zwei Kontrollläufe mit identischer Konfiguration liefern
+  byte-identische Ergebnisse. Zwei Anläufe für Seed 43 blieben ungültig. Das
+  Drei-Seed-Gate ist damit **nicht abgeschlossen**; belastbar sind Seeds 42 und 44.
+  Vorbedingung für den nächsten Anlauf: OSM-Eingabe einfrieren und allen Armen als
+  Datei vorgeben, plus Hash-Vergleich der Attraktivitäten vor jeder Auswertung.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

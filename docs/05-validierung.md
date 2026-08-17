@@ -869,6 +869,51 @@ muss dieser Hebel denselben versionierten Weg bekommen wie `calibrateDistance` �
 sonst ist das Ergebnis nicht reproduzierbar konfigurierbar. Zusätzlich steht der
 zugewiesene Widerlegungsversuch in einer zweiten Session aus.
 
+### Drei-Seed-Wiederholung (2026-08-16) — zwei Seeds gültig, Seed 43 unentscheidbar
+
+Nachgefahren wurden C/D für Seeds 43 und 44 in **einer** Backend-Session, dazu zwei
+Wiederholungsläufe zur Ursachenklärung. Ergebnis der gültigen Kontraste:
+
+| Seed | C-RMSE | D-RMSE | C `>=10 km` | D `>=10 km` | C `1–2 km` | D `1–2 km` | Status |
+|---|---|---|---|---|---|---|---|
+| 42 | 0,0448 | **0,0258** | 16,28 % | 20,70 % | 21,73 % | 13,75 % | gültig |
+| 43 | 0,0439 | 0,0229 | 16,38 % | 21,61 % | 21,32 % | 12,72 % | **ungültig** |
+| 44 | 0,0408 | **0,0245** | 17,12 % | 21,48 % | 20,94 % | 12,90 % | gültig |
+
+Alle sechs Vorab-Kriterien sind in allen drei Seeds erfüllt, die Promotions-Schwelle
+≤0,05 wird mit max. 0,0258 klar unterboten. **Das Drei-Seed-Gate ist trotzdem nicht
+abgeschlossen**, weil Seed 43 keinen Ein-Faktor-Kontrast darstellt.
+
+**Befund (Ursache, forensisch geklärt)**: Bei Seed 43 unterscheiden sich die
+`attractivities.csv` der beiden Arme; `zones.csv` ist in allen Läufen byte-identisch.
+Die Divergenz entsteht also in Stufe 3 aus den OSM-Eingangsdaten, nicht in der
+Zonierung. Folgekette: Attraktivitäten → Bevölkerungsverteilung → Haushaltsbildung
+(C43 1579, D43 1564, D43-Wdh 1550 Haushalte bei je 2.000 Personen).
+
+**Der Mechanismus ist nicht Nichtdeterminismus im Code.** Zwei Kontrollläufe mit
+identischer Konfiguration (C43 und C43-Wdh, 28 Minuten auseinander) liefern
+byte-identische Attraktivitäten, Haushalte und Personen. Bei gleichen Eingaben ist die
+Pipeline reproduzierbar. Variabel ist die **Overpass-Antwort**: D43 lud 866 statt 868
+Siedlungs-`place`-Nodes und brauchte dafür 50 s statt 8–10 s; der Wiederholungslauf
+D43-Wdh lud zwar wieder 868, erhielt aber erneut abweichende Attraktivitäten — die
+Knotenzahl allein belegt Datengleichheit also nicht. C43, C44 und D44 teilen denselben
+Attraktivitäts-Hash; betroffen waren nur die beiden D43-Läufe. Es variiert nicht jeder
+Lauf, sondern gelegentlich einer — und die Pipeline meldet das nicht: beide Stufen
+bleiben DONE, `dataQuality.populationDistribution` steht in beiden Armen auf
+`osm-places`.
+
+**Konsequenz für die Kampagne**: Zwei gültige Seeds (42, 44) bestehen alle Kriterien;
+Seed 43 ist **unentscheidbar, nicht negativ**, und wurde in zwei Anläufen nicht
+gültig. Eine belastbare Drei-Seed-Aussage verlangt zuvor eine stabile OSM-Eingabe.
+
+**Konsequenz fürs System** (wichtiger als das Kampagnenergebnis): Ein A/B ist derzeit
+nur dann ein Ein-Faktor-Kontrast, wenn beide Arme zufällig dieselbe Overpass-Antwort
+erwischen. Zwei Abhilfen, beide noch offen: (1) `manifest.json` um einen Hash der
+OSM-abgeleiteten Eingänge (mindestens `attractivities.csv`) erweitern — die
+Siedlungs-/POI-Zahlen stehen bisher nur im flüchtigen Job-Log und sind nach einem
+Backend-Neustart verloren; (2) für Kampagnen die OSM-Eingabe einmal einfrieren und
+allen Armen als Datei vorgeben, statt sie je Lauf neu zu ziehen.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
