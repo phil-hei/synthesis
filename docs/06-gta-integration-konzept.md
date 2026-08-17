@@ -889,6 +889,17 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   0,0156 % Basismasse praktisch fernzielblind. **Entscheidung:** keine neue
   Dosis oder Produktänderung; als Nächstes darf nur die Verteilung der
   per-Choice-Set-Basismasse vorab klassifiziert werden.
+  **✅ Breites Within-Zweck-Niedrigmassenregime bestätigt (2026-08-17):** Der
+  separat präregistrierte PD-000-Lauf ist erneut byteidentisch zu J-RAW und
+  besteht alle technischen Gates. 60,3511 % der freien Entscheidungen haben
+  weniger als 1 % Fernzielmasse und tragen zusammen nur 3,7926 % der
+  Gesamtmasse; 4,3369 % der Entscheidungen mit mindestens 10 % tragen dagegen
+  42,5757 %. Die Varianzzerlegung lokalisiert **93,2080 % innerhalb** und nur
+  6,7920 % zwischen Aktivitätstypen. Besonders SHOPPING_DAILY kombiniert
+  95,76 % Niedrigmassenfälle mit seltenen Hochmassenfällen. **Entscheidung:**
+  Ein konstanter Zweckbonus ist keine hinreichende Strukturerklärung. Keine
+  Dosis oder Produktänderung; als nächster Same-run-Kandidat darf nur die
+  Ausgangszonenkomponente innerhalb der Zwecke zerlegt werden.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

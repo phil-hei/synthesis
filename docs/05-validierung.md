@@ -1855,6 +1855,55 @@ Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. Ein technische
 Scheitern macht PD-000 unentscheidbar. Unabhängig vom Mechanikurteil werden aus
 diesem Ein-Seed-Lauf weder Parameter abgeleitet noch Defaults geändert.
 
+**Ausführung:** Die PD-000-Instrumentierung kompiliert mit JDK 25; ihre Utility
+ist mit SHA-256 `5b13ad11…9f454c` byteidentisch zu CE-000 und bonusfrei. Der
+einzige externe Lauf endet mit EXIT 0 und `BUILD SUCCESSFUL in 15s`. Genau eine
+Abschlusszeile enthält 19.138 freie Entscheidungen, keine ungültige
+Wahrscheinlichkeit und eine maximale Summenabweichung von `3,55e-15`; Fallback
+und Exception treten nicht auf. Gesamtmasse, Aktivitätstypbilanz und
+J-RAW-Demand-Hash `a58fac01…c7a9de` reproduzieren CE-000 exakt. Die sechs
+Klassen summieren sich auf 19.138 und ihre Massen weichen nur um `1,48e-12`
+von der Gesamtmasse ab. Alle technischen Gates bestehen.
+
+| Basis-Langwegmasse `p` | Entscheidungen | Anteil Entscheidungen | Anteil Gesamtmasse |
+|---|---:|---:|---:|
+| `<0,01 %` | 5.283 | 27,6048 % | 0,0189 % |
+| `0,01–<0,1 %` | 2.693 | 14,0715 % | 0,2566 % |
+| `0,1–<1 %` | 3.574 | 18,6749 % | 3,5171 % |
+| `1–<5 %` | 5.160 | 26,9621 % | 28,7186 % |
+| `5–<10 %` | 1.598 | 8,3499 % | 24,9132 % |
+| `>=10 %` | 830 | 4,3369 % | **42,5757 %** |
+
+Damit liegen **11.550/19.138 = 60,3511 %** der Entscheidungen unter 1 % und
+bestehen Mechanik-Gate 1. Diese breite Mehrheit trägt zusammen nur 3,7926 %
+der gesamten Fernzielmasse. Umgekehrt tragen lediglich 830 Entscheidungen mit
+`p >=10 %` bereits 42,5757 % der Masse.
+
+Die vorab definierte Varianzzerlegung ergibt `SST = 75,1796550`, davon
+`SSB = 5,1062364` zwischen und `SSW = 70,0734186` innerhalb der
+Aktivitätstypen. Der Within-Anteil beträgt damit **93,2080 %** statt mindestens
+50 %; auch Mechanik-Gate 2 besteht. Die Niedrigmassenanteile sind dennoch
+fachlich unterschiedlich: SERVICE 70,91 %, PRIVATE_VISIT 19,70 %,
+SHOPPING_DAILY **95,76 %**, SHOPPING_OTHER **100 %**, LEISURE_INDOOR 20,97 %
+und LEISURE_OUTDOOR 14,30 %. Bei SHOPPING_OTHER liegen 96,50 % sogar unter
+0,1 %. SHOPPING_DAILY verbindet dagegen 95,76 % Niedrigmassenfälle mit wenigen
+Hochmassenfällen und erzeugt allein 45,8203 der 70,0734 Within-SSE.
+
+**Urteil gegen die Vorab-Regel:** Beide Mechanik-Gates bestehen. Die
+Langwegmasse ist stark konzentriert, und nur 6,7920 % ihrer Varianz lassen sich
+durch unterschiedliche Aktivitätstypmittel erklären. Ein bloß
+zweckspezifischer konstanter Bonus ist deshalb keine hinreichende strukturelle
+Erklärung der Unterwirkung; die dominante Heterogenität liegt innerhalb
+desselben Zwecks.
+
+**Entscheidung nach Stop-Regel:** Keine Dosis, Seeds, Modalkalibrierung oder
+Produktänderung. Der nächste zulässige Mechanikkandidat ist eine neue,
+verhaltensneutrale Same-run-Varianzzerlegung nach Ausgangszone innerhalb des
+Aktivitätstyps. Sie muss vorab klären, ob Geografie/Erreichbarkeit die
+93,2080-%-Within-Varianz bindet; PD-000 selbst liefert keinen Produktparameter.
+Rohlog, Quellhashes und maschinenlesbare Klassenbilanz bleiben unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/pd-000/`.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

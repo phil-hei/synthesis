@@ -151,6 +151,14 @@ CE-135-Masse 7,0603 % entfernt. Bei `SHOPPING_OTHER` stehen trotz 100 %
 Eligibility nur 0,0156 % Basismasse auf Fernzielen. Eine neue Dosis bleibt
 gesperrt; der nächste Beleg muss diese Wahrscheinlichkeitsverteilung vorab und
 verhaltensneutral klassifizieren.
+Der daraufhin präregistrierte PD-000-Lauf bestätigt ein breites, stark
+konzentriertes Niedrigmassenregime: 60,3511 % der freien Entscheidungen liegen
+unter 1 % Fernzielmasse und tragen nur 3,7926 % der Gesamtmasse, während
+4,3369 % mindestens 10 % erreichen und 42,5757 % der Masse tragen. **93,2080 %
+der Varianz liegen innerhalb** statt zwischen Aktivitätstypen. Ein konstanter
+Zweckbonus erklärt die Struktur daher nicht hinreichend; die nächste zulässige
+Diagnose zerlegt verhaltensneutral die Ausgangszonenkomponente innerhalb der
+Zwecke. Dosis und Produktänderung bleiben gesperrt.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

@@ -115,6 +115,17 @@ Freiburg-Fall den Effekt (`8,5698 %` homogen gegenüber `6,6643 %` als Mittel
 der Einzelkontrafakte). Aggregiere deshalb nie vor einer nichtlinearen
 Logit-Transformation.
 
+**Verteilungsdiagnose statt Mittelwert (PD-000, 2026-08-17):** Für eine
+Wahrscheinlichkeitsmasse `p` feste Klassen vor dem Lauf definieren und neben
+Anzahl/Masse auch `sum(p²)` je fachlicher Gruppe protokollieren. Dann gilt mit
+Gesamtmittel `m` und Gruppenmitteln `m_g`:
+`SST=sum(p²)-n*m²`, `SSB=sum(n_g*(m_g-m)²)`, `SSW=SST-SSB`. In Freiburg lagen
+60,3511 % der Entscheidungen unter 1 %, trugen aber nur 3,7926 % der Masse;
+93,2080 % der Varianz lag innerhalb der Aktivitätstypen. Ein Gruppenmittel darf
+also nicht als Beschreibung der Einzelfallverteilung behandelt werden. Vor
+einem gruppenspezifischen Regler erst prüfen, ob `SSB/SST` überhaupt substanziell
+ist.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner

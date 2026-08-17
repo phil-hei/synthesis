@@ -392,6 +392,18 @@ CE-000-Masse 2,3376 % gegen 2,3722 % Auswahl, CE-135-Masse 7,0603 % gegen
 ist eine neue Präregistrierung fester Klassen für die Verteilung der
 per-Choice-Set-Langwegmasse nach Aktivitätstyp; keine Produktänderung.
 
+**✅ Breites Within-Zweck-Niedrigmassenregime bestätigt (2026-08-17):** Der
+vorab fixierte Ein-Arm-Lauf PD-000 ist technisch gültig und reproduziert J-RAW
+byteidentisch. 11.550/19.138 Entscheidungen (**60,3511 %**) liegen unter 1 %
+Fernzielmasse und tragen nur 3,7926 % der Gesamtmasse. Nur 830 Entscheidungen
+(4,3369 %) liegen bei mindestens 10 %, tragen aber 42,5757 %. Die
+Varianzzerlegung ergibt **93,2080 % innerhalb** und 6,7920 % zwischen
+Aktivitätstypen. SHOPPING_DAILY hat 95,76 % Niedrigmassenfälle, aber seltene
+Hochmassenfälle und dominiert die Within-SSE. **Regel:** Ein konstanter
+Zweckbonus ist keine hinreichende Strukturerklärung; keine Dosis. Der nächste
+zulässige Same-run-Spike muss die Ausgangszonenkomponente innerhalb der Zwecke
+vorab zerlegen.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

@@ -73,6 +73,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E30 | `tripId` als Cross-run-Wegschlüssel | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | E31 | Aktivitätsnachbarschaft als Langweg-Dosisformel | Kalibrierung | ENTSCHIEDEN |
 | E32 | Binäre Choice-Set-Eligibility als Unterwirkungsursache | Kalibrierung | ENTSCHIEDEN |
+| E33 | Aktivitätstypmittel als Erklärung der Langwegmassen-Heterogenität | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -656,6 +657,26 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   präregistrierten festen Klassen gemessen werden. Evidenz:
   `docs/05-validierung.md`, Abschnitt „Freiburg-Choice-Set-Eligibility
   (2026-08-17)".
+
+### E33 — Aktivitätstypmittel als Heterogenitätserklärung — ENTSCHIEDEN
+
+- **Frage:** Entsteht die starke Streuung der CE-000-Langwegmasse überwiegend
+  zwischen den sechs freien Aktivitätstypen, sodass zweckspezifische Konstanten
+  die nächste hinreichende Strukturerklärung wären?
+- **Evidenz:** Der vorab fixierte PD-000-Lauf ist bonusfrei, technisch gültig
+  und erneut byteidentisch zu J-RAW. 60,3511 % der 19.138 Entscheidungen haben
+  `p <1 %` und tragen nur 3,7926 % der Gesamtmasse. Dagegen tragen 4,3369 % mit
+  `p >=10 %` bereits 42,5757 %. Die feste Varianzzerlegung ergibt
+  `SST=75,1796550`, `SSB=5,1062364` und `SSW=70,0734186`: **93,2080 %** liegen
+  innerhalb der Aktivitätstypen, nur 6,7920 % zwischen ihnen.
+- **Root Cause:** Zweckmittel verdecken die dominante innere Mischung.
+  SHOPPING_DAILY liegt zu 95,76 % unter 1 %, enthält aber seltene
+  Hochmassenfälle und erzeugt 45,8203 der 70,0734 Within-SSE.
+- **Status/Regel:** Ein konstanter Zweckbonus ist keine hinreichende Erklärung
+  der Heterogenität. Keine Dosis oder Produktimplementierung. Der nächste
+  zulässige Same-run-Spike muss vorab die Ausgangszonenkomponente innerhalb der
+  Zwecke zerlegen. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Langwegmassenverteilung (2026-08-17)".
 
 ---
 

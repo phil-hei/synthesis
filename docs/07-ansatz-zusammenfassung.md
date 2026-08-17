@@ -173,7 +173,14 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   und CE-135 tatsächlich 7,0603 %. `SHOPPING_OTHER` bleibt trotz vollständiger
   Eligibility mit 0,0156 % Basismasse praktisch fernzielblind. Nicht
   Verfügbarkeit, sondern heterogene Wahrscheinlichkeitsmasse ist damit der
-  nächste Diagnosegegenstand; eine neue Dosis bleibt gesperrt.
+  nächste Diagnosegegenstand. Der danach präregistrierte PD-000-Lauf zeigt:
+  60,3511 % der freien Entscheidungen liegen unter 1 % Fernzielmasse und
+  tragen nur 3,7926 % der Gesamtmasse; 4,3369 % mit mindestens 10 % tragen
+  dagegen 42,5757 %. **93,2080 % der Varianz entstehen innerhalb** der
+  Aktivitätstypen, nur 6,7920 % zwischen ihnen. Ein konstanter Zweckbonus ist
+  keine hinreichende Strukturerklärung; die nächste Diagnose muss die
+  Ausgangszonenkomponente innerhalb der Zwecke zerlegen. Eine neue Dosis bleibt
+  gesperrt.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-
