@@ -114,8 +114,10 @@ treibt über die nachgelagerte Moduswahl den ÖV-Anteil hoch. Der nächste Versu
 muss deshalb mehrere Distanzbänder und den Modal-Schutz gemeinsam kontrollieren.
 Der dafür vorgesehene Legacy-Hebel `b_1_2` ist derzeit blockiert: Das generierte
 Modell vergleicht Kilometergrenzen mit einer Meter-Distanzmatrix, sodass `b_0_1`
-und `b_1_2` wirkungslos bleiben. Eine Korrektur erfordert einen versionierten,
-experimentellen Harness-Vertrag und neue Baselines.
+und `b_1_2` wirkungslos bleiben. Ein isolierter `DISTANCE / 1000`-Spike bestätigt
+die Einheitenursache und aktiviert den Hebel, verfehlt mit **+2,42 pp** im
+`1–2 km`-Band aber den vorab gesetzten Elastizitäts-Gate von +3 pp. Deshalb gibt
+es vorerst keinen neuen Produktvertrag; Runtime und Defaults bleiben unverändert.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

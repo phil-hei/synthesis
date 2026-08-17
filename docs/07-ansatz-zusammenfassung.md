@@ -138,8 +138,11 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   `>=10 km` zwar bis 33,85 %, verschlechtert den Band-RMSE aber auf 0,0729 und
   hebt den ÖV-Anteil über die separate Moduswahl auf 37,83 %. Auch dieser Pfad ist
   ohne Multi-Band- und Modal-Schutz verworfen. Der vorgesehene Multi-Band-Hebel
-  `b_1_2` ist im Legacy-Vertrag derzeit wirkungslos, weil seine Kilometergrenzen
-  gegen Meterwerte geprüft werden; die experimentelle Vertragskorrektur steht aus.
+  `b_1_2` ist im Legacy-Vertrag wirkungslos, weil seine Kilometergrenzen gegen
+  Meterwerte geprüft werden. Ein isolierter `DISTANCE / 1000`-Spike bestätigt
+  die Root Cause und aktiviert den Hebel, verfehlt mit +2,42 pp aber den
+  präregistrierten Elastizitäts-Gate von +3 pp. Deshalb wurde weder ein
+  Produktvertrag noch eine weitere Dosis oder Seed-Kampagne begonnen.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-

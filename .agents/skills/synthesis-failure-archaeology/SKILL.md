@@ -525,6 +525,14 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   präregistrierte Baselines, weil die bestehenden Kurzband-Parameter dadurch
   erstmals aktiv werden. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Multi-Band-Sonde (2026-08-17)"; Präregistrierung Commit `1ae34ad`.
+- **Spike-Nachtrag (2026-08-17):** Eine isolierte Harness-Kopie mit ausschließlich
+  `getDistance(...) / 1000.0d` bestätigt den Einheitenmechanismus: KM-000 hebt
+  `1–2 km` von 7,89 auf 9,67 %, KM-050 mit `b_1_2 +0,50` auf 12,09 %. Der
+  zusätzliche Effekt von **+2,42 pp** verfehlt jedoch den in Commit `3382e17`
+  vorab gesetzten +3-pp-Gate. Daher keine `+0,75`-Dosis, Seeds oder
+  Produktimplementierung; produktive Runtime und `validation/` bleiben
+  unverändert. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Kilometer-Vertragsspike (2026-08-17)".
 
 ---
 

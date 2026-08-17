@@ -1225,6 +1225,42 @@ beide Binär-Gates, ist nur die Mechanik bestätigt. Dann darf ein separater
 opt-in Harness-Vertrag geplant werden; Default-Änderung, weitere Dosen und Seeds
 bleiben bis zu neuer Baseline- und Schutzgate-Präregistrierung gesperrt.
 
+**Ausführung:** Die isolierte Harness-Kopie unterscheidet sich im relevanten
+Quellpfad durch genau `getDistance(...) / 1000.0d`; ihr Helper-SHA-256 ist
+`31f23b3c…118c7a` gegenüber `e2ed67f4…c24476d6` im unveränderten
+`validation/`-Harness. Der temporäre Produktions-Harness bestand (1 Test,
+EXIT 0, 78,13 s) und wurde danach entfernt. Beide Arme teilen den eingefrorenen
+Legacy-Personen-Hash `9dda440f…fca90`; kein Run-Log enthält Fallback oder Exception.
+
+| Kennzahl | PC-0090 (Metervertrag) | KM-000 | KM-050 |
+|---|---:|---:|---:|
+| Wege | 42.990 | 42.989 | 42.988 |
+| `<1 km` nach Kalibrierung | 20,85 % | 20,78 % | 20,92 % |
+| `1–2 km` | 7,89 % | **9,67 %** | **12,09 %** |
+| `5–10 km` | 27,43 % | 27,01 % | 25,82 % |
+| `>=10 km` | 20,98 % | 20,68 % | 20,19 % |
+| Ø Weglänge | 6,38 km | 6,31 km | 6,16 km |
+| Distanzband-RMSE | 0,0675 | **0,0636** | **0,0581** |
+| ÖV-Anteil | 29,29 % | 29,05 % | 28,21 % |
+| Modal-RMSE | 0,115920 | 0,115971 | 0,114158 |
+| Wege/Person·Tag | 3,07 | 3,07 | 3,07 |
+
+**Urteil gegen die Vorab-Gates:** Die Einheiten-Root-Cause ist mechanisch bestätigt:
+KM-000 ist nicht byteidentisch zu PC-0090, vorhandene Kurzband-Terme werden wirksam,
+und KM-050 unterscheidet sich wiederum byteweise von KM-000. Der vorhergesagte
+Elastizitäts-Gate scheitert jedoch: `1–2 km` steigt nur um **2,42 pp** statt
+mindestens 3 pp. Die Wirkung verbessert RMSE und ÖV-Anteil in der erwarteten
+Richtung, reicht aber weder für das absolute RMSE-Gate 0,05 noch für die
+ÖV-Diagnose 26 %.
+
+**Entscheidung nach Stop-Regel:** Keine `+0,75`-Dosis, keine Seeds und keine
+Produktimplementierung des Kilometervertrags. Die isolierte Harness-Kopie und
+Ergebnisse bleiben als Kampagnenevidenz erhalten; der produktive und der
+`validation/`-Vertrag sind unverändert. Ein neuer Anlauf müsste die nun gemessene
+statt angenommene Elastizität in einer unabhängigen Präregistrierung verwenden
+und zugleich alle Distanz- und Modal-Schutzgates adressieren; dieser Spike allein
+rechtfertigt weder ein neues Szenario-Flag noch einen Default- oder Runtime-Wechsel.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

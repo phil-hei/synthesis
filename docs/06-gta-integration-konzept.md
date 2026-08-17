@@ -803,6 +803,17 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   sondern eine versionierte, experimentell aktivierbare Harness-Korrektur
   `DISTANCE / 1000` mit neu präregistrierten Baselines; die bestehenden
   Kurzband-Terme würden dadurch erstmals wirksam.
+  **❌ Kilometer-Vertragsspike vor Produkt gestoppt (2026-08-17):** Commit
+  `3382e17` fixierte zwei Binär-Gates vorab. In einer isolierten Harness-Kopie
+  bestätigt `DISTANCE / 1000` die Root Cause: KM-000 unterscheidet sich von
+  PC-0090 und verschiebt `1–2 km` 7,89→9,67 %, RMSE 0,0675→0,0636. Ein
+  zusätzlicher `b_1_2 +0,50`-Term wirkt nun ebenfalls und erreicht 12,09 %
+  sowie RMSE 0,0581; gegenüber KM-000 sind das aber nur **+2,42 pp** statt des
+  vorab geforderten Minimums +3 pp. Beide Läufe halten `>=10 km` über 20 %,
+  der ÖV-Anteil bleibt mit 29,05/28,21 % jedoch über der 26-%-Diagnose.
+  **Entscheidung:** Einheitenerklärung bestätigt, Promotionshypothese verworfen;
+  kein `+0,75`, keine Seeds, kein opt-in Produktvertrag. Die produktive Runtime
+  und `validation/` bleiben unverändert.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

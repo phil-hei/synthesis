@@ -315,6 +315,17 @@ Harness-Vertrag versioniert und experimentell aktivierbar `DISTANCE / 1000`
 liefert. Die Korrektur braucht neue Baselines, weil sie vorhandene Kurzband-Terme
 erstmals aktiviert; `validation/` nicht direkt patchen.
 
+**❌ Isolierter Kilometer-Vertragsspike gestoppt (2026-08-17):** Eine persistente,
+gitignorierte Harness-Kopie mit ausschließlich `getDistance(...) / 1000.0d`
+bestätigt die Einheitenursache: KM-000 ist nicht byteidentisch zu PC-0090 und hebt
+`1–2 km` von 7,89 auf 9,67 %. Mit `b_1_2 +0,50` erreicht KM-050 12,09 % und
+senkt den Band-RMSE 0,0636→0,0581. Die Elastizität beträgt aber nur **+2,42 pp**
+und verfehlt damit den in Commit `3382e17` präregistrierten Mindest-Gate +3 pp.
+**Regel:** Keine `+0,75`-Dosis, Seeds oder Produktimplementierung. Eine neue
+Hypothese muss die gemessene Elastizität unabhängig präregistrieren und Distanz-
+sowie Modal-Schutzgates gemeinsam adressieren; die produktive Runtime und
+`validation/` bleiben unverändert.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.
