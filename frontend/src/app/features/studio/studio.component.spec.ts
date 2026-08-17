@@ -16,6 +16,7 @@ describe('StudioComponent', () => {
     listUploads: ReturnType<typeof vi.fn>;
     deletePopulationGrid: ReturnType<typeof vi.fn>;
     deleteRoadNetwork: ReturnType<typeof vi.fn>;
+    deleteOsmData: ReturnType<typeof vi.fn>;
     deleteCommuters: ReturnType<typeof vi.fn>;
     deleteWorkplaceMargins: ReturnType<typeof vi.fn>;
     generate: ReturnType<typeof vi.fn>;
@@ -33,6 +34,7 @@ describe('StudioComponent', () => {
       listUploads: vi.fn(() => of([])),
       deletePopulationGrid: vi.fn(() => of(undefined)),
       deleteRoadNetwork: vi.fn(() => of(undefined)),
+      deleteOsmData: vi.fn(() => of(undefined)),
       deleteCommuters: vi.fn(() => of(undefined)),
       deleteWorkplaceMargins: vi.fn(() => of(undefined)),
       generate: vi.fn(() => of(job('QUEUED'))),
@@ -118,6 +120,7 @@ describe('StudioComponent', () => {
     const failure = throwError(() => new Error('offline'));
     api.deletePopulationGrid.mockReturnValue(failure);
     api.deleteRoadNetwork.mockReturnValue(failure);
+    api.deleteOsmData.mockReturnValue(failure);
     api.deleteCommuters.mockReturnValue(failure);
     api.deleteWorkplaceMargins.mockReturnValue(failure);
     fixture = TestBed.createComponent(StudioComponent);
@@ -132,6 +135,10 @@ describe('StudioComponent', () => {
     fixture.componentInstance.removeRoadNetwork();
     expect(fixture.componentInstance.roadNetworkUploadBusy).toBe(false);
     expect(fixture.componentInstance.message).toBe('Straßennetz konnte nicht entfernt werden');
+
+    fixture.componentInstance.removeOsmData();
+    expect(fixture.componentInstance.osmDataUploadBusy).toBe(false);
+    expect(fixture.componentInstance.message).toBe('OSM-Datensnapshot konnte nicht entfernt werden');
 
     fixture.componentInstance.removeCommuters();
     expect(fixture.componentInstance.commuterUploadBusy).toBe(false);

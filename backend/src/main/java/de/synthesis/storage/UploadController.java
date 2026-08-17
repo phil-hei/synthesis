@@ -1,8 +1,10 @@
 package de.synthesis.storage;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.synthesis.generation.pipeline.BaCommuterAdapter;
 import de.synthesis.generation.pipeline.CommuterMatrix;
 import de.synthesis.generation.pipeline.MunicipalityCentroidSource;
+import de.synthesis.generation.pipeline.OsmDataSnapshot;
 import de.synthesis.generation.pipeline.PopulationGridParser;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
 import de.synthesis.generation.pipeline.WorkplaceMargins;
@@ -41,6 +43,7 @@ public class UploadController {
 
     public static final String POPULATION_GRID = "population-grid.csv";
     public static final String ROAD_NETWORK = RoadNetworkFile.NAME;
+    public static final String OSM_DATA = OsmDataSnapshot.NAME;
 
     public record UploadSummary(String name, String format, int points, long totalPopulation,
                                 long skippedLines) {
@@ -52,6 +55,10 @@ public class UploadController {
     public record RoadNetworkUploadSummary(String name, long nodes, long ways, long highwayWays,
                                            double minLat, double minLon, double maxLat, double maxLon,
                                            String sha256) {
+    }
+
+    public record OsmDataUploadSummary(String name, int elements, int pois, int places,
+                                       String sha256) {
     }
 
     public record CommuterUploadSummary(String name, int relations, long totalCommuters,
@@ -68,11 +75,14 @@ public class UploadController {
 
     private final ScenarioRepository scenarios;
     private final MunicipalityCentroidSource municipalityCentroids;
+    private final ObjectMapper mapper;
 
     public UploadController(ScenarioRepository scenarios,
-                            MunicipalityCentroidSource municipalityCentroids) {
+                            MunicipalityCentroidSource municipalityCentroids,
+                            ObjectMapper mapper) {
         this.scenarios = scenarios;
         this.municipalityCentroids = municipalityCentroids;
+        this.mapper = mapper;
     }
 
     @PostMapping("/population-grid")
@@ -128,6 +138,36 @@ public class UploadController {
             return new RoadNetworkUploadSummary(ROAD_NETWORK, inspection.nodes(), inspection.ways(),
                     inspection.highwayWays(), inspection.minLat(), inspection.minLon(),
                     inspection.maxLat(), inspection.maxLon(), inspection.sha256());
+        } catch (IllegalArgumentException e) {
+            Files.deleteIfExists(temporary);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (IOException | RuntimeException e) {
+            Files.deleteIfExists(temporary);
+            throw e;
+        }
+    }
+
+    @PostMapping("/osm-data")
+    public OsmDataUploadSummary uploadOsmData(@PathVariable String id,
+                                              @RequestParam("file") MultipartFile file)
+            throws IOException {
+        scenarios.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Szenario nicht gefunden: " + id));
+        String originalName = file.getOriginalFilename();
+        if (file.isEmpty() || originalName == null
+                || !originalName.toLowerCase(Locale.ROOT).endsWith(".json")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Bitte einen Overpass-JSON-Snapshot (.json) hochladen");
+        }
+        Path dir = scenarios.uploadsDir(id);
+        Files.createDirectories(dir);
+        Path temporary = Files.createTempFile(dir, "osm-data-", ".json");
+        try {
+            file.transferTo(temporary.toAbsolutePath());
+            OsmDataSnapshot.Content content = OsmDataSnapshot.read(temporary, mapper);
+            moveReplacing(temporary, dir.resolve(OSM_DATA));
+            return new OsmDataUploadSummary(OSM_DATA, content.elements(), content.pois().size(),
+                    content.places().size(), content.sha256());
         } catch (IllegalArgumentException e) {
             Files.deleteIfExists(temporary);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -308,6 +348,12 @@ public class UploadController {
     @DeleteMapping("/road-network")
     public ResponseEntity<Void> deleteRoadNetwork(@PathVariable String id) throws IOException {
         Files.deleteIfExists(scenarios.uploadsDir(id).resolve(ROAD_NETWORK));
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/osm-data")
+    public ResponseEntity<Void> deleteOsmData(@PathVariable String id) throws IOException {
+        Files.deleteIfExists(scenarios.uploadsDir(id).resolve(OSM_DATA));
         return ResponseEntity.noContent().build();
     }
 

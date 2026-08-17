@@ -60,6 +60,12 @@ verschieben die acht Außenanker auf pendlergewichtete reale Arbeitsortkoordinat
 ein getrennter nächster Adapter; ohne Uploads gelten unverändert die Overpass-/Luftlinien- und
 Gravitations-Fallbacks.
 
+Für reproduzierbare A/B-Kampagnen kann zusätzlich ein kombinierter **Overpass-JSON-Snapshot**
+mit POIs und bevölkerten `place`-Nodes hochgeladen werden. Er ersetzt die beiden Live-Abrufe
+der OSM-Datenstufe; `manifest.json` hält seinen SHA-256 sowie den SHA-256 der daraus erzeugten
+`attractivities.csv` fest. So lassen sich unterschiedliche Overpass-Antworten als verdeckte
+zweite Versuchsvariable ausschließen.
+
 **Zwei-Achsen-Modell** (im Studio unter „Modellierung" wählbar): _Achse A – Verhaltensquelle_
 (actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, inkl. Was-wäre-wenn-Szenarien) ×
 _Achse B – Zielmodell_ (logiTopp · MobileCity-Export · **SUMO**, Mehrfachauswahl).

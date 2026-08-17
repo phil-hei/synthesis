@@ -137,6 +137,14 @@ export interface RoadNetworkUploadSummary {
   sha256: string;
 }
 
+export interface OsmDataUploadSummary {
+  name: string;
+  elements: number;
+  pois: number;
+  places: number;
+  sha256: string;
+}
+
 export interface CommuterUploadSummary {
   name: string;
   relations: number;

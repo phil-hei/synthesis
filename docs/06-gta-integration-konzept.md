@@ -721,6 +721,18 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Drei-Seed-Gate ist damit **nicht abgeschlossen**; belastbar sind Seeds 42 und 44.
   Vorbedingung für den nächsten Anlauf: OSM-Eingabe einfrieren und allen Armen als
   Datei vorgeben, plus Hash-Vergleich der Attraktivitäten vor jeder Auswertung.
+  **✅ Reproduzierbare OSM-Kampagneneingabe umgesetzt (2026-08-17):** Das Studio und
+  `POST /api/scenarios/{id}/uploads/osm-data` akzeptieren einen kombinierten
+  Overpass-JSON-Snapshot mit POIs und bevölkerten `place`-Nodes. Die Pipeline verwendet
+  `uploads/osm-data.json` vor jedem Live-Abruf und bricht bei nachträglicher Beschädigung
+  sichtbar ab. `manifest.json.inputProvenance` enthält Snapshot-Quelle/-SHA-256 sowie
+  den SHA-256 der resultierenden `attractivities.csv`; damit ist Datengleichheit direkt
+  prüfbar und nicht mehr aus Knotenzahlen oder flüchtigen Logs zu folgern.
+  **Verifiziert:** `OsmDataSnapshotTest` (Parsing, Negativfall),
+  `UploadControllerTest` (validierter stabiler Uploadname) und der vollständige
+  Offline-`GenerationPipelineE2ETest` mit echtem Snapshot-Pfad; Backend 130 Tests,
+  0 Fehler, 7 umgebungsbedingte Skips, Frontend 21/21, Produktions-Audit ohne Befund
+  und Angular-AOT-Build grün. *Offen:* C43/D43 mit demselben Snapshot wiederholen.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

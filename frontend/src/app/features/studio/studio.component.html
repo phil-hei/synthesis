@@ -81,10 +81,35 @@
           Zufalls-Seed
           <input type="number" [(ngModel)]="scenario.population.seed">
         </label>
-        <label class="checkbox" title="POIs, Siedlungs- und Logistikdaten live von der Overpass-API laden; bei Fehlschlag fällt die Pipeline automatisch auf synthetische Daten zurück">
+        <label class="checkbox" title="POIs, Siedlungs- und Logistikdaten aus dem hochgeladenen Snapshot oder live von Overpass nutzen; nur der Live-Pfad fällt bei Fehlschlag auf synthetische Daten zurück">
           <input type="checkbox" [(ngModel)]="scenario.population.useOsmData">
-          OSM-Daten nutzen (Overpass-API)
+          OSM-Daten nutzen (Snapshot oder Overpass)
         </label>
+        <div class="upload"
+          title="Eingefrorener Overpass-JSON-Snapshot mit POIs und place-Nodes. Er hat Vorrang vor Live-Overpass und macht A/B-Läufe reproduzierbar; der SHA-256-Hash wird im Manifest festgehalten.">
+          @if (!osmDataUpload) {
+            <label class="upload-button" [class.disabled]="!scenario.id || osmDataUploadBusy">
+              {{ osmDataUploadBusy ? 'Snapshot wird geprüft…' : 'OSM-Datensnapshot hochladen (.json) ⓘ' }}
+              <input type="file" accept=".json,application/json"
+                (change)="onOsmDataSelected($event)"
+                [disabled]="!scenario.id || osmDataUploadBusy">
+            </label>
+          }
+          @if (osmDataUpload) {
+            <div class="upload-info">
+              <span>
+                🧊 Eingefrorene OSM-Daten aktiv
+                @if (osmDataUpload.sha256) {
+                  – {{ osmDataUpload.pois.toLocaleString() }} POIs,
+                  SHA-256 {{ osmDataUpload.sha256.slice(0, 12) }}…
+                }
+              </span>
+              <button class="link danger" (click)="removeOsmData()"
+                [disabled]="osmDataUploadBusy"
+                title="OSM-Datensnapshot entfernen">✕</button>
+            </div>
+          }
+        </div>
         <label class="checkbox" title="Reisezeit- und Distanzmatrizen über echtes Routing auf dem OSM-Straßennetz berechnen (GraphHopper, Auto/Rad/Fuß). Bei Fehlschlag automatisch Luftlinien-Schätzung.">
           <input type="checkbox" [(ngModel)]="scenario.population.useRealRouting">
           Echtes Routing (GraphHopper statt Luftlinie)

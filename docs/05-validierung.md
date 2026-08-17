@@ -906,13 +906,16 @@ bleiben DONE, `dataQuality.populationDistribution` steht in beiden Armen auf
 Seed 43 ist **unentscheidbar, nicht negativ**, und wurde in zwei Anläufen nicht
 gültig. Eine belastbare Drei-Seed-Aussage verlangt zuvor eine stabile OSM-Eingabe.
 
-**Konsequenz fürs System** (wichtiger als das Kampagnenergebnis): Ein A/B ist derzeit
-nur dann ein Ein-Faktor-Kontrast, wenn beide Arme zufällig dieselbe Overpass-Antwort
-erwischen. Zwei Abhilfen, beide noch offen: (1) `manifest.json` um einen Hash der
-OSM-abgeleiteten Eingänge (mindestens `attractivities.csv`) erweitern — die
-Siedlungs-/POI-Zahlen stehen bisher nur im flüchtigen Job-Log und sind nach einem
-Backend-Neustart verloren; (2) für Kampagnen die OSM-Eingabe einmal einfrieren und
-allen Armen als Datei vorgeben, statt sie je Lauf neu zu ziehen.
+**Konsequenz fürs System** (wichtiger als das Kampagnenergebnis): Ein A/B war nur dann
+ein Ein-Faktor-Kontrast, wenn beide Arme zufällig dieselbe Overpass-Antwort erhielten.
+**✅ Technische Abhilfe (2026-08-17):** Ein validierter, szenariogebundener
+`uploads/osm-data.json`-Snapshot hat nun Vorrang vor Live-Overpass. `manifest.json`
+schreibt unter `inputProvenance` sowohl Quelle und SHA-256 dieses Snapshots als auch
+den SHA-256 der tatsächlich erzeugten `zone-repository/attractivities.csv`. Der
+Offline-E2E-Test führt die Pipeline mit einem Snapshot aus und prüft beide 64-stelligen
+Hashes. Damit kann die Kampagne identische Eingaben erzwingen und nach einem Neustart
+belegen. **Noch offen:** Snapshot für C43/D43 erzeugen, beiden Armen zuweisen und den
+ungültigen Seed-43-Kontrast wiederholen; erst dieser Lauf schließt das Drei-Seed-Gate.
 
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 

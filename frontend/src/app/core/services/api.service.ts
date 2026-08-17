@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ComparisonEntry, ZonePreview } from '../models/results.model';
 import {
-  ArtifactInfo, CommuterUploadSummary, GenerationJob, Region, RegionEstimate, RoadNetworkUploadSummary,
+  ArtifactInfo, CommuterUploadSummary, GenerationJob, OsmDataUploadSummary, Region, RegionEstimate, RoadNetworkUploadSummary,
   Scenario, UploadInfo, UploadSummary, WorkplaceMarginUploadSummary
 } from '../models/scenario.model';
 
@@ -74,6 +74,17 @@ export class ApiService {
 
   deleteRoadNetwork(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/scenarios/${id}/uploads/road-network`);
+  }
+
+  uploadOsmData(id: string, file: File): Observable<OsmDataUploadSummary> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<OsmDataUploadSummary>(
+      `${this.base}/scenarios/${id}/uploads/osm-data`, form);
+  }
+
+  deleteOsmData(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/scenarios/${id}/uploads/osm-data`);
   }
 
   uploadCommuters(id: string, file: File): Observable<CommuterUploadSummary> {

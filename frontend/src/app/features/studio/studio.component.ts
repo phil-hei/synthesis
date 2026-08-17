@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 import { ApiService } from '../../core/services/api.service';
 import {
-  ArtifactInfo, CommuterUploadSummary, Depot, GenerationJob, RoadNetworkUploadSummary,
+  ArtifactInfo, CommuterUploadSummary, Depot, GenerationJob, OsmDataUploadSummary, RoadNetworkUploadSummary,
   Scenario, UploadSummary, WorkplaceMarginUploadSummary
 } from '../../core/models/scenario.model';
 import {
@@ -48,6 +48,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   uploadBusy = false;
   roadNetworkUpload: RoadNetworkUploadSummary | null = null;
   roadNetworkUploadBusy = false;
+  osmDataUpload: OsmDataUploadSummary | null = null;
+  osmDataUploadBusy = false;
   commuterUpload: CommuterUploadSummary | null = null;
   commuterUploadBusy = false;
   workplaceMarginUpload: WorkplaceMarginUploadSummary | null = null;
@@ -128,6 +130,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
         this.estimateInfo = '';
         this.upload = null;
         this.roadNetworkUpload = null;
+        this.osmDataUpload = null;
         this.commuterUpload = null;
         this.message = '';
         this.clearSimulation();
@@ -504,6 +507,48 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  onOsmDataSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.scenario?.id) {
+      if (!this.scenario?.id) {
+        this.message = 'Bitte Szenario zuerst speichern, dann OSM-Datensnapshot hochladen';
+      }
+      return;
+    }
+    this.osmDataUploadBusy = true;
+    this.api.uploadOsmData(this.scenario.id, file).subscribe({
+      next: summary => {
+        this.osmDataUpload = summary;
+        this.osmDataUploadBusy = false;
+        this.message = `OSM-Datensnapshot übernommen (${summary.pois.toLocaleString('de-DE')} POIs)`;
+      },
+      error: err => {
+        this.osmDataUploadBusy = false;
+        this.message = 'OSM-Datensnapshot fehlgeschlagen: ' + (err.error?.message ?? err.message);
+      }
+    });
+  }
+
+  removeOsmData(): void {
+    if (!this.scenario?.id) {
+      return;
+    }
+    this.osmDataUploadBusy = true;
+    this.api.deleteOsmData(this.scenario.id).subscribe({
+      next: () => {
+        this.osmDataUpload = null;
+        this.osmDataUploadBusy = false;
+        this.message = 'OSM-Datensnapshot entfernt; POIs und Siedlungen werden wieder live geladen';
+      },
+      error: () => {
+        this.osmDataUploadBusy = false;
+        this.message = 'OSM-Datensnapshot konnte nicht entfernt werden';
+      }
+    });
+  }
+
   onCommutersSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -595,6 +640,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   private loadUploads(): void {
     this.upload = null;
     this.roadNetworkUpload = null;
+    this.osmDataUpload = null;
     this.commuterUpload = null;
     this.workplaceMarginUpload = null;
     if (!this.scenario?.id) {
@@ -614,6 +660,12 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
           this.roadNetworkUpload = {
             name: network.name, nodes: 0, ways: 0, highwayWays: 0,
             minLat: 0, minLon: 0, maxLat: 0, maxLon: 0, sha256: ''
+          };
+        }
+        const osmData = list.find(u => u.name === 'osm-data.json');
+        if (osmData) {
+          this.osmDataUpload = {
+            name: osmData.name, elements: 0, pois: 0, places: 0, sha256: ''
           };
         }
         const commuters = list.find(u => u.name === 'commuters.csv');

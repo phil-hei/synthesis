@@ -26,6 +26,7 @@ import de.synthesis.generation.pipeline.DistanceCalibrator;
 import de.synthesis.generation.pipeline.ModeChoiceCalibrator;
 import de.synthesis.generation.pipeline.ModeDistanceCalibrator;
 import de.synthesis.generation.pipeline.OverpassClient;
+import de.synthesis.generation.pipeline.OsmDataSnapshot;
 import de.synthesis.generation.pipeline.PopulationEstimator;
 import de.synthesis.generation.pipeline.PopulationGenerator;
 import de.synthesis.generation.pipeline.PopulationGridParser;
@@ -180,6 +181,9 @@ public class GenerationService {
         String matrixSource = "beeline-estimate";
         /** Konkrete Netzprovenienz; bleibt "not-used", wenn kein Netz angefordert wurde. */
         String roadNetworkSource = "not-used";
+        /** POI-/Siedlungsquelle und ihr Inhalts-Hash für reproduzierbare A/B-Läufe. */
+        String osmDataSource = "not-used";
+        String osmDataSha256 = "";
         /** Arbeitszielquelle: beobachtete OD-Relationen oder synthetisches Gravitationsmodell. */
         String commuterSource = "gravity-model";
         /** Regionaler Außenarbeitsplatz-Randwert; ohne Upload bleibt die Gravitation maßgeblich. */
@@ -314,6 +318,26 @@ public class GenerationService {
             job.log("OSM-Abruf deaktiviert, nutze synthetische Daten");
             return;
         }
+        Path snapshot = scenarios.uploadsDir(ctx.scenario.id).resolve(OsmDataSnapshot.NAME);
+        if (Files.isRegularFile(snapshot)) {
+            try {
+                OsmDataSnapshot.Content content = OsmDataSnapshot.read(snapshot, mapper);
+                ctx.pois = content.pois();
+                ctx.places = content.places();
+                ctx.osmDataSource = "scenario-upload:" + OsmDataSnapshot.NAME;
+                ctx.osmDataSha256 = content.sha256();
+                job.summary.put("osmDataSource", ctx.osmDataSource);
+                job.summary.put("osmDataSha256", ctx.osmDataSha256);
+                job.log(content.pois().size() + " POIs und " + content.places().size()
+                        + " Siedlungen aus OSM-Snapshot geladen (SHA-256 "
+                        + content.sha256().substring(0, 12) + "…)");
+                return;
+            } catch (IOException | IllegalArgumentException e) {
+                throw new IllegalStateException("OSM-Datensnapshot ist nicht mehr gültig: "
+                        + e.getMessage(), e);
+            }
+        }
+        ctx.osmDataSource = "overpass-live";
         try {
             ctx.pois = overpass.fetchPois(ctx.scenario.region);
             job.log(ctx.pois.size() + " POIs von Overpass geladen");
@@ -676,7 +700,8 @@ public class GenerationService {
         writeManifest(ctx.artifacts, ctx.scenario, ctx.job, ctx.zones.size(), ctx.population,
                 ctx.logistics, !ctx.pois.isEmpty(), ctx.populationSource, ctx.totalPersons,
                 ctx.logisticsGenerator.sources(), ctx.distributionSource, ctx.matrixSource,
-                ctx.roadNetworkSource, ctx.commuterSource, ctx.workplaceMarginSource);
+                ctx.roadNetworkSource, ctx.commuterSource, ctx.workplaceMarginSource,
+                ctx.osmDataSource, ctx.osmDataSha256);
     }
 
     // --- Stufe 11: Simulation logiTopp (Achse B) ----------------------------------------------
@@ -1356,7 +1381,8 @@ public class GenerationService {
                                LogisticsGenerator.Sources logisticsSources,
                                String distributionSource, String matrixSource,
                                String roadNetworkSource, String commuterSource,
-                               String workplaceMarginSource) throws IOException {
+                               String workplaceMarginSource, String osmDataSource,
+                               String osmDataSha256) throws IOException {
         ObjectNode manifest = mapper.createObjectNode();
         manifest.put("scenarioId", scenario.id);
         manifest.put("scenarioName", scenario.name);
@@ -1386,6 +1412,17 @@ public class GenerationService {
                 : logisticsSources.depotsFromOsm() ? "osm-pois" : "auto-placed");
         quality.put("packstations", logisticsSources.packstationsFromOsm() ? "osm-pois" : "synthetic");
         manifest.putObject("populationEstimate").put("totalPersons", totalPersons);
+
+        ObjectNode inputs = manifest.putObject("inputProvenance");
+        ObjectNode osmData = inputs.putObject("osmData");
+        osmData.put("source", osmDataSource);
+        if (!osmDataSha256.isBlank()) {
+            osmData.put("sha256", osmDataSha256);
+        }
+        Path attractivities = artifacts.resolve("zone-repository/attractivities.csv");
+        ObjectNode attractivityInput = inputs.putObject("attractivities");
+        attractivityInput.put("path", "zone-repository/attractivities.csv");
+        attractivityInput.put("sha256", OsmDataSnapshot.sha256(attractivities));
 
         var notes = manifest.putArray("notes");
         notes

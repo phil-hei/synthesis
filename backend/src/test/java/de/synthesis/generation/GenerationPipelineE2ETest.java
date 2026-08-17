@@ -3,6 +3,7 @@ package de.synthesis.generation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.generation.pipeline.OverpassClient;
+import de.synthesis.generation.pipeline.OsmDataSnapshot;
 import de.synthesis.generation.pipeline.CommuterMatrix;
 import de.synthesis.generation.pipeline.WorkplaceMargins;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * End-to-End-Smoke-Test der kompletten Generierungs-Pipeline – das Sicherheitsnetz
- * für Umbauten am {@link GenerationService}. Läuft bewusst OFFLINE (keine OSM-Daten,
+ * für Umbauten am {@link GenerationService}. Läuft bewusst OFFLINE (eingefrorene OSM-Daten,
  * Luftlinien-Matrizen, Template-Verhalten, deaktivierte Simulation → kein
  * Overpass/Gradle/LLM). Der echte logiTopp-Lauf bleibt ein separat gegateter Integrationstest.
  */
@@ -60,7 +61,7 @@ class GenerationPipelineE2ETest {
         scenario.region.maxLat = 48.87;
         scenario.region.maxLon = 8.22;
         scenario.population.totalPersons = 250;
-        scenario.population.useOsmData = false;      // offline: synthetische POIs
+        scenario.population.useOsmData = true;       // offline: eingefrorener OSM-Snapshot
         scenario.population.useRealRouting = false;  // offline: Luftlinien-Matrizen
         scenario.population.behaviorSource = "template"; // kein Gradle/LLM nötig
         scenario.population.calibrateModeChoice = false;
@@ -69,6 +70,13 @@ class GenerationPipelineE2ETest {
         scenario.targetModels = new java.util.ArrayList<>(List.of("logitopp", "mobilecity"));
         scenario = repo.save(scenario);
         Files.createDirectories(repo.uploadsDir(scenario.id));
+        Files.writeString(repo.uploadsDir(scenario.id).resolve(OsmDataSnapshot.NAME), """
+                {"elements":[
+                  {"type":"node","lat":48.86,"lon":8.20,"tags":{"shop":"supermarket"}},
+                  {"type":"node","lat":48.86,"lon":8.20,
+                   "tags":{"place":"town","name":"E2E","population":"250"}}
+                ]}
+                """);
         Files.writeString(repo.uploadsDir(scenario.id).resolve(CommuterMatrix.NAME), """
                 homeLat;homeLon;workLat;workLon;commuters;homeScope
                 48.86;8.20;49.20;8.20;25;external
@@ -111,6 +119,12 @@ class GenerationPipelineE2ETest {
                 manifest.path("dataQuality").path("commuters").asText());
         assertEquals(WorkplaceMargins.SOURCE,
                 manifest.path("dataQuality").path("workplaceMargins").asText());
+        assertEquals("scenario-upload:osm-data.json",
+                manifest.path("inputProvenance").path("osmData").path("source").asText());
+        assertEquals(64,
+                manifest.path("inputProvenance").path("osmData").path("sha256").asText().length());
+        assertEquals(64,
+                manifest.path("inputProvenance").path("attractivities").path("sha256").asText().length());
         assertEquals(13_723.0 / 22_971.0,
                 ((Number) job.summary.get("externalWorkShareActual")).doubleValue(), 0.10);
 

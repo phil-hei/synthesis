@@ -6,6 +6,7 @@ import de.synthesis.generation.pipeline.BaCommuterAdapter;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
 import de.synthesis.generation.pipeline.CommuterMatrix;
 import de.synthesis.generation.pipeline.MunicipalityCentroidSource;
+import de.synthesis.generation.pipeline.OsmDataSnapshot;
 import de.synthesis.generation.pipeline.WorkplaceMargins;
 import de.synthesis.scenario.Scenario;
 import de.synthesis.scenario.ScenarioRepository;
@@ -59,6 +60,29 @@ class UploadControllerTest {
     }
 
     @Test
+    void osmDataSnapshotIsValidatedAndStoredUnderStableName(@TempDir Path tempDir) throws Exception {
+        ScenarioRepository repository = repository(tempDir);
+        repository.save(scenario());
+        UploadController controller = controller(repository);
+        String json = """
+                {"elements":[
+                  {"type":"node","lat":48.85,"lon":8.15,"tags":{"shop":"supermarket"}},
+                  {"type":"node","lat":48.86,"lon":8.16,"tags":{"place":"town","population":"50000"}}
+                ]}
+                """;
+
+        UploadController.OsmDataUploadSummary summary = controller.uploadOsmData("test",
+                new MockMultipartFile("file", "overpass.json", "application/json",
+                        json.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+
+        assertEquals(OsmDataSnapshot.NAME, summary.name());
+        assertEquals(1, summary.pois());
+        assertEquals(1, summary.places());
+        assertEquals(64, summary.sha256().length());
+        assertTrue(Files.isRegularFile(repository.uploadsDir("test").resolve(OsmDataSnapshot.NAME)));
+    }
+
+    @Test
     void commuterUploadRequiresAHomeInsideScenarioRegion(@TempDir Path tempDir) throws Exception {
         ScenarioRepository repository = repository(tempDir);
         repository.save(scenario());
@@ -92,7 +116,7 @@ class UploadControllerTest {
                 "08216043", new MunicipalityCentroidSource.Point("08216043", 48.85, 8.18),
                 "08212000", new MunicipalityCentroidSource.Point("08212000", 49.01, 8.40),
                 "08211000", new MunicipalityCentroidSource.Point("08211000", 48.76, 8.24));
-        UploadController controller = new UploadController(repository, () -> points);
+        UploadController controller = new UploadController(repository, () -> points, new ObjectMapper());
         MockMultipartFile ba = new MockMultipartFile("file", "statistik_pendler.csv", "text/csv", """
                 \uFEFF"Land";"Baden-Württemberg"
                 "Gebietsstand";"Juni 2025"
@@ -128,7 +152,7 @@ class UploadControllerTest {
         Map<String, MunicipalityCentroidSource.Point> points = Map.of(
                 "08216043", new MunicipalityCentroidSource.Point("08216043", 48.85, 8.18),
                 "08212000", new MunicipalityCentroidSource.Point("08212000", 49.01, 8.40));
-        UploadController controller = new UploadController(repository, () -> points);
+        UploadController controller = new UploadController(repository, () -> points, new ObjectMapper());
         String header = "statistics_code;statistics_label;time_code;time_label;time;1_variable_code;"
                 + "1_variable_label;1_variable_attribute_code;1_variable_attribute_label;value;"
                 + "value_unit;value_variable_code;value_variable_label\n";
@@ -171,7 +195,8 @@ class UploadControllerTest {
     }
 
     private static UploadController controller(ScenarioRepository repository) {
-        return new UploadController(repository, Map::<String, MunicipalityCentroidSource.Point>of);
+        return new UploadController(repository, Map::<String, MunicipalityCentroidSource.Point>of,
+                new ObjectMapper());
     }
 
     private static Scenario scenario() {

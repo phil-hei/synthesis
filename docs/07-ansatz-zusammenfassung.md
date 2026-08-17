@@ -27,7 +27,7 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | # | Stufe | Was passiert | Wichtigste Artefakte |
 |---|---|---|---|
 | 1 | Zonierung | Region-BBox → Gitter aus Verkehrszellen (Zellgröße, Auto-Anpassung an Zonenlimit) | `zones.csv` |
-| 2 | OSM-Daten (POIs) | Overpass: Shops/Amenities/… je Zelle (synthetischer Fallback) | (intern) |
+| 2 | OSM-Daten (POIs) | Szenario-Snapshot oder Overpass: Shops/Amenities/… und bevölkerte `place`-Nodes (synthetischer Fallback nur beim Live-Pfad) | `uploads/osm-data.json` (optional), Provenienz in `manifest.json` |
 | 3 | Attraktivitäten + Pendleranker | Ziel-Attraktivität je Zelle; optional koordinatenbasierte Pendler-OD, externe Arbeitsortanker auf reale gewichtete Ziele verschoben | `attractivities.csv`, `population/commuters.csv` |
 | 4 | Bevölkerungssynthese | Personen/Haushalte (KIT-Sample oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv` |
 | 5 | **Aktivitätenpläne (Achse A)** | Wochenpläne je Person aus `actiTopp` \| `GTA-LLM` \| `Template` | `activity.csv` |
@@ -35,7 +35,7 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | 7 | Logistik | Depots, Packstationen, Paketnachfrage sowie optionale Kundenretouren als Pickup-Nachfrage | `distribution-centers.csv`, `cepsp-shares.csv`, `parcel-demand-config.yaml` |
 | 8 | Legacy-Export | Umwandlung in das logiTopp-Legacy-Format | `legacy/…` |
 | 9 | **MobileCity-Export (B)** | District-aggregierte Config-Tabellen inkl. privatem Pkw-Bestand | `mobilecity/` (6 CSV + Shapefile + `summary.json`) |
-| 10 | Manifest | Lauf-Metadaten | `manifest.json` |
+| 10 | Manifest | Lauf-Metadaten inklusive SHA-256 der OSM-Kampagneneingabe und erzeugten Attraktivitäten | `manifest.json` |
 | 11 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete, experimentell inkl. Kundenretouren als Abholaufträge (+ optional Kalibrierungsschleife); normalisiert die simulierten Personenwege einmal in den nativen Demand-Vertrag | `demandsimulationResult.csv`, `demand/{metadata.json,person-trips.csv,legs.csv,zone-flows.csv,od-flows.csv}`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
 | 12 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-, Rad- und Fuß-Trips** der Nachfrage + **Zustelltouren** (Lkw/Lastenrad) + optional **ÖV/Bus** (GTFS → `gtfs2pt.py`, intermodal); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp inkl. Bus) | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte) |
 | 13 | **Netz-Feedback (optional)** | Gleichgewichts-Schleife: Stau-Faktoren je Zonenrelation (1–3), **MSA-gedämpft** in die Pkw-Matrix → logiTopp entscheidet neu → SUMO erneut – bis Konvergenz (Δ<0,01, max. 3 Iterationen) | aktualisierte `CAR_TTC`-Matrizen + neue `kpis.json`/SUMO-Artefakte |

@@ -47,4 +47,14 @@ describe('ApiService', () => {
       type: 'FeatureCollection', features: [], cellSizeMeters: 1000, autoAdjusted: true
     });
   });
+
+  it('uploads the frozen OSM data snapshot through the scenario contract', () => {
+    service.uploadOsmData('campaign-42', new File(['{}'], 'overpass.json')).subscribe();
+
+    const request = http.expectOne('/api/scenarios/campaign-42/uploads/osm-data');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toBeInstanceOf(FormData);
+    expect((request.request.body as FormData).get('file')).toBeInstanceOf(File);
+    request.flush({ name: 'osm-data.json', elements: 2, pois: 1, places: 1, sha256: 'abc' });
+  });
 });
