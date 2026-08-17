@@ -71,6 +71,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E28 | Kurzband + ASC-Modalschutz in Freiburg | Kalibrierung | ENTSCHIEDEN |
 | E29 | Direkter Langwegbonus aus Gesamt-Log-Odds | Kalibrierung | ENTSCHIEDEN |
 | E30 | `tripId` als Cross-run-Wegschlüssel | Diagnose/Kalibrierung | ENTSCHIEDEN |
+| E31 | Aktivitätsnachbarschaft als Langweg-Dosisformel | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -609,6 +610,28 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Entscheidungsweg und gewählte Distanz im selben Lauf gemeinsam zu
   protokollieren. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Wegeexpositionsanalyse (2026-08-17)".
+
+### E31 — Aktivitätsnachbarschaft als Langweg-Dosisformel — ENTSCHIEDEN
+
+- **Frage:** Erklärt die direkte oder Folge-Nachbarschaft zu einer freien
+  Aktivität die LT-135-Unterwirkung quantitativ hinreichend, wenn beide Läufe
+  ohne Cross-run-Join separat aggregiert werden?
+- **Evidenz:** Die in Commit `a08eb7a` präregistrierte PM-135-Auswertung besteht
+  alle technischen Gates. Exponiert sind 35.389 von 42.989 J-RAW-Wegen
+  (**82,32 %**). Sämtliche 1.480 zusätzlichen `>20 km`-Wege liegen in dieser
+  Marginale; die 7.600 nicht exponierten Wege bleiben in Langanteil 7,8158 %
+  und Ø Distanz 8,6272 km exakt unverändert. So rekonstruiert
+  `82,32 % × 4,1823 pp` den globalen Zuwachs +3,4429 pp.
+- **Warum dennoch verworfen:** Der vorab unverändert übernommene Stärke-Gate
+  fordert mindestens +5 pp innerhalb der exponierten Marginale. Beobachtet
+  werden nur 2,854→7,036 %, also **+4,182 pp**. Aktivitätsnachbarschaft
+  lokalisiert den Effekt vollständig, liefert aber keine hinreichende
+  Dosisformel.
+- **Status/Regel:** Keine höhere Bonuskonstante, Seeds, Modalkalibrierung oder
+  Produktimplementierung. Ein neuer Mechanismus muss zuerst same-run messen,
+  welcher Anteil freier Choice-Sets überhaupt attraktive `>20 km`-Alternativen
+  enthält. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Wegeexpositionsmarginalen (2026-08-17)".
 
 ---
 

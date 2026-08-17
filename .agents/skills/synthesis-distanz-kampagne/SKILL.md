@@ -369,6 +369,17 @@ nachgelagerten Gruppenwerte sind nicht interpretierbar. **Regel:** kein
 alternativer Post-hoc-Join. Nächster Anlauf nur mit Same-run-Protokoll von
 Entscheidungsweg + Distanz oder einem vorab bewiesenen stabilen Wegschlüssel.
 
+**❌ Same-run-Marginalen lokalisieren, aber dosieren nicht (2026-08-17):**
+Commit `a08eb7a` fixierte PM-135 ohne Join und mit unveränderten PX-Gates.
+Technisch besteht die Aggregation: 82,32 % der Wege sind direkt oder als
+Folgeweg zu einer freien Aktivität exponiert; alle 1.480 zusätzlichen
+`>20 km`-Wege entstehen dort, die 7.600 nicht exponierten Wege bleiben in
+Langanteil und Ø Distanz exakt unverändert. Der globale Effekt ist damit
+`82,32 % × 4,1823 pp = 3,4429 pp` lokalisiert. Der Wirkungsstärke-Gate scheitert
+aber: exponiert nur 2,854→7,036 %, also +4,182 statt ≥5 pp. **Regel:** keine
+höhere Konstante. Vor einem neuen bedingten Mechanismus die Eligibility freier
+Choice-Sets für vorhandene `>20 km`-Alternativen same-run messen.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

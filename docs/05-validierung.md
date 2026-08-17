@@ -1630,6 +1630,39 @@ Bestehen alle Gates, ist die Wirkungskette nur auf diesem Seed marginal
 lokalisiert; ein bedingter Mechanismus benötigt weiterhin eine eigene
 Präregistrierung und einen Widerlegungsversuch.
 
+**Ausführung:** PM-135 verwendete die fixierten Eingabe-Hashes und führte
+nachweislich keinen Join aus. Alle Aktivitätscodes sind bekannt, J-RAW
+reproduziert FD-000 exakt; Zielpfad- und Expositionsgruppengrößen unterscheiden
+sich zwischen den Läufen um höchstens eine Zeile. Damit bestehen sämtliche
+technischen Gates.
+
+| Marginale | J-RAW Wege | LT-135 Wege | J-RAW `>20 km` | LT-135 `>20 km` | Δ Anteil |
+|---|---:|---:|---:|---:|---:|
+| direkt + Folge | 2.886 | 2.886 | 0,66 % | 5,13 % | +4,47 pp |
+| nur direkt | 16.252 | 16.252 | 2,68 % | 7,20 % | +4,52 pp |
+| nur Folge | 16.251 | 16.250 | 3,42 % | 7,21 % | +3,79 pp |
+| **exponiert gesamt** | **35.389** | **35.388** | **2,854 %** | **7,036 %** | **+4,182 pp** |
+| nicht exponiert | 7.600 | 7.600 | 7,816 % | 7,816 % | **0,000 pp** |
+
+Alle **1.480** zusätzlichen `>20 km`-Wege (gesamt 1.604→3.084) entstehen in
+der exponierten Marginale; die nicht exponierten Wege bleiben zusätzlich bei
+der mittleren Distanz exakt 8,6272 km. Der globale Zuwachs +3,4429 pp wird durch
+den exponierten Anteil 82,321 % × dessen +4,1823 pp bis auf den
+Ein-Zeilen-Nenner reproduziert. Drei Mechanik-Gates bestehen: Exposition im
+Fenster, 100 % statt mindestens 99 % Langwegdelta exponiert, nicht exponierte
+Drift 0,0 statt höchstens 0,1 pp.
+
+**Urteil gegen die Vorab-Regel:** Das vierte Gate scheitert: Die exponierte
+Marginale steigt nur um +4,182 statt mindestens +5 pp. Aktivitätsnachbarschaft
+lokalisiert die Wirkungskette exakt, ist als hinreichende Dosisformel aber
+verworfen.
+
+**Entscheidung nach Stop-Regel:** Kein Bonus-Retry, keine Seeds,
+Modalkalibrierung oder Produktänderung. Der nächste Mechanik-Kandidat ist nicht
+eine höhere Konstante, sondern die vorab zu messende Eligibility freier
+Choice-Sets für überhaupt verfügbare `>20 km`-Alternativen. Auch dieser Schritt
+benötigt eine neue Präregistrierung und Same-run-Evidenz.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

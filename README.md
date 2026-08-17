@@ -136,7 +136,13 @@ und gewählte Distanz direkt verknüpft werden. Eine erste read-only Paarung üb
 `(tripId, legId)` ist unentscheidbar: Trotz 42.988 numerischer Treffer stimmen
 die Aktivitätscodes nur in 37,18 % statt mindestens 99,9 % überein; `tripId` ist
 zwischen Läufen kein stabiler Wegschlüssel. Benötigt wird deshalb eine
-Same-run-Instrumentierung oder ein vorab stabilisierter Schlüssel; bloßes
+Same-run-Instrumentierung oder ein vorab stabilisierter Schlüssel. Ein
+join-freier Marginalvergleich lokalisiert den Effekt anschließend exakt:
+82,32 % der Wege sind neben freien Aktivitäten exponiert, sämtliche 1.480
+zusätzlichen `>20 km`-Wege entstehen dort, und 7.600 nicht exponierte Wege
+bleiben unverändert. Der exponierte Langanteil steigt aber nur
+2,854→7,036 %, also +4,182 statt des vorab geforderten Minimums +5 pp.
+Choice-Set-Eligibility muss vor einer neuen Dosis gemessen werden; bloßes
 Hochskalieren bleibt gesperrt.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der

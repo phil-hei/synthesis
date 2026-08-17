@@ -862,6 +862,18 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   alternativer Post-hoc-Join versucht. **Lösungsweg:** Entscheidungsweg und
   gewählte Distanz im selben Lauf protokollieren oder vorab einen stabilen
   semantischen Schlüssel ausgeben. Keine neue Dosis oder Produktänderung.
+  **❌ Expositionsmarginale lokalisiert, Wirkungsstärke zu klein (2026-08-17):**
+  Commit `a08eb7a` übernahm für PM-135 unverändert die PX-135-Gates und verbot
+  jeden Join. Die separate Same-run-Aggregation ist technisch gültig:
+  35.389/42.989 J-RAW-Wege (**82,32 %**) liegen direkt oder als Folgeweg neben
+  freien Aktivitäten. Sämtliche 1.480 zusätzlichen `>20 km`-Wege entstehen in
+  dieser Marginale; 7.600 nicht exponierte Wege bleiben in Langanteil
+  (7,8158 %) und Ø Distanz (8,6272 km) exakt unverändert. Damit rekonstruiert
+  `82,32 % × 4,1823 pp` den globalen Zuwachs +3,4429 pp. **Gate dennoch
+  verfehlt:** exponiert steigt `>20 km` nur 2,854→7,036 %, also +4,182 statt
+  mindestens +5 pp. Wirkungskette lokalisiert, hinreichende Dosisformel
+  verworfen; nächster Spike muss die `>20 km`-Eligibility der freien
+  Choice-Sets messen, nicht den Bonus erhöhen.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

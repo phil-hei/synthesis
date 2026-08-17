@@ -96,6 +96,14 @@ Ziel- und Vorgängeraktivitätscode. Deshalb Demand-CSVs nie allein über
 `(tripId, legId)` Cross-run-joinen; zuerst einen stabilen fachlichen Schlüssel
 beweisen oder die benötigten Größen im selben Lauf protokollieren.
 
+**Zulässige Alternative ohne Wegpaarung:** Gruppenmarginalen dürfen je Lauf
+separat verglichen werden, wenn ihre Definition vorab feststeht und die
+Gruppengrößen als technischer Gate stabil sind. PM-135 (2026-08-17) nutzte
+genau dieses Muster: keine Paarung, Gruppenabweichung höchstens eine Zeile;
+dadurch war die Aussage „alle 1.480 zusätzlichen Langwege liegen in der
+exponierten Marginale" belastbar, aber keine Aussage darüber, welcher einzelne
+Weg wechselte.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner

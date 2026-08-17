@@ -160,7 +160,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   der fast vollständig numerisch gepaarten Wege behalten ihre Aktivitätscodes.
   Der nächste Beleg braucht einen stabilen semantischen Wegschlüssel oder eine
   Same-run-Instrumentierung; die Gruppenwerte des Fehlversuchs werden nicht
-  interpretiert.
+  interpretiert. Ein join-freier Marginalvergleich ist danach technisch gültig
+  und lokalisiert alle 1.480 zusätzlichen `>20 km`-Wege in den 82,32 % direkt
+  oder als Folgeweg exponierten Wegen; 7.600 nicht exponierte Wege bleiben
+  exakt unverändert. Der exponierte Langanteil steigt jedoch nur
+  2,854→7,036 % (+4,182 statt vorab mindestens +5 pp). Vor einer neuen Dosis
+  muss deshalb die `>20 km`-Eligibility der freien Choice-Sets gemessen werden.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-
