@@ -1297,6 +1297,45 @@ kein neues Szenario-Flag. Bestehen alle Gates, ist nur die Komposition auf dem
 eingefrorenen Seed 42 bestätigt; Seeds 43/44 und eine zweite Region benötigen
 eine neue Präregistrierung. `validation/` bleibt in jedem Fall unverändert.
 
+**Ausführung:** Ein erster technischer Aufruf endete nach 0,15 s vor der
+Simulation, weil die Sandbox keine Gradle-Sperrdatei unter `~/.gradle` anlegen
+konnte; er ist getrennt als ungültiger Umgebungsfehlanlauf erhalten. Der
+unveränderte Retry bestand den vollständigen externen Harness mit 1 Test,
+EXIT 0 und 158,1 s. Die Nahkalibrierung lief 6,61→14,93→21,38 % in drei
+Iterationen, der Modalkalibrator nutzte die vorab erlaubten acht Iterationen.
+Sein erster Basis-MNL-Lauf reproduzierte J-RAW byteidentisch; alle elf Run-Logs
+sind frei von Fallback und Exception, Eingabe- und Helper-Hashes stimmen.
+
+| Kennzahl | J-RAW | J-MOD | Vorab-Gate |
+|---|---:|---:|---:|
+| Wege | 42.989 | 42.988 | stabil |
+| Wege/Person·Tag | 3,0706 | 3,0706 | ✅ `[3,0; 3,4]` |
+| `<1 km` | 21,38 % | 21,43 % | ✅ `[19; 23] %` |
+| `1–2 km` | **14,12 %** | **14,08 %** | ✅ `[12; 16] %` |
+| `2–5 km` | 19,96 % | 19,94 % | berichtet |
+| `5–10 km` | 24,85 % | 24,86 % | berichtet |
+| `10–20 km` | 15,96 % | 15,98 % | berichtet |
+| `>20 km` | 3,73 % | 3,70 % | MiD 13 % |
+| `>=10 km` | **19,69 %** | **19,68 %** | ❌ mindestens 20 % |
+| Ø Weglänge | 6,024 km | 6,019 km | berichtet |
+| Distanzband-RMSE | **0,055140** | **0,055292** | ❌ höchstens 0,05 |
+| ÖV-Anteil | 27,42 % | **10,70 %** | ✅ J-MOD `[8; 12] %` |
+| Modal-RMSE | 0,113275 | **0,017562** | ✅ Δ −0,095713 und ≤0,08 |
+
+**Urteil:** Die aus einer einzigen Elastizitätsmessung abgeleitete Dosis trifft
+das MiD-Kurzband ohne Raster praktisch exakt, und der bestehende ASC-Regler
+schützt den Modal-Split weit unter dem Vorab-Gate. Er verändert die
+Distanzmarginale dabei nur minimal. Genau deshalb bleiben die strukturellen
+Fehler `5–10 km` zu hoch und `>20 km` zu niedrig; Fernweg- und absoluter
+Distanz-RMSE-Gate scheitern in beiden Ständen.
+
+**Entscheidung nach Stop-Regel:** Keine weitere `b_1_2`-Dosis, keine Seeds und
+keine Produktimplementierung. Der Kilometervertrag ist damit als notwendige
+Kurzbandkorrektur erklärt, aber nicht als hinreichender Produktpfad befördert.
+Ein neuer Anlauf muss einen eigenständigen Mechanismus für das `>20 km`-Band
+präregistrieren, statt Kurzband- oder Modalparameter weiter zu scannen; Runtime,
+Defaults und `validation/` bleiben unverändert.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

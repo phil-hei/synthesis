@@ -814,6 +814,18 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   **Entscheidung:** Einheitenerklärung bestätigt, Promotionshypothese verworfen;
   kein `+0,75`, keine Seeds, kein opt-in Produktvertrag. Die produktive Runtime
   und `validation/` bleiben unverändert.
+  **❌ Joint-Komposition am Langende gestoppt (2026-08-17):** Commit `7bbcc2d`
+  leitete vorab aus KM-000/KM-050 genau `b_1_2 +0,895` ab und koppelte den
+  bestehenden ASC-Modalkalibrator als Schutz an. Der End-to-End-Harness bestand
+  mit EXIT 0 (1 Test, 158,1 s): `1–2 km` trifft 14,12/14,08 %, Modal-RMSE sinkt
+  0,113275→0,017562 und ÖV 27,42→10,70 %. Die Modalkalibrierung lässt die
+  Distanzbänder praktisch invariant. **Blocker:** `>=10 km` bleibt bei
+  19,69/19,68 % statt mindestens 20 %, der Distanzband-RMSE bei
+  0,055140/0,055292 statt höchstens 0,05; insbesondere `>20 km` erreicht nur
+  3,73/3,70 % gegen MiD 13 %. **Entscheidung:** keine weitere Dosis, Seeds oder
+  Produktimplementierung. Der nächste Versuch braucht einen separat
+  präregistrierten Langwegmechanismus; Runtime, Defaults und `validation/`
+  bleiben unverändert.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

@@ -142,7 +142,11 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   Meterwerte geprüft werden. Ein isolierter `DISTANCE / 1000`-Spike bestätigt
   die Root Cause und aktiviert den Hebel, verfehlt mit +2,42 pp aber den
   präregistrierten Elastizitäts-Gate von +3 pp. Deshalb wurde weder ein
-  Produktvertrag noch eine weitere Dosis oder Seed-Kampagne begonnen.
+  Produktvertrag noch eine weitere Dosis oder Seed-Kampagne begonnen. Eine
+  unabhängige Joint-Komposition trifft anschließend das `1–2 km`-Ziel mit
+  14,08 % und senkt den Modal-RMSE 0,1133→0,0176, scheitert aber weiter am
+  Langende (`>20 km` 3,70 %; Distanzband-RMSE 0,0553 statt ≤0,05). Der nächste
+  Hebel muss deshalb eigenständig Fernwege adressieren.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-

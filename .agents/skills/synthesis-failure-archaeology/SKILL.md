@@ -68,6 +68,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E25 | `b_tt_* +0,06` als universeller Regionaltransfer | Kalibrierung | ENTSCHIEDEN |
 | E26 | Pkw-spezifischer `b_tt`-Split in Freiburg | Kalibrierung | ENTSCHIEDEN |
 | E27 | `b_0_1`/`b_1_2` gegen Meter statt Kilometer | Legacy/Kalibrierung | BLOCKIERT |
+| E28 | Kurzband + ASC-Modalschutz in Freiburg | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -533,6 +534,26 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Produktimplementierung; produktive Runtime und `validation/` bleiben
   unverändert. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Kilometer-Vertragsspike (2026-08-17)".
+
+### E28 — Kurzband + ASC-Modalschutz in Freiburg — ENTSCHIEDEN
+
+- **Frage:** Reicht die aus der korrigierten Kurzband-Elastizität abgeleitete
+  Einzeldosis zusammen mit dem bestehenden ASC-Modalkalibrator für alle
+  Freiburg-Produktgates?
+- **Evidenz:** Commit `7bbcc2d` fixierte `b_1_2 +0,895` und alle Gates vorab.
+  Der echte Harness trifft `1–2 km` mit 14,12 % roh und 14,08 % nach Modalschutz.
+  Modal-RMSE sinkt 0,113275→0,017562, ÖV 27,42→10,70 %. Dennoch bleiben
+  `>=10 km` bei 19,69/19,68 % und Distanzband-RMSE bei 0,055140/0,055292;
+  beide verfehlen die unveränderten Gates 20 % beziehungsweise 0,05.
+- **Root Cause:** `b_1_2` verteilt Ziele in das 1–2-km-Band um, erzeugt aber
+  keine fehlenden Fernziele. Die nachgelagerte ASC-Kalibrierung korrigiert die
+  Moduswahl und lässt die sechs Distanzbänder nahezu unverändert; sie kann das
+  verbleibende `>20 km`-Defizit von rund neun Prozentpunkten nicht heilen.
+- **Status/Regel:** Keine weitere `b_1_2`-Dosis, Seeds oder Produktimplementierung.
+  Ein neuer Anlauf muss einen eigenständigen Langwegmechanismus präregistrieren;
+  gemeinsame `b_tt`-Offsets, Pkw-Splits und Kurzband-Scans sind durch E25–E28
+  ausgeschöpft. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Joint-Kompositionssonde (2026-08-17)".
 
 ---
 

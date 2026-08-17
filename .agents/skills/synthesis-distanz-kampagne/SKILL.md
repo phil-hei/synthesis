@@ -326,6 +326,17 @@ Hypothese muss die gemessene Elastizität unabhängig präregistrieren und Dista
 sowie Modal-Schutzgates gemeinsam adressieren; die produktive Runtime und
 `validation/` bleiben unverändert.
 
+**❌ Joint-Komposition löst das Langende nicht (2026-08-17):** Commit `7bbcc2d`
+leitete aus der gemessenen Elastizität einmalig `b_1_2 +0,895` ab und koppelte
+danach den produktiven `ModeChoiceCalibrator` an. Die Dosis trifft `1–2 km`
+praktisch exakt (14,12 % roh, 14,08 % geschützt); Modal-RMSE sinkt
+0,113275→0,017562 und ÖV 27,42→10,70 %. Die Distanzmarginale bleibt unter dem
+ASC-Regler nahezu invariant. Trotzdem verfehlen beide Stände `>=10 km >=20 %`
+(19,69/19,68 %) und RMSE ≤0,05 (0,055140/0,055292); `>20 km` bleibt bei
+3,73/3,70 % gegen MiD 13 %. **Regel:** Keine weitere Kurzbanddosis, Seeds oder
+Produktimplementierung. Der nächste Mechanismus muss das `>20 km`-Band direkt
+adressieren und vorab eigene Distanz-/Modal-Schutzgates bekommen.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

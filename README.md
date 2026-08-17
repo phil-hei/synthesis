@@ -118,6 +118,11 @@ und `b_1_2` wirkungslos bleiben. Ein isolierter `DISTANCE / 1000`-Spike bestäti
 die Einheitenursache und aktiviert den Hebel, verfehlt mit **+2,42 pp** im
 `1–2 km`-Band aber den vorab gesetzten Elastizitäts-Gate von +3 pp. Deshalb gibt
 es vorerst keinen neuen Produktvertrag; Runtime und Defaults bleiben unverändert.
+Eine unabhängige Joint-Sonde trifft mit der daraus abgeleiteten Einzeldosis das
+`1–2 km`-Ziel (14,12 %) und korrigiert den Modal-RMSE 0,1133→0,0176. Sie wird
+trotzdem nicht befördert: `>=10 km` bleibt bei 19,68 % und der Distanzband-RMSE
+bei 0,0553 statt höchstens 0,05. Offen ist nun ein eigener Langwegmechanismus,
+nicht weiteres Kurzband- oder Modal-Tuning.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist
