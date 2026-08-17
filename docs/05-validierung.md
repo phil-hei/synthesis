@@ -1132,6 +1132,40 @@ kontrollieren: präregistrierte Elastizität von `b_1_2` auf Basis von PC-0090 z
 Wiederherstellung des 1–2-km-Bands, kombiniert mit einem separaten Modal-Schutz;
 alternativ eine regional/hierarchisch geschätzte Parametrisierung.
 
+#### Freiburg-Multi-Band-Sonde (2026-08-17) — präregistriert
+
+**Hypothese vor dem ersten Lauf:** PC-0090 erzeugt mit `>=10 km` 20,98 % bereits
+genügend Fernwege; sein RMSE-Problem liegt unter anderem im zu schwachen Band
+`1–2 km` (7,89 statt MiD 14 %). Ein additiver Bonus auf `b_1_2` in allen vier
+Zweckdateien soll dieses Band gezielt auffüllen, ohne die Fernwegwirkung des
+Pkw-Splits aufzugeben. `b_tt_*` und alle übrigen Parameter bleiben auf PC-0090;
+nach jeder Sonde stellt dieselbe `b_intrazonal`-Kalibrierung das `<1 km`-Band
+auf 21 % zurück.
+
+| Arm | zusätzlicher Term auf `b_1_2` | erwartetes `1–2 km` |
+|---|---:|---:|
+| MB-000 (Harness-Kontrolle) | `+0,00` | Reproduktion PC-0090: ca. 7,9 % |
+| MB-050 | `+0,50` | 12–14 % |
+| MB-075 | `+0,75` | 14–17 % |
+
+Die Dosen sind nicht nachträglich gesucht: Unter der Logit-Näherung
+`p' = p·exp(Δ)/(1-p+p·exp(Δ))` verschieben `+0,50/+0,75` den Ausgangsanteil
+7,89 % rechnerisch auf 12,4/15,3 %. Erwartet wird außerdem `>=10 km >=20 %`
+und ein sinkender ÖV-Anteil bis höchstens 26 %, weil mehr Wegemasse in ein kurzes
+Band zurückkehrt. Die sieben Transferkriterien gelten weiter gegen PC-0060;
+das bisher einseitige `1–2 km <=18 %` wird für diese Formsonde auf **12–16 %**
+verschärft. Die ÖV-Marke `<=26 %` ist ein zusätzliches Mechanismus-Gate.
+
+**Ablauf- und Stop-Regel:** MB-000 muss PC-0090 byteidentisch reproduzieren,
+danach läuft MB-050. Steigt `1–2 km` nicht, fällt `>=10 km` unter 20 % oder
+verschlechtert sich der Modal-RMSE gegenüber MB-000 um mehr als 0,02, wird
+MB-075 nicht gestartet. Besteht MB-050 alle verschärften Kriterien, ist er die
+kleinste Kandidatendosis und MB-075 entfällt. Andernfalls darf MB-075 nur nach
+bestandener Fortsetzungsregel laufen. Verfehlt auch MB-075 Distanzband-RMSE
+`<=0,05`, `1–2 km` in 12–16 % oder ÖV `<=26 %`, ist ein gemeinsamer additiver
+`b_1_2`-Bonus auf diesem Parameterstand verworfen; weitere Dosen und Seeds sind
+ohne neue Hypothese gesperrt.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
