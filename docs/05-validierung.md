@@ -1663,6 +1663,86 @@ eine höhere Konstante, sondern die vorab zu messende Eligibility freier
 Choice-Sets für überhaupt verfügbare `>20 km`-Alternativen. Auch dieser Schritt
 benötigt eine neue Präregistrierung und Same-run-Evidenz.
 
+#### Freiburg-Choice-Set-Eligibility (2026-08-17) — präregistriert
+
+**Forensik und binäre Frage vor dem Lauf:** `DestinationChoicePerActivity`
+filtert das Choice-Set vor der Nutzenberechnung auf Zonen mit
+`getAttractivity(nextActivity.activityType()) > 0` und übergibt die resultierenden
+Nutzen an `DefaultLogitModel`. Eine freie Entscheidung ist deshalb genau dann
+**langweg-eligible**, wenn dieses bereits zweckspezifisch attraktive Choice-Set
+mindestens eine Alternative mit Modellentfernung `DISTANCE > 20 km` und strikt
+positiver MNL-Wahrscheinlichkeit enthält. Erklärt ein strukturell ineligibler
+Teil der 19.138 freien Entscheidungen die verbleibende LT-135-Unterwirkung?
+
+Der Anker wird vorab aus den join-freien Direktmarginalen gebildet: J-RAW hat
+454/19.138 direkte Langwege (**2,3722 %**), LT-135 1.318/19.138
+(**6,8868 %**). Eine homogene Logit-Umschichtung um `+1,35` ergäbe aus dem
+J-RAW-Anteil **8,5698 %**; der beobachtete Zuwachs erreicht davon **72,84 %**.
+Die primäre Vorhersage lautet daher: Der CE-000-Eligibility-Anteil liegt im
+vorab großzügig fixierten Fenster **`[65;85] %`**. Ein höherer Wert widerlegt
+strukturelle Ineligibility als hinreichende Erklärung, ein niedrigerer Wert
+widerlegt die aus dem beobachteten Wirkungsverhältnis abgeleitete Größenordnung.
+
+Die zwei Instrumentierungsarme **CE-000** und **CE-135** verwenden denselben
+eingefrorenen Freiburg-Stand, Seed 42, Legacy-Personen-Hash
+`9dda440f…fca90`, Helper `DISTANCE / 1000` und dieselben fünf
+Zielwahlparameter. CE-000 hat keinen Langwegbonus; CE-135 wiederholt
+ausschließlich den bereits entschiedenen LT-135-Term
+`1,35 * [DISTANCE > 20]` — dies ist keine neue Dosis. Ein isolierter,
+gitignorierter Harness ergänzt in `DestinationChoicePerActivity` nur
+threadsichere Aggregatzähler. Pro freier Entscheidung werden Choice-Set-Größe,
+Anzahl `>20-km`-Alternativen, Eligibility, Summe ihrer MNL-Wahrscheinlichkeiten
+und die Modellentfernung der tatsächlich gewählten Zone erfasst. Es gibt kein
+Per-Decision-Log und keinen Cross-run-Join.
+
+CE-000 berechnet außerdem read-only den exakten Kontrafakt für denselben
+Choice-Set-Zustand. Für die Basis-Langwegmasse `p` ist er
+`p_135 = exp(1,35) * p / (1 - p + exp(1,35) * p)`. Dieser Wert verändert weder
+Nutzen noch Zufallszahl oder Auswahl. CE-135 protokolliert die wirkliche
+Wahrscheinlichkeitsmasse nach dem bekannten Bonus; so wird getrennt geprüft,
+ob Ineligibility, heterogene Basismasse oder eine endogen veränderte Folge von
+Ausgangszonen die naive Gesamt-Log-Odds-Prognose bricht.
+
+**Technische Gates vor Interpretation:**
+
+1. Beide externen Läufe enden mit EXIT 0; Personen-, Helper-, Basis-MNL- und
+   Zielwahlparameter-Hashes stimmen mit J-RAW überein. Die Quellunterschiede
+   beschränken sich auf die Instrumentierung und im CE-135-Arm den bekannten
+   `+1,35`-Term; kein Fallback und keine Exception.
+2. Die Instrumentierung ist verhaltensneutral: CE-000 reproduziert den
+   J-RAW-Demand-Hash `a58fac01…c7a9de`, CE-135 den LT-135-Hash
+   `b13e675e…e6bb57` byteidentisch.
+3. Je Arm ist genau eine Abschlusszeile parsebar. Alle Choice-Sets sind
+   nichtleer, jede Wahrscheinlichkeit ist endlich und nichtnegativ, ihre Summe
+   weicht je Entscheidung höchstens `1e-9` von 1 ab. CE-000 reproduziert exakt
+   19.138 freie Entscheidungen und die FD-000-Aktivitätsbilanz; CE-135 darf
+   wegen seiner bekannten Ein-Zeilen-Gesamtabweichung höchstens eine freie
+   Entscheidung abweichen.
+
+**Vorab fixierte Mechanik-Gates:**
+
+1. Primär: CE-000-Eligibility liegt in `[65;85] %`.
+2. Je Arm weicht die mittlere protokollierte Langweg-Wahrscheinlichkeitsmasse
+   höchstens **0,5 Prozentpunkte** vom Anteil tatsächlich gewählter
+   `DISTANCE > 20`-Zonen ab; damit wird die read-only Wahrscheinlichkeitsmessung
+   gegen die reale Ein-Seed-Auswahl geprüft.
+3. Die mittlere CE-000-Kontrafaktmasse `p_135` weicht höchstens
+   **1,0 Prozentpunkt** von der mittleren wirklichen CE-135-Langwegmasse ab.
+   Dieses Gate prüft ohne Wegpaarung, ob der Baseline-Choice-Set-Zustand den
+   Bonusarm aggregiert vorhersagt. Eligibility und Wahrscheinlichkeitsmasse
+   werden zusätzlich je freiem Aktivitätstyp berichtet, aber nicht post hoc
+   gegatet.
+
+**Stop-Regel:** Genau CE-000 und die Wiederholung der bereits bekannten Dosis
+CE-135, jeweils nur Seed 42. Keine neue Bonuskonstante, Modalkalibrierung,
+Seed- oder Regionenvariation und keine Produktänderung. Scheitert ein
+technisches Gate, ist die Messung unentscheidbar. Scheitert Mechanik-Gate 1,
+ist strukturelle Choice-Set-Ineligibility als hinreichende Erklärung verworfen;
+die vorab fixierten Wahrscheinlichkeitsdiagnosen werden trotzdem berichtet,
+aber nicht in eine neue Dosis umgerechnet. Auch bei vollständigem Bestehen ist
+nur der Mechanismus dieses Freiburg-Seeds erklärt; ein Produktvertrag bleibt
+bis zu einer neuen Mehrregionen-Präregistrierung gesperrt.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
