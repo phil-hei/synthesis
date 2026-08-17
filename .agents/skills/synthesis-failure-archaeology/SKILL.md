@@ -67,6 +67,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E24 | Stiller OSM-Fallback konfundiert A/B-Vergleiche | Infrastruktur | ENTSCHIEDEN |
 | E25 | `b_tt_* +0,06` als universeller Regionaltransfer | Kalibrierung | ENTSCHIEDEN |
 | E26 | Pkw-spezifischer `b_tt`-Split in Freiburg | Kalibrierung | ENTSCHIEDEN |
+| E27 | `b_0_1`/`b_1_2` gegen Meter statt Kilometer | Legacy/Kalibrierung | BLOCKIERT |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -502,6 +503,28 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   PC-0090) und einen getrennten Modal-Schutz vorsehen; alternativ regional oder
   hierarchisch schätzen. Vollständige Zahlen: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Split-Sonde (2026-08-17)".
+
+### E27 — `b_0_1`/`b_1_2` gegen Meter statt Kilometer — BLOCKIERT
+
+- **Symptom:** Die präregistrierte Freiburg-Sonde `b_1_2 +0,50` änderte trotz
+  nachweislich gepatchter Zweckdateien kein einziges Ergebnisbyte; MB-000,
+  MB-050 und PC-0090 liefern exakt dieselben 42.990 Wege und Kennzahlen.
+- **Root Cause:** `DestinationChoiceUtilityFunction` enthält zwar die Terme
+  `b_0_1 * [0 < DISTANCE <= 1]` und `b_1_2 * [1 < DISTANCE <= 2]`.
+  `DefaultDestinationChoiceHelper.getDISTANCE` gibt aber
+  `ImpedanceIfc.getDistance` unverändert zurück; die Run-Config bindet dafür
+  `other/CAR_DIS.mtx` in **Metern**. Freiburgs kleinster Matrixwert beträgt
+  411,918 m. Andere Legacy-Stellen teilen für Kilometer explizit durch 1.000,
+  womit die Fehlverdrahtung unabhängig bestätigt ist.
+- **Verworfener Scheinfix:** Nicht einfach größere `b_0_1`-/`b_1_2`-Dosen testen:
+  der Indikator bleibt null. Auch `CAR_DIS.mtx` nicht global auf Kilometer skalieren;
+  dieselbe Matrix speist weitere Distanzkonsumenten und Ergebnisverträge.
+- **Status/Regel:** Multi-Band-Kalibrierung ist blockiert. `validation/` nicht direkt
+  verändern. Der nächste Anlauf braucht eine versionierte, experimentell
+  aktivierbare Korrektur des externen Harness (`DISTANCE / 1000`) und neue
+  präregistrierte Baselines, weil die bestehenden Kurzband-Parameter dadurch
+  erstmals aktiv werden. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Multi-Band-Sonde (2026-08-17)"; Präregistrierung Commit `1ae34ad`.
 
 ---
 

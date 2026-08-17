@@ -791,6 +791,18 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   auf PC-0090 plus separater Modal-Schutz) oder eine regional/hierarchisch
   geschätzte Parametrisierung. Vollständiger Befund:
   [docs/05-validierung.md](05-validierung.md).
+  **⛔ Multi-Band-Parameter im Legacy-Vertrag blockiert (2026-08-17):** Die in
+  Commit `1ae34ad` präregistrierte `b_1_2 +0,50`-Sonde blieb trotz korrekt
+  gepatchter Zweckdateien vollständig wirkungslos; MB-000, MB-050 und PC-0090
+  sind im Demand-CSV byteidentisch (42.990 Wege). Die Forensik zeigt eine
+  Einheitenfehlverdrahtung: Das generierte Modell prüft `1 < DISTANCE <= 2`,
+  `DefaultDestinationChoiceHelper` liefert aber die in `CAR_DIS.mtx` gebundene
+  Distanz unverändert in Metern. Der kleinste Freiburg-Wert ist 411,918 m;
+  dadurch sind `b_0_1` und `b_1_2` faktisch tot. MB-075 wurde nach Stop-Regel
+  nicht gestartet. **Lösungsweg:** keine Direktänderung unter `validation/`,
+  sondern eine versionierte, experimentell aktivierbare Harness-Korrektur
+  `DISTANCE / 1000` mit neu präregistrierten Baselines; die bestehenden
+  Kurzband-Terme würden dadurch erstmals wirksam.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

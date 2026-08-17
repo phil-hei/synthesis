@@ -302,6 +302,19 @@ zulässige Mechanismusversuch kontrolliert mehrere Distanzbänder explizit
 (`b_1_2`-Elastizität auf PC-0090 plus separater Modal-Schutz) oder schätzt die
 Parameter regional/hierarchisch.
 
+**⛔ `b_0_1`/`b_1_2` im Legacy-Vertrag einheitenbedingt tot (2026-08-17):**
+Die in Commit `1ae34ad` präregistrierte Freiburg-Sonde mit `b_1_2 +0,50`
+lieferte trotz nachweislich gepatchter Zweckdateien ein zu Kontrolle und PC-0090
+byteidentisches Demand-CSV (42.990 Wege); `+0,75` wurde nach Stop-Regel nicht
+gestartet. Root Cause: Die generierte Utility prüft `[1 < DISTANCE <= 2]`, aber
+`DefaultDestinationChoiceHelper.getDISTANCE` reicht `ImpedanceIfc.getDistance`
+unskaliert aus der Meter-Matrix `CAR_DIS.mtx` durch. Der kleinste Freiburg-Wert
+ist 411,918 m, also wird weder das 0–1- noch das 1–2-„km“-Dummy jemals aktiv.
+**Regel:** Keine weiteren Dosen/Regler auf `b_0_1` oder `b_1_2`, bevor der externe
+Harness-Vertrag versioniert und experimentell aktivierbar `DISTANCE / 1000`
+liefert. Die Korrektur braucht neue Baselines, weil sie vorhandene Kurzband-Terme
+erstmals aktiviert; `validation/` nicht direkt patchen.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

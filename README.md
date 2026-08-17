@@ -112,6 +112,10 @@ bleibt deshalb opt-in. Auch ein auf Pkw-Fahrer/Mitfahrer begrenzter Offset wurde
 verworfen: Er erzeugt zwar mehr Fernwege, verschlechtert aber die Bandform und
 treibt über die nachgelagerte Moduswahl den ÖV-Anteil hoch. Der nächste Versuch
 muss deshalb mehrere Distanzbänder und den Modal-Schutz gemeinsam kontrollieren.
+Der dafür vorgesehene Legacy-Hebel `b_1_2` ist derzeit blockiert: Das generierte
+Modell vergleicht Kilometergrenzen mit einer Meter-Distanzmatrix, sodass `b_0_1`
+und `b_1_2` wirkungslos bleiben. Eine Korrektur erfordert einen versionierten,
+experimentellen Harness-Vertrag und neue Baselines.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

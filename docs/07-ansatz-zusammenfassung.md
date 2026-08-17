@@ -137,8 +137,10 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   damit regional strukturell unzureichend. Ein Pkw-spezifischer Split erhöht
   `>=10 km` zwar bis 33,85 %, verschlechtert den Band-RMSE aber auf 0,0729 und
   hebt den ÖV-Anteil über die separate Moduswahl auf 37,83 %. Auch dieser Pfad ist
-  ohne Multi-Band- und Modal-Schutz verworfen. Ein Default-Flip steht aus: `>20 km`
-  bleibt unter MiD und der Mehrregionen-Beleg fehlt.
+  ohne Multi-Band- und Modal-Schutz verworfen. Der vorgesehene Multi-Band-Hebel
+  `b_1_2` ist im Legacy-Vertrag derzeit wirkungslos, weil seine Kilometergrenzen
+  gegen Meterwerte geprüft werden; die experimentelle Vertragskorrektur steht aus.
+  Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-
   Gemeindeziele bedingt auf bereits gewählte Außenbeziehungen. In einem demografisch bytegleich

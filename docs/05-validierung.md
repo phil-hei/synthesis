@@ -1166,6 +1166,35 @@ bestandener Fortsetzungsregel laufen. Verfehlt auch MB-075 Distanzband-RMSE
 `b_1_2`-Bonus auf diesem Parameterstand verworfen; weitere Dosen und Seeds sind
 ohne neue Hypothese gesperrt.
 
+**Ergebnis:** Der temporäre Produktions-Harness bestand (1 Test, EXIT 0, 78,12 s)
+und wurde danach entfernt. MB-000 reproduziert PC-0090 byteidentisch. Trotz des
+nachweislich in allen vier Zweckdateien vorhandenen Terms `b_1_2 +0,50` ist auch
+MB-050 im vollständigen `demandsimulationResult.csv` byteidentisch zu MB-000:
+42.990 Wege, `1–2 km` 7,89 %, `>=10 km` 20,98 %, Band-RMSE 0,0675,
+ÖV 29,29 % und Modal-RMSE 0,115920. Die erwartete Richtungswirkung bleibt exakt
+null; MB-075 wurde gemäß Stop-Regel nicht gestartet.
+
+**Root Cause im gepinnten Legacy-Vertrag:** Die generierte
+`DestinationChoiceUtilityFunction` verwendet tatsächlich
+`b_1_2 * [1 < DISTANCE <= 2]` (analog `b_0_1` für 0–1). Der
+`DefaultDestinationChoiceHelper.getDISTANCE` gibt jedoch
+`ImpedanceIfc.getDistance(...)` unverändert zurück, während die Run-Config dafür
+`other/CAR_DIS.mtx` bindet und dieser Vertrag Distanzen in **Metern** hält. Der
+kleinste der 1.065.024 Freiburg-Matrixwerte beträgt 411,918 m; kein Wert kann
+also die Schwellen 1 oder 2 erfüllen. Dass andere Legacy-Stellen für Kilometer
+explizit durch 1.000 teilen (`ElectricCarOwnership.distance`), bestätigt die
+Einheitenforensik unabhängig. `b_0_1` und `b_1_2` sind im verwendeten Modellpfad
+damit faktisch tote Parameter.
+
+**Entscheidung nach Vorab-Regel:** Die Multi-Band-Sonde ist nicht negativ im Sinn
+einer zu kleinen Dosis, sondern wegen einer bewiesenen Einheitenfehlverdrahtung
+blockiert; weitere Dosen oder Seeds wären informationslos. `validation/` wird
+nicht direkt gepatcht. Ein weiterer Anlauf braucht zuerst eine versionierte,
+experimentell aktivierbare Korrektur des externen Harness-Vertrags
+(`DISTANCE / 1000`) und muss danach die bisherigen Zielwahl-Baselines neu
+präregistrieren, weil dadurch vorhandene `b_0_1`-/`b_1_2`-Terme erstmals wirksam
+werden. Bis dahin darf Multi-Band-Kalibrierung nicht als verfügbar gelten.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
