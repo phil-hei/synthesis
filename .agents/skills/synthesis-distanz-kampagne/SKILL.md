@@ -277,6 +277,17 @@ befördern oder in Freiburg bloß wiederholen; nächster zulässiger Anlauf ist 
 separat präregistrierte regionale Elastizitäts-Sonde beziehungsweise ein
 hierarchisch/regional parametrisierter Hebel. Das Produktflag bleibt opt-in.
 
+**❌ Gemeinsamer Offset an der Vorzeichengrenze ausgeschöpft (2026-08-17):**
+Die in Commit `68b4baa` präregistrierte Freiburg-Sonde testete `+0,075` und
+`+0,09` auf demselben eingefrorenen Legacy-Export mit produktivem Runner und
+Nahkalibrierung. `+0,09` lässt `b_tt_put=-0,0006` gerade noch negativ; größere
+gemeinsame Dosen würden die Reisezeit-Nutzensemantik umkehren. Trotzdem erreicht
+die Obergrenze nur `>=10 km` 18,80 %, Distanzband-RMSE 0,0685 und `1–2 km`
+8,29 %. **Regel:** Den gemeinsamen Offset in Freiburg nicht weiter erhöhen und
+keine weiteren Seeds fahren. Die nächste Hypothese muss einzelne `b_tt_*`-Hebel
+trennen oder regional/hierarchisch parametrisieren; wiederholtes Scannen eines
+gemeinsamen Offsets ist eine entschiedene Sackgasse.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

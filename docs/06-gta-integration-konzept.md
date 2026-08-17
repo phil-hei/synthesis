@@ -766,6 +766,16 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Transferwert, kein Default-Flip. Ein weiterer Anlauf muss regionale Elastizität
   beziehungsweise hierarchische Parameter neu präregistrieren (vollständiger Befund:
   [docs/05-validierung.md](05-validierung.md)).
+  **❌ Sign-erhaltende Grenzsonde beendet (2026-08-17):** Commit `68b4baa`
+  fixierte vorab `+0,075` und `+0,09`; letzteres lässt den kleinsten resultierenden
+  Koeffizienten `b_tt_put=-0,0006` gerade noch negativ. Mit produktivem Runner und
+  Nahkalibrierung steigt `>=10 km` monoton auf 15,95/18,80 %, bleibt aber selbst
+  an der fachlichen Grenze unter 20 %. Der Distanzband-RMSE verschlechtert sich
+  weiter auf 0,0657/0,0685, während `1–2 km` auf 10,07/8,29 % fällt.
+  **Entscheidung:** Der gemeinsame additive Offset ist in Freiburg strukturell
+  unzureichend; größere Dosen würden die Reisezeit-Nutzensemantik umkehren und sind
+  ebenso gesperrt wie weitere Seeds. Nächster zulässiger Ansatz: getrennte
+  Koeffizienten oder regionale/hierarchische Parametrisierung.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

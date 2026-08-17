@@ -471,10 +471,14 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
 - **Status/Regel:** Seeds 43/44 wurden nach Stop-Regel nicht gestartet;
   `correctDistanceDecay` bleibt opt-in. `+0,06` nicht als universellen Default
   befördern und dieselbe Freiburg-Serie nicht ohne neue Hypothese wiederholen.
-  Stattdessen regionale Elastizität separat präregistrieren oder einen
+  Die anschließend präregistrierte Grenzsonde schöpfte den gemeinsamen Offset
+  bis `+0,09` aus; dort bleibt `b_tt_put=-0,0006` gerade noch negativ, aber
+  `>=10 km` endet bei 18,80 %, RMSE bei 0,0685 und `1–2 km` bei 8,29 %.
+  Größere gemeinsame Dosen würden die Nutzensemantik umkehren und sind ebenso
+  gesperrt wie weitere Seeds. Stattdessen einzelne Koeffizienten trennen oder einen
   hierarchisch/regional parametrisierten Hebel untersuchen. Evidenz:
   `docs/05-validierung.md`, Abschnitt „Mehrregionen-Transferprobe Freiburg
-  (2026-08-17)"; Schwellen vorab in Commit `bc9a19a`.
+  (2026-08-17)"; Schwellen vorab in Commits `bc9a19a` und `68b4baa`.
 
 ---
 

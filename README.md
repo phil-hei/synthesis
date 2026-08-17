@@ -106,7 +106,9 @@ Für logiTopp stehen experimentelle, standardmäßig deaktivierte Kalibrierungen
 `b_tt_* +0,06` szenariogebunden ab; zusammen mit der Nahdistanz-Kalibrierung trifft er
 die vorregistrierten Sechs-Band-Gates im Großraum Rastatt. Eine streng isolierte
 Freiburg-Probe bestätigte zwar die Wirkungsrichtung, verwarf `+0,06` aber als
-universellen Transferwert; das Flag bleibt deshalb opt-in.
+universellen Transferwert. Selbst der höchste gemeinsame Offset vor einem
+Koeffizienten-Vorzeichenwechsel verfehlte die Fernweg- und RMSE-Gates; das Flag
+bleibt deshalb opt-in.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

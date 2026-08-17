@@ -1008,7 +1008,7 @@ Anlauf braucht eine neue Präregistrierung für eine regionale Elastizitäts-Son
 beziehungsweise einen hierarchisch oder regional parametrisierten Hebel — keine
 Wiederholung derselben universellen Dosis.
 
-#### Freiburg-Grenzsonde (2026-08-17) — präregistriert, Ergebnis offen
+#### Freiburg-Grenzsonde (2026-08-17) — gemeinsamer Offset verworfen
 
 **Frage vor dem ersten Lauf:** Kann eine stärkere gemeinsame Dosis das verfehlte
 `>=10-km`-Gate erreichen, solange alle fünf resultierenden Reisezeitkoeffizienten
@@ -1027,6 +1027,32 @@ Mehrseed-Prüfung. Bleibt selbst `+0,09` unter 20 % oder RMSE `>0,05`, ist der
 gemeinsame sign-erhaltende Offset für Freiburg strukturell unzureichend; dann
 werden weder größere Offsets noch weitere Seeds gestartet. Zulässiger Folgeschritt
 ist nur ein anders parametrisierter beziehungsweise hierarchischer Hebel.
+
+**Ergebnis:** Beide Grenzsonden liefen auf dem eingefrorenen T-C42-Legacy-Export
+mit identischem Seed und identischem Legacy-Personen-Hash. Der temporäre Harness
+nutzte die produktiven `SimulationRunner`- und `DistanceCalibrator`-Klassen und
+wurde nach dem Lauf entfernt. Alle fünf resultierenden `b_tt_*`-Summen blieben
+negativ; bei `+0,09` liegt `b_tt_put` mit `-0,0006` unmittelbar an der Grenze.
+
+| Dosis | Ø km | `<1` | `1–2` | `5–10` | `10–20` | `>20` | `>=10` | Band-RMSE |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `+0,075` | 5,66 | 20,94 % | 10,07 % | 27,34 % | 13,31 % | 2,64 % | **15,95 %** | 0,0657 |
+| `+0,09` | 6,08 | 21,10 % | 8,29 % | 28,03 % | 15,62 % | 3,18 % | **18,80 %** | 0,0685 |
+
+Die Vorhersage der monotonen Fernwegwirkung besteht zwischen den beiden exakt
+gleich orchestrierten Grenzsonden. Beide liefern 42.987 Wege und 3,07
+Wege/Person·Tag; der Modal-RMSE liegt bei 0,104378 beziehungsweise 0,109389.
+Der separat über den Produktpfad orchestrierte `+0,06`-Arm lieferte 42.989 Wege;
+deshalb stützt sich die Strukturentscheidung auf die absoluten Gates bei `+0,09`,
+nicht auf ein exaktes Delta zwischen den Harness-Läufen.
+
+**Entscheidung nach Vorab-Regel:** Selbst der höchste sign-erhaltende gemeinsame
+Offset verfehlt `>=10 km >=20 %` und RMSE `<=0,05`; zugleich wird `1–2 km` mit
+8,29 % weit unter das MiD-Ziel 14 % gedrückt. Größere gemeinsame Dosen würden
+mindestens `b_tt_put` nichtnegativ machen und sind gesperrt. Der gemeinsame additive
+Offset ist für Freiburg strukturell unzureichend. Der nächste Forschungshebel muss
+die fünf Koeffizienten trennen oder regional/hierarchisch parametrisieren; weitere
+Seeds werden nicht gestartet.
 
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
