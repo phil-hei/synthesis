@@ -1089,6 +1089,49 @@ Modal-Schutzschwelle hält. Verfehlt auch PC-0115 `>=10 km >=20 %` oder
 Distanzband-RMSE `<=0,05`, ist auch die getrennte Pkw-Korrektur an ihrer
 sign-erhaltenden Grenze verworfen; größere Dosen und weitere Seeds bleiben gesperrt.
 
+**Ausführung und Isolation:** Der temporäre Harness lief mit den produktiven
+`SimulationRunner`- und `DistanceCalibrator`-Klassen erfolgreich durch (1 Test,
+EXIT 0, 110,9 s) und wurde danach entfernt. PC-0060 ist im vollständigen
+`demandsimulationResult.csv` byte-identisch zu T-D42; alle drei Arme teilen den
+Legacy-Personen-Hash `9dda440f…fca90`. Die Parameterdateien belegen ausschließlich
+die präregistrierten Offsets, alle resultierenden Koeffizienten bleiben negativ.
+
+| Kennzahl | PC-0060 | PC-0090 | PC-0115 |
+|---|---:|---:|---:|
+| Wege | 42.989 | 42.990 | 42.988 |
+| Nahkalibrierung `<1 km` | 9,60→20,34 % (2) | 6,77→20,85 % (3) | 3,88→19,96 % (3) |
+| Ø Weglänge | 5,38 km | 6,38 km | 8,60 km |
+| `1–2 km` | 11,90 % | 7,89 % | 4,61 % |
+| `10–20 km` | 11,58 % | 17,31 % | 23,97 % |
+| `>20 km` | 2,42 % | 3,67 % | 9,88 % |
+| `>=10 km` | 14,00 % | **20,98 %** | **33,85 %** |
+| Distanzband-RMSE | 0,0644 | **0,0675** | **0,0729** |
+| ÖV-Anteil | 24,86 % | **29,29 %** | **37,83 %** |
+| Modal-RMSE | 0,101357 | 0,115920 | 0,154486 |
+| Wege/Person·Tag | 3,07 | 3,07 | 3,07 |
+
+PC-0090 bestätigt die Richtungsprognose und überschreitet erstmals das absolute
+Fernweg-Gate; auch der formale Modal-RMSE-Schutz hält mit Δ `+0,014563`. Beide
+Distanz-RMSE-Gates scheitern jedoch (`-0,0031` statt Verbesserung), und die
+zusätzliche ÖV-Diagnose `<=26 %` wird verfehlt. Damit bestand PC-0090 nicht alle
+sieben Transferkriterien und PC-0115 war gemäß Fortsetzungsregel zulässig. An der
+Obergrenze wächst das Fernwegmaß weiter monoton, zugleich scheitern Distanz-RMSE,
+Modal-Schutz (Δ `+0,053129`) und ÖV-Diagnose noch deutlicher.
+
+**Befund und Mechanismus:** Die getrennte Pkw-Korrektur kann Fernziele erzeugen,
+aber die realisierten Modi nicht isoliert steuern. Obwohl `b_tt_put` in allen drei
+Armen unverändert bei `-0,0306` bleibt, wählt die Zielwahl weiter entfernte Ziele;
+die nachgelagerte Moduswahl bedient diese Wege überproportional mit ÖV. Gleichzeitig
+wird Masse aus `1–2 km` bis auf 4,61 % verdrängt, sodass der Sechs-Band-RMSE trotz
+mehr Fernwegen steigt. Die Hypothese „Pkw-Fernwege ohne ÖV-Schaden“ ist widerlegt.
+
+**Entscheidung nach Vorab-Regel:** Keine weiteren Seeds und keine größeren Pkw-
+Offsets. Auch ein bloßes Scannen anderer Modus-Teilmengen ist ohne neuen Mechanismus
+gesperrt. Ein nächster Anlauf muss die Verteilungsform explizit mehrdimensional
+kontrollieren: präregistrierte Elastizität von `b_1_2` auf Basis von PC-0090 zur
+Wiederherstellung des 1–2-km-Bands, kombiniert mit einem separaten Modal-Schutz;
+alternativ eine regional/hierarchisch geschätzte Parametrisierung.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

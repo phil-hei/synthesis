@@ -108,7 +108,10 @@ die vorregistrierten Sechs-Band-Gates im Großraum Rastatt. Eine streng isoliert
 Freiburg-Probe bestätigte zwar die Wirkungsrichtung, verwarf `+0,06` aber als
 universellen Transferwert. Selbst der höchste gemeinsame Offset vor einem
 Koeffizienten-Vorzeichenwechsel verfehlte die Fernweg- und RMSE-Gates; das Flag
-bleibt deshalb opt-in.
+bleibt deshalb opt-in. Auch ein auf Pkw-Fahrer/Mitfahrer begrenzter Offset wurde
+verworfen: Er erzeugt zwar mehr Fernwege, verschlechtert aber die Bandform und
+treibt über die nachgelagerte Moduswahl den ÖV-Anteil hoch. Der nächste Versuch
+muss deshalb mehrere Distanzbänder und den Modal-Schutz gemeinsam kontrollieren.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

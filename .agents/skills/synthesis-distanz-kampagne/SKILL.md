@@ -288,6 +288,20 @@ keine weiteren Seeds fahren. Die nächste Hypothese muss einzelne `b_tt_*`-Hebel
 trennen oder regional/hierarchisch parametrisieren; wiederholtes Scannen eines
 gemeinsamen Offsets ist eine entschiedene Sackgasse.
 
+**❌ Pkw-spezifischer Split ebenfalls verworfen (2026-08-17):** Die in Commit
+`f337233` präregistrierte Sonde ließ `put`/`ped`/`bike` auf `+0,06` und erhöhte
+nur `car_d`/`car_p` auf `+0,09` beziehungsweise die sign-erhaltende Obergrenze
+`+0,115`. Auf dem bytegleich reproduzierten Freiburg-Kontrollarm steigt
+`>=10 km` stark und monoton 14,00→20,98→33,85 %, aber der Distanzband-RMSE
+verschlechtert sich 0,0644→0,0675→0,0729 und `1–2 km` fällt auf 7,89/4,61 %.
+Trotz unverändertem Zielwahl-`b_tt_put=-0,0306` wächst der realisierte ÖV-Anteil
+24,86→29,29→37,83 %, weil die nachgelagerte Moduswahl die neu erreichbaren
+Fernziele überproportional per ÖV bedient. **Regel:** Keine weiteren Seeds,
+größeren Pkw-Offsets oder ungegründeten Scans anderer Modus-Teilmengen. Der nächste
+zulässige Mechanismusversuch kontrolliert mehrere Distanzbänder explizit
+(`b_1_2`-Elastizität auf PC-0090 plus separater Modal-Schutz) oder schätzt die
+Parameter regional/hierarchisch.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

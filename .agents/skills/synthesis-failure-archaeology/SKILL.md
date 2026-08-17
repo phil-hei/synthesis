@@ -66,6 +66,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E23 | Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum | Infrastruktur | ENTSCHIEDEN |
 | E24 | Stiller OSM-Fallback konfundiert A/B-Vergleiche | Infrastruktur | ENTSCHIEDEN |
 | E25 | `b_tt_* +0,06` als universeller Regionaltransfer | Kalibrierung | ENTSCHIEDEN |
+| E26 | Pkw-spezifischer `b_tt`-Split in Freiburg | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -479,6 +480,28 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   hierarchisch/regional parametrisierten Hebel untersuchen. Evidenz:
   `docs/05-validierung.md`, Abschnitt „Mehrregionen-Transferprobe Freiburg
   (2026-08-17)"; Schwellen vorab in Commits `bc9a19a` und `68b4baa`.
+
+### E26 — Pkw-spezifischer `b_tt`-Split in Freiburg — ENTSCHIEDEN
+
+- **Frage:** Kann die fehlende Fernwegwirkung dem Pkw zugeordnet werden, ohne den
+  bereits schwachen ÖV-Zeitkoeffizienten weiter Richtung null zu verschieben?
+- **Evidenz:** Commit `f337233` präregistrierte einen bytegleich orchestrierten
+  PC-0060-Kontrollarm und Pkw-Gesamtoffsets `+0,09`/`+0,115`; `put`/`ped`/`bike`
+  blieben auf `+0,06`. `>=10 km` reagiert stark und monoton
+  **14,00→20,98→33,85 %**, Ø Weglänge 5,38→6,38→8,60 km. Trotzdem steigt der
+  Distanzband-RMSE **0,0644→0,0675→0,0729**, während `1–2 km` auf 7,89/4,61 %
+  fällt. Der ÖV-Anteil wächst trotz unverändertem Zielwahl-`b_tt_put=-0,0306`
+  auf 29,29/37,83 %; am Grenzarm verschlechtert sich der Modal-RMSE um 0,053129.
+- **Root Cause:** Die Zielwahl-`b_tt_*` steuern die Erreichbarkeit von Zielen, nicht
+  den realisierten Modus isoliert. Öffnet der Pkw-Term weiter entfernte Ziele, wählt
+  die nachgelagerte Moduswahl für diese Wege überproportional ÖV. Der Pkw-Split
+  behebt damit einen Randwert und beschädigt zugleich Bandform und Modalverteilung.
+- **Status/Regel:** Keine höheren Pkw-Dosen, weiteren Seeds oder Scans anderer
+  Modus-Teilmengen ohne neue Mechanismushypothese. Ein weiterer Anlauf muss
+  mindestens das `1–2 km`-Band explizit kontrollieren (`b_1_2`-Elastizität auf
+  PC-0090) und einen getrennten Modal-Schutz vorsehen; alternativ regional oder
+  hierarchisch schätzen. Vollständige Zahlen: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Split-Sonde (2026-08-17)".
 
 ---
 

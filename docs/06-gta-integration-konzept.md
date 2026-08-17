@@ -776,6 +776,21 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   unzureichend; größere Dosen würden die Reisezeit-Nutzensemantik umkehren und sind
   ebenso gesperrt wie weitere Seeds. Nächster zulässiger Ansatz: getrennte
   Koeffizienten oder regionale/hierarchische Parametrisierung.
+  **❌ Pkw-Split-Sonde verworfen (2026-08-17):** Commit `f337233` trennte vorab
+  ausschließlich `b_tt_car_d`/`b_tt_car_p` vom produktiven `+0,06`-Stand. Der
+  byteidentisch reproduzierte Kontrollarm PC-0060 und die sign-erhaltenden Dosen
+  PC-0090/PC-0115 verschieben `>=10 km` monoton **14,00→20,98→33,85 %** und
+  Ø Weglänge 5,38→6,38→8,60 km. Der Sechs-Band-RMSE verschlechtert sich jedoch
+  **0,0644→0,0675→0,0729**; `1–2 km` kollabiert 11,90→7,89→4,61 %.
+  Obwohl `b_tt_put=-0,0306` unverändert bleibt, steigt der realisierte ÖV-Anteil
+  24,86→29,29→37,83 %: Die Zielwahl öffnet Fernziele, die separate Moduswahl
+  anschließend überproportional per ÖV bedient. PC-0115 verfehlt zusätzlich den
+  Modal-Schutz (RMSE-Δ +0,053129). **Entscheidung:** Pkw-Split und weitere
+  Modus-Teilmengen-Scans ohne neuen Mechanismus sind gestoppt; keine weiteren Seeds.
+  Nächster zulässiger Spike ist eine präregistrierte Multi-Band-Sonde (`b_1_2`
+  auf PC-0090 plus separater Modal-Schutz) oder eine regional/hierarchisch
+  geschätzte Parametrisierung. Vollständiger Befund:
+  [docs/05-validierung.md](05-validierung.md).
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum
