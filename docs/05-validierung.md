@@ -1195,6 +1195,36 @@ experimentell aktivierbare Korrektur des externen Harness-Vertrags
 präregistrieren, weil dadurch vorhandene `b_0_1`-/`b_1_2`-Terme erstmals wirksam
 werden. Bis dahin darf Multi-Band-Kalibrierung nicht als verfügbar gelten.
 
+#### Freiburg-Kilometer-Vertragsspike (2026-08-17) — präregistriert
+
+**Binäre Frage vor dem ersten Lauf:** Aktiviert ausschließlich
+`DefaultDestinationChoiceHelper.getDISTANCE := ImpedanceDistance / 1000` die
+vorhandenen Kilometerband-Terme über die vollständige logiTopp-Kette? Dafür wird
+der installierte Harness in die persistente, gitignorierte Kampagnenablage kopiert;
+`validation/` bleibt unverändert. Die Kopie unterscheidet sich im Modellcode nur
+in dieser Einheitenkorrektur und behält denselben Vertragsmarker, Build und
+eingefrorenen PC-0090-Legacy-Export.
+
+| Arm | korrigierter Helper | zusätzlicher `b_1_2`-Term |
+|---|---:|---:|
+| KM-000 | `DISTANCE / 1000` | `+0,00` |
+| KM-050 | `DISTANCE / 1000` | `+0,50` |
+
+**Vorhersage:** KM-000 darf wegen der erstmals aktiven bestehenden
+`b_0_1`-/`b_1_2`-Terme nicht mehr byteidentisch zu PC-0090 sein. KM-050 muss
+gegenüber KM-000 das `1–2 km`-Band um mindestens 3 Prozentpunkte erhöhen und ein
+nicht byteidentisches Demand-CSV erzeugen. `<1 km` wird in beiden Armen wieder
+auf 19–23 % kalibriert; alle übrigen Distanz-, Modal- und Wegekennzahlen werden
+berichtet, sind in diesem Mechanikspike aber kein nachträglich veränderbares
+Promotions-Gate.
+
+**Stop-Regel:** Bleibt KM-000 byteidentisch zu PC-0090 oder steigt `1–2 km` in
+KM-050 um weniger als 3 Prozentpunkte, ist die Einheitenkorrektur als Erklärung
+widerlegt beziehungsweise unzureichend; keine Produktimplementierung. Bestehen
+beide Binär-Gates, ist nur die Mechanik bestätigt. Dann darf ein separater
+opt-in Harness-Vertrag geplant werden; Default-Änderung, weitere Dosen und Seeds
+bleiben bis zu neuer Baseline- und Schutzgate-Präregistrierung gesperrt.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
