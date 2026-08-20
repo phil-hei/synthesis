@@ -2,6 +2,8 @@ package de.synthesis.generation.pipeline;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -94,6 +97,58 @@ public final class OsmDataSnapshot {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    /**
+     * Schreibt die geparsten POIs und Siedlungen wieder als Overpass-{@code elements}-Array und
+     * liefert den SHA-256 der Datei. Damit bekommt auch ein Live-Abruf einen nachprüfbaren
+     * Fingerabdruck: Zwei Läufe teilen genau dann dieselbe OSM-Eingabe, wenn dieser Hash gleich
+     * ist. Die Datei ist zugleich als {@link #NAME} in {@code uploads/} eines anderen Szenarios
+     * wiederverwendbar und friert die Eingabe damit für einen A/B-Vergleich ein.
+     *
+     * <p>Elemente werden je Koordinate zusammengeführt, damit ein Knoten, der sowohl POI als auch
+     * Siedlung ist, beim Zurücklesen nicht doppelt gezählt wird. Zwei verschiedene Knoten auf
+     * exakt derselben Koordinate verschmelzen dabei zu einem — für die koordinatenbasierte
+     * Attraktivitätsrechnung ohne Belang.
+     */
+    public static String write(Path file, List<OverpassClient.Poi> pois,
+                               List<OverpassClient.Place> places, ObjectMapper mapper)
+            throws IOException {
+        Map<String, Map<String, String>> byCoordinate = new LinkedHashMap<>();
+        for (OverpassClient.Poi poi : pois) {
+            byCoordinate.computeIfAbsent(key(poi.lat(), poi.lon()), k -> new LinkedHashMap<>())
+                    .putAll(poi.tags());
+        }
+        for (OverpassClient.Place place : places) {
+            Map<String, String> tags = byCoordinate
+                    .computeIfAbsent(key(place.lat(), place.lon()), k -> new LinkedHashMap<>());
+            tags.put("place", place.type());
+            tags.put("name", place.name());
+            tags.put("population", Long.toString(place.population()));
+        }
+
+        ObjectNode root = mapper.createObjectNode();
+        ArrayNode elements = root.putArray("elements");
+        byCoordinate.forEach((coordinate, tags) -> {
+            int separator = coordinate.indexOf('/');
+            ObjectNode element = elements.addObject();
+            element.put("type", "node");
+            element.put("lat", Double.parseDouble(coordinate.substring(0, separator)));
+            element.put("lon", Double.parseDouble(coordinate.substring(separator + 1)));
+            ObjectNode tagNode = element.putObject("tags");
+            tags.forEach(tagNode::put);
+        });
+
+        Path parent = file.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), root);
+        return sha256(file);
+    }
+
+    private static String key(double lat, double lon) {
+        return lat + "/" + lon;
     }
 
     public static String sha256(Path file) throws IOException {

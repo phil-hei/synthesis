@@ -461,6 +461,16 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   nichts — nur der Hash-Vergleich entscheidet. Der saubere Weg für Kampagnen ist, die
   OSM-Eingabe einmal einzufrieren und allen Armen als Datei vorzugeben. Evidenz:
   `docs/05-validierung.md`, Abschnitt „Drei-Seed-Wiederholung (2026-08-16)".
+- **✅ Abhilfe im Produkt (2026-08-20):** Beide Teile sind jetzt gebaut. Jeder Lauf mit
+  Live-Abruf schreibt die tatsächlich verwendeten OSM-Daten als
+  `artifacts/osm-data.json` und legt deren SHA-256 zusammen mit dem der erzeugten
+  `attractivities.csv` unter `manifest.json` → `inputProvenance` ab. Der A/B-Check ist
+  damit maschinell: `inputProvenance.attractivities.sha256` beider Arme vergleichen,
+  statt hinterher Logs zu rekonstruieren. Und dieselbe Datei nach `uploads/` eines
+  zweiten Szenarios kopiert **friert die Eingabe ein** — verifiziert: Lauf 2 meldet
+  `scenario-upload:osm-data.json` mit identischem OSM-Hash und identischen
+  Attraktivitäten. Für Kampagnen gilt ab jetzt: ersten Arm live fahren, dessen
+  `osm-data.json` allen weiteren Armen vorgeben.
 
 ### E25 — `b_tt_* +0,06` als universeller Regionaltransfer — ENTSCHIEDEN
 

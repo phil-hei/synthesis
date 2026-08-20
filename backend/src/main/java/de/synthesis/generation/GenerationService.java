@@ -352,6 +352,34 @@ public class GenerationService {
         } catch (Exception e) {
             job.log("Overpass-Places fehlgeschlagen (" + e.getMessage() + ") – Bevölkerung über Dichte/POIs");
         }
+        writeOsmSnapshot(ctx);
+    }
+
+    /**
+     * Schreibt die live geholten OSM-Daten als Snapshot-Artefakt und hinterlegt dessen SHA-256 im
+     * Manifest. Overpass liefert für dieselbe Region nicht immer dieselbe Antwort; ohne
+     * Fingerabdruck ist hinterher nicht feststellbar, ob zwei Läufe auf derselben Eingabe
+     * beruhten (Befund vom 2026-08-16: abweichende Attraktivitäten bei gleicher Knotenzahl).
+     * Die Datei ist zugleich der Einfrier-Pfad: nach {@code uploads/} kopiert, liest sie ein
+     * anderes Szenario statt neu abzurufen.
+     */
+    private void writeOsmSnapshot(PipelineContext ctx) {
+        if ((ctx.pois == null || ctx.pois.isEmpty()) && (ctx.places == null || ctx.places.isEmpty())) {
+            return;
+        }
+        try {
+            Path snapshot = ctx.artifacts.resolve(OsmDataSnapshot.NAME);
+            ctx.osmDataSha256 = OsmDataSnapshot.write(snapshot,
+                    ctx.pois == null ? List.of() : ctx.pois,
+                    ctx.places == null ? List.of() : ctx.places,
+                    mapper);
+            ctx.job.summary.put("osmDataSource", ctx.osmDataSource);
+            ctx.job.summary.put("osmDataSha256", ctx.osmDataSha256);
+            ctx.job.log("OSM-Snapshot geschrieben (" + OsmDataSnapshot.NAME + ", SHA-256 "
+                    + ctx.osmDataSha256.substring(0, 12) + "…)");
+        } catch (IOException e) {
+            ctx.job.log("OSM-Snapshot konnte nicht geschrieben werden (" + e.getMessage() + ")");
+        }
     }
 
     // --- Zwischenschritt: Einwohnerzahl + räumliche Verteilung --------------------

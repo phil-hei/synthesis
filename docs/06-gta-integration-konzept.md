@@ -733,6 +733,20 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Offline-`GenerationPipelineE2ETest` mit echtem Snapshot-Pfad; Backend 130 Tests,
   0 Fehler, 7 umgebungsbedingte Skips, Frontend 21/21, Produktions-Audit ohne Befund
   und Angular-AOT-Build grün.
+  **✅ Schreibpfad ergänzt (2026-08-20):** Bis hierhin konnte ein Szenario einen Snapshot
+  nur *entgegennehmen*; erzeugt hat ihn nichts, weshalb `inputProvenance` in allen
+  Kampagnenläufen leer blieb und ein Live-Abruf unbelegt war. `OsmDataSnapshot.write`
+  serialisiert die geholten POIs und Siedlungen nun wieder als Overpass-`elements`
+  (je Koordinate zusammengeführt, damit ein Knoten mit POI- *und* `place`-Tag beim
+  Zurücklesen nicht doppelt zählt); jeder Live-Lauf legt sie als
+  `artifacts/osm-data.json` ab und trägt den SHA-256 ins Manifest. Damit ist der
+  Einfrier-Pfad erstmals benutzbar, ohne den Snapshot von Hand zu beschaffen.
+  **Verifiziert:** Round-Trip, Doppelzähl-Fall und Fingerabdruck-Unterscheidung als
+  Tests; live erzeugt ein Lauf `osm-data.json` (auch im degradierten Fall: POIs per
+  HTTP 500 gescheitert, 18 Siedlungen geladen — genau der Lauf, der bisher unbelegt
+  blieb), und derselbe Snapshot in ein zweites Szenario kopiert liefert
+  `scenario-upload:osm-data.json` mit identischem OSM-Hash **und identischer
+  `attractivities.csv`**. Backend 138 Tests, 0 Fehler, 7 umgebungsbedingte Skips.
   **✅ Drei-Seed-Gate abgeschlossen (2026-08-17):** Der Live-Abruf eines historischen
   Snapshots blieb an allen erreichbaren Overpass-Endpunkten im Dispatcher-Timeout; ein
   unvollständiger Snapshot wurde nicht akzeptiert. Als stärker isolierter Ersatz liefen

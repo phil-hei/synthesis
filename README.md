@@ -66,6 +66,11 @@ der OSM-Datenstufe; `manifest.json` hält seinen SHA-256 sowie den SHA-256 der d
 `attractivities.csv` fest. So lassen sich unterschiedliche Overpass-Antworten als verdeckte
 zweite Versuchsvariable ausschließen.
 
+Den Snapshot muss man dafür nicht selbst beschaffen: Jeder Lauf mit Live-Abruf schreibt die
+tatsächlich verwendeten OSM-Daten als `osm-data.json` in seine Artefakte und hinterlegt deren
+SHA-256 im Manifest. Diese Datei in die Uploads eines zweiten Szenarios kopiert, friert die
+Eingabe für einen A/B-Vergleich ein — beide Arme belegen dann denselben Hash.
+
 **Zwei-Achsen-Modell** (im Studio unter „Modellierung" wählbar): _Achse A – Verhaltensquelle_
 (actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, inkl. Was-wäre-wenn-Szenarien) ×
 _Achse B – Zielmodell_ (logiTopp · MobileCity-Export · **SUMO**, Mehrfachauswahl).
