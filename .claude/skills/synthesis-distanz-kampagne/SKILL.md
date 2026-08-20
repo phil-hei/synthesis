@@ -250,8 +250,170 @@ Distanzband-RMSE verschlechterte sich 0,1343→0,3072, Joint-RMSE
 heilen. **Regel:** Vor jeder Kampagne prüfen, ob der intrazonale Pkw-Matrixwert
 im kalibrierten Band liegt. Der Produktcode erzwingt dies nun fail-fast; bei
 `>=1 km` Zellgröße verkleinern oder die Distanzrepräsentation/Zielgröße
-methodisch neu präregistrieren. Seeds 43/44 nicht nachholen, solange diese
-Voraussetzung fehlt.
+methodisch neu präregistrieren.
+
+**✅ Distanz-Abklingen über drei Seeds bestätigt (2026-08-17):** Der kombinierte
+Hebel `b_tt_* +0,06` plus nachgelagerter `b_intrazonal`-Kalibrierung erreicht für
+Seeds 42/43/44 Distanzband-RMSE 0,0258/0,0240/0,0245 und besteht alle
+vorregistrierten Schutzgates. Seed 43 wurde nach einem ungültigen Live-Overpass-A/B
+als strikter Ein-Faktor-Kontrast auf demselben eingefrorenen Legacy-Export wiederholt
+(43.084/43.076 Wege; D43: `<1 km` 22,15 %, `1–2 km` 13,53 %, `>=10 km` 21,04 %,
+Modal-RMSE-Delta +0,006). Kein Default-Flip: Der `b_tt_*`-Hebel ist noch kein
+Produktiv-Default. Das opt-in-Flag `population.correctDistanceDecay=false` erzeugt
+inzwischen einen szenariogebundenen Parameterstand mit dem festen Term `+0,06` und
+komponiert ihn vor `calibrateDistance`, Modus-Kalibrierungen und Netz-Feedback;
+`>20 km` bleibt unter MiD und der Mehrregionen-Beleg steht aus.
+
+**❌ Universelle Dosis in Freiburg widerlegt (2026-08-17):** Die vorab in
+Commit `bc9a19a` festgelegte Transferprobe verwendete in T-C42/T-D42 byte-identische
+OSM-, Attraktivitäts-, Populations-, Matrix-, Logistik- und Legacy-Eingaben; der
+einzige Unterschied war `correctDistanceDecay=false→true`. Die Wirkungsrichtung
+transferiert (`1–2 km` 18,35→11,90 %, `>=10 km` 10,16→14,00 %, Ø
+4,58→5,38 km), aber der feste Rastatt-Term `+0,06` nicht als Kalibrierwert:
+Distanzband-RMSE 0,0611→0,0644, absolutes Fernweg-Gate 20 % verfehlt und
+`>20 km` nur 2,11→2,42 %. Nahband, Modal-Schutz und Wegefrequenz blieben intakt.
+Stop-Regel: keine Seeds 43/44. **Regel:** `+0,06` nicht als universellen Wert
+befördern oder in Freiburg bloß wiederholen; nächster zulässiger Anlauf ist eine
+separat präregistrierte regionale Elastizitäts-Sonde beziehungsweise ein
+hierarchisch/regional parametrisierter Hebel. Das Produktflag bleibt opt-in.
+
+**❌ Gemeinsamer Offset an der Vorzeichengrenze ausgeschöpft (2026-08-17):**
+Die in Commit `68b4baa` präregistrierte Freiburg-Sonde testete `+0,075` und
+`+0,09` auf demselben eingefrorenen Legacy-Export mit produktivem Runner und
+Nahkalibrierung. `+0,09` lässt `b_tt_put=-0,0006` gerade noch negativ; größere
+gemeinsame Dosen würden die Reisezeit-Nutzensemantik umkehren. Trotzdem erreicht
+die Obergrenze nur `>=10 km` 18,80 %, Distanzband-RMSE 0,0685 und `1–2 km`
+8,29 %. **Regel:** Den gemeinsamen Offset in Freiburg nicht weiter erhöhen und
+keine weiteren Seeds fahren. Die nächste Hypothese muss einzelne `b_tt_*`-Hebel
+trennen oder regional/hierarchisch parametrisieren; wiederholtes Scannen eines
+gemeinsamen Offsets ist eine entschiedene Sackgasse.
+
+**❌ Pkw-spezifischer Split ebenfalls verworfen (2026-08-17):** Die in Commit
+`f337233` präregistrierte Sonde ließ `put`/`ped`/`bike` auf `+0,06` und erhöhte
+nur `car_d`/`car_p` auf `+0,09` beziehungsweise die sign-erhaltende Obergrenze
+`+0,115`. Auf dem bytegleich reproduzierten Freiburg-Kontrollarm steigt
+`>=10 km` stark und monoton 14,00→20,98→33,85 %, aber der Distanzband-RMSE
+verschlechtert sich 0,0644→0,0675→0,0729 und `1–2 km` fällt auf 7,89/4,61 %.
+Trotz unverändertem Zielwahl-`b_tt_put=-0,0306` wächst der realisierte ÖV-Anteil
+24,86→29,29→37,83 %, weil die nachgelagerte Moduswahl die neu erreichbaren
+Fernziele überproportional per ÖV bedient. **Regel:** Keine weiteren Seeds,
+größeren Pkw-Offsets oder ungegründeten Scans anderer Modus-Teilmengen. Der nächste
+zulässige Mechanismusversuch kontrolliert mehrere Distanzbänder explizit
+(`b_1_2`-Elastizität auf PC-0090 plus separater Modal-Schutz) oder schätzt die
+Parameter regional/hierarchisch.
+
+**⛔ `b_0_1`/`b_1_2` im Legacy-Vertrag einheitenbedingt tot (2026-08-17):**
+Die in Commit `1ae34ad` präregistrierte Freiburg-Sonde mit `b_1_2 +0,50`
+lieferte trotz nachweislich gepatchter Zweckdateien ein zu Kontrolle und PC-0090
+byteidentisches Demand-CSV (42.990 Wege); `+0,75` wurde nach Stop-Regel nicht
+gestartet. Root Cause: Die generierte Utility prüft `[1 < DISTANCE <= 2]`, aber
+`DefaultDestinationChoiceHelper.getDISTANCE` reicht `ImpedanceIfc.getDistance`
+unskaliert aus der Meter-Matrix `CAR_DIS.mtx` durch. Der kleinste Freiburg-Wert
+ist 411,918 m, also wird weder das 0–1- noch das 1–2-„km“-Dummy jemals aktiv.
+**Regel:** Keine weiteren Dosen/Regler auf `b_0_1` oder `b_1_2`, bevor der externe
+Harness-Vertrag versioniert und experimentell aktivierbar `DISTANCE / 1000`
+liefert. Die Korrektur braucht neue Baselines, weil sie vorhandene Kurzband-Terme
+erstmals aktiviert; `validation/` nicht direkt patchen.
+
+**❌ Isolierter Kilometer-Vertragsspike gestoppt (2026-08-17):** Eine persistente,
+gitignorierte Harness-Kopie mit ausschließlich `getDistance(...) / 1000.0d`
+bestätigt die Einheitenursache: KM-000 ist nicht byteidentisch zu PC-0090 und hebt
+`1–2 km` von 7,89 auf 9,67 %. Mit `b_1_2 +0,50` erreicht KM-050 12,09 % und
+senkt den Band-RMSE 0,0636→0,0581. Die Elastizität beträgt aber nur **+2,42 pp**
+und verfehlt damit den in Commit `3382e17` präregistrierten Mindest-Gate +3 pp.
+**Regel:** Keine `+0,75`-Dosis, Seeds oder Produktimplementierung. Eine neue
+Hypothese muss die gemessene Elastizität unabhängig präregistrieren und Distanz-
+sowie Modal-Schutzgates gemeinsam adressieren; die produktive Runtime und
+`validation/` bleiben unverändert.
+
+**❌ Joint-Komposition löst das Langende nicht (2026-08-17):** Commit `7bbcc2d`
+leitete aus der gemessenen Elastizität einmalig `b_1_2 +0,895` ab und koppelte
+danach den produktiven `ModeChoiceCalibrator` an. Die Dosis trifft `1–2 km`
+praktisch exakt (14,12 % roh, 14,08 % geschützt); Modal-RMSE sinkt
+0,113275→0,017562 und ÖV 27,42→10,70 %. Die Distanzmarginale bleibt unter dem
+ASC-Regler nahezu invariant. Trotzdem verfehlen beide Stände `>=10 km >=20 %`
+(19,69/19,68 %) und RMSE ≤0,05 (0,055140/0,055292); `>20 km` bleibt bei
+3,73/3,70 % gegen MiD 13 %. **Regel:** Keine weitere Kurzbanddosis, Seeds oder
+Produktimplementierung. Der nächste Mechanismus muss das `>20 km`-Band direkt
+adressieren und vorab eigene Distanz-/Modal-Schutzgates bekommen.
+
+**❌ Direkter Langwegbonus aus Gesamt-Log-Odds gestoppt (2026-08-17):** Commit
+`a949eb2` fixierte ohne Raster `+1,35` Nutzenpunkte für frei gewählte Ziele über
+20 km. LT-135 wirkt in der vollständigen Kette und verbessert `>20 km`
+3,73→7,17 %, `>=10 km` 19,69→22,06 % sowie Distanzband-RMSE
+0,055140→0,042661; Kurzband und Wegefrequenz bestehen. Der Langweg-Gate
+scheitert dennoch mit +3,44 statt mindestens +5 pp und 7,17 statt `[10;16] %`.
+Die Dosisprognose war falsch konditioniert: `FixedLocationDestinationChoice`
+umgeht die Utility für HOME- und personengebundene Fixziele, sodass die
+Gesamtmengen-Log-Odds den End-to-End-Effekt überschätzen. **Regel:** keine
+zweite Bonusdosis, Seeds oder Modalkalibrierung. Vor einem neuen Langwegspike
+zuerst den Anteil frei gewählter Zielentscheidungen messen und den Mechanismus
+darauf bedingt präregistrieren; bloßes Hochskalieren ist gesperrt.
+
+**✅ Freizielanteil verhaltensneutral gemessen (2026-08-17):** Commit `c2b283b`
+präregistrierte FD-000 mit dem festen Erklärungsfenster `[30;45] %`. Der externe
+Harness lief EXIT 0 und klassifiziert bei byteidentischem J-RAW-Demand alle
+42.989 Zielentscheidungen: HOME 18.722, FIXED 5.129, freie Utility-Pfade 19.138
+= **44,52 %**. Der Bypass ist damit als wesentlicher Verdünnungsmechanismus
+gestützt, die Quote liegt aber 7,41 pp über dem LT-135-Wirkungsverhältnis
+37,11 %. **Regel:** keine neue Bonusdosis. Zuerst Entscheidungsweg und gewählte
+Distanz in einem eigenen verhaltensneutralen Spike direkt verknüpfen; erst dann
+einen bedingten Mechanismus präregistrieren.
+
+**❌ Cross-run-Paarung per `tripId` unentscheidbar (2026-08-17):** Commit
+`1b8ec51` präregistrierte PX-135 als read-only Join von J-RAW und LT-135 über
+`(tripId, legId)`. 42.988 von 42.989 Schlüsseln überlappen, aber nur 15.982
+Paare (**37,18 %**) behalten Ziel- und Vorgängeraktivität statt ≥99,9 %.
+`tripId` ist zwischen kontrafaktischen Läufen semantisch instabil; alle
+nachgelagerten Gruppenwerte sind nicht interpretierbar. **Regel:** kein
+alternativer Post-hoc-Join. Nächster Anlauf nur mit Same-run-Protokoll von
+Entscheidungsweg + Distanz oder einem vorab bewiesenen stabilen Wegschlüssel.
+
+**❌ Same-run-Marginalen lokalisieren, aber dosieren nicht (2026-08-17):**
+Commit `a08eb7a` fixierte PM-135 ohne Join und mit unveränderten PX-Gates.
+Technisch besteht die Aggregation: 82,32 % der Wege sind direkt oder als
+Folgeweg zu einer freien Aktivität exponiert; alle 1.480 zusätzlichen
+`>20 km`-Wege entstehen dort, die 7.600 nicht exponierten Wege bleiben in
+Langanteil und Ø Distanz exakt unverändert. Der globale Effekt ist damit
+`82,32 % × 4,1823 pp = 3,4429 pp` lokalisiert. Der Wirkungsstärke-Gate scheitert
+aber: exponiert nur 2,854→7,036 %, also +4,182 statt ≥5 pp. **Regel:** keine
+höhere Konstante. Vor einem neuen bedingten Mechanismus die Eligibility freier
+Choice-Sets für vorhandene `>20 km`-Alternativen same-run messen.
+
+**❌ Binäre Choice-Set-Ineligibility widerlegt (2026-08-17):** Commit `f8064f6`
+präregistrierte CE-000/CE-135 mit festen Same-run-Gates. Beide Läufe enden EXIT
+0, reproduzieren J-RAW/LT-135 byteidentisch und zählen je 19.138 freie
+Entscheidungen. **Alle 19.138 sind langweg-eligible**, womit das erwartete
+Fenster `[65;85] %` scheitert. Die Wahrscheinlichkeitsevidenz besteht dagegen:
+CE-000-Masse 2,3376 % gegen 2,3722 % Auswahl, CE-135-Masse 7,0603 % gegen
+6,8868 % Auswahl; der exakte CE-000-`+1,35`-Kontrafakt 6,6643 % weicht nur
+0,3960 pp von CE-135 ab. `SHOPPING_OTHER` hat trotz 100 % Eligibility nur
+0,0156 % Basismasse. **Regel:** keine neue Dosis. Nächster zulässiger Schritt
+ist eine neue Präregistrierung fester Klassen für die Verteilung der
+per-Choice-Set-Langwegmasse nach Aktivitätstyp; keine Produktänderung.
+
+**✅ Breites Within-Zweck-Niedrigmassenregime bestätigt (2026-08-17):** Der
+vorab fixierte Ein-Arm-Lauf PD-000 ist technisch gültig und reproduziert J-RAW
+byteidentisch. 11.550/19.138 Entscheidungen (**60,3511 %**) liegen unter 1 %
+Fernzielmasse und tragen nur 3,7926 % der Gesamtmasse. Nur 830 Entscheidungen
+(4,3369 %) liegen bei mindestens 10 %, tragen aber 42,5757 %. Die
+Varianzzerlegung ergibt **93,2080 % innerhalb** und 6,7920 % zwischen
+Aktivitätstypen. SHOPPING_DAILY hat 95,76 % Niedrigmassenfälle, aber seltene
+Hochmassenfälle und dominiert die Within-SSE. **Regel:** Ein konstanter
+Zweckbonus ist keine hinreichende Strukturerklärung; keine Dosis. Der nächste
+zulässige Same-run-Spike muss die Ausgangszonenkomponente innerhalb der Zwecke
+vorab zerlegen.
+
+**❌ Ausgangsgeografie nicht dominant (2026-08-17):** Der präregistrierte
+OZ-000-Lauf reproduziert PD-/J-RAW byteidentisch. 1.293 wiederholt belegte
+`(Aktivitätstyp, Ausgangszone)`-Zellen mit `n>=5` decken 14.748/19.138 =
+77,0613 % der freien Entscheidungen ab. Sie erklären aber nur **20,0786 %**
+statt des vorab geforderten Minimums 70 % der Within-Zweck-Varianz;
+79,9214 % bleiben innerhalb gleicher Zellen. SHOPPING_DAILY dominiert die
+absolute Streuung, sein Zonenanteil beträgt nur 9,54 %. **Regel:** keine
+geografische Folgesonde oder Dosis. Nächster zulässiger Same-run-Spike nur mit
+vorab fixierten Personen-/Modusverfügbarkeits- oder situativen Merkmalen
+innerhalb identischer Zweck-Zonen-Zellen.
 
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
@@ -284,7 +446,7 @@ Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `M
 | Frage „wurde X schon probiert?" | synthesis-failure-archaeology |
 | Prozess-/Evidenzfragen | synthesis-research-methodology |
 
-## Provenienz & Wartung (Stand: 2026-07-29)
+## Provenienz & Wartung (Stand: 2026-08-17)
 
 Verifiziert am 2026-07-10: Parameterdateien + Inhalte (ls/cat oben), `destinationChoice:`-
 Verdrahtung (grep in SimulationRunner.java Z. 106–114), Baseline-Messung (distance_profile.py,

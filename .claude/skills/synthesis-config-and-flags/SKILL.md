@@ -92,6 +92,9 @@ UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellier
 | `useActitopp` | boolean | `true` | **@Deprecated** – durch `behaviorSource` ersetzt; nur noch in `behaviorSourceEffective()` gelesen. UI: Checkbox „KIT actiTopp für Aktivitätenpläne" (Block „Bevölkerung") existiert noch | Legacy |
 | `useKitPopulation` | boolean | `true` | Haushalte aus KIT-synthetisiertem Demografie-Sample (realistische Zusammensetzungen) statt Ad-hoc-Ziehung. Konsument: `PopulationGenerator` | produktiv |
 | `calibrateModeChoice` | boolean | **`false`** | Iterative ASC-Kalibrierung der Moduswahl gegen Ziel-Modal-Split (mehrere Sim-Läufe, teuer). Konsument: `GenerationService` (Stufe „Simulation (logiTopp)") → `ModeChoiceCalibrator`. UI: Checkbox „Modal-Split kalibrieren (langsam)", gated `*ngIf="hasTarget('logitopp')"` | **experimentell** |
+| `calibrateDistance` | boolean | **`false`** | Iterative Zielwahl-Kalibrierung von `b_intrazonal` auf den MiD-Nahanteil `<1 km`; benötigt mehrere logiTopp-Läufe und eine intrazonale Pkw-Distanz unter 1 km. Konsument: `GenerationService` → `DistanceCalibrator`. UI: „Distanz-Verteilung kalibrieren" | **experimentell** |
+| `correctDistanceDecay` | boolean | **`false`** | Erzeugt einen szenariogebundenen Zielwahl-Parameterstand und addiert den über Seeds 42/43/44 bestätigten festen Term `+0,06` auf `b_tt_car_d`, `b_tt_car_p`, `b_tt_put`, `b_tt_ped`, `b_tt_bike`. Komponiert mit `calibrateDistance`, Modus-Kalibrierungen und Netz-Feedback; verändert nie die geteilten Legacy-Dateien. Konsument: `GenerationService` → `DestinationChoiceParameterAdjuster`. UI: „Distanz-Abklingen korrigieren" | **experimentell** |
+| `calibrateModeDistance` | boolean | **`false`** | Gemeinsame Kalibrierung von ÖV-Niveau (`asc_put`) und ÖV-Fernweg-Schräge (`b_tt_put`) gegen MiD; mehrere logiTopp-Läufe. Konsument: `GenerationService` → `ModeDistanceCalibrator`. UI: „ÖV nach Distanz kalibrieren" | **experimentell** |
 | `calibrationTarget` | Map\<String, Double\> | MiD 2017 bundesweit: `pedestrian 0.22, bike 0.11, car 0.43, passenger 0.14, publicTransport 0.10` | Ziel-Modal-Split der Kalibrierung; leer/null → Fallback `ModeChoiceCalibrator.MID_2017`. Auch von der LLM-Moduswahl als Referenz gelesen. UI: editierbare Zeilen + RegioStaR-Preset-Select, nur sichtbar wenn `calibrateModeChoice` an | Datum produktiv; nur von experimentellen Flags genutzt |
 | `llmModeChoice` | boolean | **`false`** | GTA 3c: zusätzliche LLM-gestützte Moduswahl auf den simulierten Trips (geerdet in Reisezeiten je Modus) – alternativer Modal-Split zum Vergleich mit MNL/MiD. Benötigt logiTopp + LLM. Konsument: Stufe „LLM-Moduswahl" → `LlmModeChoiceRunner`. UI: Checkbox, gated `hasTarget('logitopp')` | **experimentell** |
 | `sumoFeedback` | boolean | **`false`** | Netz-Feedback: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu (Gleichgewichts-Schleife). Benötigt logiTopp + SUMO. Konsument: Stufe „Netz-Feedback" → `FeedbackMath`. UI: Checkbox, gated `hasTarget('logitopp') && hasTarget('sumo')` | **experimentell** |
@@ -121,10 +124,11 @@ GTA-Lauf eine Exception wirft (Log: „… Fallback actiTopp").
 `vehicleType` (`"TRUCK"` \| `"CARGO_BIKE"` – als Union-Typ auch im Frontend-Modell).
 `DeliveryService`-Felder: `name`, `share`.
 
-### 1.4 Experimentell vs. produktiv – Kurzliste (Stand 2026-07-08)
+### 1.4 Experimentell vs. produktiv – Kurzliste (Stand 2026-08-17)
 
 **Experimentell (alle default `false` bzw. nicht die Default-Option; Beförderung nur über das
-Gate in `synthesis-change-control`):** `calibrateModeChoice`, `llmModeChoice`, `sumoFeedback`,
+Gate in `synthesis-change-control`):** `calibrateModeChoice`, `calibrateDistance`,
+`correctDistanceDecay`, `calibrateModeDistance`, `llmModeChoice`, `sumoFeedback`,
 `publicTransport`, `behaviorSource = "gta"` (+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
 Ziel `sumo` in `targetModels` ist funktionsfähig, aber **nicht** im Default enthalten.
 
@@ -350,7 +354,7 @@ aktualisieren und den Stand-Vermerk unten anpassen.
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-07-08.** Ground Truth vollständig gelesen und übertragen aus:
+- **Stand: 2026-08-17.** Ground Truth vollständig gelesen und übertragen aus:
   `backend/src/main/java/de/synthesis/scenario/Scenario.java`,
   `backend/src/main/java/de/synthesis/SynthesisProperties.java`,
   `backend/src/main/resources/application.yml`,

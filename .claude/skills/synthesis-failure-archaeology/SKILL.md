@@ -23,7 +23,7 @@ Sackgasse, verworfene Lösung und jedes Rollback, jeweils als **Symptom → Root
 Status → Was du stattdessen tust**. Bevor du einen "naheliegenden" Ansatz umsetzt, prüfe hier,
 ob er schon einmal gescheitert ist — und warum.
 
-**Stand: 2026-08-11.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
+**Stand: 2026-08-17.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
 und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzahlen sind
 überlieferte Werte vom jeweils genannten Datum, keine aktuellen Messungen.
 
@@ -65,6 +65,16 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E22 | `<1 km`-Kalibrierung bei grober Zonierung | Kalibrierung | ENTSCHIEDEN |
 | E23 | Gradle-Quellsnapshot hängt im lokalen KIT-Quellbaum | Infrastruktur | ENTSCHIEDEN |
 | E24 | Stiller OSM-Fallback konfundiert A/B-Vergleiche | Infrastruktur | ENTSCHIEDEN |
+| E25 | `b_tt_* +0,06` als universeller Regionaltransfer | Kalibrierung | ENTSCHIEDEN |
+| E26 | Pkw-spezifischer `b_tt`-Split in Freiburg | Kalibrierung | ENTSCHIEDEN |
+| E27 | `b_0_1`/`b_1_2` gegen Meter statt Kilometer | Legacy/Kalibrierung | BLOCKIERT |
+| E28 | Kurzband + ASC-Modalschutz in Freiburg | Kalibrierung | ENTSCHIEDEN |
+| E29 | Direkter Langwegbonus aus Gesamt-Log-Odds | Kalibrierung | ENTSCHIEDEN |
+| E30 | `tripId` als Cross-run-Wegschlüssel | Diagnose/Kalibrierung | ENTSCHIEDEN |
+| E31 | Aktivitätsnachbarschaft als Langweg-Dosisformel | Kalibrierung | ENTSCHIEDEN |
+| E32 | Binäre Choice-Set-Eligibility als Unterwirkungsursache | Kalibrierung | ENTSCHIEDEN |
+| E33 | Aktivitätstypmittel als Erklärung der Langwegmassen-Heterogenität | Kalibrierung | ENTSCHIEDEN |
+| E34 | Ausgangszelle als dominante Within-Zweck-Erklärung | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -451,6 +461,253 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   nichts — nur der Hash-Vergleich entscheidet. Der saubere Weg für Kampagnen ist, die
   OSM-Eingabe einmal einzufrieren und allen Armen als Datei vorzugeben. Evidenz:
   `docs/05-validierung.md`, Abschnitt „Drei-Seed-Wiederholung (2026-08-16)".
+- **✅ Abhilfe im Produkt (2026-08-20):** Beide Teile sind jetzt gebaut. Jeder Lauf mit
+  Live-Abruf schreibt die tatsächlich verwendeten OSM-Daten als
+  `artifacts/osm-data.json` und legt deren SHA-256 zusammen mit dem der erzeugten
+  `attractivities.csv` unter `manifest.json` → `inputProvenance` ab. Der A/B-Check ist
+  damit maschinell: `inputProvenance.attractivities.sha256` beider Arme vergleichen,
+  statt hinterher Logs zu rekonstruieren. Und dieselbe Datei nach `uploads/` eines
+  zweiten Szenarios kopiert **friert die Eingabe ein** — verifiziert: Lauf 2 meldet
+  `scenario-upload:osm-data.json` mit identischem OSM-Hash und identischen
+  Attraktivitäten. Für Kampagnen gilt ab jetzt: ersten Arm live fahren, dessen
+  `osm-data.json` allen weiteren Armen vorgeben.
+
+### E25 — `b_tt_* +0,06` als universeller Regionaltransfer — ENTSCHIEDEN
+
+- **Symptom/Frage:** Der feste Term bestand im Großraum Rastatt alle Gates über
+  Seeds 42/43/44. Ist `+0,06` deshalb ein regionsunabhängiger Produktwert?
+- **Evidenz:** Nein. Die vorab festgeschriebene Freiburg-Probe T-C42/T-D42
+  verwendete byte-identische OSM-, Attraktivitäts-, Populations-, Matrix-,
+  Logistik- und Legacy-Eingaben. Der produktive Flag-Wechsel verschob die Verteilung
+  in der erwarteten Richtung (`1–2 km` 18,35→11,90 %, `>=10 km`
+  10,16→14,00 %, Ø 4,58→5,38 km), verschlechterte aber den Distanzband-RMSE
+  **0,0611→0,0644**. Das absolute 20-%-Fernweg-Gate scheiterte; `>20 km` stieg
+  nur 2,11→2,42 % gegen MiD 13 %. Drei von sieben Vorab-Kriterien scheiterten.
+- **Root Cause:** Bestätigt ist die Mechanik des Reisezeit-Beta-Hebels, nicht die
+  Übertragbarkeit seiner Dosis. Ausgangsverteilung, Gebietsgeometrie und
+  Attraktivitätsstruktur unterscheiden sich regional; ein fester additiver Term
+  kann deshalb dieselbe Richtung bei falscher Zielgröße liefern.
+- **Status/Regel:** Seeds 43/44 wurden nach Stop-Regel nicht gestartet;
+  `correctDistanceDecay` bleibt opt-in. `+0,06` nicht als universellen Default
+  befördern und dieselbe Freiburg-Serie nicht ohne neue Hypothese wiederholen.
+  Die anschließend präregistrierte Grenzsonde schöpfte den gemeinsamen Offset
+  bis `+0,09` aus; dort bleibt `b_tt_put=-0,0006` gerade noch negativ, aber
+  `>=10 km` endet bei 18,80 %, RMSE bei 0,0685 und `1–2 km` bei 8,29 %.
+  Größere gemeinsame Dosen würden die Nutzensemantik umkehren und sind ebenso
+  gesperrt wie weitere Seeds. Stattdessen einzelne Koeffizienten trennen oder einen
+  hierarchisch/regional parametrisierten Hebel untersuchen. Evidenz:
+  `docs/05-validierung.md`, Abschnitt „Mehrregionen-Transferprobe Freiburg
+  (2026-08-17)"; Schwellen vorab in Commits `bc9a19a` und `68b4baa`.
+
+### E26 — Pkw-spezifischer `b_tt`-Split in Freiburg — ENTSCHIEDEN
+
+- **Frage:** Kann die fehlende Fernwegwirkung dem Pkw zugeordnet werden, ohne den
+  bereits schwachen ÖV-Zeitkoeffizienten weiter Richtung null zu verschieben?
+- **Evidenz:** Commit `f337233` präregistrierte einen bytegleich orchestrierten
+  PC-0060-Kontrollarm und Pkw-Gesamtoffsets `+0,09`/`+0,115`; `put`/`ped`/`bike`
+  blieben auf `+0,06`. `>=10 km` reagiert stark und monoton
+  **14,00→20,98→33,85 %**, Ø Weglänge 5,38→6,38→8,60 km. Trotzdem steigt der
+  Distanzband-RMSE **0,0644→0,0675→0,0729**, während `1–2 km` auf 7,89/4,61 %
+  fällt. Der ÖV-Anteil wächst trotz unverändertem Zielwahl-`b_tt_put=-0,0306`
+  auf 29,29/37,83 %; am Grenzarm verschlechtert sich der Modal-RMSE um 0,053129.
+- **Root Cause:** Die Zielwahl-`b_tt_*` steuern die Erreichbarkeit von Zielen, nicht
+  den realisierten Modus isoliert. Öffnet der Pkw-Term weiter entfernte Ziele, wählt
+  die nachgelagerte Moduswahl für diese Wege überproportional ÖV. Der Pkw-Split
+  behebt damit einen Randwert und beschädigt zugleich Bandform und Modalverteilung.
+- **Status/Regel:** Keine höheren Pkw-Dosen, weiteren Seeds oder Scans anderer
+  Modus-Teilmengen ohne neue Mechanismushypothese. Ein weiterer Anlauf muss
+  mindestens das `1–2 km`-Band explizit kontrollieren (`b_1_2`-Elastizität auf
+  PC-0090) und einen getrennten Modal-Schutz vorsehen; alternativ regional oder
+  hierarchisch schätzen. Vollständige Zahlen: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Split-Sonde (2026-08-17)".
+
+### E27 — `b_0_1`/`b_1_2` gegen Meter statt Kilometer — BLOCKIERT
+
+- **Symptom:** Die präregistrierte Freiburg-Sonde `b_1_2 +0,50` änderte trotz
+  nachweislich gepatchter Zweckdateien kein einziges Ergebnisbyte; MB-000,
+  MB-050 und PC-0090 liefern exakt dieselben 42.990 Wege und Kennzahlen.
+- **Root Cause:** `DestinationChoiceUtilityFunction` enthält zwar die Terme
+  `b_0_1 * [0 < DISTANCE <= 1]` und `b_1_2 * [1 < DISTANCE <= 2]`.
+  `DefaultDestinationChoiceHelper.getDISTANCE` gibt aber
+  `ImpedanceIfc.getDistance` unverändert zurück; die Run-Config bindet dafür
+  `other/CAR_DIS.mtx` in **Metern**. Freiburgs kleinster Matrixwert beträgt
+  411,918 m. Andere Legacy-Stellen teilen für Kilometer explizit durch 1.000,
+  womit die Fehlverdrahtung unabhängig bestätigt ist.
+- **Verworfener Scheinfix:** Nicht einfach größere `b_0_1`-/`b_1_2`-Dosen testen:
+  der Indikator bleibt null. Auch `CAR_DIS.mtx` nicht global auf Kilometer skalieren;
+  dieselbe Matrix speist weitere Distanzkonsumenten und Ergebnisverträge.
+- **Status/Regel:** Multi-Band-Kalibrierung ist blockiert. `validation/` nicht direkt
+  verändern. Der nächste Anlauf braucht eine versionierte, experimentell
+  aktivierbare Korrektur des externen Harness (`DISTANCE / 1000`) und neue
+  präregistrierte Baselines, weil die bestehenden Kurzband-Parameter dadurch
+  erstmals aktiv werden. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Multi-Band-Sonde (2026-08-17)"; Präregistrierung Commit `1ae34ad`.
+- **Spike-Nachtrag (2026-08-17):** Eine isolierte Harness-Kopie mit ausschließlich
+  `getDistance(...) / 1000.0d` bestätigt den Einheitenmechanismus: KM-000 hebt
+  `1–2 km` von 7,89 auf 9,67 %, KM-050 mit `b_1_2 +0,50` auf 12,09 %. Der
+  zusätzliche Effekt von **+2,42 pp** verfehlt jedoch den in Commit `3382e17`
+  vorab gesetzten +3-pp-Gate. Daher keine `+0,75`-Dosis, Seeds oder
+  Produktimplementierung; produktive Runtime und `validation/` bleiben
+  unverändert. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Kilometer-Vertragsspike (2026-08-17)".
+
+### E28 — Kurzband + ASC-Modalschutz in Freiburg — ENTSCHIEDEN
+
+- **Frage:** Reicht die aus der korrigierten Kurzband-Elastizität abgeleitete
+  Einzeldosis zusammen mit dem bestehenden ASC-Modalkalibrator für alle
+  Freiburg-Produktgates?
+- **Evidenz:** Commit `7bbcc2d` fixierte `b_1_2 +0,895` und alle Gates vorab.
+  Der echte Harness trifft `1–2 km` mit 14,12 % roh und 14,08 % nach Modalschutz.
+  Modal-RMSE sinkt 0,113275→0,017562, ÖV 27,42→10,70 %. Dennoch bleiben
+  `>=10 km` bei 19,69/19,68 % und Distanzband-RMSE bei 0,055140/0,055292;
+  beide verfehlen die unveränderten Gates 20 % beziehungsweise 0,05.
+- **Root Cause:** `b_1_2` verteilt Ziele in das 1–2-km-Band um, erzeugt aber
+  keine fehlenden Fernziele. Die nachgelagerte ASC-Kalibrierung korrigiert die
+  Moduswahl und lässt die sechs Distanzbänder nahezu unverändert; sie kann das
+  verbleibende `>20 km`-Defizit von rund neun Prozentpunkten nicht heilen.
+- **Status/Regel:** Keine weitere `b_1_2`-Dosis, Seeds oder Produktimplementierung.
+  Ein neuer Anlauf muss einen eigenständigen Langwegmechanismus präregistrieren;
+  gemeinsame `b_tt`-Offsets, Pkw-Splits und Kurzband-Scans sind durch E25–E28
+  ausgeschöpft. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Joint-Kompositionssonde (2026-08-17)".
+
+### E29 — Direkter Langwegbonus aus Gesamt-Log-Odds — ENTSCHIEDEN
+
+- **Frage:** Kann ein analytisch aus J-RAW `>20 km` 3,73 % und MiD 13 %
+  abgeleiteter Nutzenbonus `logit(0,13)-logit(0,0373119)=+1,35` das Langband
+  ohne Parameterscan direkt herstellen?
+- **Evidenz:** Der in Commit `a949eb2` präregistrierte, isolierte Harness bestand
+  den externen Lauf mit EXIT 0. `>20 km` steigt **3,73→7,17 %** und damit nur
+  +3,44 statt mindestens +5 pp; das absolute Gate `[10;16] %` scheitert.
+  Zugleich bestehen die übrigen Schutzwerte: `<1 km` 20,75 %, `1–2 km`
+  13,94 %, `>=10 km` 22,06 %, Distanzband-RMSE 0,042661 und 3,0706
+  Wege/Person·Tag.
+- **Root Cause der Fehlprognose:** Die Gesamtmengen-Log-Odds-Rechnung setzt
+  voraus, dass alle End-to-End-Ziele dieselbe gepatchte MNL-Utility durchlaufen.
+  `FixedLocationDestinationChoice` gibt HOME-Ziele und personengebundene
+  Fixziele jedoch vor dem Utility-Aufruf zurück. Der Bonus wirkt nur auf freie
+  Zielentscheidungen und wird in der Gesamtmarginale verdünnt.
+- **Status/Regel:** Der `ModeChoiceCalibrator` wurde nach Stop-Regel nicht
+  gestartet. Die in Commit `c2b283b` präregistrierte FD-000-Nachmessung zählt
+  bei byteidentischem J-RAW-Demand 19.138 von 42.989 Entscheidungen als frei
+  (**44,52 %**; HOME 43,55 %, FIXED 11,93 %) und besteht damit das feste
+  `[30;45] %`-Erklärungsfenster. Der Bypass ist als wesentliche Verdünnung
+  gestützt, erklärt die Unterwirkung aber noch nicht vollständig: Die Quote
+  liegt 7,41 pp über dem LT-135-Wirkungsverhältnis 37,11 %. Keine zweite
+  Bonusdosis, Seeds oder Produktimplementierung; der nächste Spike muss den
+  Entscheidungsweg direkt mit der gewählten Distanz verknüpfen. Eine bloße
+  Nachskalierung von `+1,35` bleibt gesperrt. Evidenz:
+  `docs/05-validierung.md`, Abschnitte „Freiburg-Langweg-Nutzenbonusspike" und
+  „Freiburg-Freiziel-Instrumentierung (2026-08-17)".
+
+### E30 — `tripId` als Cross-run-Wegschlüssel — ENTSCHIEDEN
+
+- **Frage:** Lassen sich J-RAW und LT-135 über `(tripId, legId)` semantisch
+  paaren, um die Distanzwirkung einer freien Zielwahl auf Hin- und Folgeweg zu
+  lokalisieren?
+- **Evidenz:** Die in Commit `1b8ec51` präregistrierte PX-135-Auswertung findet
+  eindeutige Schlüssel und 42.988 numerische Gegenstücke für 42.989
+  J-RAW-Wege. Das vorgeschaltete Semantik-Gate scheitert trotzdem: Nur 15.982
+  Paare (**37,18 %**) haben denselben Ziel- und Vorgängeraktivitätscode statt
+  mindestens 99,9 %. Fast vollständige ID-Überlappung ist hier also ein
+  irreführendes Scheinsignal.
+- **Root Cause:** `tripId` verhält sich empirisch als laufslokale Weg-ID, nicht
+  als stabiler fachlicher Schlüssel: Dieselben Nummern bezeichnen in den beiden
+  Läufen überwiegend verschiedene Aktivitäten. Die interne Vergabelogik wurde
+  für dieses Urteil nicht weiter aufgelöst; die beobachtete Semantik reicht aus,
+  um den Join zu verwerfen.
+- **Status/Regel:** PX-135 ist unentscheidbar; seine nachgelagerten
+  Gruppenkennzahlen werden nicht interpretiert und es gibt keinen alternativen
+  Post-hoc-Join. Cross-run-Vergleiche benötigen einen vorab bewiesenen stabilen
+  semantischen Schlüssel. Für den Langwegspike ist die sichere Alternative,
+  Entscheidungsweg und gewählte Distanz im selben Lauf gemeinsam zu
+  protokollieren. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Wegeexpositionsanalyse (2026-08-17)".
+
+### E31 — Aktivitätsnachbarschaft als Langweg-Dosisformel — ENTSCHIEDEN
+
+- **Frage:** Erklärt die direkte oder Folge-Nachbarschaft zu einer freien
+  Aktivität die LT-135-Unterwirkung quantitativ hinreichend, wenn beide Läufe
+  ohne Cross-run-Join separat aggregiert werden?
+- **Evidenz:** Die in Commit `a08eb7a` präregistrierte PM-135-Auswertung besteht
+  alle technischen Gates. Exponiert sind 35.389 von 42.989 J-RAW-Wegen
+  (**82,32 %**). Sämtliche 1.480 zusätzlichen `>20 km`-Wege liegen in dieser
+  Marginale; die 7.600 nicht exponierten Wege bleiben in Langanteil 7,8158 %
+  und Ø Distanz 8,6272 km exakt unverändert. So rekonstruiert
+  `82,32 % × 4,1823 pp` den globalen Zuwachs +3,4429 pp.
+- **Warum dennoch verworfen:** Der vorab unverändert übernommene Stärke-Gate
+  fordert mindestens +5 pp innerhalb der exponierten Marginale. Beobachtet
+  werden nur 2,854→7,036 %, also **+4,182 pp**. Aktivitätsnachbarschaft
+  lokalisiert den Effekt vollständig, liefert aber keine hinreichende
+  Dosisformel.
+- **Status/Regel:** Keine höhere Bonuskonstante, Seeds, Modalkalibrierung oder
+  Produktimplementierung. Ein neuer Mechanismus muss zuerst same-run messen,
+  welcher Anteil freier Choice-Sets überhaupt attraktive `>20 km`-Alternativen
+  enthält. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Wegeexpositionsmarginalen (2026-08-17)".
+
+### E32 — Binäre Choice-Set-Eligibility als Unterwirkungsursache — ENTSCHIEDEN
+
+- **Frage:** Fehlen einem wesentlichen Teil der freien Entscheidungen überhaupt
+  zweckspezifisch attraktive `>20 km`-Alternativen mit positiver
+  MNL-Wahrscheinlichkeit, sodass dies die Unterwirkung von `+1,35` erklärt?
+- **Evidenz:** Die in Commit `f8064f6` präregistrierten CE-000/CE-135-Läufe
+  bestehen alle technischen Gates und reproduzieren J-RAW/LT-135 byteidentisch.
+  Entgegen dem Fenster `[65;85] %` sind **19.138 von 19.138** freien
+  Entscheidungen eligible. Die mittlere MNL-Masse stimmt mit der realen
+  Auswahl überein (CE-000 2,3376 % vs. 2,3722 %; CE-135 7,0603 % vs.
+  6,8868 %). Der exakt je Basis-Choice-Set berechnete `+1,35`-Kontrafakt
+  6,6643 % liegt nur 0,3960 pp von der wirklichen CE-135-Masse entfernt.
+- **Root Cause:** Die homogene Logit-Transformation des aggregierten
+  J-RAW-Anteils ignoriert die starke Heterogenität der einzelnen
+  Ausgangsmassen. Binäre Verfügbarkeit ist zu grob; bei `SHOPPING_OTHER`
+  beträgt die Basismasse trotz 100 % Eligibility nur 0,0156 %.
+- **Status/Regel:** Choice-Set-Ineligibility ist als Erklärung verworfen. Keine
+  neue Bonusdosis, Seeds oder Produktimplementierung. Vor einem weiteren
+  Mechanismus darf nur die per-Choice-Set-Massenverteilung in neu
+  präregistrierten festen Klassen gemessen werden. Evidenz:
+  `docs/05-validierung.md`, Abschnitt „Freiburg-Choice-Set-Eligibility
+  (2026-08-17)".
+
+### E33 — Aktivitätstypmittel als Heterogenitätserklärung — ENTSCHIEDEN
+
+- **Frage:** Entsteht die starke Streuung der CE-000-Langwegmasse überwiegend
+  zwischen den sechs freien Aktivitätstypen, sodass zweckspezifische Konstanten
+  die nächste hinreichende Strukturerklärung wären?
+- **Evidenz:** Der vorab fixierte PD-000-Lauf ist bonusfrei, technisch gültig
+  und erneut byteidentisch zu J-RAW. 60,3511 % der 19.138 Entscheidungen haben
+  `p <1 %` und tragen nur 3,7926 % der Gesamtmasse. Dagegen tragen 4,3369 % mit
+  `p >=10 %` bereits 42,5757 %. Die feste Varianzzerlegung ergibt
+  `SST=75,1796550`, `SSB=5,1062364` und `SSW=70,0734186`: **93,2080 %** liegen
+  innerhalb der Aktivitätstypen, nur 6,7920 % zwischen ihnen.
+- **Root Cause:** Zweckmittel verdecken die dominante innere Mischung.
+  SHOPPING_DAILY liegt zu 95,76 % unter 1 %, enthält aber seltene
+  Hochmassenfälle und erzeugt 45,8203 der 70,0734 Within-SSE.
+- **Status/Regel:** Ein konstanter Zweckbonus ist keine hinreichende Erklärung
+  der Heterogenität. Keine Dosis oder Produktimplementierung. Der nächste
+  zulässige Same-run-Spike muss vorab die Ausgangszonenkomponente innerhalb der
+  Zwecke zerlegen. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Langwegmassenverteilung (2026-08-17)".
+
+### E34 — Ausgangszelle als dominante Within-Zweck-Erklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt die vorherige Zone mindestens 70 % der von PD-000
+  lokalisierten Within-Zweck-Varianz der Langwegmasse?
+- **Evidenz:** OZ-000 ist technisch gültig und erneut byteidentisch zu J-RAW.
+  Um sparse-cell-Überanpassung zu begrenzen, waren nur 1.293
+  `(Aktivitätstyp, Ausgangszone)`-Zellen mit `n>=5` zugelassen; sie decken
+  14.748/19.138 = 77,0613 % ab. Von ihrer Within-Zweck-SSE 50,3748793 liegen
+  10,1145501 zwischen Ausgangszellen und 40,2603292 innerhalb identischer
+  Zellen: **20,0786 % erklärt, 79,9214 % Rest**.
+- **Warum verworfen:** Der vorab gesetzte 70-%-Gate wird weit verfehlt. Bei
+  SHOPPING_DAILY, dem größten absoluten Varianztreiber, erklärt die Zone nur
+  9,54 %. Höhere Anteile bei einzelnen Freizeitzwecken ändern das
+  Gesamturteil nicht.
+- **Status/Regel:** Keine geografische Folgesonde, Dosis oder
+  Produktimplementierung. Der nächste Same-run-Spike muss Personen-/
+  Modusverfügbarkeits- oder situative Merkmale innerhalb identischer
+  Zweck-Zonen-Zellen vorab zerlegen. Evidenz: `docs/05-validierung.md`,
+  Abschnitt „Freiburg-Ausgangszonenzerlegung (2026-08-17)".
 
 ---
 
