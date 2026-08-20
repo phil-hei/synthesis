@@ -22,7 +22,7 @@ Speichergründen eigene Prozesse.
 ## Kommandos
 
 ```sh
-# Schnelle Prüfung für Backend + Frontend
+# Schnelle Prüfung für Backend + Frontend, inkl. Abgleich der Skill-Registries
 scripts/preflight.sh core
 
 # Gepinnte KIT-Laufprojekte und Transit-venv rekonstruieren
@@ -38,6 +38,15 @@ scripts/dev.sh
 scripts/verify.sh core
 scripts/verify.sh full
 ```
+
+`scripts/preflight.sh core` prüft seit dem 2026-08-20 zusätzlich, ob `.agents/skills/`
+und `.claude/skills/` byte-identisch sind. Die Skills liegen doppelt vor: `.agents/`
+wird gepflegt, `.claude/` wird geladen. Läuft das auseinander, arbeiten Agenten still
+nach veralteten Anweisungen — der Drift ist sonst unsichtbar, weil beide Bäume
+git-getrackt sind und nichts sie vergleicht. Die Prüfung ist bewusst ein Fehler und
+kein Hinweis: Der Abgleich kostet einen `cp`, ein übersehener Hinweis kostet Tage.
+Vor dem Kopieren die Richtung prüfen — welcher Baum der neuere ist, entscheidet der
+Inhalt, nicht der Zeitstempel.
 
 `scripts/dev.sh` startet nur eigene Kindprozesse und beendet beim Abbruch auch nur
 diese. Laufzeitlogs liegen gitignoriert unter `.runtime/logs/`. Ein bereits extern

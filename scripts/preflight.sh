@@ -48,6 +48,23 @@ has npm && ok "npm $(npm --version)" || fail "npm"
 [[ -f $SYNTHESIS_ROOT/backend/pom.xml ]] && ok "Backend-Projekt" || fail "backend/pom.xml"
 [[ -f $SYNTHESIS_ROOT/frontend/package-lock.json ]] && ok "Frontend-Lockfile" || fail "frontend/package-lock.json"
 
+# Die Skills liegen doppelt: .agents/skills/ wird gepflegt, .claude/skills/ wird geladen.
+# Läuft das auseinander, arbeiten Agenten still nach veralteten Anweisungen — genau so
+# überlebte ein bereits widerlegter Rat mehrere Tage. Der Drift ist sonst unsichtbar,
+# weil beide Bäume git-getrackt sind und nichts sie vergleicht.
+if [[ -d $SYNTHESIS_ROOT/.agents/skills && -d $SYNTHESIS_ROOT/.claude/skills ]]; then
+  # `|| true`: diff meldet Unterschiede per Exit 1, und runtime-common.sh setzt set -e —
+  # ohne die Klammer bräche das Skript hier ab, statt den Drift zu melden.
+  skill_drift=$(diff -rq "$SYNTHESIS_ROOT/.agents/skills" "$SYNTHESIS_ROOT/.claude/skills" 2>&1 || true)
+  if [[ -z $skill_drift ]]; then
+    ok "Skill-Registries synchron (.agents/skills == .claude/skills)"
+  else
+    fail "Skill-Registries auseinandergelaufen — .claude/ wird geladen, .agents/ gepflegt:"
+    printf '%s\n' "$skill_drift" | sed 's|'"$SYNTHESIS_ROOT"'/||g; s/^/      /'
+    echo "      Abgleich nach Richtungsprüfung: cp .agents/skills/<name>/SKILL.md .claude/skills/<name>/SKILL.md"
+  fi
+fi
+
 if has lsof; then
   lsof -nP -iTCP:8090 -sTCP:LISTEN >/dev/null 2>&1 && warn "Port 8090 ist bereits belegt" || ok "Port 8090 frei"
   lsof -nP -iTCP:4300 -sTCP:LISTEN >/dev/null 2>&1 && warn "Port 4300 ist bereits belegt" || ok "Port 4300 frei"
