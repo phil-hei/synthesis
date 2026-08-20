@@ -747,6 +747,20 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   blieb), und derselbe Snapshot in ein zweites Szenario kopiert liefert
   `scenario-upload:osm-data.json` mit identischem OSM-Hash **und identischer
   `attractivities.csv`**. Backend 138 Tests, 0 Fehler, 7 umgebungsbedingte Skips.
+  **✅ Straßennetz gleichgezogen (2026-08-20):** Dieselbe Asymmetrie bestand beim
+  OSM-Straßennetz und war dort gefährlicher — der Upload-Pfad wurde geprüft und gehasht,
+  ein Overpass-Abruf lebte dagegen nur im Speicher des Laufs. Ausgerechnet dieser Abruf
+  fällt bei Zeitüberschreitung still auf Luftlinien-Matrizen zurück; genau diese
+  Kontamination (Ø 2,0 km, Fuß 51,9 %) hat historisch eine ganze Kampagne entwertet.
+  `RoadNetworkFile.persist` sichert das Netz jetzt als `artifacts/road-network.osm`,
+  und `inputProvenance` trägt neben `osmData` und `attractivities` auch `roadNetwork`
+  mit Quelle und SHA-256.
+  **Verifiziert:** Zwei Tests (Schreiben inkl. Verzeichnisanlage mit
+  fingerabdruck-gleicher Nachprüfung; Wiederverwendbarkeit des gesicherten Netzes als
+  Szenario-Upload samt Regionsdeckung). Live: Ein Lauf mit `useRealRouting=true`
+  schreibt 3,3 MB `road-network.osm` und meldet den Hash; beide Dateien in ein zweites
+  Szenario kopiert liefern `scenario-upload:road-network.osm@922630532e0b` — alle drei
+  Provenienz-Hashes in beiden Armen identisch, GraphHopper-Routing statt Luftlinie.
   **✅ Drei-Seed-Gate abgeschlossen (2026-08-17):** Der Live-Abruf eines historischen
   Snapshots blieb an allen erreichbaren Overpass-Endpunkten im Dispatcher-Timeout; ein
   unvollständiger Snapshot wurde nicht akzeptiert. Als stärker isolierter Ersatz liefen

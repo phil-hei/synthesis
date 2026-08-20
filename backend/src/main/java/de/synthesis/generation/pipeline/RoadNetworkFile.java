@@ -8,6 +8,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -33,6 +34,23 @@ public final class RoadNetworkFile {
     }
 
     private RoadNetworkFile() {
+    }
+
+    /**
+     * Sichert ein live geholtes Straßennetz als Artefakt und liefert dessen Prüfung samt
+     * SHA-256. Der Upload-Pfad war schon immer geprüft und gehasht; ein Overpass-Abruf lebte
+     * dagegen nur im Speicher des Laufs. Ohne Fingerabdruck ist hinterher weder belegbar, dass
+     * zwei Läufe dasselbe Netz benutzten, noch lässt es sich für einen A/B-Vergleich einfrieren
+     * — und genau dieser Abruf fällt bei Zeitüberschreitung still auf Luftlinien-Matrizen
+     * zurück.
+     */
+    public static Inspection persist(Path target, String osmXml) throws IOException {
+        Path parent = target.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        Files.writeString(target, osmXml, StandardCharsets.UTF_8);
+        return inspect(target);
     }
 
     public static Inspection inspect(Path file) throws IOException {

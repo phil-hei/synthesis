@@ -51,6 +51,38 @@ class RoadNetworkFileTest {
         assertThrows(IllegalArgumentException.class, () -> RoadNetworkFile.inspect(file));
     }
 
+    // --- Schreibpfad: Live-Abruf belegbar machen ----------------------------------
+    // Der Upload-Pfad war immer geprüft und gehasht; ein Overpass-Abruf lebte nur im
+    // Speicher des Laufs und war hinterher nicht mehr nachweisbar.
+
+    @Test
+    void persistWritesNetworkAndReportsSameFingerprintAsInspect(@TempDir Path dir) throws Exception {
+        Path target = dir.resolve("sub").resolve(RoadNetworkFile.NAME);
+
+        RoadNetworkFile.Inspection persisted = RoadNetworkFile.persist(target, networkXml());
+
+        assertTrue(Files.isRegularFile(target), "Zielverzeichnis muss angelegt werden");
+        assertEquals(networkXml(), Files.readString(target), "Netz muss unverändert abgelegt werden");
+        assertEquals(RoadNetworkFile.inspect(target).sha256(), persisted.sha256(),
+                "persist() muss denselben Fingerabdruck melden wie eine spätere Prüfung");
+        assertEquals(1, persisted.highwayWays());
+    }
+
+    @Test
+    void persistedNetworkIsReusableAsScenarioUpload(@TempDir Path dir) throws Exception {
+        // Das gesicherte Artefakt muss als Upload eines zweiten Szenarios taugen — sonst
+        // gibt es keinen Weg, die Eingabe für einen A/B-Vergleich einzufrieren.
+        Path produced = dir.resolve("run1").resolve(RoadNetworkFile.NAME);
+        RoadNetworkFile.Inspection first = RoadNetworkFile.persist(produced, networkXml());
+
+        Path reused = dir.resolve("run2").resolve(RoadNetworkFile.NAME);
+        Files.createDirectories(reused.getParent());
+        Files.copy(produced, reused);
+
+        assertEquals(first.sha256(), RoadNetworkFile.inspectForRegion(reused, region()).sha256(),
+                "kopiertes Netz muss denselben Fingerabdruck und die Regionsdeckung behalten");
+    }
+
     private static Scenario.Region region() {
         Scenario.Region region = new Scenario.Region();
         region.minLat = 48.8;

@@ -49,6 +49,7 @@ import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -185,6 +186,7 @@ public class GenerationService {
         /** POI-/Siedlungsquelle und ihr Inhalts-Hash für reproduzierbare A/B-Läufe. */
         String osmDataSource = "not-used";
         String osmDataSha256 = "";
+        String roadNetworkSha256 = "";
         /** Arbeitszielquelle: beobachtete OD-Relationen oder synthetisches Gravitationsmodell. */
         String commuterSource = "gravity-model";
         /** Regionaler Außenarbeitsplatz-Randwert; ohne Upload bleibt die Gravitation maßgeblich. */
@@ -730,7 +732,7 @@ public class GenerationService {
                 ctx.logistics, !ctx.pois.isEmpty(), ctx.populationSource, ctx.totalPersons,
                 ctx.logisticsGenerator.sources(), ctx.distributionSource, ctx.matrixSource,
                 ctx.roadNetworkSource, ctx.commuterSource, ctx.workplaceMarginSource,
-                ctx.osmDataSource, ctx.osmDataSha256);
+                ctx.osmDataSource, ctx.osmDataSha256, ctx.roadNetworkSha256);
     }
 
     // --- Stufe 11: Simulation logiTopp (Achse B) ----------------------------------------------
@@ -1301,7 +1303,33 @@ public class GenerationService {
         ctx.job.log("Lade OSM-Straßennetz (" + ctx.roadNetworkSource + ")…");
         String osmXml = overpass.fetchRoadNetworkOsm(ctx.scenario.region, scenarioFile);
         ctx.roadNetwork.set(osmXml);
+        persistRoadNetwork(ctx, osmXml, scenarioFile);
         return osmXml;
+    }
+
+    /**
+     * Legt das tatsächlich verwendete Straßennetz als Artefakt ab und hinterlegt seinen SHA-256
+     * im Manifest. Der Upload-Pfad war bereits geprüft und gehasht, der Live-Abruf nicht: Das
+     * XML lebte nur im Speicher des Laufs. Damit war weder belegbar, dass zwei Läufe dasselbe
+     * Netz benutzten, noch ließ es sich für einen A/B-Vergleich einfrieren — und gerade dieser
+     * Abruf kippt bei Zeitüberschreitung still auf Luftlinien-Matrizen (siehe
+     * „Fallback auf Luftlinie"), was historisch eine ganze Kampagne kontaminiert hat.
+     */
+    private void persistRoadNetwork(PipelineContext ctx, String osmXml, Path scenarioFile) {
+        try {
+            Path target = ctx.artifacts.resolve(RoadNetworkFile.NAME);
+            if (Files.isRegularFile(scenarioFile)) {
+                // Upload-Pfad: Der Hash steckt bereits in roadNetworkSource; nicht neu schreiben.
+                ctx.roadNetworkSha256 = RoadNetworkFile.inspect(scenarioFile).sha256();
+                return;
+            }
+            ctx.roadNetworkSha256 = RoadNetworkFile.persist(target, osmXml).sha256();
+            ctx.job.summary.put("roadNetworkSha256", ctx.roadNetworkSha256);
+            ctx.job.log("Straßennetz gesichert (" + RoadNetworkFile.NAME + ", SHA-256 "
+                    + ctx.roadNetworkSha256.substring(0, 12) + "…)");
+        } catch (Exception e) {
+            ctx.job.log("Straßennetz konnte nicht gesichert werden (" + e.getMessage() + ")");
+        }
     }
 
     private void writeSumoSummary(Path file, SumoRunner.Result sumo) throws IOException {
@@ -1431,7 +1459,7 @@ public class GenerationService {
                                String distributionSource, String matrixSource,
                                String roadNetworkSource, String commuterSource,
                                String workplaceMarginSource, String osmDataSource,
-                               String osmDataSha256) throws IOException {
+                               String osmDataSha256, String roadNetworkSha256) throws IOException {
         ObjectNode manifest = mapper.createObjectNode();
         manifest.put("scenarioId", scenario.id);
         manifest.put("scenarioName", scenario.name);
@@ -1467,6 +1495,11 @@ public class GenerationService {
         osmData.put("source", osmDataSource);
         if (!osmDataSha256.isBlank()) {
             osmData.put("sha256", osmDataSha256);
+        }
+        ObjectNode roadNetwork = inputs.putObject("roadNetwork");
+        roadNetwork.put("source", roadNetworkSource);
+        if (!roadNetworkSha256.isBlank()) {
+            roadNetwork.put("sha256", roadNetworkSha256);
         }
         Path attractivities = artifacts.resolve("zone-repository/attractivities.csv");
         ObjectNode attractivityInput = inputs.putObject("attractivities");

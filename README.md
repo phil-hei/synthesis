@@ -68,8 +68,11 @@ zweite Versuchsvariable ausschließen.
 
 Den Snapshot muss man dafür nicht selbst beschaffen: Jeder Lauf mit Live-Abruf schreibt die
 tatsächlich verwendeten OSM-Daten als `osm-data.json` in seine Artefakte und hinterlegt deren
-SHA-256 im Manifest. Diese Datei in die Uploads eines zweiten Szenarios kopiert, friert die
-Eingabe für einen A/B-Vergleich ein — beide Arme belegen dann denselben Hash.
+SHA-256 im Manifest. Dasselbe gilt für das **Straßennetz**: Ein live geholtes Netz wird als
+`road-network.osm` gesichert und gehasht. Beide Dateien in die Uploads eines zweiten Szenarios
+kopiert, frieren die Eingabe für einen A/B-Vergleich ein — `manifest.json` →
+`inputProvenance` belegt dann für POI-Daten, Straßennetz und die daraus erzeugten
+`attractivities.csv` denselben Hash in beiden Armen.
 
 **Zwei-Achsen-Modell** (im Studio unter „Modellierung" wählbar): _Achse A – Verhaltensquelle_
 (actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, inkl. Was-wäre-wenn-Szenarien) ×
