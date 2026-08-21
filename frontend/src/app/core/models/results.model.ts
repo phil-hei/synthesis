@@ -185,6 +185,16 @@ export interface ComparisonParams {
 export type Mid2017Reference = NonNullable<SimKpis['mid2017']>;
 
 /** Vollständiger Frontend-Vertrag des Szenariovergleichs. */
+/**
+ * Herkunft der OSM-Eingaben eines Laufs (manifest.json → inputProvenance). Zwei Läufe sind
+ * nur dann ein Ein-Faktor-Vergleich, wenn diese Fingerabdrücke übereinstimmen.
+ */
+export interface InputProvenance {
+  osmData?: { source: string; sha256?: string };
+  roadNetwork?: { source: string; sha256?: string };
+  attractivities?: { path: string; sha256?: string };
+}
+
 export interface ComparisonEntry {
   id: string;
   name: string;
@@ -193,6 +203,7 @@ export interface ComparisonEntry {
   depotStats: DepotStats[] | null;
   sumo: SumoSummary | null;
   simulated: boolean;
+  inputProvenance: InputProvenance | null;
 }
 
 /** population/gta-personas.json – GTA-Personas mit LLM-Begründungen (GTA 3d). */

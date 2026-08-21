@@ -104,3 +104,20 @@ table.compare td:first-child {
   color: #8895a3;
   background: #fafbfc;
 }
+
+/* Warnung, wenn verglichene Läufe nicht auf denselben OSM-Eingaben beruhen. */
+.provenance-warning {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #b45309;
+  background: #fffbeb;
+  color: #7c2d12;
+  border-radius: 4px;
+  line-height: 1.45;
+}
+
+.provenance-warning.subtle {
+  border-left-color: #94a3b8;
+  background: #f8fafc;
+  color: #475569;
+}

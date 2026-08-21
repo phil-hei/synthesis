@@ -761,6 +761,22 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   schreibt 3,3 MB `road-network.osm` und meldet den Hash; beide Dateien in ein zweites
   Szenario kopiert liefern `scenario-upload:road-network.osm@922630532e0b` — alle drei
   Provenienz-Hashes in beiden Armen identisch, GraphHopper-Routing statt Luftlinie.
+  **✅ Vergleich prüft die Herkunft (2026-08-21):** Die Provenienz stand im Manifest,
+  geprüft hat sie niemand — die Regel „vor jeder Auswertung Hashes vergleichen" blieb
+  Handarbeit und wurde in der Seed-43-Auswertung übersehen. Der `ComparisonController`
+  liefert `inputProvenance` je Eintrag, und der Szenario-Vergleich wertet sie aus:
+  Weichen OSM-Daten, Straßennetz oder Attraktivitäten ab, erscheint eine sichtbare
+  Warnung samt Benennung der betroffenen Eingaben. Bewusst zurückhaltend: Gemeldet
+  wird nur, wenn **mindestens zwei belegte** Hashes verschieden sind; fehlende
+  Herkunft (Läufe vor der Einführung) erscheint als eigener, schwächerer Hinweis
+  „nicht belegt" statt als Gleichheit.
+  **Verifiziert:** Drei Frontend-Tests (Abweichung → `role="alert"` mit benannter
+  Eingabe; gleiche Eingaben → keine Warnung; fehlende Herkunft → schwacher Hinweis),
+  Frontend 24/24. Live im Browser gegen echte Läufe alle drei Fälle bestätigt — beim
+  Paar mit verschiedenen Regionen nennt die Warnung korrekt OSM-Daten und
+  Attraktivitäten, aber **nicht** das Straßennetz, weil einer der Läufe ohne
+  Realrouting lief und dort kein Hash existiert. Für die historisch konfundierten
+  Seed-43-Arme meldet die UI „nicht belegt".
   **✅ Drei-Seed-Gate abgeschlossen (2026-08-17):** Der Live-Abruf eines historischen
   Snapshots blieb an allen erreichbaren Overpass-Endpunkten im Dispatcher-Timeout; ein
   unvollständiger Snapshot wurde nicht akzeptiert. Als stärker isolierter Ersatz liefen

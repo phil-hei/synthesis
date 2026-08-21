@@ -63,6 +63,13 @@ public class ComparisonController {
         node.set("sumo", readJson(repository.artifactsDir(scenario.id)
                 .resolve("sumo").resolve("summary.json")));
         node.put("simulated", !kpis.isNull());
+        // Herkunft der OSM-Eingaben mitliefern: Zwei Läufe sind nur dann ein
+        // Ein-Faktor-Vergleich, wenn sie auf denselben Eingaben beruhen. Overpass liefert
+        // für dieselbe Region nicht immer dieselbe Antwort, und die Pipeline meldet das
+        // nicht — ohne diese Hashes bliebe der Unterschied bis in die Auswertung unsichtbar.
+        JsonNode manifest = readJson(repository.artifactsDir(scenario.id).resolve("manifest.json"));
+        node.set("inputProvenance", manifest.isNull()
+                ? mapper.nullNode() : manifest.path("inputProvenance").deepCopy());
         return node;
     }
 

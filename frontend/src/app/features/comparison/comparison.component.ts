@@ -126,6 +126,42 @@ export class ComparisonComponent implements OnInit {
     return value == null ? '–' : (value * 100).toFixed(1).replace('.', ',') + ' %';
   }
 
+  /**
+   * Meldet, welche OSM-Eingaben sich zwischen den verglichenen Läufen unterscheiden.
+   * Ein Vergleich mit abweichenden Eingaben ist kein Ein-Faktor-Kontrast: Overpass
+   * liefert für dieselbe Region nicht immer dieselbe Antwort, und die Pipeline meldet
+   * das nicht. Leere Liste = vergleichbar.
+   */
+  get divergingInputs(): string[] {
+    if (this.entries.length < 2) {
+      return [];
+    }
+    const labels: Record<string, string> = {
+      osmData: 'OSM-Daten (POIs/Siedlungen)',
+      roadNetwork: 'Straßennetz',
+      attractivities: 'Attraktivitäten'
+    };
+    const diverging: string[] = [];
+    for (const key of Object.keys(labels) as (keyof typeof labels)[]) {
+      const hashes = this.entries.map(e => {
+        const part = e.inputProvenance?.[key as keyof typeof e.inputProvenance];
+        return part?.sha256 ?? null;
+      });
+      // Fehlende Herkunft (ältere Läufe) ist kein Beleg für Gleichheit, aber auch kein
+      // Beweis für Abweichung — nur belegte, verschiedene Hashes werden gemeldet.
+      const known = hashes.filter((h): h is string => h !== null);
+      if (known.length >= 2 && new Set(known).size > 1) {
+        diverging.push(labels[key]);
+      }
+    }
+    return diverging;
+  }
+
+  get provenanceUnknown(): boolean {
+    return this.entries.length >= 2
+      && this.entries.some(e => !e.inputProvenance?.attractivities?.sha256);
+  }
+
   deliveryGenerated(entry: ComparisonEntry): number | null {
     return entry.kpis?.logistics?.deliveries?.generated
       ?? entry.kpis?.parcels?.total

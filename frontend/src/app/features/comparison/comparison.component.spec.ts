@@ -78,6 +78,62 @@ describe('ComparisonComponent', () => {
     expect(groupCell?.getAttribute('colspan')).toBe('3');
   });
 
+  // Ein Vergleich mit abweichenden OSM-Eingaben ist kein Ein-Faktor-Kontrast. Das war
+  // bisher nur eine Doku-Regel und wurde in einer Kampagne übersehen (E24).
+
+  it('warns visibly when compared runs used different OSM inputs', () => {
+    comparisonEntries = [
+      comparisonEntry('a', 'A', { inputProvenance: provenance('aaa', 'net', 'attr-1') }),
+      comparisonEntry('b', 'B', { inputProvenance: provenance('aaa', 'net', 'attr-2') })
+    ];
+    const fixture = TestBed.createComponent(ComparisonComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.selected = { a: true, b: true };
+
+    fixture.componentInstance.loadComparison();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.divergingInputs).toEqual(['Attraktivitäten']);
+    const warning = (fixture.nativeElement as HTMLElement).querySelector('.provenance-warning');
+    expect(warning?.textContent).toContain('Eingaben unterschiedlich');
+    expect(warning?.getAttribute('role')).toBe('alert');
+  });
+
+  it('stays silent when compared runs share their inputs', () => {
+    comparisonEntries = [
+      comparisonEntry('a', 'A', { inputProvenance: provenance('aaa', 'net', 'attr-1') }),
+      comparisonEntry('b', 'B', { inputProvenance: provenance('aaa', 'net', 'attr-1') })
+    ];
+    const fixture = TestBed.createComponent(ComparisonComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.selected = { a: true, b: true };
+
+    fixture.componentInstance.loadComparison();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.divergingInputs).toEqual([]);
+    expect(fixture.componentInstance.provenanceUnknown).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.provenance-warning')).toBeNull();
+  });
+
+  it('flags runs without recorded provenance as unproven rather than equal', () => {
+    comparisonEntries = [
+      comparisonEntry('alt', 'Alt'),
+      comparisonEntry('neu', 'Neu', { inputProvenance: provenance('aaa', 'net', 'attr-1') })
+    ];
+    const fixture = TestBed.createComponent(ComparisonComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.selected = { alt: true, neu: true };
+
+    fixture.componentInstance.loadComparison();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.divergingInputs).toEqual([]);
+    expect(fixture.componentInstance.provenanceUnknown).toBe(true);
+    const notice = (fixture.nativeElement as HTMLElement).querySelector('.provenance-warning.subtle');
+    expect(notice?.textContent).toContain('nicht hinterlegt');
+  });
+
   it('prevents duplicate requests while a comparison is loading', () => {
     const response = new Subject<ComparisonEntry[]>();
     api.compare.mockReturnValue(response);
@@ -205,7 +261,16 @@ function comparisonEntry(
     depotStats: null,
     sumo: null,
     simulated: false,
+    inputProvenance: null,
     ...overrides
+  };
+}
+
+function provenance(osm: string, road: string, attr: string) {
+  return {
+    osmData: { source: 'overpass-live', sha256: osm },
+    roadNetwork: { source: 'overpass-live', sha256: road },
+    attractivities: { path: 'zone-repository/attractivities.csv', sha256: attr }
   };
 }
 

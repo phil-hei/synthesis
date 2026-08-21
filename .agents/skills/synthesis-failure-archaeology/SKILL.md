@@ -471,6 +471,14 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   `scenario-upload:osm-data.json` mit identischem OSM-Hash und identischen
   Attraktivitäten. Für Kampagnen gilt ab jetzt: ersten Arm live fahren, dessen
   `osm-data.json` allen weiteren Armen vorgeben.
+- **✅ Prüfung im Produkt (2026-08-21):** Das Straßennetz ist gleichgezogen
+  (`inputProvenance.roadNetwork`), und der **Szenario-Vergleich prüft die Hashes
+  selbst**: Weichen die verglichenen Läufe in OSM-Daten, Straßennetz oder
+  Attraktivitäten ab, erscheint eine sichtbare Warnung, dass Kennzahlunterschiede
+  nicht allein den Parametern zuzuschreiben sind. Läufe ohne hinterlegte Herkunft
+  werden als **nicht belegt** ausgewiesen statt stillschweigend als gleich — genau
+  der Fall der Seed-43-Arme. Damit ist die Regel oben keine Handarbeit mehr, sondern
+  greift am Ort der Auswertung.
 
 ### E25 — `b_tt_* +0,06` als universeller Regionaltransfer — ENTSCHIEDEN
 

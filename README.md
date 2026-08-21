@@ -88,7 +88,9 @@ mit (Fußweg → Bus → Fußweg). Ergebnisse: Verkehrs-KPIs (Fahrzeuge, Ø Reis
 eingefärbt) und optional das **Netz-Feedback**: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die
 Pkw-Matrix zurück, logiTopp und SUMO iterieren bis zum Nachfrage-Netz-Gleichgewicht. Der **Szenario-Vergleich** stellt Nachfrage-,
 Distanzverteilungs-, Logistik- und Emissions-Kennzahlen mehrerer Szenarien nebeneinander (z. B. Lkw- vs.
-Lastenrad-Flotte). Benötigt eine lokale SUMO-Installation (`$SUMO_HOME`); ÖV zusätzlich ein
+Lastenrad-Flotte). Er **warnt sichtbar, wenn die verglichenen Läufe nicht auf denselben OSM-Eingaben
+beruhen** — dann sind Kennzahlunterschiede nicht allein den Szenario-Parametern zuzuschreiben. Läufe
+ohne hinterlegte Herkunft werden als „nicht belegt" ausgewiesen, nicht als gleich. Benötigt eine lokale SUMO-Installation (`$SUMO_HOME`); ÖV zusätzlich ein
 Python-venv (pandas/rtree/pyproj) für `gtfs2pt.py` (gekapselt, sonst wird die ÖV-Stufe übersprungen).
 ÖV ist aktuell auf **Bus** beschränkt – Schienen-ÖV (Tram/Rail) wurde versucht, scheitert aber an
 einer SUMO-Eigenheit beim Fußgänger-Routing nahe Bahnhöfen (Befund + Lösungsweg im Abschnitt

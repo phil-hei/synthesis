@@ -25,6 +25,22 @@
       </p>
     }
 
+    @if (divergingInputs.length > 0) {
+      <p class="provenance-warning" role="alert">
+        <strong>Eingaben unterschiedlich:</strong>
+        Diese Läufe beruhen nicht auf denselben Daten
+        ({{ divergingInputs.join(', ') }}). Unterschiede in den Kennzahlen sind damit
+        nicht allein auf die Szenario-Parameter zurückzuführen. Für einen
+        Ein-Faktor-Vergleich die OSM-Eingaben eines Laufs als Upload für die anderen
+        verwenden.
+      </p>
+    } @else if (provenanceUnknown) {
+      <p class="provenance-warning subtle" role="status">
+        Für mindestens einen Lauf ist die Herkunft der Eingaben nicht hinterlegt (Lauf vor
+        Einführung der Provenienz). Gleiche Eingaben sind damit nicht belegt.
+      </p>
+    }
+
     @if (entries.length > 0) {
       <table class="compare">
         <thead>
