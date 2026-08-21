@@ -2224,9 +2224,16 @@ Kalibrierung mit getrennten Hebeln sinnvoll.
 4. **Distanz-/Moduskalibrierung übertragen**: Arbeitsplatz-Randwert und BA-Außenanker sind für
    Rastatt befördert; offen sind der Mehrregionen-Beleg und eine produktive
    Langweg-Moduskalibrierung.
-5. **Bikesharing-Zonenreferenz**: Das Tutorial nutzt einen zone-`id`-Lookup für Stationen; bei
-   eigenen Zonen-IDs werden
-   die Rastatt-Stationen verworfen (nur WARNING, kein Fehler).
+5. **Sharing-/Ladeinfrastruktur bewusst leer** (präzisiert 2026-08-21): Der Punkt lautete
+   zuvor, bei eigenen Zonen-IDs würden „die Rastatt-Stationen verworfen (nur WARNING)".
+   Das kann in unserer Pipeline nicht eintreten: `LegacyExportGenerator.writeZoneRepository`
+   schreibt `stations.csv`, `chargingdata.csv` und die Carsharing-Dateien **header-only**,
+   ebenso `writeZoneProperties` die `bikesharing-properties.csv` — nachgeprüft an einem
+   echten Lauf (`stations.csv` = 1 Zeile). Es gibt also keine Stationen, die verworfen
+   werden könnten; Sharing und Laden sind schlicht nicht modelliert. Der ursprüngliche
+   Befund stammt aus der tutorial-basierten Frühphase. **Offen bleibt nur**, falls
+   Sharing-Modi je in Scope kommen: Der Legacy-Serializer referenziert Stationen über die
+   zone-`id`, was mit eigenen Zonen-IDs einen Abbildungsschritt braucht.
 6. **Externe Klärungen**: KIT-Kontakt zu logiTopp-Migration, actitoppNG-Lizenz und offiziellem
    Aktivitätsset; Takomat-Klärung zu den noch benötigten MobileCity-Defaults.
 
