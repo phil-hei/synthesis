@@ -1999,6 +1999,69 @@ OZ-000 liefert weder einen Parameter noch einen Default. Rohlog, Quellhashes
 und maschinenlesbare Evidenz bleiben unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/oz-000/`.
 
+#### Freiburg-Modusverfügbarkeitszerlegung (2026-08-24) — präregistriert
+
+**Forensik und binäre Frage vor dem Lauf:** OZ-000 lässt 79,9214 % der
+Langwegmassenvarianz innerhalb identischer `(Aktivitätstyp, Ausgangszone)`-
+Zellen unerklärt. Die Zielwahl-Utility enthält getrennte Logsums für aktive/
+öffentliche und motorisierte Modi; deren Verfügbarkeit hängt im verwendeten
+`ModeAvailabilityInDestinationChoice` unter anderem davon ab, ob die Person zu
+Hause ist, ein Fahrrad besitzt, einen Führerschein und aktuell Zugriff auf ein
+Haushaltsfahrzeug hat oder außerhalb bereits an einen Modus gebunden ist.
+Erklärt das tatsächlich verfügbare Modusset den überwiegenden Teil des
+OZ-000-Rests, oder bleibt die Streuung auch bei gleichem Zweck, gleicher
+Ausgangszone und gleicher Modusverfügbarkeit überwiegend bestehen?
+
+Der einmalige Arm **AV-000** verwendet OZ-000 unverändert: Freiburg, Seed 42,
+J-0895-Zielwahlparameter, Basis-MNL, Helper `DISTANCE / 1000`, kein
+Langwegbonus. Zusätzlich wird je freier Entscheidung mit derselben
+`ModeAvailabilityInDestinationChoice`-Implementierung und demselben
+Sieben-Modi-Choice-Set wie in `SimulatorBuilder` das sortierte Set der
+verfügbaren `StandardMode`s bestimmt. Akkumuliert werden ausschließlich `n`,
+`sum(p)` und `sum(p²)` je
+`(Aktivitätstyp, Ausgangszone, Verfügbarkeitssignatur)`; es gibt weder ein
+Per-Decision-Log noch einen Cross-run-Join.
+
+Für die Varianzzerlegung zählen nur Verfügbarkeits-Unterzellen mit `n >=5`.
+Auf deren Entscheidungen werden die Mittelwerte der jeweiligen
+`(Aktivitätstyp, Ausgangszone)`-Elternzellen neu gebildet. Der darin liegende
+OZ-Rest `SSW_origin` zerfällt in
+`SSB_availability = sum_a(n_a*(m_a-m_c)²)` zwischen Verfügbarkeitssignaturen
+derselben Elternzelle und
+`SSW_availability = sum_a(sum(p²)_a-n_a*m_a²)` innerhalb identischer
+Signaturen. Bis `1e-9` muss gelten:
+`SSW_origin = SSB_availability + SSW_availability`.
+
+**Technische Gates vor Interpretation:** Externer Lauf EXIT 0, kein Fallback
+und keine Exception, genau eine Abschlusszeile, CE-/PD-/OZ-Bilanz mit 19.138
+freien Entscheidungen, keine ungültige Wahrscheinlichkeit, maximale
+Summenabweichung `<=1e-9`, byteidentischer J-RAW-Demand-Hash
+`a58fac01…c7a9de` und byteidentische Utility
+`5b13ad11…9f454c`. Gesamtmasse, `sum(p²)`, Klassen,
+Aktivitätstypaggregate und die vollständige OZ-Zerlegung stimmen bis `1e-9`
+mit OZ-000 überein. Alle Verfügbarkeits-Unterzellen summieren sich auf 19.138;
+die `n>=5`-Unterzellen decken mindestens **60 %** aller freien Entscheidungen
+ab, und die Varianzidentität hält bis `1e-9`.
+
+**Vorab fixiertes Mechanik-Gate:** Unterschiede zwischen den verfügbaren
+Modussets erklären mindestens **50 %** der auf den abgedeckten Entscheidungen
+neu berechneten Within-Zweck-/Ausgangszonen-Varianz:
+`SSB_availability / SSW_origin >=0,50`.
+
+Besteht der Gate, ist die dynamische Modusverfügbarkeit der dominante nächste
+Mechanismus. Ein weiterer Diagnosepfad müsste dann vorab einzelne
+Verfügbarkeitskomponenten trennen; AV-000 selbst liefert noch keinen
+Kalibrierparameter. Scheitert der Gate, wird die Modusverfügbarkeit als
+dominante Erklärung verworfen und als Nächstes dürfen nur die in der Utility
+tatsächlich verwendeten Personenmerkmale (Altersband, Erwerbsstatus,
+Zeitkartenbesitz, Pkw-Ausstattung und ökonomischer Status) innerhalb derselben
+Zweck-Zonen-Zellen zerlegt werden.
+
+**Stop-Regel:** Genau ein AV-000-Lauf, nur Seed 42. Keine Bonuskonstante,
+Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. Ein
+technisches Scheitern macht AV-000 unentscheidbar. Auch ein bestandener Gate
+liefert nur eine Mechanismusrichtung, keinen Parameter oder Default.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
