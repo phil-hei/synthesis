@@ -2235,6 +2235,39 @@ betroffenen Merkmals. Ein vollständig negativer Befund erzwingt neue
 Mechanismusforensik statt einer weiteren Personen- oder Verfügbarkeitssonde.
 PC-000 liefert keinen Parameter oder Default.
 
+**Ausführung:** PC-000 kompiliert mit JDK 25 und endet extern mit EXIT 0 sowie
+`BUILD SUCCESSFUL in 16s`. Genau eine Abschlusszeile enthält je Komponente
+alle 19.138 Entscheidungen. Es gibt keine ungültige Wahrscheinlichkeit,
+Exception oder keinen Fallback. Utility (`5b13ad11…9f454c`), J-RAW-Demand
+(`a58fac01…c7a9de`) und sämtliche CE-/PD-/OZ-/AV-/AC-Aggregate werden exakt
+reproduziert; alle sieben Varianzidentitäten schließen mit Abweichung 0.
+
+| Komponente | Entscheidungen mit `n>=5` | OZ-Restvarianz abgedeckt | erklärt |
+|---|---:|---:|---:|
+| `AGE_BAND` | **50,9928 %** | 78,5814 % | 9,5722 % roh |
+| `EDUCATION` | 70,3104 % | 96,0795 % | **6,8995 %** |
+| `HOME_OR_UNEMPLOYED` | 68,0008 % | 92,8824 % | 0,9742 % |
+| `COMMUTER_TICKET` | 67,6194 % | 82,9665 % | 1,3721 % |
+| `CARS_PER_ADULT_AT_LEAST_ONE` | 63,8050 % | 88,1247 % | 1,9917 % |
+| `NO_OWNED_CAR` | 77,0613 % | 100,0000 % | 0,0000 % |
+| `HIGH_ECONOMICAL_STATUS` | 65,2001 % | 93,2238 % | 2,0895 % |
+
+Die sechs binären Komponenten bestehen beide technischen 60-%-Gates und
+verfehlen den 50-%-Mechanik-Gate klar; `EDUCATION` ist mit 6,8995 % ihr
+Maximum. `AGE_BAND` besteht zwar die Restvarianzabdeckung, erreicht mit
+9.759/19.138 Entscheidungen aber nur 50,9928 % statt mindestens 60 %. Sein
+roher Anteil 9,5722 % wird deshalb nicht interpretiert.
+
+**Urteil und Stop-Regel:** PC-000 ist insgesamt wegen der dünn besetzten
+Altersbandzellen unentscheidbar, nicht negativ. Die sechs binären
+Personenkodierungen sind jeweils als dominante Erklärung verworfen; für das
+Altersband gilt das ausdrücklich nicht. Der Zellfilter wird nicht gesenkt,
+und es folgen keine Dosis, Seeds, Modalkalibrierung oder Produktänderung. Ein
+neuer Same-run-Spike darf nur die drei von der Utility tatsächlich getrennt
+verwendeten binären Altersindikatoren vorab einzeln zerlegen. Rohlog,
+Quellhashes und maschinenlesbare Evidenz liegen unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/pc-000/`.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

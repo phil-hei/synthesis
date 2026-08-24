@@ -186,7 +186,12 @@ AC-000-Zerlegung ist technisch entscheidbar: Alle sieben Einzelkomponenten
 bestehen die Abdeckungs-Gates, aber selbst `CAR` als stärkste Komponente
 erklärt nur **4,3735 % statt mindestens 50 %** der jeweiligen Restvarianz. Einzelne
 Modusverfügbarkeiten sind damit nicht dominant; als Nächstes müssen die in der
-Zielwahl-Utility verwendeten Personenmerkmale vorab geprüft werden.
+Zielwahl-Utility verwendeten Personenmerkmale vorab geprüft werden. PC-000
+verwirft sechs binäre Personenkodierungen mit höchstens 6,8995 % erklärter
+Restvarianz, bleibt insgesamt aber unentscheidbar: Das vierstufige Altersband
+deckt nur **50,9928 % statt mindestens 60 %** der Entscheidungen ab. Als
+Nächstes dürfen deshalb ausschließlich die drei bereits in der Utility
+getrennten binären Altersindikatoren vorab geprüft werden.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

@@ -75,6 +75,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E34 | Ausgangszelle als dominante Within-Zweck-Erklärung | Kalibrierung | ENTSCHIEDEN |
 | E35 | Exaktes Modusset als Zerlegungsdimension | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | E36 | Einzelne Modusverfügbarkeit als dominante Resterklärung | Kalibrierung | ENTSCHIEDEN |
+| E37 | Vierstufiges Altersband als sparse-cell-Zerlegung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -755,6 +756,26 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Verfügbarkeitskomponenten (2026-08-24)".
 
+### E37 — Vierstufiges Altersband als sparse-cell-Zerlegung — ENTSCHIEDEN
+
+- **Frage:** Erklärt mindestens eine tatsächlich in der Zielwahl-Utility
+  verwendete Personenkomponente mindestens 50 % des OZ-000-Rests?
+- **Evidenz:** PC-000 reproduziert alle früheren Aggregate exakt. Sechs
+  binäre Komponenten bestehen Entscheidungs- und SSE-Abdeckung und erklären
+  einzeln höchstens 6,8995 %. `AGE_BAND` deckt zwar 78,5814 % der
+  OZ-Restvarianz, aber nur 9.759/19.138 = 50,9928 % statt mindestens 60 % der
+  Entscheidungen ab.
+- **Warum teilweise unentscheidbar:** Der technische Entscheidungsgate des
+  vierstufigen Altersbands scheitert vor der Interpretation; sein roher Anteil
+  9,5722 % ist weder positiver noch negativer Mechanismusbeleg. Die sechs
+  technisch gültigen binären Personenkodierungen sind dagegen jeweils klar
+  nicht dominant.
+- **Status/Regel:** `n>=5` nicht senken und Alterskodierung nicht verwerfen.
+  Ein neuer Same-run-Spike darf ausschließlich die drei schon in der Utility
+  getrennten binären Altersindikatoren vorab einzeln zerlegen. Keine Dosis
+  oder Produktimplementierung. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Personenkomponenten (2026-08-24)".
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
@@ -903,7 +924,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E36 ergänzt.
+- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E37 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch

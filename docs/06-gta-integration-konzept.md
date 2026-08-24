@@ -973,6 +973,15 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   2,1291 %. Überlappende Anteile werden nicht addiert. **Entscheidung:** keine
   Dosis oder Produktänderung; als nächster Same-run-Spike dürfen nur die in
   der Utility verwendeten Personenmerkmale vorab zerlegt werden.
+  **⛔ Personenkomponenten wegen Altersband teilweise unentscheidbar
+  (2026-08-24):** PC-000 reproduziert alle bisherigen Aggregate exakt. Sechs
+  binäre Utility-Kodierungen bestehen beide Abdeckungsgates und erklären
+  einzeln höchstens 6,8995 %. Das vierstufige `AGE_BAND` deckt jedoch nur
+  **50,9928 % statt mindestens 60 %** der Entscheidungen ab; sein roher Anteil
+  wird nicht gewertet. **Entscheidung:** Die sechs binären Kodierungen sind
+  nicht dominant, die Alterskodierung bleibt offen. Keine Dosis; nächster
+  Same-run-Spike nur mit den drei von der Utility getrennt verwendeten binären
+  Altersindikatoren.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

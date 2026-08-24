@@ -439,6 +439,17 @@ Verfügbarkeitssonde, Dosis oder Produktimplementierung. Als nächster
 Same-run-Spike dürfen nur die tatsächlich in der Zielwahl-Utility verwendeten
 Personenmerkmale vorab zerlegt werden.
 
+**⛔ Personenkomponenten wegen Altersband teilweise unentscheidbar
+(2026-08-24):** PC-000 zerlegt nur die sieben tatsächlich von der Zielwahl-
+Utility verwendeten Kodierungen. Sechs binäre Komponenten bestehen beide
+60-%-Abdeckungsgates und erklären einzeln höchstens 6,8995 %; sie sind nicht
+dominant. Das vierstufige `AGE_BAND` deckt mit `n>=5` jedoch nur
+9.759/19.138 = **50,9928 %** statt mindestens 60 % der Entscheidungen ab. Sein
+roher Anteil 9,5722 % ist nicht interpretierbar. **Regel:** Zellfilter nicht
+senken und Alterskodierung nicht verwerfen. Nächster Same-run-Spike nur als
+neu präregistrierte Einzelzerlegung der drei in der Utility vorhandenen
+binären Altersindikatoren; keine Dosis oder Produktimplementierung.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

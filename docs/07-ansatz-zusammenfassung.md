@@ -194,7 +194,11 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   aber selbst `CAR` als stärkste
   erklärt nur **4,3735 % statt mindestens 50 %**. Einzelne
   Modusverfügbarkeiten sind damit nicht dominant; als Nächstes folgen die in
-  der Utility verwendeten Personenmerkmale. Eine neue Dosis bleibt gesperrt.
+  der Utility verwendeten Personenmerkmale. PC-000 verwirft sechs binäre
+  Kodierungen mit höchstens 6,8995 %, bleibt beim vierstufigen Altersband aber
+  unentscheidbar: Es deckt nur **50,9928 % statt mindestens 60 %** der
+  Entscheidungen ab. Als Nächstes dürfen nur die drei bereits in der Utility
+  getrennten Altersindikatoren geprüft werden. Eine neue Dosis bleibt gesperrt.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-

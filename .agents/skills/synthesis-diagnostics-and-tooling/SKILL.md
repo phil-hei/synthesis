@@ -153,6 +153,15 @@ addiert werden. AC-000 verlangte je mindestens 60 % Abdeckung und erhielt für
 alle sieben Moduskomponenten entscheidbare, aber einzeln sehr kleine Anteile
 von 1,0205 % bis 4,3735 %.
 
+**Mehrkategorie-Komponente nicht post hoc retten (PC-000, 2026-08-24):** Ein
+vierstufiges Merkmal kann den Entscheidungs-Gate verfehlen, obwohl seine
+SSE-Abdeckung besteht. PC-000 erreichte für `AGE_BAND` 50,9928 %
+Entscheidungs-, aber 78,5814 % SSE-Abdeckung. Dann weder den Rohanteil
+interpretieren noch `n>=5` senken. Wenn die produktive Utility das Merkmal
+ohnehin als getrennte binäre Indikatoren nutzt, dürfen genau diese in einer
+neuen Präregistrierung einzeln geprüft werden; neue Datenkategorien sind das
+nicht.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
@@ -356,4 +365,7 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
   `docs/05-validierung.md`.
 - **Ergänzung 2026-08-24:** AC-000 belegt die getrennte Bewertung
   überlappender Komponenten mit doppeltem Abdeckungsgate; Evidenz in
+  `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** PC-000 belegt den technischen Abbruch einer
+  Mehrkategorie-Komponente trotz bestandener SSE-Abdeckung; Evidenz in
   `docs/05-validierung.md`.
