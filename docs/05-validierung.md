@@ -2145,6 +2145,39 @@ Tourbindung; ein vollständig negativer Befund erlaubt als Nächstes die vorab
 definierte Zerlegung der tatsächlich in der Utility verwendeten
 Personenmerkmale. AC-000 selbst liefert keinen Parameter oder Default.
 
+**Ausführung:** AC-000 kompiliert mit JDK 25 und endet extern mit EXIT 0 sowie
+`BUILD SUCCESSFUL in 14s`. Es gibt genau eine Abschlusszeile, keine ungültige
+Wahrscheinlichkeit, Exception oder keinen Fallback. Utility
+(`5b13ad11…9f454c`), J-RAW-Demand (`a58fac01…c7a9de`) und sämtliche
+CE-/PD-/OZ-/AV-Aggregate werden exakt reproduziert. Jede Komponententabelle
+enthält vor dem Zellfilter alle 19.138 Entscheidungen; alle sieben
+Varianzidentitäten schließen mit Abweichung 0.
+
+| Komponente | Entscheidungen mit `n>=5` | OZ-Restvarianz abgedeckt | erklärt |
+|---|---:|---:|---:|
+| `CAR` | 61,5843 % | 91,4904 % | **4,3735 %** |
+| `PASSENGER` | 73,7904 % | 99,6819 % | 2,1291 % |
+| `BIKE` | 62,6502 % | 89,8752 % | 1,0205 % |
+| `PEDESTRIAN` | 73,7904 % | 99,6819 % | 2,1291 % |
+| `PUBLICTRANSPORT` | 73,7904 % | 99,6819 % | 2,1291 % |
+| `CARSHARING_STATION` | 72,0086 % | 96,9052 % | 1,1036 % |
+| `CARSHARING_FREE` | 73,7904 % | 99,6819 % | 2,1291 % |
+
+Damit bestehen alle Komponenten beide technischen 60-%-Gates und sind
+interpretierbar. Keine erreicht den vorab geforderten Mechanik-Gate von 50 %;
+das Maximum ist `CAR` mit nur 4,3735 %. Die identischen Werte von
+`PASSENGER`, `PEDESTRIAN`, `PUBLICTRANSPORT` und `CARSHARING_FREE` folgen aus
+identischen Verfügbarkeitsmustern in diesem Lauf und sind ausdrücklich nicht
+addierbar.
+
+**Urteil und Stop-Regel:** Die sieben binären Modusverfügbarkeiten sind als
+jeweils dominante Erklärung des OZ-000-Rests verworfen. Keine Dosis, Seeds,
+Modalkalibrierung oder Produktänderung. Der nächste zulässige Same-run-Spike
+darf die tatsächlich in der Zielwahl-Utility verwendeten Personenmerkmale
+vorab zerlegen. AC-000 liefert weder Parameter noch Default. Rohlog,
+Quellhashes und maschinenlesbare Evidenz liegen unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/ac-000/`.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

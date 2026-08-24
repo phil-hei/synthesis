@@ -964,6 +964,15 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Varianzanteil der Teilmenge wird nicht gewertet. **Entscheidung:** Schwelle
   nicht nachträglich senken, keine Dosis. Der nächste Same-run-Spike muss
   Verfügbarkeitskomponenten gröber und vorab getrennt definieren.
+  **❌ Einzelne Modusverfügbarkeiten nicht dominant (2026-08-24):** AC-000
+  zerlegt alle sieben Komponenten separat und reproduziert sämtliche
+  bisherigen Aggregate exakt. Jede Komponente besteht sowohl 60 %
+  Entscheidungs- als auch 60 % Restvarianzabdeckung. Keine erreicht jedoch
+  den vorab geforderten Erklärungsanteil von 50 %; `CAR` ist mit nur
+  **4,3735 %** das Maximum, alle anderen liegen zwischen 1,0205 % und
+  2,1291 %. Überlappende Anteile werden nicht addiert. **Entscheidung:** keine
+  Dosis oder Produktänderung; als nächster Same-run-Spike dürfen nur die in
+  der Utility verwendeten Personenmerkmale vorab zerlegt werden.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

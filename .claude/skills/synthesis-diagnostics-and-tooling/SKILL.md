@@ -143,6 +143,16 @@ und 2.529 Singletons; die vorab zugelassenen 939 Zellen mit `n>=5` deckten nur
 Erklärungsanteil interpretieren noch die Mindestzellgröße post hoc senken.
 Die Dimension in einer neuen Präregistrierung gröber zerlegen.
 
+**Komponentenweise Entschärfung ohne Additivitätsfehler (AC-000,
+2026-08-24):** Eine zu granulare Signatur kann in vorab benannte binäre
+Komponenten zerlegt werden, ohne `n>=5` zu lockern. Jede Komponente braucht
+einen eigenen Entscheidungs- und SSE-Abdeckungsgate; die Elternmittel werden
+auf ihrer jeweiligen Teilpopulation neu zentriert. Komponentenanteile können
+wegen identischer oder überlappender Gruppen gleich sein und dürfen nie
+addiert werden. AC-000 verlangte je mindestens 60 % Abdeckung und erhielt für
+alle sieben Moduskomponenten entscheidbare, aber einzeln sehr kleine Anteile
+von 1,0205 % bis 4,3735 %.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
@@ -343,4 +353,7 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
   gemessen; Detailbefund E30 in `synthesis-failure-archaeology`.
 - **Ergänzung 2026-08-24:** AV-000 belegt den technischen Abbruch einer zu
   granularen Zerlegung vor jeder fachlichen Mechanismusbewertung; Evidenz in
+  `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** AC-000 belegt die getrennte Bewertung
+  überlappender Komponenten mit doppeltem Abdeckungsgate; Evidenz in
   `docs/05-validierung.md`.

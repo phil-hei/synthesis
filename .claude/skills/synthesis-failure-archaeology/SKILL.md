@@ -74,6 +74,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E33 | Aktivitätstypmittel als Erklärung der Langwegmassen-Heterogenität | Kalibrierung | ENTSCHIEDEN |
 | E34 | Ausgangszelle als dominante Within-Zweck-Erklärung | Kalibrierung | ENTSCHIEDEN |
 | E35 | Exaktes Modusset als Zerlegungsdimension | Diagnose/Kalibrierung | ENTSCHIEDEN |
+| E36 | Einzelne Modusverfügbarkeit als dominante Resterklärung | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -735,6 +736,25 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Dosis oder Produktimplementierung. Evidenz: `docs/05-validierung.md`,
   Abschnitt „Freiburg-Modusverfügbarkeitszerlegung (AV-000, 2026-08-24)".
 
+### E36 — Einzelne Modusverfügbarkeit als dominante Resterklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt mindestens eine der sieben separat betrachteten binären
+  Modusverfügbarkeiten mindestens 50 % des OZ-000-Rests?
+- **Evidenz:** AC-000 reproduziert CE-/PD-/OZ-/AV-000 exakt. Alle sieben
+  Komponenten bestehen jeweils mindestens 60 % Entscheidungs- und
+  Restvarianzabdeckung; alle Identitäten schließen numerisch exakt. `CAR`
+  erklärt mit 4,3735 % am meisten. `PASSENGER`, `PEDESTRIAN`,
+  `PUBLICTRANSPORT` und `CARSHARING_FREE` liegen jeweils bei 2,1291 %,
+  `CARSHARING_STATION` bei 1,1036 % und `BIKE` bei 1,0205 %.
+- **Warum verworfen:** Der stärkste Einzelanteil verfehlt den 50-%-Gate um
+  mehr als den Faktor elf. Identische Werte einiger Komponenten entstehen aus
+  identischen Gruppen und dürfen nicht addiert werden.
+- **Status/Regel:** Keine weitere Verfügbarkeitssonde, Dosis oder
+  Produktimplementierung. Der nächste Same-run-Spike darf nur die tatsächlich
+  in der Zielwahl-Utility verwendeten Personenmerkmale vorab zerlegen.
+  Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Verfügbarkeitskomponenten (2026-08-24)".
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
@@ -883,7 +903,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E35 ergänzt.
+- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E36 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch

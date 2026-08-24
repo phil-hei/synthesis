@@ -427,6 +427,18 @@ Mechanismus verwerfen. Der nächste Same-run-Spike muss eine gröbere,
 komponentenweise Verfügbarkeitszerlegung neu präregistrieren; weiterhin keine
 Dosis oder Produktimplementierung.
 
+**❌ Einzelne Modusverfügbarkeiten nicht dominant (2026-08-24):** AC-000
+zerlegt `CAR`, `PASSENGER`, `BIKE`, `PEDESTRIAN`, `PUBLICTRANSPORT`,
+`CARSHARING_STATION` und `CARSHARING_FREE` separat. Alle sieben bestehen die
+vorab gesetzten 60-%-Gates für Entscheidungs- und OZ-Restvarianzabdeckung;
+ihre Varianzidentitäten schließen exakt. Keine erreicht 50 % Erklärung:
+`CAR` ist mit **4,3735 %** das Maximum, die anderen liegen zwischen 1,0205 %
+und 2,1291 %. Gleiche Komponentenwerte stammen aus identischen
+Verfügbarkeitsmustern und sind nicht addierbar. **Regel:** keine weitere
+Verfügbarkeitssonde, Dosis oder Produktimplementierung. Als nächster
+Same-run-Spike dürfen nur die tatsächlich in der Zielwahl-Utility verwendeten
+Personenmerkmale vorab zerlegt werden.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

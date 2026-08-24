@@ -181,7 +181,12 @@ technisch sauber, aber wegen Sparse Cells unentscheidbar: `n>=5`-Unterzellen
 decken nur **45,0308 %** statt mindestens 60 % ab. Der auf dieser Teilmenge
 berechnete Varianzanteil wird nicht interpretiert. Als Nächstes müssen die
 Verfügbarkeitsdimensionen gröber und komponentenweise präregistriert werden;
-Dosis und Produktänderung bleiben gesperrt.
+Dosis und Produktänderung bleiben gesperrt. Die daraufhin präregistrierte
+AC-000-Zerlegung ist technisch entscheidbar: Alle sieben Einzelkomponenten
+bestehen die Abdeckungs-Gates, aber selbst `CAR` als stärkste Komponente
+erklärt nur **4,3735 % statt mindestens 50 %** der jeweiligen Restvarianz. Einzelne
+Modusverfügbarkeiten sind damit nicht dominant; als Nächstes müssen die in der
+Zielwahl-Utility verwendeten Personenmerkmale vorab geprüft werden.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

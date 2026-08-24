@@ -189,7 +189,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   unentscheidbar: `n>=5`-Unterzellen decken nur **45,0308 % statt mindestens
   60 %** ab. Der rohe Varianzanteil dieser Teilmenge wird nicht interpretiert;
   als Nächstes sind gröbere, komponentenweise Verfügbarkeitsmerkmale
-  zu präregistrieren. Eine neue Dosis bleibt gesperrt.
+  zu präregistrieren. Das anschließend präregistrierte AC-000 macht diese
+  Prüfung entscheidbar: Alle sieben Komponenten bestehen die Abdeckungsgates,
+  aber selbst `CAR` als stärkste
+  erklärt nur **4,3735 % statt mindestens 50 %**. Einzelne
+  Modusverfügbarkeiten sind damit nicht dominant; als Nächstes folgen die in
+  der Utility verwendeten Personenmerkmale. Eine neue Dosis bleibt gesperrt.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-
