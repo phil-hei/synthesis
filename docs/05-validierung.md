@@ -2268,6 +2268,39 @@ verwendeten binären Altersindikatoren vorab einzeln zerlegen. Rohlog,
 Quellhashes und maschinenlesbare Evidenz liegen unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/pc-000/`.
 
+#### Freiburg-Altersindikatoren (2026-08-24) — präregistriert
+
+**Frage vor dem Lauf:** PC-000 ist allein wegen der gemeinsamen vierstufigen
+Alterszerlegung unentscheidbar. Die Utility verwendet Alter jedoch nicht als
+gemeinsame Kategorie, sondern als drei getrennte Indikatoren. AI-000 prüft
+daher ausschließlich `AGE_0_17` (`0<=age<=17`), `AGE_50_69`
+(`50<=age<=69`) und `AGE_70_120` (`70<=age<=120`) jeweils binär gegen ihren
+Rest. Neue Altersgrenzen oder ein gemeinsamer Schlüssel sind ausgeschlossen.
+
+Der einmalige Arm **AI-000** übernimmt PC-000 unverändert: Freiburg, Seed 42,
+J-0895, Basis-MNL, `DISTANCE / 1000`, kein Bonus. Je Indikator werden nur
+`n`, `sum(p)` und `sum(p²)` pro
+`(Aktivitätstyp, Ausgangszone, Indikatorwert)` akkumuliert. Unterzellen zählen
+weiter nur ab `n>=5`; ihre Elternmittel werden separat neu zentriert. Bis
+`1e-9` gilt `SSW_age = SSB_age + SSW_within_age`. Die drei Anteile überlappen
+und werden nicht addiert.
+
+**Technische Gates:** EXIT 0, keine Exception oder Fallback, genau eine
+Abschlusszeile, byteidentische Utility (`5b13ad11…9f454c`) und J-RAW-Demand
+(`a58fac01…c7a9de`), exakte CE-/PD-/OZ-/AV-/AC-/PC-Reproduktion und je
+Indikator vor Filter 19.138 Entscheidungen. Interpretierbar ist ein Indikator
+nur mit mindestens 60 % Entscheidungs- und 60 % OZ-Restvarianzabdeckung sowie
+Varianzidentität bis `1e-9`.
+
+**Mechanik-Gate und Stop-Regel:** Ein Indikator ist nur ab 50 % erklärter
+Restvarianz dominant. Alle drei müssen technisch interpretierbar sein, um bei
+vollständig verfehltem Gate die Altersindikatoren insgesamt als nicht
+dominant zu verwerfen; sonst ist AI-000 unentscheidbar. Genau ein Lauf, Seed
+42; kein post-hoc Filter, keine weitere Alterszerlegung, Dosis,
+Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. Ein negativer
+Befund erzwingt neue Mechanismusforensik außerhalb von Verfügbarkeits- und
+Personenmerkmalen. AI-000 liefert keinen Parameter oder Default.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
