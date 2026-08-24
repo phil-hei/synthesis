@@ -2178,6 +2178,63 @@ vorab zerlegen. AC-000 liefert weder Parameter noch Default. Rohlog,
 Quellhashes und maschinenlesbare Evidenz liegen unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/ac-000/`.
 
+#### Freiburg-Personenkomponenten (2026-08-24) — präregistriert
+
+**Forensik und Frage vor dem Lauf:** Die generierte
+`DestinationChoiceUtilityFunction` konsumiert Personendaten nur über sieben
+getrennte Kodierungen: ein Altersband sowie sechs binäre Statusindikatoren.
+PC-000 prüft, ob mindestens eine dieser tatsächlich verwendeten Komponenten
+den überwiegenden Teil des nach OZ-000 verbleibenden Rests erklärt. Rohwerte
+oder Kategorien, die in der Utility nicht vorkommen, sind ausgeschlossen.
+
+Der einmalige Arm **PC-000** verwendet AC-000 unverändert: Freiburg, Seed 42,
+J-0895-Zielwahlparameter, Basis-MNL, Helper `DISTANCE / 1000`, kein
+Langwegbonus. Die sieben vorab fixierten Komponenten bilden die Utility-
+Bedingungen exakt nach:
+
+- `AGE_BAND`: `0_17`, `50_69`, `70_120`, sonst `BASELINE_OTHER`;
+- `EDUCATION`: Employment ist `STUDENT`, `STUDENT_PRIMARY`,
+  `STUDENT_SECONDARY`, `STUDENT_TERTIARY` oder `EDUCATION`;
+- `HOME_OR_UNEMPLOYED`: Employment ist `HOMEKEEPER` oder `UNEMPLOYED`;
+- `COMMUTER_TICKET`: `person.hasCommuterTicket()`;
+- `CARS_PER_ADULT_AT_LEAST_ONE`: eigene Pkw geteilt durch Erwachsene im
+  Haushalt, mit demselben Mindestnenner 1 wie im Helper, ist mindestens 1;
+- `NO_OWNED_CAR`: Zahl eigener Haushalts-Pkw ist 0;
+- `HIGH_ECONOMICAL_STATUS`: Code des ökonomischen Haushaltsstatus liegt in
+  `[4;5]`.
+
+Je Komponente werden ausschließlich `n`, `sum(p)` und `sum(p²)` pro
+`(Aktivitätstyp, Ausgangszone, Komponentenwert)` akkumuliert. Jede Zerlegung
+wird unabhängig mit Unterzellen `n>=5` ausgewertet und auf ihrer
+Teilpopulation neu zentriert: `SSW_person = SSB_person +
+SSW_within_person`, Toleranz `1e-9`. Die Komponenten überlappen und dürfen
+nicht addiert oder als unabhängige Effekte gelesen werden.
+
+**Technische Gates vor Interpretation:** Externer Lauf EXIT 0, kein Fallback
+und keine Exception, genau eine Abschlusszeile, byteidentische Utility
+`5b13ad11…9f454c`, byteidentischer J-RAW-Demand
+`a58fac01…c7a9de` sowie exakte Reproduktion aller CE-/PD-/OZ-/AV-/AC-
+Aggregate. Jede Komponententabelle enthält vor dem Zellfilter alle 19.138
+freien Entscheidungen. Eine Komponente ist nur interpretierbar, wenn ihre
+`n>=5`-Unterzellen mindestens **60 %** der Entscheidungen und ihre neu
+zentrierte `SSW_person` mindestens **60 %** der vollständigen OZ-Restvarianz
+`40,26032918334451` abdecken und ihre Identität bis `1e-9` hält.
+
+**Vorab fixiertes Mechanik-Gate:** Eine technisch interpretierbare Komponente
+ist nur ab `SSB_person / SSW_person >=0,50` ein dominanter nächster Kandidat.
+Alle sieben Einzelquoten und die größte werden berichtet, aber nicht addiert.
+Erreicht keine den Gate, gilt nur dann jede einzelne Kodierung als nicht
+dominant, wenn alle sieben technisch interpretierbar waren; andernfalls ist
+PC-000 unentscheidbar.
+
+**Stop-Regel:** Genau ein PC-000-Lauf, nur Seed 42. Keine gemeinsame
+Personensignatur, kein post-hoc Zellfilter, keine neue Kategorie,
+Bonuskonstante, Dosis, Modalkalibrierung, Seed-/Regionenvariation oder
+Produktänderung. Ein positiver Befund erlaubt erst eine neue Diagnose des
+betroffenen Merkmals. Ein vollständig negativer Befund erzwingt neue
+Mechanismusforensik statt einer weiteren Personen- oder Verfügbarkeitssonde.
+PC-000 liefert keinen Parameter oder Default.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
