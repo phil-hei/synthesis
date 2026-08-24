@@ -191,7 +191,11 @@ verwirft sechs binäre Personenkodierungen mit höchstens 6,8995 % erklärter
 Restvarianz, bleibt insgesamt aber unentscheidbar: Das vierstufige Altersband
 deckt nur **50,9928 % statt mindestens 60 %** der Entscheidungen ab. Als
 Nächstes dürfen deshalb ausschließlich die drei bereits in der Utility
-getrennten binären Altersindikatoren vorab geprüft werden.
+getrennten binären Altersindikatoren vorab geprüft werden. AI-000 macht diese
+Prüfung entscheidbar: Alle drei bestehen die Abdeckungsgates, aber selbst
+`AGE_0_17` erklärt nur **5,5282 % statt mindestens 50 %**. Weitere Personen-
+und Verfügbarkeitssonden sind damit gesperrt; es braucht neue
+Mechanismusforensik.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

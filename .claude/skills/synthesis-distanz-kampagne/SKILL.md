@@ -450,6 +450,13 @@ senken und Alterskodierung nicht verwerfen. Nächster Same-run-Spike nur als
 neu präregistrierte Einzelzerlegung der drei in der Utility vorhandenen
 binären Altersindikatoren; keine Dosis oder Produktimplementierung.
 
+**❌ Altersindikatoren nicht dominant (2026-08-24):** AI-000 prüft die drei
+Utility-Schalter einzeln; alle bestehen beide 60-%-Abdeckungsgates.
+`AGE_0_17` erklärt maximal 5,5282 %, `AGE_50_69` 1,5368 % und `AGE_70_120`
+0,7127 % statt mindestens 50 %. **Regel:** keine weitere Personen-, Alters-
+oder Verfügbarkeitssonde und keine Dosis. Der nächste Schritt braucht neue,
+vorab fixierte Mechanismusforensik außerhalb dieser Merkmalsklassen.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

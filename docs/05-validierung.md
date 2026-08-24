@@ -2301,6 +2301,25 @@ Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. Ein negativer
 Befund erzwingt neue Mechanismusforensik außerhalb von Verfügbarkeits- und
 Personenmerkmalen. AI-000 liefert keinen Parameter oder Default.
 
+**Ausführung und Urteil:** AI-000 endet mit EXIT 0 und `BUILD SUCCESSFUL in
+15s`, genau einer Abschlusszeile, ohne ungültige Wahrscheinlichkeit,
+Exception oder Fallback. Utility, Demand und sämtliche früheren Aggregate
+werden exakt reproduziert; alle Identitäten schließen mit Abweichung 0.
+
+| Indikator | Entscheidungen mit `n>=5` | OZ-Restvarianz abgedeckt | erklärt |
+|---|---:|---:|---:|
+| `AGE_0_17` | 71,3502 % | 97,3496 % | **5,5282 %** |
+| `AGE_50_69` | 64,0401 % | 82,8165 % | 1,5368 % |
+| `AGE_70_120` | 64,4947 % | 94,8987 % | 0,7127 % |
+
+Alle drei Indikatoren bestehen beide technischen 60-%-Gates und verfehlen
+den 50-%-Mechanik-Gate klar. Die Altersindikatoren sind damit als jeweils
+dominante Resterklärung verworfen. Weitere Verfügbarkeits-, Personen- oder
+Alterszerlegungen sowie Dosis und Produktänderung bleiben gesperrt. Der
+nächste Schritt muss neue Mechanismusforensik außerhalb dieser Merkmalsklassen
+präregistrieren. Evidenz liegt unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/ai-000/`.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

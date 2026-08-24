@@ -76,6 +76,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E35 | Exaktes Modusset als Zerlegungsdimension | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | E36 | Einzelne Modusverfügbarkeit als dominante Resterklärung | Kalibrierung | ENTSCHIEDEN |
 | E37 | Vierstufiges Altersband als sparse-cell-Zerlegung | Diagnose/Kalibrierung | ENTSCHIEDEN |
+| E38 | Einzelne Altersindikatoren als dominante Resterklärung | Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -776,6 +777,16 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   oder Produktimplementierung. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Personenkomponenten (2026-08-24)".
 
+### E38 — Einzelne Altersindikatoren als dominante Resterklärung — ENTSCHIEDEN
+
+- **Evidenz:** AI-000 reproduziert alle früheren Aggregate exakt; alle drei
+  Indikatoren bestehen beide 60-%-Gates. `AGE_0_17` erklärt 5,5282 %,
+  `AGE_50_69` 1,5368 % und `AGE_70_120` 0,7127 % statt mindestens 50 %.
+- **Status/Regel:** Altersindikatoren sind nicht dominant. Keine weitere
+  Personen-/Verfügbarkeitssonde oder Dosis; neue Mechanismusforensik ist
+  nötig. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Altersindikatoren (2026-08-24)".
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
@@ -924,7 +935,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E37 ergänzt.
+- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E38 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch

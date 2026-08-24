@@ -982,6 +982,11 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   nicht dominant, die Alterskodierung bleibt offen. Keine Dosis; nächster
   Same-run-Spike nur mit den drei von der Utility getrennt verwendeten binären
   Altersindikatoren.
+  **❌ Altersindikatoren nicht dominant (2026-08-24):** AI-000 macht alle drei
+  Indikatoren technisch interpretierbar. `AGE_0_17` erklärt maximal 5,5282 %,
+  `AGE_50_69` 1,5368 % und `AGE_70_120` 0,7127 % statt mindestens 50 %.
+  **Entscheidung:** keine weitere Personen-/Verfügbarkeitssonde und keine
+  Dosis; neue Mechanismusforensik ist erforderlich.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum
