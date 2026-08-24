@@ -80,6 +80,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E39 | Skalare Fixziel-Ankerdistanz als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | E40 | Kombinierter Fixziel-Utilitybeitrag als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | E41 | Kombinierter Origin-Utilitybeitrag als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
+| E42 | Kombinierter Zielstruktur-Utilitybeitrag als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -849,6 +850,28 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   formuliert werden. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Origin-Utilitybeitrag (2026-08-24)".
 
+### E42 — Kombinierter Zielstruktur-Utilitybeitrag als dominante Resterklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt der nach FIX und Origin verbleibende, disjunkte
+  Zielstruktur-Block aus Attraktivitäts-Logsum sowie direkten Kurzband- und
+  Intrazonal-Termen mindestens 50 % des OZ-000-Rests?
+- **Evidenz:** DU-000 lässt Vollutility und Auswahl unverändert und
+  reproduziert Demand sowie alle Voraggregate exakt. Beide Karten sind gültig.
+  1.274 Zellen decken 76,5336 % der Entscheidungen und praktisch 100 % der
+  OZ-Restvarianz ab. Positive Steigung, aber nur 17,8117 % statt mindestens
+  50 % Erklärung. Ohne den Block steigt die mittlere Langwegmasse lediglich
+  2,3376→2,9077 %.
+- **Root Cause/Einordnung:** Mit FU-/OU-/DU-000 ist die Top-Level-Utility nach
+  Quellformel vollständig und disjunkt in FIX, Origin und Zielstruktur
+  partitioniert. Keiner der Blöcke dominiert einzeln; ihre getrennten
+  Gegenlauf-`R²` sind wegen nichtlinearer Wahrscheinlichkeitsbildung und
+  möglicher Korrelation nicht addierbar.
+- **Status/Regel:** Keine post-hoc Aufteilung des Zielstruktur-Blocks, keine
+  Summe der Einzelanteile, keine Dosis und keine Produktimplementierung. Ein
+  nächster Anlauf muss eine gemeinsame Kompositions-/Kompensationshypothese der
+  drei Blöcke neu präregistrieren. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Zielstruktur-Utilitybeitrag (2026-08-24)".
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
@@ -997,7 +1020,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E41 ergänzt.
+- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E42 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch

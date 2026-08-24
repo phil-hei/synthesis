@@ -191,6 +191,16 @@ Auch hier gilt: 2,3376→10,0636 % mittlere Langwegmasse ohne die Komponente ist
 eine Niveauwirkung; die Dominanzfrage entschied separat das vorab fixierte
 Within-Cell-`R²` von nur 5,1121 %.
 
+**Disjunkte Utility-Zerlegung vor gemeinsamer Kompositionsprüfung (DU-000,
+2026-08-24):** Erst die obersten additiven Blöcke quellengetreu und ohne
+Überlappung definieren. FU-/OU-/DU-000 zerlegen so FIX-Logsummen,
+Origin-Logsummen und Zielstruktur; jede Sonde lässt reale Auswahl und
+Vollutility unverändert. Wenn kein Einzelblock das vorab gesetzte Dominanzgate
+erreicht (32,6632/5,1121/17,8117 %), die Anteile nicht addieren: Die
+Prädiktoren stammen aus separaten nichtlinearen Gegenläufen und können
+korrelieren. Der nächste Test muss eine gemeinsame Kompositionshypothese samt
+multivariater Identität neu präregistrieren.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
@@ -407,3 +417,6 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
 - **Ergänzung 2026-08-24:** OU-000 belegt die neue Präregistrierung eines zum
   abgeschlossenen Kandidaten disjunkten Top-Level-Beitrags, ohne dessen
   Teilbeiträge nachträglich zu zerlegen; Evidenz in `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** DU-000 schließt die disjunkte Top-Level-Zerlegung
+  und sperrt die Addition einzelner Gegenlauf-`R²`; Evidenz in
+  `docs/05-validierung.md`.

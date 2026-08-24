@@ -2583,6 +2583,32 @@ Attraktivitäts-, Kurzband- und Intrazonal-Terme, kein Prädiktorwechsel, keine
 Koeffizientendosis, Modalkalibrierung, Seed-/Regionenvariation oder
 Produktänderung. DU-000 liefert keinen Parameter oder Default.
 
+**Ausführung und Urteil:** DU-000 endet mit EXIT 0 und `BUILD SUCCESSFUL in
+30s`, genau einer Abschlusszeile und ohne Exception oder Fallback. Die
+bestehende `calculateU_destination`-Methode bleibt textuell unverändert;
+Demand und sämtliche früheren Aggregate werden exakt reproduziert. Beide
+Wahrscheinlichkeitskarten sind gültig und bis maximal `4,2188e-15` auf eins
+normiert; es gibt keine ungültige Langmassenpaarung.
+
+Nach `n>=5` und positiver Within-Varianz bleiben erneut 1.274 Zellen mit
+14.647/19.138 = **76,5336 %** der Entscheidungen. Sie decken
+40,260329/40,260329 = praktisch **100 %** der OZ-Restvarianz ab; die
+Regressionsidentität schließt mit Abweichung 0. Die gepoolte Steigung ist
+positiv (`0,0407584`), doch `U_destinationStructure` erklärt nur
+**17,8117 %** statt mindestens 50 %. Der kombinierte Zielstruktur-
+Utilitybeitrag ist damit als dominanter Einzelmechanismus verworfen.
+
+Deskriptiv erhöht das Entfernen des Zielstruktur-Blocks die mittlere
+Langwegmasse von 2,3376 % auf 2,9077 % (+0,5702 Prozentpunkte). Das ersetzt
+nicht das vorab fixierte Varianzgate. FU-000, OU-000 und DU-000 bilden nach
+Quellformel die vollständige Top-Level-Utility disjunkt ab: FIX erklärt
+32,6632 %, Origin 5,1121 % und Zielstruktur 17,8117 % jeweils einzeln; kein
+Block dominiert die Restvarianz. Es folgt keine post-hoc Einzeltermzerlegung.
+Der nächste zulässige Anlauf muss einen gemeinsamen, vorab fixierten
+Kompositions-/Kompensationsmechanismus der drei Blöcke prüfen. Evidenz liegt
+unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/du-000/`.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

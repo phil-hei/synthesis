@@ -493,6 +493,18 @@ der Beitrag wirkt stark auf das Niveau, dominiert aber nicht die Restvarianz.
 nächste Schritt braucht einen neuen, vorab fixierten Mechanismus außerhalb der
 kombinierten Origin- und FIX-Beiträge.
 
+**❌ Direkter Zielstruktur-Utilitybeitrag nicht dominant (2026-08-24):**
+DU-000 entfernt in einem rein diagnostischen Gegenlauf den verbleibenden,
+disjunkten Block aus Attraktivitäts-Logsum sowie direkten Kurzband- und
+Intrazonal-Termen. Der Lauf ist mit 76,5336 % Entscheidungs- und praktisch
+100 % SSE-Abdeckung interpretierbar; positive Steigung, aber nur
+**17,8117 %** statt mindestens 50 % Erklärung. Ohne Zielstruktur-Block steigt
+die mittlere Langwegmasse nur 2,3376→2,9077 %. FU-/OU-/DU-000 decken nach
+Quellformel die vollständige Top-Level-Utility disjunkt ab; einzeln erklärt
+kein Block mindestens 50 %. **Regel:** keine Einzeltermzerlegung und keine
+Dosis. Nächster zulässiger Mechanismus ist eine neu präregistrierte gemeinsame
+Kompositions-/Kompensationsprüfung der drei Blöcke.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.
