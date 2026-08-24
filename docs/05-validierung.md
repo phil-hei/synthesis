@@ -2534,6 +2534,55 @@ weiterer Anlauf benötigt einen neuen, vorab fixierten Mechanismus außerhalb
 der kombinierten Origin- und FIX-Beiträge. Evidenz liegt unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/ou-000/`.
 
+#### Freiburg-Zielstruktur-Utilitybeitrag (2026-08-24) — präregistriert
+
+**Frage vor dem Lauf:** Erklärt der exakte kandidatenbezogene Beitrag des
+verbleibenden Zielstruktur-Blocks mindestens 50 % der nach OZ-000 verbleibenden
+Varianz der freien Langwegmasse? DU-000 teilt weder die in FU-000 gemeinsam
+geprüften FIX-Logsummen noch die in OU-000 gemeinsam geprüften Origin-Logsummen
+auf. Der neue Kandidat ist der dazu disjunkte Rest der obersten Utility-
+Summenstruktur: der person- und distanzmodifizierte Attraktivitäts-Logsum plus
+die direkten `b_0_1`-, `b_1_2`- und `b_intrazonal`-Terme.
+
+Der einmalige Arm **DU-000** übernimmt OU-000 unverändert: Freiburg, Seed 42,
+J-0895, Basis-MNL, `DISTANCE / 1000`, kein Bonus. Für jeden Kandidaten `z`
+wird zusätzlich zum unveränderten Vollnutzen `U(z)` der Zielstruktur-Beitrag
+`U_destinationStructure(z)` exakt mit denselben Attraktivitäts-, Distanzband-
+und Intrazonalwerten berechnet. Der verhaltensneutrale Gegenlauf verwendet
+`U_withoutDestinationStructure(z)=U(z)-U_destinationStructure(z)` nur für eine
+zweite Wahrscheinlichkeitsberechnung; ausgewählt wird weiterhin ausschließlich
+aus `U(z)`.
+
+Pro Entscheidung sind `p_full` und `p_withoutDestinationStructure` jeweils die
+summierten Wahrscheinlichkeiten aller Ziele über 20 km. Ohne Clipping muss für
+beide `0<p<1` gelten. Einziger Prädiktor ist der vom Zielstruktur-Block
+verursachte Lang-vs.-Kurz-Log-Odds-Shift
+`x=logit(p_full)-logit(p_withoutDestinationStructure)`; Zielgröße bleibt
+`y=p_full`. Je `(Aktivitätstyp, Ausgangszone)` werden nur `n`, `sum(x)`,
+`sum(x²)`, `sum(y)`, `sum(y²)` und `sum(x*y)` gesammelt. Aus Zellen mit
+`n>=5` und positiver Within-Varianz von `x` werden lokal zentrierte `Sxx`,
+`Syy` und `Sxy` gepoolt. Vorab gilt `R²=(Sxy²/Sxx)/Syy` und bis `1e-9`
+`Syy=Sxy²/Sxx+SSE_residual`; die Steigung `Sxy/Sxx` muss positiv sein.
+
+**Technische Gates:** EXIT 0, keine Exception oder Fallback, genau eine
+Abschlusszeile, J-RAW-Demand `a58fac01…c7a9de`, unveränderter Quelltext der
+bestehenden `calculateU_destination`-Methode, exakte
+CE-/PD-/OZ-/AV-/AC-/PC-/AI-/FA-/FU-/OU-Reproduktion und 19.138 Entscheidungen.
+Beide Wahrscheinlichkeitskarten müssen endlich, nichtnegativ und je
+Entscheidung bis `1e-12` auf eins normiert sein; beide Langmassen müssen strikt
+in `(0,1)` liegen. Zulässige Zellen müssen mindestens 60 % aller Entscheidungen
+und 60 % der OZ-Restvarianz `40,2603291833` abdecken; sonst ist DU-000 vor der
+Mechanikinterpretation unentscheidbar.
+
+**Mechanik-Gate und Stop-Regel:** Dominant ist der Zielstruktur-Beitrag nur bei
+positiver Steigung und `R²>=0,50`. Bei technisch gültigem, aber verfehltem Gate
+ist genau diese direkte `U_destinationStructure`-Erklärung als nächster
+Einzelmechanismus verworfen; bei gescheiterter Abdeckung bleibt sie
+unentscheidbar. Genau ein Lauf, Seed 42; keine post-hoc Aufteilung in
+Attraktivitäts-, Kurzband- und Intrazonal-Terme, kein Prädiktorwechsel, keine
+Koeffizientendosis, Modalkalibrierung, Seed-/Regionenvariation oder
+Produktänderung. DU-000 liefert keinen Parameter oder Default.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
