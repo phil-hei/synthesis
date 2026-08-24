@@ -2391,6 +2391,54 @@ Distanz-Proxys. Dosis, Seeds und Produktänderung bleiben gesperrt. Evidenz
 liegt unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/fa-000/`.
 
+#### Freiburg-Fixziel-Utilitybeitrag (2026-08-24) — präregistriert
+
+**Frage vor dem Lauf:** Erklärt der exakte kandidatenbezogene Beitrag der
+beiden additiven `*_FIX`-Logsummen mindestens 50 % der nach OZ-000
+verbleibenden Varianz der freien Langwegmasse? FU-000 ist keine Rettung der in
+FA-000 unentscheidbaren Ankerdistanz: Es verwendet weder deren Wert noch eine
+neue Transformation oder Klasse, sondern zerlegt die tatsächlich ausgeführte
+Zielwahl-Utility an ihrer obersten Summenstruktur.
+
+Der einmalige Arm **FU-000** übernimmt FA-000 unverändert: Freiburg, Seed 42,
+J-0895, Basis-MNL, `DISTANCE / 1000`, kein Bonus. Für jeden Kandidaten `z`
+wird zusätzlich zum unveränderten Vollnutzen `U(z)` exakt die Summe aus dem
+Fixziel-PT-/Aktiv-Logsum-Term und dem Fixziel-Drive-Logsum-Term als `U_fix(z)`
+berechnet. Der verhaltensneutrale Gegenlauf verwendet
+`U_withoutFix(z)=U(z)-U_fix(z)` nur für eine zweite
+Wahrscheinlichkeitsberechnung; ausgewählt wird weiterhin ausschließlich aus
+`U(z)`.
+
+Pro Entscheidung sind `p_full` und `p_withoutFix` jeweils die summierten
+Wahrscheinlichkeiten aller Ziele über 20 km. Ohne Clipping muss für beide
+`0<p<1` gelten. Der einzige Prädiktor ist der exakte Fixziel-Beitrag zu den
+Lang-vs.-Kurz-Log-Odds
+`x=logit(p_full)-logit(p_withoutFix)`; Zielgröße bleibt
+`y=p_full`. Je `(Aktivitätstyp, Ausgangszone)` werden nur `n`, `sum(x)`,
+`sum(x²)`, `sum(y)`, `sum(y²)` und `sum(x*y)` gesammelt. Aus Zellen mit
+`n>=5` und positiver Within-Varianz von `x` werden lokal zentrierte `Sxx`,
+`Syy` und `Sxy` gepoolt. Vorab gilt
+`R²=(Sxy²/Sxx)/Syy` und bis `1e-9`
+`Syy=Sxy²/Sxx+SSE_residual`; die Steigung `Sxy/Sxx` muss positiv sein.
+
+**Technische Gates:** EXIT 0, keine Exception oder Fallback, genau eine
+Abschlusszeile, J-RAW-Demand `a58fac01…c7a9de`, unveränderter Quelltext der
+bestehenden `calculateU_destination`-Methode, exakte
+CE-/PD-/OZ-/AV-/AC-/PC-/AI-/FA-Reproduktion und 19.138 Entscheidungen. Beide
+Wahrscheinlichkeitskarten müssen endlich, nichtnegativ und je Entscheidung
+bis `1e-12` auf eins normiert sein; beide Langmassen müssen strikt in `(0,1)`
+liegen. Zulässige Zellen müssen mindestens 60 % aller Entscheidungen und 60 %
+der OZ-Restvarianz `40,2603291833` abdecken; sonst ist FU-000 vor der
+Mechanikinterpretation unentscheidbar.
+
+**Mechanik-Gate und Stop-Regel:** Dominant ist der direkte Fixziel-
+Utilitybeitrag nur bei positiver Steigung und `R²>=0,50`. Bei technisch
+gültigem, aber verfehltem Gate ist genau diese direkte `U_fix`-Erklärung als
+nächster Einzelmechanismus verworfen; bei gescheiterter Abdeckung bleibt sie
+unentscheidbar. Genau ein Lauf, Seed 42; kein post-hoc Prädiktorwechsel, keine
+Koeffizientenzerlegung, Dosis, Modalkalibrierung, Seed-/Regionenvariation oder
+Produktänderung. FU-000 liefert keinen Parameter oder Default.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
