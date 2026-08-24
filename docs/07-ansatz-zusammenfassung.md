@@ -184,8 +184,12 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   Geografie aber als dominanten Mechanismus: Ausgangszellen erklären nur
   **20,0786 % statt mindestens 70 %**, 79,9214 % bleiben innerhalb gleicher
   Zweck-Zonen-Zellen. Der nächste Same-run-Beleg muss deshalb Personen-/
-  Modusverfügbarkeits- oder situative Merkmale prüfen. Eine neue Dosis bleibt
-  gesperrt.
+  Modusverfügbarkeits- oder situative Merkmale prüfen. AV-000 versucht dies
+  mit dem exakten verfügbaren Modusset, ist aber wegen Sparse Cells
+  unentscheidbar: `n>=5`-Unterzellen decken nur **45,0308 % statt mindestens
+  60 %** ab. Der rohe Varianzanteil dieser Teilmenge wird nicht interpretiert;
+  als Nächstes sind gröbere, komponentenweise Verfügbarkeitsmerkmale
+  zu präregistrieren. Eine neue Dosis bleibt gesperrt.
   Ein Default-Flip steht aus: `>20 km` bleibt unter MiD und der Mehrregionen-Beleg fehlt.
 - **Amtliche BA-Außenanker integriert und Acht-Anker-Hypothese befördert:** Der direkte
   `Auspendler Gemeinden`-CSV-Adapter löst AGS über BKG VG250 auf und verwendet die 79 Rastatt-

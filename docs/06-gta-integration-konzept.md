@@ -954,6 +954,16 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   **Entscheidung:** keine geografische Folgesonde oder Dosis. Die nächste
   zulässige Same-run-Diagnose muss Personen-/Modusverfügbarkeit oder andere
   situative Merkmale innerhalb gleicher Zweck-Zonen-Zellen prüfen.
+  **⛔ Exakte Modusset-Zerlegung zu dünn besetzt (2026-08-24):** AV-000
+  reproduziert Utility, J-RAW-Demand und sämtliche CE-/PD-/OZ-Aggregate exakt;
+  der externe Lauf endet mit EXIT 0. Die vollständige
+  `ModeAvailabilityInDestinationChoice`-Signatur erzeugt jedoch 6.459
+  Unterzellen, davon 2.529 Singletons. Die vorab zugelassenen `n>=5`-Zellen
+  decken nur **8.618/19.138 = 45,0308 %** statt mindestens 60 % ab. Damit ist
+  der Lauf vor jeder Mechanikinterpretation unentscheidbar; der rohe
+  Varianzanteil der Teilmenge wird nicht gewertet. **Entscheidung:** Schwelle
+  nicht nachträglich senken, keine Dosis. Der nächste Same-run-Spike muss
+  Verfügbarkeitskomponenten gröber und vorab getrennt definieren.
   **Sperre aufgehoben (2026-08-13):** Der Bootstrap-Vertrag ist rekonstruiert und setzt
   jetzt auf dem Upstream-Stand auf; der Harness kompiliert in 3 s statt >31 min zu hängen,
   `scripts/preflight.sh full` meldet 0 Fehler. Damit ist die Vorbedingung „KIT-Quellbaum

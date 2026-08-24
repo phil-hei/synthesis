@@ -2062,6 +2062,34 @@ Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. Ein
 technisches Scheitern macht AV-000 unentscheidbar. Auch ein bestandener Gate
 liefert nur eine Mechanismusrichtung, keinen Parameter oder Default.
 
+**Ausführung:** AV-000 kompiliert mit dem gepinnten JDK 25 und endet extern mit
+EXIT 0 sowie `BUILD SUCCESSFUL in 14s`. Genau eine Abschlusszeile enthält alle
+19.138 freien Entscheidungen. Utility (`5b13ad11…9f454c`) und J-RAW-Demand
+(`a58fac01…c7a9de`) bleiben byteidentisch; Gesamtmasse, `sum(p²)`, Klassen,
+Aktivitätstypaggregate und die vollständige OZ-Zerlegung werden exakt
+reproduziert. Es gibt keine ungültige Wahrscheinlichkeit, Exception oder
+Fallback; beide Varianzidentitäten haben Abweichung 0.
+
+Die exakte Verfügbarkeitssignatur fragmentiert die Stichprobe jedoch stark:
+6.459 Unterzellen enthalten 2.529 Singletons. Nur 939 Unterzellen mit `n>=5`
+in 718 Zweck-Zonen-Eltern decken **8.618/19.138 = 45,0308 %** statt der vorab
+geforderten mindestens 60 % ab. Damit scheitert ein technischer Gate vor jeder
+Mechanikinterpretation.
+
+Auf der nicht hinreichend abgedeckten Teilmenge ergibt die reine Rechnung
+`SSW_origin = 31,41837067`, `SSB_availability = 1,18291499` und
+`SSW_availability = 30,23545569`. Der daraus folgende rohe Anteil 3,7650 %
+wird nach der Vorab-Regel **nicht interpretiert**; insbesondere ist er kein
+Beleg gegen Modusverfügbarkeit.
+
+**Urteil und Stop-Regel:** AV-000 ist wegen Sparse Cells unentscheidbar, nicht
+negativ. Die Mindestzellgröße wird nicht nachträglich gesenkt, und es folgen
+keine Dosis, Seeds, Modalkalibrierung oder Produktänderung. Der nächste
+zulässige Same-run-Spike muss die Verfügbarkeitsdimensionen vorab gröber und
+komponentenweise definieren, bevor Personenmerkmale untersucht werden. Rohlog,
+Quellhashes und maschinenlesbare Evidenz liegen unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/av-000/`.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

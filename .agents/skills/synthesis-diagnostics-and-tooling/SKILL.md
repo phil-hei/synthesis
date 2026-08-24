@@ -135,6 +135,14 @@ Within-Zweck-SSE. Immer `SSW_purpose = SSB_subgroup + SSW_cell` numerisch
 reconciliieren und den Rest innerhalb gleicher Zellen berichten; sonst wird
 feine Granularität mit echter Erklärung verwechselt.
 
+**Granularitäts-Gate vor Mechanismus-Gate (AV-000, 2026-08-24):** Auch eine
+fachlich exakte Gruppierung kann den technischen Abdeckungstest verfehlen.
+Die vollständige Sieben-Modi-Verfügbarkeitssignatur erzeugte 6.459 Unterzellen
+und 2.529 Singletons; die vorab zugelassenen 939 Zellen mit `n>=5` deckten nur
+8.618/19.138 = 45,0308 % statt mindestens 60 % ab. Dann weder den rohen
+Erklärungsanteil interpretieren noch die Mindestzellgröße post hoc senken.
+Die Dimension in einer neuen Präregistrierung gröber zerlegen.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
@@ -315,7 +323,7 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-07-08.** Verifiziert gegen den Code auf `main` (Commit 4ad6382)
+- **Stand: 2026-08-24.** Verifiziert gegen den Code auf `main` (Commit 4ad6382)
   und die echte CSV `validation/mobitopp-rastatt/output/synthesis/results/demandsimulationResult.csv`.
 - **Ground Truth:** JSON-Keys aus `SimulationResultIngestor` (kpis/depot-stats/
   parcel-density/tours), `GenerationService.writeSumoSummary`/`writeLlmModeChoice`,
@@ -333,3 +341,6 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
 - **Ergänzung 2026-08-17:** Die Cross-run-Instabilität von `tripId` wurde in
   PX-135 gegen zwei echte Freiburg-Demand-CSVs mit fixierten Eingabe-Hashes
   gemessen; Detailbefund E30 in `synthesis-failure-archaeology`.
+- **Ergänzung 2026-08-24:** AV-000 belegt den technischen Abbruch einer zu
+  granularen Zerlegung vor jeder fachlichen Mechanismusbewertung; Evidenz in
+  `docs/05-validierung.md`.

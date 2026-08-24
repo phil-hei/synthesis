@@ -415,6 +415,18 @@ geografische Folgesonde oder Dosis. Nächster zulässiger Same-run-Spike nur mit
 vorab fixierten Personen-/Modusverfügbarkeits- oder situativen Merkmalen
 innerhalb identischer Zweck-Zonen-Zellen.
 
+**⛔ Exakte Modusverfügbarkeit wegen dünn besetzter Zellen unentscheidbar
+(2026-08-24):** AV-000 reproduziert J-RAW, CE-000, PD-000 und OZ-000 exakt.
+Die Zerlegung nach der vollständigen Sieben-Modi-Verfügbarkeitssignatur erzeugt
+jedoch 6.459 Unterzellen, davon 2.529 Singletons. Nur 939 Unterzellen mit
+`n>=5` decken 8.618/19.138 = **45,0308 %** der Entscheidungen ab und verfehlen
+damit den präregistrierten technischen Mindestwert von 60 %. Der rohe Anteil
+von 3,7650 % erklärter Restvarianz ist deshalb nicht interpretierbar.
+**Regel:** Weder den Zellfilter nachträglich senken noch Modusverfügbarkeit als
+Mechanismus verwerfen. Der nächste Same-run-Spike muss eine gröbere,
+komponentenweise Verfügbarkeitszerlegung neu präregistrieren; weiterhin keine
+Dosis oder Produktimplementierung.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.
@@ -446,7 +458,7 @@ Details + vorher→nachher-Zahlen: docs/06 „Phase 1b" (Eintrag 2026-07-16), `M
 | Frage „wurde X schon probiert?" | synthesis-failure-archaeology |
 | Prozess-/Evidenzfragen | synthesis-research-methodology |
 
-## Provenienz & Wartung (Stand: 2026-08-17)
+## Provenienz & Wartung (Stand: 2026-08-24)
 
 Verifiziert am 2026-07-10: Parameterdateien + Inhalte (ls/cat oben), `destinationChoice:`-
 Verdrahtung (grep in SimulationRunner.java Z. 106–114), Baseline-Messung (distance_profile.py,

@@ -176,7 +176,12 @@ erklären nur **20,0786 %** statt mindestens 70 % der Within-Zweck-Varianz;
 SHOPPING_DAILY sind es trotz größter absoluter Streuung nur 9,54 %. Der nächste
 zulässige Same-run-Beleg muss daher Personen-/Modusverfügbarkeits- oder andere
 situative Merkmale prüfen. Eine geografische Folgesonde, Dosis und
-Produktänderung bleiben gesperrt.
+Produktänderung bleiben gesperrt. Der erste exakte Modusset-Anlauf AV-000 ist
+technisch sauber, aber wegen Sparse Cells unentscheidbar: `n>=5`-Unterzellen
+decken nur **45,0308 %** statt mindestens 60 % ab. Der auf dieser Teilmenge
+berechnete Varianzanteil wird nicht interpretiert. Als Nächstes müssen die
+Verfügbarkeitsdimensionen gröber und komponentenweise präregistriert werden;
+Dosis und Produktänderung bleiben gesperrt.
 Neu trennt „ÖV nach Distanz kalibrieren" das globale ÖV-Niveau (`asc_put`) von der
 Fernweg-Schräge (`b_tt_put`) gegen MiD 2017. Sie lässt sich nach der Kalibrierung der
 Distanz-Verteilung auf deren korrigierten Zielwahlparametern ausführen. Die Mechanik ist

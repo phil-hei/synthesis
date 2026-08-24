@@ -4,13 +4,11 @@ description: >
   Failure-Archäologie für SyntheSis — die Chronik aller größeren Untersuchungen, Sackgassen,
   verworfenen Lösungen und Rollbacks (Symptom → Root Cause → Evidenz → Status). Nutze diesen
   Skill, BEVOR du etwas erneut versuchst, das schon einmal scheiterte oder bewusst verworfen
-  wurde. Stichworte der Vorfälle: Rail/Tram-ÖV in SUMO zurückgerollt (duarouter mapmatch snappt
-  Fußgänger auf Gleise, "No destination edge"), LLM-Moduswahl mit MiD-Verankerung revertiert
-  (Qwen ignoriert quantitative Vorgaben), externe Zonen werden nie gewählt, pyproj/PEP 668,
-  gtfs2pt langsamer tracemapper / fehlender vType "bus", KIT populationsynthesis nicht generisch
-  anbindbar / Mega-Haushalte (444 Personen), Llama-3.1-Lizenz verworfen, temperature 0.7
-  nicht reproduzierbar, GTA-Überproduktion (5,7 Aktivitäten/Tag), POPtrips-Halbzählung,
-  Kalibrier-Loop-Bugs (createDirectories, ASC-Semantik), Executor-Pool 2→1, Overpass-Rate-Limit,
+  wurde. Stichworte der Vorfälle: Rail/Tram-ÖV in SUMO zurückgerollt, "No destination edge",
+  LLM-Moduswahl mit MiD-Verankerung revertiert, externe Zonen werden nie gewählt,
+  pyproj/PEP 668, gtfs2pt/tracemapper, fehlender vType "bus", KIT populationsynthesis/
+  Mega-Haushalte, Modelllizenz, Reproduzierbarkeit, GTA-Überproduktion,
+  POPtrips-Halbzählung, Kalibrier-Loop-Bugs, Executor-Pool, Overpass-Rate-Limit,
   "No destination available for WORK", OID vs. externe Zonen-ID, "SynthesisApplication 2.class".
   Auch nutzen bei Fragen wie "warum ist X so gebaut?", "wurde Y schon mal probiert?",
   "können wir nicht einfach Z machen?".
@@ -23,7 +21,7 @@ Sackgasse, verworfene Lösung und jedes Rollback, jeweils als **Symptom → Root
 Status → Was du stattdessen tust**. Bevor du einen "naheliegenden" Ansatz umsetzt, prüfe hier,
 ob er schon einmal gescheitert ist — und warum.
 
-**Stand: 2026-08-17.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
+**Stand: 2026-08-24.** Primärquellen: `docs/05-validierung.md` (Phase-0-/Adapter-/logiTopp-Befunde)
 und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzahlen sind
 überlieferte Werte vom jeweils genannten Datum, keine aktuellen Messungen.
 
@@ -75,6 +73,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E32 | Binäre Choice-Set-Eligibility als Unterwirkungsursache | Kalibrierung | ENTSCHIEDEN |
 | E33 | Aktivitätstypmittel als Erklärung der Langwegmassen-Heterogenität | Kalibrierung | ENTSCHIEDEN |
 | E34 | Ausgangszelle als dominante Within-Zweck-Erklärung | Kalibrierung | ENTSCHIEDEN |
+| E35 | Exaktes Modusset als Zerlegungsdimension | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -717,6 +716,25 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   Zweck-Zonen-Zellen vorab zerlegen. Evidenz: `docs/05-validierung.md`,
   Abschnitt „Freiburg-Ausgangszonenzerlegung (2026-08-17)".
 
+### E35 — Exaktes Modusset als Zerlegungsdimension — ENTSCHIEDEN
+
+- **Frage:** Erklärt die vollständige Sieben-Modi-Verfügbarkeitssignatur
+  mindestens 50 % der nach OZ-000 verbleibenden Restvarianz?
+- **Evidenz:** AV-000 reproduziert alle 19.138 Entscheidungen sowie CE-000,
+  PD-000 und OZ-000 exakt. Die Verfügbarkeitssignatur erzeugt 6.459
+  Unterzellen, davon 2.529 Singletons. Nur 939 Unterzellen mit `n>=5` decken
+  8.618/19.138 = 45,0308 % der Entscheidungen ab; präregistriert waren
+  mindestens 60 %. Die Varianzidentität schließt numerisch exakt.
+- **Warum unentscheidbar:** Der technische Abdeckungstest scheitert vor dem
+  Mechanismus-Gate. Der rohe Erklärungsanteil von 3,7650 % beschreibt nur die
+  selektierte Teilpopulation und darf nicht als Widerlegung des Mechanismus
+  gelesen werden.
+- **Status/Regel:** Mindestzellgröße nicht post hoc senken und
+  Modusverfügbarkeit nicht verwerfen. Nächster Same-run-Spike nur als neu
+  präregistrierte, gröbere komponentenweise Verfügbarkeitszerlegung; keine
+  Dosis oder Produktimplementierung. Evidenz: `docs/05-validierung.md`,
+  Abschnitt „Freiburg-Modusverfügbarkeitszerlegung (AV-000, 2026-08-24)".
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
@@ -865,7 +883,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-07-29.** Verfasst beim Ausscheiden des Principal Engineers und um E20–E22 ergänzt.
+- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E35 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch
