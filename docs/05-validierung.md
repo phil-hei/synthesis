@@ -2320,6 +2320,54 @@ nächste Schritt muss neue Mechanismusforensik außerhalb dieser Merkmalsklassen
 präregistrieren. Evidenz liegt unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/ai-000/`.
 
+#### Freiburg-Fixziel-Ankergeometrie (2026-08-24) — präregistriert
+
+**Frage vor dem Lauf:** Erklärt die Entfernung vom aktuellen Ausgangspunkt
+zum nächsten personengebundenen Fixziel mindestens 50 % der nach OZ-000
+verbleibenden Varianz der freien Langwegmasse? Dieser situative Kandidat folgt
+direkt aus der ausgeführten Utility: Für jede Alternative gehen Reisezeiten
+und -kosten vom Kandidaten zum Ergebnis von
+`person.nextFixedActivityZone(previousActivity)` über die `*_FIX`-Terme ein.
+Der ebenfalls übergebene Zeitpunkt ist im fixierten Freiburg-Arm dagegen kein
+unabhängiger Kandidat, weil die Matrixkonfiguration für Werktag, Samstag und
+Sonntag von 0 bis 23 Uhr jeweils dieselben Dateien bindet.
+
+Der einmalige Arm **FA-000** übernimmt AI-000 unverändert: Freiburg, Seed 42,
+J-0895, Basis-MNL, `DISTANCE / 1000`, kein Bonus. Pro freier Entscheidung ist
+`y` die bereits validierte MNL-Masse aller Ziele über 20 km. Der einzige neue
+Prädiktor ist `x=log1p(d_origin,fix / km)`, wobei `d_origin,fix` über denselben
+`ImpedanceIfc.getDistance(...)/1000`-Vertrag wie die Zielentfernung berechnet
+wird. Je `(Aktivitätstyp, Ausgangszone)` werden ausschließlich `n`, `sum(x)`,
+`sum(x²)`, `sum(y)`, `sum(y²)` und `sum(x*y)` akkumuliert; es werden keine
+Einzelentscheidungen gespeichert und keine Distanzklassen nachträglich
+gebildet.
+
+Aus den OZ-Elternzellen mit `n>=5` und positiver Within-Cell-Varianz von `x`
+werden `Sxx`, `Syy` und `Sxy` jeweils um das eigene Zellenmittel zentriert und
+über alle zulässigen Zellen gepoolt. Die präregistrierte lineare
+Within-Cell-Erklärung ist `R²=(Sxy²/Sxx)/Syy`; bis `1e-9` muss
+`Syy = Sxy²/Sxx + SSE_residual` gelten. Das Vorzeichen der gepoolten Steigung
+`Sxy/Sxx` muss positiv sein: weiter entferntes nächstes Fixziel soll die
+Langwegmasse erhöhen, nicht senken.
+
+**Technische Gates:** EXIT 0, keine Exception oder Fallback, genau eine
+Abschlusszeile, byteidentische Utility (`5b13ad11…9f454c`) und J-RAW-Demand
+(`a58fac01…c7a9de`), exakte CE-/PD-/OZ-/AV-/AC-/PC-/AI-Reproduktion, 19.138
+Entscheidungen vor Filter, keine fehlende Fixzone sowie nur endliche,
+nichtnegative Ankerdistanzen. Zulässige Zellen müssen mindestens 60 % aller
+Entscheidungen und mindestens 60 % der OZ-Restvarianz `40,2603291833`
+abdecken; sonst ist FA-000 vor jeder Mechanikinterpretation unentscheidbar.
+
+**Mechanik-Gate und Stop-Regel:** Bestätigt ist der Fixziel-Anker als
+dominanter nächster Kandidat nur bei positiver Steigung und `R²>=0,50`.
+Verfehlt ein technisch gültiger Lauf dieses Gate, ist die skalare
+Origin-Fixziel-Distanz als dominante Erklärung verworfen; daraus folgt weder,
+dass die einzelnen `*_FIX`-Beiträge wirkungslos sind, noch dass sie verändert
+werden dürfen. Genau ein Lauf, Seed 42; kein post-hoc Transformationswechsel,
+keine weitere Geografie-, Personen- oder Verfügbarkeitssonde, Dosis,
+Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. FA-000 liefert
+keinen Parameter oder Default.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
