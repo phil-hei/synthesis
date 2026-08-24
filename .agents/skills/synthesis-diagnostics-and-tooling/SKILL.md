@@ -162,6 +162,15 @@ ohnehin als getrennte binäre Indikatoren nutzt, dürfen genau diese in einer
 neuen Präregistrierung einzeln geprüft werden; neue Datenkategorien sind das
 nicht.
 
+**Kontinuierlicher Prädiktor braucht beide Abdeckungsgates (FA-000,
+2026-08-24):** Auch eine Within-Cell-Regression darf Zellen ohne Variation des
+Prädiktors nicht als Evidenz zählen. Für jede Elternzelle `n`, `sum(x)`,
+`sum(x²)`, `sum(y)`, `sum(y²)` und `sum(x*y)` sammeln, lokal zentrieren und
+erst dann `Sxx`, `Syy`, `Sxy` poolen. FA-000 deckte damit 97,7036 % der
+OZ-Restvarianz, aber nur 58,8515 % statt mindestens 60 % der Entscheidungen
+ab. Dann trotz hoher SSE-Abdeckung weder `R²` noch Steigung interpretieren und
+die Transformation nicht post hoc wechseln.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
@@ -369,3 +378,6 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
 - **Ergänzung 2026-08-24:** PC-000 belegt den technischen Abbruch einer
   Mehrkategorie-Komponente trotz bestandener SSE-Abdeckung; Evidenz in
   `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** FA-000 überträgt denselben Vorrang technischer
+  Abdeckung auf kontinuierliche, innerhalb der Elternzellen zentrierte
+  Prädiktoren; Evidenz in `docs/05-validierung.md`.

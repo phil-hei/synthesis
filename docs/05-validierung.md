@@ -2368,6 +2368,29 @@ keine weitere Geografie-, Personen- oder Verfügbarkeitssonde, Dosis,
 Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. FA-000 liefert
 keinen Parameter oder Default.
 
+**Ausführung und Urteil:** FA-000 endet mit EXIT 0 und `BUILD SUCCESSFUL in
+16s`, genau einer Abschlusszeile, ohne fehlendes Fixziel, ungültige
+Ankerdistanz, Exception oder Fallback. Utility, Demand und sämtliche früheren
+Aggregate werden exakt reproduziert; die Regressionsidentität schließt mit
+Abweichung 0.
+
+Von 1.293 wiederholt belegten OZ-Elternzellen haben 478 mit 3.485
+Entscheidungen eine konstante Ankerdistanz. Die verbleibenden 815 Zellen decken
+11.263/19.138 = **58,8515 %** statt mindestens 60 % der Entscheidungen ab.
+Der SSE-Gate besteht mit 39,335809/40,260329 = 97,7036 %. Wegen des zuerst
+greifenden Entscheidungsgates ist FA-000 **unentscheidbar**. Die rohe positive
+Steigung `0,0334171` und der rohe Erklärungsanteil 13,2780 % werden nicht als
+Mechanismusbeleg interpretiert.
+
+Die Mindestabdeckung wird nicht nachträglich gesenkt, und es folgt keine neue
+Transformation oder Klassierung derselben Ankerdistanz. Damit ist weder die
+Fixziel-Utility bestätigt noch verworfen. Ein nächster Anlauf braucht eine
+neue, vorab fixierte Mechanismusfrage, etwa eine direkte Zerlegung der
+kandidatenbezogenen `*_FIX`-Utilitybeiträge statt eines weiteren skalaren
+Distanz-Proxys. Dosis, Seeds und Produktänderung bleiben gesperrt. Evidenz
+liegt unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/fa-000/`.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

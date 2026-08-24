@@ -457,6 +457,18 @@ Utility-Schalter einzeln; alle bestehen beide 60-%-Abdeckungsgates.
 oder Verfügbarkeitssonde und keine Dosis. Der nächste Schritt braucht neue,
 vorab fixierte Mechanismusforensik außerhalb dieser Merkmalsklassen.
 
+**⛔ Fixziel-Ankerdistanz technisch unentscheidbar (2026-08-24):** FA-000
+regressiert `log1p` der Origin-Fixziel-Distanz innerhalb identischer
+Zweck-Ausgangszellen gegen die Langwegmasse. Utility, Demand und alle früheren
+Aggregate sind exakt; Fixzonen und Distanzen sind vollständig gültig. Nach
+Ausschluss von Zellen ohne Within-Varianz bleiben aber nur 11.263/19.138 =
+**58,8515 %** statt mindestens 60 % der Entscheidungen, obwohl 97,7036 % der
+OZ-Restvarianz abgedeckt sind. Rohe Steigung und 13,2780 % Erklärungsanteil
+sind daher nicht interpretierbar. **Regel:** Abdeckung nicht senken und keine
+andere Transformation/Klassierung derselben Ankerdistanz nachschieben. Ein
+neuer Mechanismus muss vorab direkt an den kandidatenbezogenen `*_FIX`-
+Utilitybeiträgen oder einer anderen situativen Struktur ansetzen; keine Dosis.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

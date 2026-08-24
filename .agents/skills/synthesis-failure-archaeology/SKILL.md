@@ -77,6 +77,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E36 | Einzelne Modusverfügbarkeit als dominante Resterklärung | Kalibrierung | ENTSCHIEDEN |
 | E37 | Vierstufiges Altersband als sparse-cell-Zerlegung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | E38 | Einzelne Altersindikatoren als dominante Resterklärung | Kalibrierung | ENTSCHIEDEN |
+| E39 | Skalare Fixziel-Ankerdistanz als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -787,6 +788,26 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   nötig. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Altersindikatoren (2026-08-24)".
 
+### E39 — Skalare Fixziel-Ankerdistanz als dominante Resterklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt `log1p` der Entfernung vom aktuellen Ausgang zum nächsten
+  personengebundenen Fixziel mindestens 50 % des OZ-000-Rests? Der Kandidat ist
+  situativ und folgt direkt aus den `*_FIX`-Termen der ausgeführten Utility;
+  Zeit ist wegen ganztägig identischer Matrixdateien kein unabhängiger Hebel.
+- **Evidenz:** FA-000 reproduziert Utility, Demand und alle früheren Aggregate
+  exakt. Es fehlen keine Fixziele; alle Distanzen sind gültig. Nach `n>=5` und
+  positiver Within-Varianz des Prädiktors decken 815 Zellen 11.263/19.138 =
+  58,8515 % der Entscheidungen, aber 97,7036 % der OZ-Restvarianz ab.
+- **Warum unentscheidbar:** Der vorab fixierte 60-%-Entscheidungsgate scheitert
+  vor dem Mechanik-Gate. Die rohe positive Steigung und 13,2780 % Erklärung
+  dürfen weder als Bestätigung noch als Widerlegung gelesen werden.
+- **Status/Regel:** Mindestabdeckung nicht senken und denselben Prädiktor nicht
+  nachträglich anders transformieren oder klassieren. Eine neue Sonde muss
+  vorab direkt die kandidatenbezogenen `*_FIX`-Utilitybeiträge oder eine andere
+  situative Struktur prüfen. Keine Dosis oder Produktimplementierung. Evidenz:
+  `docs/05-validierung.md`, Abschnitt „Freiburg-Fixziel-Ankergeometrie
+  (2026-08-24)".
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
@@ -935,7 +956,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E38 ergänzt.
+- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E39 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch
