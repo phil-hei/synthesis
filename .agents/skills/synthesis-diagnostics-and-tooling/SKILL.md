@@ -171,6 +171,16 @@ OZ-Restvarianz, aber nur 58,8515 % statt mindestens 60 % der Entscheidungen
 ab. Dann trotz hoher SSE-Abdeckung weder `R²` noch Steigung interpretieren und
 die Transformation nicht post hoc wechseln.
 
+**Direkter Utility-Gegenlauf ohne Verhaltensänderung (FU-000, 2026-08-24):**
+Einen additiven Kandidatenbeitrag je Alternative separat berechnen,
+`U_counterfactual=U_full-U_component` bilden und nur daraus eine zweite
+Wahrscheinlichkeitskarte erzeugen; die echte Auswahl bleibt auf `U_full`.
+Beide Karten je Entscheidung auf Endlichkeit, Nichtnegativität und Summe eins
+prüfen. Für einen komponentenbedingten Log-Odds-Prädiktor keine Massen
+clippen: `0<p_full,p_counterfactual<1` ist ein technischer Gate. Ein großer
+Mittelwertunterschied im Gegenlauf ist eine Niveauwirkung und ersetzt nicht
+ein vorab festgelegtes Varianz-/Dominanzgate.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
@@ -381,3 +391,6 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
 - **Ergänzung 2026-08-24:** FA-000 überträgt denselben Vorrang technischer
   Abdeckung auf kontinuierliche, innerhalb der Elternzellen zentrierte
   Prädiktoren; Evidenz in `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** FU-000 belegt das verhaltensneutrale Muster eines
+  kandidatenbezogenen Utility-Gegenlaufs und die Trennung von Niveauwirkung
+  und Varianzerklärung; Evidenz in `docs/05-validierung.md`.

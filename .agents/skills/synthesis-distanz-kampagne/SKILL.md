@@ -469,6 +469,18 @@ andere Transformation/Klassierung derselben Ankerdistanz nachschieben. Ein
 neuer Mechanismus muss vorab direkt an den kandidatenbezogenen `*_FIX`-
 Utilitybeiträgen oder einer anderen situativen Struktur ansetzen; keine Dosis.
 
+**❌ Direkter Fixziel-Utilitybeitrag nicht dominant (2026-08-24):** FU-000
+entfernt in einem rein diagnostischen zweiten Wahrscheinlichkeitslauf exakt
+die zwei additiven FIX-Logsummen je Kandidat. Vollutility, Auswahl, Demand und
+frühere Aggregate bleiben identisch. Die Prüfung ist mit 76,5336 %
+Entscheidungs- und praktisch 100 % SSE-Abdeckung interpretierbar; positive
+Steigung, aber nur **32,6632 %** statt mindestens 50 % Erklärung. Ohne
+FIX-Terme steigt die mittlere Langwegmasse deskriptiv 2,3376→6,8881 %; der
+Beitrag wirkt also auf das Niveau, dominiert aber nicht die Restvarianz.
+**Regel:** keine post-hoc Aufteilung der FIX-Logsummen und keine Dosis. Der
+nächste Schritt braucht einen neuen, vorab fixierten Mechanismus außerhalb des
+kombinierten Fixzielbeitrags.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

@@ -78,6 +78,7 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E37 | Vierstufiges Altersband als sparse-cell-Zerlegung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | E38 | Einzelne Altersindikatoren als dominante Resterklärung | Kalibrierung | ENTSCHIEDEN |
 | E39 | Skalare Fixziel-Ankerdistanz als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
+| E40 | Kombinierter Fixziel-Utilitybeitrag als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -808,6 +809,26 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   `docs/05-validierung.md`, Abschnitt „Freiburg-Fixziel-Ankergeometrie
   (2026-08-24)".
 
+### E40 — Kombinierter Fixziel-Utilitybeitrag als dominante Resterklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt der exakte Beitrag der beiden additiven `*_FIX`-Logsummen
+  mindestens 50 % des OZ-000-Rests, gemessen als Within-Cell-Regression des
+  verursachten Lang-vs.-Kurz-Log-Odds-Shifts gegen die Langwegmasse?
+- **Evidenz:** FU-000 lässt die bestehende Vollutility textuell unverändert und
+  reproduziert Demand sowie alle früheren Aggregate exakt. Beide
+  Wahrscheinlichkeitskarten sind gültig. 1.274 Zellen decken 76,5336 % der
+  Entscheidungen und praktisch 100 % der OZ-Restvarianz ab. Die Steigung ist
+  positiv, der Erklärungsanteil beträgt aber nur 32,6632 % statt 50 %.
+- **Einordnung:** Das Entfernen beider FIX-Terme hebt die mittlere Langwegmasse
+  deskriptiv von 2,3376 % auf 6,8881 %. Der Beitrag ist damit wirksam auf das
+  Niveau, aber nicht dominant für die verbleibende Varianz; beides ist kein
+  Widerspruch.
+- **Status/Regel:** Keine post-hoc Aufteilung in PT-/Aktiv- und Drive-FIX,
+  keine Koeffizientendosis und keine Produktimplementierung. Der nächste
+  Mechanismus muss vorab außerhalb des kombinierten Fixzielbeitrags formuliert
+  werden. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Fixziel-Utilitybeitrag (2026-08-24)".
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
@@ -956,7 +977,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E39 ergänzt.
+- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E40 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch
