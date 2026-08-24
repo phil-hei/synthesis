@@ -481,6 +481,18 @@ Beitrag wirkt also auf das Niveau, dominiert aber nicht die Restvarianz.
 nächste Schritt braucht einen neuen, vorab fixierten Mechanismus außerhalb des
 kombinierten Fixzielbeitrags.
 
+**❌ Direkter Origin-Utilitybeitrag nicht dominant (2026-08-24):** OU-000
+entfernt in einem rein diagnostischen zweiten Wahrscheinlichkeitslauf exakt
+die beiden ausgangsseitigen Nicht-FIX-Logsummen je Kandidat. Vollutility,
+Auswahl, Demand und frühere Aggregate bleiben identisch. Die Prüfung ist mit
+76,5336 % Entscheidungs- und praktisch 100 % SSE-Abdeckung interpretierbar;
+positive Steigung, aber nur **5,1121 %** statt mindestens 50 % Erklärung. Ohne
+Origin-Terme steigt die mittlere Langwegmasse deskriptiv 2,3376→10,0636 %;
+der Beitrag wirkt stark auf das Niveau, dominiert aber nicht die Restvarianz.
+**Regel:** keine post-hoc Aufteilung der Origin-Logsummen und keine Dosis. Der
+nächste Schritt braucht einen neuen, vorab fixierten Mechanismus außerhalb der
+kombinierten Origin- und FIX-Beiträge.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

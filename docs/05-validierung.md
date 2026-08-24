@@ -2511,6 +2511,29 @@ und Drive-Logsum, kein Prädiktorwechsel, keine Koeffizientendosis,
 Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. OU-000 liefert
 keinen Parameter oder Default.
 
+**Ausführung und Urteil:** OU-000 endet mit EXIT 0 und `BUILD SUCCESSFUL in
+25s`, genau einer Abschlusszeile und ohne Exception oder Fallback. Die
+bestehende `calculateU_destination`-Methode bleibt textuell unverändert;
+Demand und sämtliche früheren Aggregate werden exakt reproduziert. Beide
+Wahrscheinlichkeitskarten sind gültig und bis maximal `4,4409e-15` auf eins
+normiert; es gibt keine ungültige Langmassenpaarung.
+
+Nach `n>=5` und positiver Within-Varianz bleiben erneut 1.274 Zellen mit
+14.647/19.138 = **76,5336 %** der Entscheidungen. Sie decken
+40,260329/40,260329 = praktisch **100 %** der OZ-Restvarianz ab; die
+Regressionsidentität schließt mit Abweichung 0. Die gepoolte Steigung ist
+positiv (`0,0237359`), doch `U_origin` erklärt nur **5,1121 %** statt
+mindestens 50 %. Der kombinierte ausgangsseitige Nicht-FIX-Utilitybeitrag ist
+damit als dominanter Einzelmechanismus verworfen.
+
+Deskriptiv erhöht das Entfernen beider Origin-Terme die mittlere Langwegmasse
+von 2,3376 % auf 10,0636 % (+7,7261 Prozentpunkte). Das belegt eine starke
+Niveauwirkung, ersetzt aber nicht das vorab fixierte Varianzgate. Es folgt
+keine post-hoc Aufteilung in PT-/Aktiv- und Drive-Logsum und keine Dosis. Ein
+weiterer Anlauf benötigt einen neuen, vorab fixierten Mechanismus außerhalb
+der kombinierten Origin- und FIX-Beiträge. Evidenz liegt unter
+`backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/ou-000/`.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.

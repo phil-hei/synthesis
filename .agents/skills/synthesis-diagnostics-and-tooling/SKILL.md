@@ -181,6 +181,16 @@ clippen: `0<p_full,p_counterfactual<1` ist ein technischer Gate. Ein großer
 Mittelwertunterschied im Gegenlauf ist eine Niveauwirkung und ersetzt nicht
 ein vorab festgelegtes Varianz-/Dominanzgate.
 
+**Komplementäre Top-Level-Beiträge getrennt präregistrieren (OU-000,
+2026-08-24):** Nach einem kombinierten Utility-Gegenlauf dessen Teilbeiträge
+nicht post hoc aufspalten. Ein komplementärer Beitrag darf in einer neuen
+Präregistrierung geprüft werden, wenn seine Terme disjunkt zur abgeschlossenen
+Komponente sind. OU-000 fasste deshalb die beiden ausgangsseitigen Nicht-FIX-
+Logsummen zusammen und ließ die zuvor geprüften FIX-Logsummen unangetastet.
+Auch hier gilt: 2,3376→10,0636 % mittlere Langwegmasse ohne die Komponente ist
+eine Niveauwirkung; die Dominanzfrage entschied separat das vorab fixierte
+Within-Cell-`R²` von nur 5,1121 %.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
@@ -394,3 +404,6 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
 - **Ergänzung 2026-08-24:** FU-000 belegt das verhaltensneutrale Muster eines
   kandidatenbezogenen Utility-Gegenlaufs und die Trennung von Niveauwirkung
   und Varianzerklärung; Evidenz in `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** OU-000 belegt die neue Präregistrierung eines zum
+  abgeschlossenen Kandidaten disjunkten Top-Level-Beitrags, ohne dessen
+  Teilbeiträge nachträglich zu zerlegen; Evidenz in `docs/05-validierung.md`.
