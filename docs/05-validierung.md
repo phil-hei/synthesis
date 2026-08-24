@@ -2090,6 +2090,61 @@ komponentenweise definieren, bevor Personenmerkmale untersucht werden. Rohlog,
 Quellhashes und maschinenlesbare Evidenz liegen unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/av-000/`.
 
+#### Freiburg-Verfügbarkeitskomponenten (2026-08-24) — präregistriert
+
+**Frage und Abgrenzung vor dem Lauf:** AV-000 ist nur deshalb unentscheidbar,
+weil die vollständige Modusset-Signatur zu viele dünn besetzte Unterzellen
+erzeugt. AC-000 prüft daher dieselben Verfügbarkeitsinformationen gröber, ohne
+den vorab gesetzten Zellfilter zu lockern: Erklärt mindestens eine einzelne
+binäre Modusverfügbarkeit den überwiegenden Teil des OZ-000-Rests innerhalb
+gleicher Zweck-Ausgangszonen-Zellen?
+
+Der einmalige Arm **AC-000** verwendet AV-000 unverändert: Freiburg, Seed 42,
+J-0895-Zielwahlparameter, Basis-MNL, Helper `DISTANCE / 1000`, kein
+Langwegbonus und dieselbe produktive
+`ModeAvailabilityInDestinationChoice`-Abfrage. Aus ihrem einmal je
+Entscheidung berechneten Sieben-Modi-Set werden die Komponenten `CAR`,
+`PASSENGER`, `BIKE`, `PEDESTRIAN`, `PUBLICTRANSPORT`,
+`CARSHARING_STATION` und `CARSHARING_FREE` jeweils separat als
+verfügbar/nicht verfügbar ausgewertet. Je Komponente werden ausschließlich
+`n`, `sum(p)` und `sum(p²)` pro
+`(Aktivitätstyp, Ausgangszone, Verfügbarkeitswert)` akkumuliert. Die sieben
+Zerlegungen überlappen und dürfen weder addiert noch als unabhängige Effekte
+interpretiert werden.
+
+Pro Komponente zählen weiterhin nur binäre Unterzellen mit `n >=5`; die
+Elternmittel werden auf deren jeweiliger Teilpopulation neu gebildet. Damit
+zerfällt `SSW_mode` in `SSB_mode` zwischen verfügbar/nicht verfügbar und
+`SSW_within_mode` innerhalb desselben Werts. Bis `1e-9` muss gelten:
+`SSW_mode = SSB_mode + SSW_within_mode`.
+
+**Technische Gates vor Interpretation:** Externer Lauf EXIT 0, kein Fallback
+und keine Exception, genau eine Abschlusszeile, byteidentische Utility
+`5b13ad11…9f454c`, byteidentischer J-RAW-Demand
+`a58fac01…c7a9de` sowie exakte Reproduktion aller CE-/PD-/OZ-/AV-Aggregate.
+Jede der sieben Komponententabellen enthält vor dem Zellfilter alle 19.138
+freien Entscheidungen. Eine Komponente ist nur interpretierbar, wenn ihre
+`n>=5`-Unterzellen mindestens **60 %** der Entscheidungen und ihre neu
+zentrierte `SSW_mode` mindestens **60 %** der vollständigen OZ-Restvarianz
+`40,26032918334451` abdecken und die Varianzidentität bis `1e-9` hält.
+
+**Vorab fixiertes Mechanik-Gate:** Für jede technisch interpretierbare
+Komponente wird einzeln `SSB_mode / SSW_mode` berechnet. Mindestens eine
+Komponente muss **50 %** erreichen, um als dominanter nächster
+Mechanismuskandidat zu gelten. Die größte Einzelquote wird berichtet, aber
+nicht aus mehreren Komponenten zusammengesetzt. Erreicht keine Komponente den
+Gate, gilt der Mechanismus nur dann als nicht dominant, wenn alle sieben
+Komponenten technisch interpretierbar waren; andernfalls bleibt AC-000
+unentscheidbar.
+
+**Stop-Regel:** Genau ein AC-000-Lauf, nur Seed 42. Kein post-hoc veränderter
+Zellfilter, keine kombinierte Signatur, Bonuskonstante, Dosis,
+Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. Ein positiver
+Befund erlaubt erst eine neue Diagnose zur Trennung von Ressource und
+Tourbindung; ein vollständig negativer Befund erlaubt als Nächstes die vorab
+definierte Zerlegung der tatsächlich in der Utility verwendeten
+Personenmerkmale. AC-000 selbst liefert keinen Parameter oder Default.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
