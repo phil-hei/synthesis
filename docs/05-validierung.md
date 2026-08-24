@@ -2462,6 +2462,55 @@ Anlauf benötigt einen neuen, vorab fixierten Mechanismus außerhalb des
 kombinierten Fixzielbeitrags. Evidenz liegt unter
 `backend/data/campaigns/distance-decay-transfer-freiburg/choice-set-eligibility/fu-000/`.
 
+#### Freiburg-Origin-Utilitybeitrag (2026-08-24) — präregistriert
+
+**Frage vor dem Lauf:** Erklärt der exakte kandidatenbezogene Beitrag der
+beiden ausgangsseitigen Nicht-FIX-Logsummen mindestens 50 % der nach OZ-000
+verbleibenden Varianz der freien Langwegmasse? OU-000 ist keine nachträgliche
+Aufteilung von FU-000: Die beiden dort gemeinsam geprüften `*_FIX`-Terme
+bleiben unberührt. Der neue Kandidat liegt außerhalb dieses Beitrags und fasst
+die zwei anderen, vom aktuellen Ausgang zum Ziel gerichteten Reiseimpedanz-
+Logsummen der obersten Utility-Summenstruktur zusammen.
+
+Der einmalige Arm **OU-000** übernimmt FU-000 unverändert: Freiburg, Seed 42,
+J-0895, Basis-MNL, `DISTANCE / 1000`, kein Bonus. Für jeden Kandidaten `z`
+wird zusätzlich zum unveränderten Vollnutzen `U(z)` exakt die Summe aus dem
+ausgangsseitigen PT-/Aktiv-Logsum-Term einschließlich ÖV-Zugang/-Abgang und dem
+ausgangsseitigen Drive-Logsum-Term als `U_origin(z)` berechnet. Der
+verhaltensneutrale Gegenlauf verwendet
+`U_withoutOrigin(z)=U(z)-U_origin(z)` ausschließlich für eine zweite
+Wahrscheinlichkeitsberechnung; ausgewählt wird weiterhin nur aus `U(z)`.
+
+Pro Entscheidung sind `p_full` und `p_withoutOrigin` jeweils die summierten
+Wahrscheinlichkeiten aller Ziele über 20 km. Ohne Clipping muss für beide
+`0<p<1` gelten. Einziger Prädiktor ist der von `U_origin` verursachte
+Lang-vs.-Kurz-Log-Odds-Shift
+`x=logit(p_full)-logit(p_withoutOrigin)`; Zielgröße bleibt `y=p_full`. Je
+`(Aktivitätstyp, Ausgangszone)` werden nur `n`, `sum(x)`, `sum(x²)`, `sum(y)`,
+`sum(y²)` und `sum(x*y)` gesammelt. Aus Zellen mit `n>=5` und positiver
+Within-Varianz von `x` werden lokal zentrierte `Sxx`, `Syy` und `Sxy` gepoolt.
+Vorab gilt `R²=(Sxy²/Sxx)/Syy` und bis `1e-9`
+`Syy=Sxy²/Sxx+SSE_residual`; die Steigung `Sxy/Sxx` muss positiv sein.
+
+**Technische Gates:** EXIT 0, keine Exception oder Fallback, genau eine
+Abschlusszeile, J-RAW-Demand `a58fac01…c7a9de`, unveränderter Quelltext der
+bestehenden `calculateU_destination`-Methode, exakte
+CE-/PD-/OZ-/AV-/AC-/PC-/AI-/FA-/FU-Reproduktion und 19.138 Entscheidungen.
+Beide Wahrscheinlichkeitskarten müssen endlich, nichtnegativ und je
+Entscheidung bis `1e-12` auf eins normiert sein; beide Langmassen müssen strikt
+in `(0,1)` liegen. Zulässige Zellen müssen mindestens 60 % aller Entscheidungen
+und 60 % der OZ-Restvarianz `40,2603291833` abdecken; sonst ist OU-000 vor der
+Mechanikinterpretation unentscheidbar.
+
+**Mechanik-Gate und Stop-Regel:** Dominant ist der kombinierte
+Origin-Utilitybeitrag nur bei positiver Steigung und `R²>=0,50`. Bei technisch
+gültigem, aber verfehltem Gate ist genau diese direkte `U_origin`-Erklärung als
+nächster Einzelmechanismus verworfen; bei gescheiterter Abdeckung bleibt sie
+unentscheidbar. Genau ein Lauf, Seed 42; keine post-hoc Aufteilung in PT-/Aktiv-
+und Drive-Logsum, kein Prädiktorwechsel, keine Koeffizientendosis,
+Modalkalibrierung, Seed-/Regionenvariation oder Produktänderung. OU-000 liefert
+keinen Parameter oder Default.
+
 ### ÖV-Zugang und -Abgang (2026-07-28) — im externen Legacy-Vertrag blockiert
 
 SyntheSis erzeugt `PUT_ACT.mtx.bz2` und `PUT_EGT.mtx.bz2` mit je sechs Minuten.
