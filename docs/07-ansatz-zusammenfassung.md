@@ -29,7 +29,7 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | 1 | Zonierung | Region-BBox → Gitter aus Verkehrszellen (Zellgröße, Auto-Anpassung an Zonenlimit) | `zones.csv` |
 | 2 | OSM-Daten (POIs) | Szenario-Snapshot oder Overpass: Shops/Amenities/… und bevölkerte `place`-Nodes (synthetischer Fallback nur beim Live-Pfad) | `uploads/osm-data.json` (optional), Provenienz in `manifest.json` |
 | 3 | Attraktivitäten + Pendleranker | Ziel-Attraktivität je Zelle; optional koordinatenbasierte Pendler-OD, externe Arbeitsortanker auf reale gewichtete Ziele verschoben | `attractivities.csv`, `population/commuters.csv` |
-| 4 | Bevölkerungssynthese | Personen/Haushalte (KIT-Sample oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv` |
+| 4 | Bevölkerungssynthese | Gesamtzahl/Verteilung: manuell → alternatives Upload-Raster → hashgeprüfter Destatis-Zensus 2022 → OSM → Dichte; danach Personen/Haushalte (KIT-Sample oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv`; Provenienz in `manifest.json` |
 | 5 | **Aktivitätenpläne (Achse A)** | Wochenpläne je Person aus `actiTopp` \| `GTA-LLM` \| `Template` | `activity.csv` |
 | 6 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle; Netzquelle Szenario-OSM-XML → Serverdatei → Overpass, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
 | 7 | Logistik | Depots, Packstationen, Paketnachfrage sowie optionale Kundenretouren als Pickup-Nachfrage | `distribution-centers.csv`, `cepsp-shares.csv`, `parcel-demand-config.yaml` |
@@ -208,8 +208,8 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   gepaarten Drei-Seed-A/B mit exakt gleicher externer WORK-Häufigkeit steigt Ø Weglänge
   3,77→4,57 km; `≥20 km` steigt 0,40→3,13 %. Die acht Richtungsanker bestehen den Promotions-
   Gate.
-- **Arbeitsplatz-Randwert 13111 integriert:** Der direkte Flat-File-Import setzt mit
-  `PEN092/ERW033` für Rastatt 59,74 % externe WORK-Ziele, während die BA-Relationen weiterhin
+- **Arbeitsplatz-Randwert automatisiert:** Die backendseitig versionierten BA-Gemeindedaten 2025
+  setzen für Rastatt 59,74 % externe WORK-Ziele, während die BA-Relationen weiterhin
   nur das Außenziel verteilen. Im bytegleich gepaarten Drei-Seed-Versuch steigt Ø Weglänge
   4,57→8,10 km, `≥20 km` 3,13→10,86 % und der Distanz-RMSE sinkt 0,1035→0,0829. Die
   Modal-RMSE steigt 0,0747→0,0943; weitere Regionen und eine Langweg-Moduskalibrierung bleiben offen.

@@ -15,12 +15,22 @@ synthesis:
   data-dir: data
   max-zones: 600
   overpass:
+    live-data-enabled: true                    # POIs/Orte automatisch live laden; Snapshots bleiben bei false nutzbar
     endpoint: https://overpass-api.de/api/interpreter
     timeout-seconds: 30                        # allgemeines Budget (leichte POI-/Place-Queries)
     road-network-timeout-seconds: 180          # eigenes, großes Budget für den GraphHopper-Netzabruf (way[highway]+recurse)
     # road-network-file: ../validation/rastatt-test.osm # lokales OSM-XML für reproduzierbare Offline-Routingläufe
     # mirrors:                                 # Ausweich-Endpunkte bei 504/429 (Default: kumi.systems, private.coffee)
     #   - https://overpass.kumi.systems/api/interpreter
+  census:
+    enabled: true
+    version: zensus-2022-2024-10-08
+    reference-date: 2022-05-15
+    source-url: https://www.destatis.de/static/DE/zensus/gitterdaten/Zensus2022_Bevoelkerungszahl.zip
+    archive-sha256: 1a8428d31eab264c8717bfdcbf40fbd66c217edb2e2a98d0e67741bd8a1a941a
+    grid-entry: Zensus2022_Bevoelkerungszahl_100m-Gitter.csv
+    timeout-seconds: 180
+    max-archive-mb: 64
   simulation:
     enabled: true                              # Stufe 11: logiTopp-Wochensimulation
     project-dir: ../validation/mobitopp-rastatt # Legacy-Projekt mit runDeliverySynthesis

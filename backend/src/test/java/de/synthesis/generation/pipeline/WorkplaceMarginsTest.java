@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WorkplaceMarginsTest {
@@ -44,6 +45,20 @@ class WorkplaceMarginsTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> WorkplaceMargins.parseOfficial(file));
+    }
+
+    @Test
+    void resolvesRastattFromBundledBa2025Reference() throws Exception {
+        WorkplaceMargins.Margin margin = WorkplaceMargins.bundledBaMargin("08216043")
+                .orElseThrow();
+
+        assertEquals(WorkplaceMargins.BA_SOURCE, margin.source());
+        assertEquals(LocalDate.of(2025, 6, 30), margin.date());
+        assertEquals(22_971, margin.residentWorkers());
+        assertEquals(13_723, margin.outboundWorkers());
+        assertEquals(13_723.0 / 22_971.0, margin.externalShare(), 1e-12);
+        assertTrue(WorkplaceMargins.bundledBaMargin("01051035").isEmpty(),
+                "Amtlich geheim gehaltene Auspendlerwerte bleiben absichtlich aus");
     }
 
     private static String officialRows() {

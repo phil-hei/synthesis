@@ -190,6 +190,15 @@ export type Mid2017Reference = NonNullable<SimKpis['mid2017']>;
  * nur dann ein Ein-Faktor-Vergleich, wenn diese Fingerabdrücke übereinstimmen.
  */
 export interface InputProvenance {
+  population?: {
+    source: string;
+    version?: string;
+    referenceDate?: string;
+    url?: string;
+    sha256?: string;
+    license?: string;
+    attribution?: string;
+  };
   osmData?: { source: string; sha256?: string };
   roadNetwork?: { source: string; sha256?: string };
   attractivities?: { path: string; sha256?: string };

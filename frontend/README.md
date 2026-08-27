@@ -27,7 +27,8 @@ Die App läuft dann auf http://localhost:4300; `/api`-Requests werden per
    Nach dem Setzen erscheinen automatisch die Zonen-Vorschau und eine Einwohner-Schätzung aus
    OSM-Siedlungsdaten (place-Nodes mit population-Tag), die das Einwohner-Feld vorbefüllt.
 2. **Parametrieren:** Zellgröße (Kantenlänge einer Rasterzelle = einer Verkehrszone), Einwohner,
-   Stichprobenanteil, Seed, Paketaufkommen und Zielanteile; optional Depots über „Depot auf
+   amtliche Zensus-2022-Einwohnerquelle mit Stichtag, Stichprobenanteil als Prozent-Regler,
+   automatische oder wiederholbare Zufallsvariante, Paketaufkommen und Zielanteile; optional Depots über „Depot auf
    Karte setzen" platzieren. Ohne eigene Depots nutzt die Pipeline echte OSM-Logistikstandorte
    bzw. platziert automatisch. Alle Felder haben Tooltips (Maus über das Label halten).
 3. **Generieren:** „Speichern" → „Nachfragemodell generieren"; rechts erscheinen Pipeline-Status,

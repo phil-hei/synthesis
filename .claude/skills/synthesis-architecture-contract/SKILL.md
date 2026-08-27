@@ -48,9 +48,9 @@ Achtung: Das Javadoc an `run()` sagt „13 Pipeline-Stufen" — das ist veraltet
 
 | # | Stufe | Gate / SKIPPED-Bedingung | FAILED möglich? |
 |---|---|---|---|
-| 1 | Zonierung | immer; `zoning.mode` `grid` (Bbox-Raster, Feld-Default) \| `inspire` (EPSG:3035-Gitter, nur Europa; seit 2026-07-16 Default für NEUANLAGEN via `/defaults`, Feld-Default bleibt `grid` für Alt-Szenarien ohne Key); Region außerhalb Europas → `Epsg3035.covers`-Guard fällt auf Bbox-Raster zurück; Zellgröße wird auf `synthesis.max-zones` (600) auto-angehoben (grid) bzw. auf die nächstgröbere kanonische Auflösung 100 m/1 km/10 km quantisiert (inspire) | Lauf bricht ab |
-| 2 | OSM-Daten (POIs) | SKIPPED wenn `population.useOsmData=false`; Overpass-Fehler ⇒ Fallback synthetisch, Stage bleibt DONE mit `message` | nein (Fallback) |
-| — | `preparePopulationDistribution` | **kein eigener Schritt**, läuft zwischen 2 und 3 (Nutzerwert > Upload-Raster > OSM-Schätzung > Dichte) | Lauf bricht ab |
+| 1 | Zonierung | immer; `zoning.mode` `grid` (automatisch fein aufgelöstes Bbox-Raster, Neu- und Feld-Default) \| `inspire` (EPSG:3035-Gitter, nur Europa, bewusst wählbar); Region außerhalb Europas → `Epsg3035.covers`-Guard fällt auf Bbox-Raster zurück. Das Studio fragt bei neuer Region ab 100 m an und übernimmt die feinste 50-m-Stufe innerhalb von `synthesis.max-zones` (600); INSPIRE bleibt auf 100 m/1 km/10 km quantisiert. | Lauf bricht ab |
+| 2 | OSM-Daten (POIs) | automatische Quelle: Szenario-Snapshot → Live-Overpass → synthetischer Fallback; das Legacy-Feld `population.useOsmData` wird ignoriert | nein (Fallback) |
+| — | `preparePopulationDistribution` | **kein eigener Schritt**, läuft zwischen 2 und 3 (manuelle Gesamtzahl > alternatives Upload-Raster > hashgeprüfter Zensus 2022 > OSM-Schätzung > Dichte). Zensus-Fehler aktivieren den nächsten Fallback. | nein (Fallback) |
 | 3 | Attraktivitäten | immer; ohne POIs synthetisch; `externalTrips` hängt externe Zielzonen an | Lauf bricht ab |
 | 4 | Bevölkerungssynthese | immer | Lauf bricht ab |
 | 5 | Aktivitätenpläne (Achse A) | immer; Quelle per Fallback-Kette `gta → actitopp → template` | nein (Fallback) |
@@ -126,6 +126,7 @@ Jede externe Abhängigkeit hat eine definierte Ausweichkette:
 
 | Abhängigkeit | Leiter |
 |---|---|
+| Destatis Zensus 2022 | versionierter zentraler Cache → amtlicher URL-Download nur bei passendem SHA-256 → OSM-Siedlungsschätzung → Dichteannahme |
 | Overpass | Primär-Endpunkt → Mirror-Liste (`SynthesisProperties.Overpass.allEndpoints()`) → synthetische POIs bzw. Luftlinien-Matrizen |
 | actiTopp | → Template-Generator |
 | GTA-LLM | → actiTopp → Template (Kette in `stageActivityPlans`) |
@@ -216,7 +217,8 @@ Studio + Szenario-Vergleich als Feature-Komponenten, Dev-Proxy `/api` → `http:
 
 ## Provenienz & Wartung
 
-**Stand: 2026-07-08**, verifiziert gegen den Code auf `main` (Commit `4ad6382`). Alle
+**Stand: 2026-08-25**, verifiziert gegen den aktuellen Workspace einschließlich der
+automatischen, SHA-256-gepinnten Zensus-2022-Quelle. Alle
 Klassen-, Pfad- und Flag-Aussagen wurden direkt im Repo nachgelesen (GenerationService,
 Scenario, SynthesisProperties, SimulationRunner, SumoRunner, docs/05, docs/06, docs/07).
 Zeilennummern sind Zirka-Angaben und driften; Namen und Muster sind das Verlässliche.

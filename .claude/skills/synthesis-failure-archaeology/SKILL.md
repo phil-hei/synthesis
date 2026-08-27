@@ -77,6 +77,10 @@ und `docs/06-gta-integration-konzept.md` (Phasen-Chronik F). Historische Messzah
 | E36 | Einzelne Modusverfügbarkeit als dominante Resterklärung | Kalibrierung | ENTSCHIEDEN |
 | E37 | Vierstufiges Altersband als sparse-cell-Zerlegung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | E38 | Einzelne Altersindikatoren als dominante Resterklärung | Kalibrierung | ENTSCHIEDEN |
+| E39 | Skalare Fixziel-Ankerdistanz als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
+| E40 | Kombinierter Fixziel-Utilitybeitrag als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
+| E41 | Kombinierter Origin-Utilitybeitrag als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
+| E42 | Kombinierter Zielstruktur-Utilitybeitrag als dominante Resterklärung | Diagnose/Kalibrierung | ENTSCHIEDEN |
 | O1 | Overpass-Rate-Limit / self-hosted | Infrastruktur | OFFEN |
 
 ---
@@ -787,6 +791,87 @@ Drei Stolpersteine im `ModeChoiceCalibrator`
   nötig. Evidenz: `docs/05-validierung.md`, Abschnitt
   „Freiburg-Altersindikatoren (2026-08-24)".
 
+### E39 — Skalare Fixziel-Ankerdistanz als dominante Resterklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt `log1p` der Entfernung vom aktuellen Ausgang zum nächsten
+  personengebundenen Fixziel mindestens 50 % des OZ-000-Rests? Der Kandidat ist
+  situativ und folgt direkt aus den `*_FIX`-Termen der ausgeführten Utility;
+  Zeit ist wegen ganztägig identischer Matrixdateien kein unabhängiger Hebel.
+- **Evidenz:** FA-000 reproduziert Utility, Demand und alle früheren Aggregate
+  exakt. Es fehlen keine Fixziele; alle Distanzen sind gültig. Nach `n>=5` und
+  positiver Within-Varianz des Prädiktors decken 815 Zellen 11.263/19.138 =
+  58,8515 % der Entscheidungen, aber 97,7036 % der OZ-Restvarianz ab.
+- **Warum unentscheidbar:** Der vorab fixierte 60-%-Entscheidungsgate scheitert
+  vor dem Mechanik-Gate. Die rohe positive Steigung und 13,2780 % Erklärung
+  dürfen weder als Bestätigung noch als Widerlegung gelesen werden.
+- **Status/Regel:** Mindestabdeckung nicht senken und denselben Prädiktor nicht
+  nachträglich anders transformieren oder klassieren. Eine neue Sonde muss
+  vorab direkt die kandidatenbezogenen `*_FIX`-Utilitybeiträge oder eine andere
+  situative Struktur prüfen. Keine Dosis oder Produktimplementierung. Evidenz:
+  `docs/05-validierung.md`, Abschnitt „Freiburg-Fixziel-Ankergeometrie
+  (2026-08-24)".
+
+### E40 — Kombinierter Fixziel-Utilitybeitrag als dominante Resterklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt der exakte Beitrag der beiden additiven `*_FIX`-Logsummen
+  mindestens 50 % des OZ-000-Rests, gemessen als Within-Cell-Regression des
+  verursachten Lang-vs.-Kurz-Log-Odds-Shifts gegen die Langwegmasse?
+- **Evidenz:** FU-000 lässt die bestehende Vollutility textuell unverändert und
+  reproduziert Demand sowie alle früheren Aggregate exakt. Beide
+  Wahrscheinlichkeitskarten sind gültig. 1.274 Zellen decken 76,5336 % der
+  Entscheidungen und praktisch 100 % der OZ-Restvarianz ab. Die Steigung ist
+  positiv, der Erklärungsanteil beträgt aber nur 32,6632 % statt 50 %.
+- **Einordnung:** Das Entfernen beider FIX-Terme hebt die mittlere Langwegmasse
+  deskriptiv von 2,3376 % auf 6,8881 %. Der Beitrag ist damit wirksam auf das
+  Niveau, aber nicht dominant für die verbleibende Varianz; beides ist kein
+  Widerspruch.
+- **Status/Regel:** Keine post-hoc Aufteilung in PT-/Aktiv- und Drive-FIX,
+  keine Koeffizientendosis und keine Produktimplementierung. Der nächste
+  Mechanismus muss vorab außerhalb des kombinierten Fixzielbeitrags formuliert
+  werden. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Fixziel-Utilitybeitrag (2026-08-24)".
+
+### E41 — Kombinierter Origin-Utilitybeitrag als dominante Resterklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt der exakte Beitrag der beiden ausgangsseitigen Nicht-FIX-
+  Logsummen mindestens 50 % des OZ-000-Rests, gemessen mit demselben
+  verhaltensneutralen Log-Odds-Gegenlauf wie FU-000?
+- **Evidenz:** OU-000 lässt die Vollutility textuell unverändert und
+  reproduziert Demand sowie alle früheren Aggregate exakt. Beide
+  Wahrscheinlichkeitskarten sind gültig. 1.274 Zellen decken 76,5336 % der
+  Entscheidungen und praktisch 100 % der OZ-Restvarianz ab. Die Steigung ist
+  positiv, der Erklärungsanteil beträgt aber nur 5,1121 % statt 50 %.
+- **Einordnung:** Das Entfernen beider Origin-Terme hebt die mittlere
+  Langwegmasse deskriptiv von 2,3376 % auf 10,0636 %. Der Beitrag steuert damit
+  das Niveau stark, ist aber nicht dominant für die verbleibende Varianz.
+- **Status/Regel:** Keine post-hoc Aufteilung in PT-/Aktiv- und Drive-Logsum,
+  keine Koeffizientendosis und keine Produktimplementierung. Der nächste
+  Mechanismus muss vorab außerhalb der kombinierten Origin- und FIX-Beiträge
+  formuliert werden. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Origin-Utilitybeitrag (2026-08-24)".
+
+### E42 — Kombinierter Zielstruktur-Utilitybeitrag als dominante Resterklärung — ENTSCHIEDEN
+
+- **Frage:** Erklärt der nach FIX und Origin verbleibende, disjunkte
+  Zielstruktur-Block aus Attraktivitäts-Logsum sowie direkten Kurzband- und
+  Intrazonal-Termen mindestens 50 % des OZ-000-Rests?
+- **Evidenz:** DU-000 lässt Vollutility und Auswahl unverändert und
+  reproduziert Demand sowie alle Voraggregate exakt. Beide Karten sind gültig.
+  1.274 Zellen decken 76,5336 % der Entscheidungen und praktisch 100 % der
+  OZ-Restvarianz ab. Positive Steigung, aber nur 17,8117 % statt mindestens
+  50 % Erklärung. Ohne den Block steigt die mittlere Langwegmasse lediglich
+  2,3376→2,9077 %.
+- **Root Cause/Einordnung:** Mit FU-/OU-/DU-000 ist die Top-Level-Utility nach
+  Quellformel vollständig und disjunkt in FIX, Origin und Zielstruktur
+  partitioniert. Keiner der Blöcke dominiert einzeln; ihre getrennten
+  Gegenlauf-`R²` sind wegen nichtlinearer Wahrscheinlichkeitsbildung und
+  möglicher Korrelation nicht addierbar.
+- **Status/Regel:** Keine post-hoc Aufteilung des Zielstruktur-Blocks, keine
+  Summe der Einzelanteile, keine Dosis und keine Produktimplementierung. Ein
+  nächster Anlauf muss eine gemeinsame Kompositions-/Kompensationshypothese der
+  drei Blöcke neu präregistrieren. Evidenz: `docs/05-validierung.md`, Abschnitt
+  „Freiburg-Zielstruktur-Utilitybeitrag (2026-08-24)".
+
 ---
 
 ## 7. Legacy-Formate (mobiTopp/logiTopp)
@@ -935,7 +1020,7 @@ Vollständig: `docs/05-validierung.md`, Abschnitt "Befunde für die logiTopp-Int
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E38 ergänzt.
+- **Stand: 2026-08-24.** Verfasst beim Ausscheiden des Principal Engineers und bis E42 ergänzt.
 - **Primärquellen:** `docs/05-validierung.md` (Phase-0-Befunde, A1–A12, L1–L6, Capstone,
   Außenbeziehungen, populationsynthesis, MobileCity) und `docs/06-gta-integration-konzept.md`
   (Phasen-Chronik F: SUMO/ÖV/GTFS/Rail-Rollback, GTA/LLM, Kalibrierung). Bei Widerspruch

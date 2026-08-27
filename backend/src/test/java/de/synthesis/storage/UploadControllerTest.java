@@ -97,6 +97,7 @@ class UploadControllerTest {
 
         assertEquals(1, summary.relationsWithHomeInRegion());
         assertEquals(123, summary.totalCommuters());
+        assertEquals(null, summary.workplaceMargin());
         assertTrue(Files.isRegularFile(repository.uploadsDir("test").resolve(CommuterMatrix.NAME)));
 
         MockMultipartFile outside = new MockMultipartFile("file", "outside.csv", "text/csv", """
@@ -138,10 +139,19 @@ class UploadControllerTest {
         assertEquals(1_000, summary.exportTotalCommuters());
         assertEquals(0.9, summary.coverage(), 1e-9);
         assertEquals(1, summary.skippedAggregateRows());
+        assertEquals(WorkplaceMargins.BA_SOURCE, summary.workplaceMargin().source());
+        assertEquals(22_971, summary.workplaceMargin().residentWorkers());
+        assertEquals(13_723, summary.workplaceMargin().outboundWorkers());
         Path stored = repository.uploadsDir("test").resolve(CommuterMatrix.NAME);
         assertEquals(BaCommuterAdapter.SOURCE, CommuterMatrix.source(stored));
         assertTrue(CommuterMatrix.parse(stored).flows().stream()
                 .allMatch(flow -> flow.homeScope() == CommuterMatrix.HomeScope.EXTERNAL));
+        Path margin = repository.uploadsDir("test").resolve(WorkplaceMargins.NAME);
+        assertEquals(WorkplaceMargins.BA_SOURCE,
+                WorkplaceMargins.readNormalized(margin).source());
+
+        controller.deleteCommuters("test");
+        assertTrue(Files.notExists(margin));
     }
 
     @Test

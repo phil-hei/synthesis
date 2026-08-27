@@ -83,7 +83,7 @@ curl -s -X POST http://localhost:8090/api/scenarios \
   -d '{
     "name": "Rastatt klein",
     "region": {"minLat": 48.83, "minLon": 8.15, "maxLat": 48.88, "maxLon": 8.25},
-    "zoning": {"cellSizeMeters": 1000, "mode": "grid"},
+    "zoning": {"cellSizeMeters": 100, "mode": "grid"},
     "population": {"totalPersons": 250, "seed": 42, "behaviorSource": "actitopp"},
     "targetModels": ["logitopp", "sumo"]
   }'
@@ -91,8 +91,8 @@ curl -s -X POST http://localhost:8090/api/scenarios \
 ```
 
 Wichtigste Felder des Scenario-JSON (`Scenario.java`): `region` (BBox),
-`zoning.{cellSizeMeters, mode}` (`mode`: `grid` Bbox-Raster (Default) \| `inspire`
-EPSG:3035-/Zensus-Gitter, nur Europa — siehe `synthesis-config-and-flags`),
+`zoning.{cellSizeMeters, mode}` (`mode`: `grid` automatisch feinstes Bbox-Raster (Default) \| `inspire`
+EPSG:3035-/Zensus-Standardraster, nur Europa — siehe `synthesis-config-and-flags`),
 `population.{totalPersons, samplingFraction, seed, useOsmData,
 useRealRouting, externalTrips, behaviorSource, gtaWhatIf, calibrateModeChoice,
 calibrationTarget, llmModeChoice, sumoFeedback, publicTransport, carsPerHousehold}`,
@@ -207,7 +207,7 @@ backend/data/scenarios/<id>/
     │       └── delivery-services.csv
     ├── mobilecity/                   # MobileCityExporter (nur bei Ziel mobilecity)
     │   ├── StudyAreaConfig.csv · REGdistricts.csv · REGattractivity.csv
-    │   ├── POPinhabitants.csv · POPtrips.csv     # 5 CSVs
+    │   ├── POPinhabitants.csv · POPtrips.csv · TECCarFleet.csv  # 6 CSVs
     │   ├── districts.shp/.shx/.dbf/.prj          # ShapefileWriter, WGS84
     │   └── summary.json
     ├── simulation/                   # nur bei Ziel logitopp
@@ -247,8 +247,8 @@ SKIPPED = bewusst übersprungen (Gate nicht erfüllt), FAILED = versucht und ges
 
 | # | Stufe (Job-Log-Name) | Gate (läuft nur wenn …) | SKIPPED wenn … | Dauer (überliefert, Größenordnung) |
 |---|---|---|---|---|
-| 1 | Zonierung | immer (`zoning.mode`: `grid` Bbox-Raster \| `inspire` EPSG:3035-Gitter, Neuanlagen-Default seit 2026-07-16; außerhalb Europas Fallback auf Bbox-Raster mit Log-Hinweis; tatsächlicher Provider in `summary.zoningMode`) | – | Sekunden |
-| 2 | OSM-Daten (POIs) | `population.useOsmData` | Flag aus. Bei Overpass-Fehler **kein** SKIPPED, sondern Fallback auf synthetische Daten (`message` gesetzt, Stufe DONE) | Sekunden–Minute (Overpass) |
+| 1 | Zonierung | immer (`zoning.mode`: `grid` automatisch feinstes Bbox-Raster als Default \| `inspire` EPSG:3035-Standardraster; außerhalb Europas Fallback auf Bbox-Raster; tatsächlicher Provider in `summary.zoningMode`) | – | Sekunden |
+| 2 | OSM-Daten (POIs) | automatisch: Szenario-Snapshot → Live-Overpass → synthetischer Fallback | nie wegen Nutzerabwahl; das Legacy-Feld `population.useOsmData` wird ignoriert | Sekunden–Minute (Overpass) |
 | 3 | Attraktivitäten | immer | – | Sekunden |
 | 4 | Bevölkerungssynthese | immer | – | Sekunden |
 | 5 | Aktivitätenpläne | immer (Achse A intern: gta → actitopp → Template-Fallback, nie SKIPPED) | – | Sekunden (Template/actiTopp) bis Minuten (GTA-LLM, z. B. ~140 s für 18 Persona-Calls) |

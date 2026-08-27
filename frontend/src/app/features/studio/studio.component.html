@@ -8,7 +8,7 @@
         <button (click)="newScenario()" [disabled]="busy"
           title="Leeres Szenario anlegen – Region anschließend auf der Karte zeichnen">+ Neu</button>
       </div>
-      <label>Vorhandenes Szenario laden
+      <label title="Gespeichertes Szenario auswählen und mit allen Parametern und Uploads laden">Vorhandenes Szenario laden
         <span class="select-row">
           <select [(ngModel)]="selectedScenarioId" (change)="onScenarioSelected()" [disabled]="busy"
             title="Gespeichertes Szenario auswählen und laden">
@@ -30,7 +30,7 @@
 
     @if (scenario) {
       <section class="block">
-        <label>Name
+        <label title="Anzeigename des Szenarios">Name
           <input [(ngModel)]="scenario.name" title="Anzeigename des Szenarios">
         </label>
         <label title="Untersuchungsgebiet: mit „Region zeichnen' direkt auf der Karte aufziehen oder den sichtbaren Kartenausschnitt übernehmen">
@@ -44,61 +44,77 @@
             <span class="region-info missing">Noch keine Region gesetzt – auf der Karte zeichnen</span>
           }
         </label>
-        <label title="Kantenlänge einer quadratischen Rasterzelle. Jede Zelle wird eine Verkehrszelle (Zone) des Nachfragemodells: Alle Wege werden zwischen Zonen-Mittelpunkten modelliert. Kleinere Zellen = feinere Auflösung, aber quadratisch mehr Matrix-Einträge (Limit 600 Zonen).">
+        <label title="Tatsächlich verwendete Kantenlänge einer quadratischen Verkehrszelle. Bei einer neuen Region berechnet SyntheSis automatisch die kleinste Zellgröße, die höchstens 600 Zonen erzeugt. Der Wert kann danach manuell geändert werden.">
           Zellgröße Zonenraster (m) ⓘ
-          <input type="number" [(ngModel)]="scenario.zoning.cellSizeMeters" min="200" step="100">
+          <input type="number" [(ngModel)]="scenario.zoning.cellSizeMeters"
+            (change)="previewZones()" min="100" step="50">
+          @if (zonePreviewInfo) {
+            <small class="field-note zone-warning">{{ zonePreviewInfo }}</small>
+          }
         </label>
-        <label title="Zonierungs-Gitter. 'Bbox-Raster' = metrisches Quadratgitter ab der Regionsecke (global). 'INSPIRE/Zensus' = flächengleiches EPSG:3035-Gitter (nur Europa), rastet auf das Zensus-Standardgitter ein (100 m/1 km/10 km) — vergleichbare IDs, verlustfreie Zensus-Zuordnung.">
+        <label title="Zonierungs-Gitter. 'Automatisch fein' berechnet eine praktische Zellgröße in 50-m-Schritten und nutzt das 600-Zonen-Limit bestmöglich aus. 'INSPIRE/Zensus' verwendet bewusst nur die amtlichen Standardstufen 100 m, 1 km oder 10 km.">
           Zonierungs-Gitter ⓘ
-          <select [(ngModel)]="scenario.zoning.mode">
-            <option value="grid">Bbox-Raster (global)</option>
-            <option value="inspire">INSPIRE/Zensus (EPSG:3035, Europa)</option>
+          <select [(ngModel)]="scenario.zoning.mode" (change)="previewZones(true)">
+            <option value="grid">Automatisch fein (empfohlen)</option>
+            <option value="inspire">INSPIRE/Zensus-Standardraster</option>
           </select>
         </label>
       </section>
       <section class="block">
         <h2>Bevölkerung</h2>
         @if (estimateInfo) {
-          <p class="hint">{{ estimateInfo }}</p>
+          <p class="hint">{{ estimateInfo }}
+            @if (estimateSourceUrl) {
+              <a [href]="estimateSourceUrl" target="_blank" rel="noopener">Quelle</a>
+            }
+          </p>
         }
-        <label title="Gesamtzahl der Einwohner in der Region. Wird beim Setzen der Region automatisch aus OSM-Siedlungsdaten (place-Nodes mit population-Tag) vorbefüllt; leer = Schätzung über Einwohnerdichte.">
+        <label title="Zeigt zunächst die automatisch ermittelte Gesamtzahl. Wenn du den Wert bearbeitest, wird er als manuelle Vorgabe gespeichert. Leeren aktiviert wieder die automatische Quellenwahl: alternatives Upload-Raster, Destatis Zensus 2022, OSM-Siedlungsdaten, Dichteannahme.">
           Einwohner gesamt ⓘ
-          <input type="number" [(ngModel)]="scenario.population.totalPersons">
+          <input type="number" [value]="displayedTotalPersons ?? ''"
+            (input)="onTotalPersonsChanged($any($event.target).value)"
+            aria-label="Einwohner gesamt">
+          @if (scenario.population.totalPersons == null && estimatedPopulation != null) {
+            <small class="field-note">Automatisch ermittelt – Bearbeiten setzt eine manuelle Vorgabe.</small>
+          }
         </label>
         <label title="Fallback-Dichte, falls keine Einwohnerzahl gesetzt ist und OSM keine Siedlungsdaten liefert">
-          Einwohner je km² (Fallback)
+          Einwohner je km² (Fallback) ⓘ
           <input type="number" [(ngModel)]="scenario.population.personsPerKm2">
         </label>
-        <label title="Anteil der Bevölkerung, der tatsächlich synthetisiert wird (mobiTopp fractionOfPopulation). Kleinere Werte = schnellere Läufe.">
-          Stichprobenanteil (0–1)
-          <input type="number" [(ngModel)]="scenario.population.samplingFraction" min="0.05" max="1" step="0.05">
+        <label class="range-field" title="Prozentanteil der regionalen Bevölkerung, der als Personenstichprobe synthetisiert und simuliert wird. 10 % bedeutet ungefähr ein Zehntel der Einwohner; kleinere Werte beschleunigen Testläufe.">
+          <span class="range-label">
+            <span>Stichprobenanteil ⓘ</span>
+            <output>{{ samplingPercent }} %</output>
+          </span>
+          <input type="range" [value]="samplingPercent"
+            (input)="samplingPercent = $any($event.target).value"
+            min="5" max="100" step="5"
+            aria-label="Stichprobenanteil in Prozent">
         </label>
         <label title="Durchschnittliche Pkw-Ausstattung der Haushalte">
-          Pkw je Haushalt
+          Pkw je Haushalt ⓘ
           <input type="number" [(ngModel)]="scenario.population.carsPerHousehold" min="0" max="3" step="0.1">
         </label>
-        <label title="Startwert des Zufallsgenerators – gleicher Seed + gleiche Parameter = identisches Ergebnis (Reproduzierbarkeit)">
-          Zufalls-Seed
-          <input type="number" [(ngModel)]="scenario.population.seed">
+        <label class="checkbox" title="Aus: Gleiche Eingaben erzeugen bei Wiederholungen dieselbe Variante. An: Vor jedem Lauf wird automatisch eine neue interne Zufallszahl gewählt und im Szenario sowie Manifest gespeichert.">
+          <input type="checkbox" [(ngModel)]="randomizeEachRun">
+          Bei jedem Lauf neue Zufallsvariante ⓘ
         </label>
-        <label class="checkbox" title="POIs, Siedlungs- und Logistikdaten aus dem hochgeladenen Snapshot oder live von Overpass nutzen; nur der Live-Pfad fällt bei Fehlschlag auf synthetische Daten zurück">
-          <input type="checkbox" [(ngModel)]="scenario.population.useOsmData">
-          OSM-Daten nutzen (Snapshot oder Overpass)
-        </label>
-        <div class="upload"
-          title="Eingefrorener Overpass-JSON-Snapshot mit POIs und place-Nodes. Er hat Vorrang vor Live-Overpass und macht A/B-Läufe reproduzierbar; der SHA-256-Hash wird im Manifest festgehalten.">
-          @if (!osmDataUpload) {
-            <label class="upload-button" [class.disabled]="!scenario.id || osmDataUploadBusy">
-              {{ osmDataUploadBusy ? 'Snapshot wird geprüft…' : 'OSM-Datensnapshot hochladen (.json) ⓘ' }}
-              <input type="file" accept=".json,application/json"
-                (change)="onOsmDataSelected($event)"
-                [disabled]="!scenario.id || osmDataUploadBusy">
-            </label>
-          }
+        <div class="source-group">
+          <div class="source-group-head">
+            <strong>Orte und Einrichtungen</strong>
+            <span>für Ziele, Bevölkerung, Depots und Packstationen</span>
+          </div>
+          <div class="automatic-source"
+            title="Beim Generieren lädt SyntheSis Geschäfte, Arbeitsorte, Freizeitziele, Depots, Packstationen und Siedlungen automatisch über die OSM-Schnittstelle Overpass. Der verwendete Stand wird mit SHA-256 als Ergebnis gespeichert. Ein eigener Upload ist nicht erforderlich.">
+            <strong>OSM-Ortsdaten werden automatisch geladen ⓘ</strong>
+            <span>Overpass → dokumentierter Lauf-Snapshot → synthetischer Fallback</span>
+          </div>
           @if (osmDataUpload) {
-            <div class="upload-info">
+            <div class="upload-info"
+              title="Dieses Szenario besitzt bereits einen eingefrorenen OSM-Stand. Nach dem Entfernen werden die Ortsdaten beim nächsten Lauf wieder automatisch über Overpass geladen.">
               <span>
-                🧊 Eingefrorene OSM-Daten aktiv
+                🧊 Eingefrorener OSM-Stand aktiv
                 @if (osmDataUpload.sha256) {
                   – {{ osmDataUpload.pois.toLocaleString() }} POIs,
                   SHA-256 {{ osmDataUpload.sha256.slice(0, 12) }}…
@@ -106,31 +122,36 @@
               </span>
               <button class="link danger" (click)="removeOsmData()"
                 [disabled]="osmDataUploadBusy"
-                title="OSM-Datensnapshot entfernen">✕</button>
+                title="Eingefrorenen OSM-Stand entfernen und wieder automatisch laden">✕</button>
             </div>
           }
         </div>
-        <label class="checkbox" title="Reisezeit- und Distanzmatrizen über echtes Routing auf dem OSM-Straßennetz berechnen (GraphHopper, Auto/Rad/Fuß). Bei Fehlschlag automatisch Luftlinien-Schätzung.">
-          <input type="checkbox" [(ngModel)]="scenario.population.useRealRouting">
-          Echtes Routing (GraphHopper statt Luftlinie)
-        </label>
-        <div class="upload"
-          title="Szenariogebundenes OSM-XML-Straßennetz für reproduzierbares Offline-Routing. Die Datei muss die gewählte Region vollständig abdecken und highway-Wege enthalten. Sie hat Vorrang vor Server-Konfiguration und Overpass; PBF wird noch nicht unterstützt.">
-          @if (!roadNetworkUpload) {
-            <label class="upload-button" [class.disabled]="!scenario.id || roadNetworkUploadBusy">
-              {{ roadNetworkUploadBusy ? 'Netz wird geprüft…' : 'OSM-Straßennetz hochladen (.osm/.xml) ⓘ' }}
-              <input type="file" accept=".osm,.xml,application/xml,text/xml"
-                (change)="onRoadNetworkSelected($event)"
-                [disabled]="!scenario.id || roadNetworkUploadBusy">
-            </label>
-            @if (!scenario.id) {
-              <p class="hint">Zum Hochladen Szenario zuerst speichern.</p>
-            }
+        <div class="source-group">
+          <div class="source-group-head">
+            <strong>Straßennetz und Routing</strong>
+            <span>für Fahrzeiten und Entfernungen zwischen den Zonen</span>
+          </div>
+          <div class="automatic-source"
+            title="SyntheSis lädt das OSM-Straßennetz automatisch und berechnet damit realistische Fahrzeiten und Entfernungen zwischen den Zonen. SUMO-Fahrzeuge fahren unabhängig davon immer auf Straßen; hier geht es um die vorgelagerten Nachfragematrizen.">
+            <strong>Fahrzeiten werden automatisch auf dem Straßennetz berechnet ⓘ</strong>
+            <span>OSM/Overpass → GraphHopper → bei Ausfall vorübergehend Luftlinienschätzung</span>
+          </div>
+          @if (!roadNetworkUpload && roadNetworkFallbackNeeded) {
+            <div class="upload fallback-upload"
+              title="Der letzte Lauf konnte das Straßennetz nicht automatisch laden und verwendete deshalb Luftlinien. Optional kann hier ein passender OSM-Netzausschnitt als Fallback hinterlegt werden.">
+              <label class="upload-button" [class.disabled]="!scenario.id || roadNetworkUploadBusy">
+                {{ roadNetworkUploadBusy ? 'Netz wird geprüft…' : 'Manuelles Straßennetz als Fallback hochladen ⓘ' }}
+                <input type="file" accept=".osm,.xml,application/xml,text/xml"
+                  (change)="onRoadNetworkSelected($event)"
+                  [disabled]="!scenario.id || roadNetworkUploadBusy">
+              </label>
+              <p class="hint">Nur sichtbar, weil der letzte Routingversuch auf Luftlinie zurückfiel.</p>
+            </div>
           }
           @if (roadNetworkUpload) {
             <div class="upload-info">
               <span>
-                🛣️ Lokales OSM-Netz aktiv
+                🛣️ Manueller Straßennetz-Fallback aktiv
                 @if (roadNetworkUpload.highwayWays > 0) {
                   – {{ roadNetworkUpload.highwayWays.toLocaleString() }} Straßen,
                   SHA-256 {{ roadNetworkUpload.sha256.slice(0, 12) }}…
@@ -138,16 +159,16 @@
               </span>
               <button class="link danger" (click)="removeRoadNetwork()"
                 [disabled]="roadNetworkUploadBusy"
-                title="Hochgeladenes Straßennetz entfernen">✕</button>
+                title="Hochgeladenes Straßennetz entfernen und wieder automatisch laden">✕</button>
             </div>
           }
         </div>
-        <label class="checkbox" title="Externe Zielzonen rund um das Gebiet ergänzen, damit ein Teil der Wege das Untersuchungsgebiet verlässt (realistischere Weglängen). Ohne Einwohner, nur als Ziele.">
+        <label class="checkbox" title="Erlaubt Aktivitäten und Ziele außerhalb des gezeichneten Gebiets. Bewohner und ihre ersten Wege starten weiterhin innerhalb; nach einer Aktivität außerhalb kann der Rückweg dort beginnen. Es werden keine zusätzlichen Bewohner außerhalb erzeugt.">
           <input type="checkbox" [(ngModel)]="scenario.population.externalTrips">
-          Außenbeziehungen (externe Zielzonen)
+          Wege über die Gebietsgrenze zulassen ⓘ
         </label>
         <div class="upload"
-          title="Akzeptiert eine normalisierte Pendler-OD-Matrix oder einen amtlichen BA-Export 'Auspendler Gemeinden'. BA-Gemeindeschlüssel werden über BKG VG250 aufgelöst. Der BA-Export verteilt die Außenziele; die Außenquote kommt optional aus dem Arbeitsplatz-Randwert darunter. 'Außenbeziehungen' muss aktiv sein.">
+          title="Optional: Eine normalisierte Pendler-OD-Matrix oder ein amtlicher BA-Export 'Auspendler Gemeinden' ersetzt für abgedeckte Wohnzonen die Standardschätzung der Arbeitsziele. BA-Gemeindeschlüssel werden über BKG VG250 aufgelöst. 'Außenbeziehungen' muss aktiv sein.">
           @if (!commuterUpload) {
             <label class="upload-button" [class.disabled]="!scenario.id || commuterUploadBusy">
               {{ commuterUploadBusy ? 'Matrix wird geprüft…' : 'Pendlermatrix hochladen (CSV) ⓘ' }}
@@ -171,61 +192,55 @@
             </div>
           }
         </div>
-        <div class="upload"
-          title="Amtlicher Flat-File-CSV-Export der Regionalstatistik-Tabelle 13111-08-02-5-B. ERW033 (Beschäftigte am Wohnort) und PEN092 (Auspendelnde) bestimmen die Außenquote. Wirksam zusammen mit einer externen Pendler-OD und aktivierten Außenbeziehungen.">
-          @if (!workplaceMarginUpload) {
-            <label class="upload-button" [class.disabled]="!scenario.id || workplaceMarginUploadBusy">
-              {{ workplaceMarginUploadBusy ? 'Randwert wird geprüft…' : 'Arbeitsplatz-Randwert 13111 hochladen (CSV) ⓘ' }}
-              <input type="file" accept=".csv,text/csv" (change)="onWorkplaceMarginsSelected($event)"
-                [disabled]="!scenario.id || workplaceMarginUploadBusy">
-            </label>
-            <p class="hint">Regionalstatistik: Tabelle 13111-08-02-5-B · Download „Flat-File-CSV“</p>
-          }
-          @if (workplaceMarginUpload) {
-            <div class="upload-info">
-              <span>
-                📊 Arbeitsplatz-Randwert aktiv
-                @if (workplaceMarginUpload.residentWorkers > 0) {
-                  – {{ (workplaceMarginUpload.externalShare * 100).toLocaleString('de-DE', { maximumFractionDigits: 2 }) }} % außen,
-                  Stichtag {{ workplaceMarginUpload.date }}
-                }
-              </span>
-              <button class="link danger" (click)="removeWorkplaceMargins()"
-                [disabled]="workplaceMarginUploadBusy"
-                title="Arbeitsplatz-Randwert entfernen">✕</button>
-            </div>
-          }
-        </div>
+        @if (workplaceMarginUpload) {
+          <div class="upload-info"
+            title="Bei einem amtlichen BA-Pendlerexport ordnet SyntheSis die Auspendlerquote automatisch aus den backendseitig versionierten BA-Gemeindedaten 2025 zu. Sie wirkt nur zusammen mit der externen Pendlermatrix.">
+            <span>
+              📊 Amtliche Auspendlerquote automatisch zugeordnet
+              @if (workplaceMarginUpload.residentWorkers > 0) {
+                – {{ (workplaceMarginUpload.externalShare * 100).toLocaleString('de-DE', { maximumFractionDigits: 2 }) }} % außen,
+                Stichtag {{ workplaceMarginUpload.date }}
+              }
+            </span>
+          </div>
+        }
         <label class="checkbox" title="Haushalte aus einem KIT-synthetisierten Demografie-Sample ziehen (realistische Alters-/Geschlechts-/Haushaltsgrößen-Verteilung) statt aus Ad-hoc-Annahmen.">
           <input type="checkbox" [(ngModel)]="scenario.population.useKitPopulation">
           KIT-Demografie-Sample (Haushalte)
         </label>
-        <div class="upload"
-          title="Punktbasiertes Bevölkerungsraster als CSV: Zensus-2022-Gitter (x_mp_100m;y_mp_100m;Einwohner), INSPIRE-/Eurostat-Gitter-IDs (GRD_ID bzw. GITTER_ID + Einwohner/T, z. B. Eurostat Census Grid 2021 europaweit) oder generisch (lat;lon;population). EPSG:3035 wird automatisch umgerechnet. Hat Vorrang vor OSM- und Dichte-Schätzung.">
-          @if (!upload) {
-            <label class="upload-button" [class.disabled]="!scenario.id || uploadBusy">
-              {{ uploadBusy ? 'Wird verarbeitet…' : 'Bevölkerungsraster hochladen (CSV) ⓘ' }}
-              <input type="file" accept=".csv,text/csv" (change)="onGridFileSelected($event)"
-                [disabled]="!scenario.id || uploadBusy">
-            </label>
-            @if (!scenario.id) {
-              <p class="hint">Zum Hochladen Szenario zuerst speichern.</p>
-            }
-          }
-          @if (upload) {
-            <div class="upload-info">
-              <span>
-                📄 Bevölkerungsraster aktiv
-                @if (upload.points > 0) {
-                  – {{ upload.points.toLocaleString() }} Punkte,
-                  {{ upload.totalPopulation.toLocaleString() }} Einwohner ({{ upload.format }})
-                }
-              </span>
-              <button class="link danger" (click)="removeUpload()" [disabled]="uploadBusy"
-                title="Hochgeladenes Raster entfernen">✕</button>
-            </div>
-          }
+        <div class="automatic-source"
+          title="Ein Bevölkerungsraster teilt die Einwohner räumlich auf kleine Zellen auf. Für Deutschland verwendet SyntheSis automatisch das amtliche Zensus-2022-Raster mit 100-Meter-Zellen; dadurch wohnen nicht in jeder Verkehrszone gleich viele Menschen.">
+          <strong>Räumliche Einwohnerverteilung automatisch aus Zensus 2022 ⓘ</strong>
+          <span>100-m-Zellen geben an, wie viele Menschen an welchem Ort wohnen.</span>
         </div>
+        @if (upload) {
+          <div class="upload-info">
+            <span>
+              📄 Eigenes Bevölkerungsraster aktiv
+              @if (upload.points > 0) {
+                – {{ upload.points.toLocaleString() }} Punkte,
+                {{ upload.totalPopulation.toLocaleString() }} Einwohner ({{ upload.format }})
+              }
+            </span>
+            <button class="link danger" (click)="removeUpload()" [disabled]="uploadBusy"
+              title="Eigenes Raster entfernen und wieder Zensus 2022 verwenden">✕</button>
+          </div>
+        } @else {
+          <details class="optional-source">
+            <summary>Eigenes oder neueres Bevölkerungsraster verwenden (optional)</summary>
+            <div class="upload"
+              title="Optionaler Ersatz für Zensus 2022: Zensus-/INSPIRE-/Eurostat-Gitter mit Zell-ID und Einwohnerzahl oder eine CSV mit Koordinate und Einwohnerzahl. Das eigene Raster hat Vorrang vor der automatischen Quelle.">
+              <label class="upload-button" [class.disabled]="!scenario.id || uploadBusy">
+                {{ uploadBusy ? 'Wird verarbeitet…' : 'Alternative Rasterdatei hochladen (CSV) ⓘ' }}
+                <input type="file" accept=".csv,text/csv" (change)="onGridFileSelected($event)"
+                  [disabled]="!scenario.id || uploadBusy">
+              </label>
+              @if (!scenario.id) {
+                <p class="hint">Optionaler Upload erst nach dem Speichern möglich.</p>
+              }
+            </div>
+          </details>
+        }
       </section>
       <section class="block">
         <h2>Modellierung</h2>
@@ -254,19 +269,22 @@
         }
         <div class="targets" title="Achse B – welche Zielmodelle die erzeugte Nachfrage verwerten (Mehrfachauswahl)">
           <span class="targets-label">Zielmodell</span>
-          <label class="checkbox" title="Mikroskopische Personen- und Paketsimulation (KIT), liefert KPIs/Touren">
+          <label class="checkbox" title="Simuliert für jede synthetische Person eine Modellwoche mit Ziel- und Verkehrsmittelwahl und ergänzt Paketbestellungen sowie Zustelltouren. Ergebnisse: Rohwege, native Nachfrage, KPIs, Depotstatistik und Tour-/Paket-Karten.">
             <input type="checkbox" [checked]="hasTarget('logitopp')" (change)="toggleTarget('logitopp')">
             logiTopp (Personen + Pakete)
           </label>
-          <label class="checkbox" title="District-aggregierte Config-Tabellen für die MobileCity/Takomat-App">
+          <label class="checkbox" title="Exportiert die Zonen als aggregierte MobileCity-Districts: Bevölkerung nach Altersgruppe, Wegeraten nach Zweck, Attraktivitäten, Pkw-Bestand und Shapefile. Das ist ein Übergabepaket, keine zusätzliche Simulation in SyntheSis.">
             <input type="checkbox" [checked]="hasTarget('mobilecity')" (change)="toggleTarget('mobilecity')">
             MobileCity-Export (Takomat)
           </label>
-          <label class="checkbox" title="Eigene mikroskopische Verkehrssimulation der Auto-Trips (benötigt logiTopp)">
+          <label class="checkbox" title="Übernimmt die von logiTopp erzeugten Pkw-, Rad-, Fuß- und Liefertouren für einen Tag, routet sie auf dem OSM-Straßennetz und simuliert einzelne Fahrzeuge. Ergebnisse: Netzlast/Stau, Fahrzeiten, Routen und CO₂. Benötigt logiTopp und lokale SUMO-Binaries.">
             <input type="checkbox" [checked]="hasTarget('sumo')" (change)="toggleTarget('sumo')">
             SUMO (mikroskopischer Verkehr)
           </label>
         </div>
+        <p class="hint">Mehrfachauswahl: logiTopp erzeugt die agentenbasierte Nachfrage;
+          SUMO kann diese anschließend auf dem Straßennetz simulieren. MobileCity ist ein
+          unabhängiger, district-aggregierter Export.</p>
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
             title="Passt die Moduswahl-Konstanten iterativ an den Ziel-Modal-Split an (mehrere Simulationsläufe, daher deutlich langsamer).">
@@ -312,7 +330,7 @@
               </select>
             </label>
             @for (m of calibrationModes; track m) {
-              <label class="calib-row">
+              <label class="calib-row" [title]="m.title">
                 {{ m.label }}
                 <input type="number" min="0" max="1" step="0.01"
                   [(ngModel)]="scenario.population.calibrationTarget[m.key]">
@@ -346,7 +364,7 @@
         @if (scenario.population.publicTransport && hasTarget('sumo')) {
           <div class="hint">
             GTFS wird automatisch nach Region geladen. Kein Feed verfügbar?
-            <label class="linklike">GTFS-ZIP hochladen
+            <label class="linklike" title="Eigenen GTFS-Fahrplan als ZIP hochladen, wenn für die Region kein automatischer Feed verfügbar ist">GTFS-ZIP hochladen
               <input type="file" accept=".zip" hidden
               [disabled]="!scenario.id" (change)="onGtfsSelected($event)"></label>
               @if (!scenario.id) {
@@ -360,23 +378,65 @@
         </section>
         <section class="block">
           <h2>Logistik (logiTopp)</h2>
-          <label title="Mittelwert der Normalverteilung für Paketbestellungen je Person und Woche (logiTopp NumberOfParcelsSelector)">
-            Pakete je Person und Woche (Mittelwert)
-            <input type="number" [(ngModel)]="scenario.logistics.parcelsPerPersonWeek" min="0" step="0.05">
+          <label class="range-field" title="Durchschnittliche Zahl der Paketbestellungen je Person und Woche. 0 bedeutet keine privaten Pakete; 0,75 bedeutet im Mittel drei Pakete je vier Personen und Woche.">
+            <span class="range-label">
+              <span>Pakete je Person und Woche ⓘ</span>
+              <output>{{ logisticsMetricLabel('parcelsPerPersonWeek') }}</output>
+            </span>
+            <input type="range" [value]="scenario.logistics.parcelsPerPersonWeek"
+              (input)="setLogisticsMetric('parcelsPerPersonWeek', $any($event.target).value, 10)"
+              min="0" max="10" step="0.05" aria-label="Pakete je Person und Woche">
+            <span class="range-scale"><span>0</span><span>5</span><span>10</span></span>
           </label>
-          <label title="Streuung der Paketanzahl um den Mittelwert">
-            Standardabweichung
-            <input type="number" [(ngModel)]="scenario.logistics.parcelStdDev" min="0" step="0.05">
+          <label class="range-field" title="Bestimmt, wie unterschiedlich viele Pakete einzelne Personen erhalten. 0 bedeutet: alle liegen nahe am Durchschnitt. Ein höherer Wert erzeugt stärkere Unterschiede zwischen Wenig- und Vielbestellern.">
+            <span class="range-label">
+              <span>Unterschiede zwischen Personen ⓘ</span>
+              <output>{{ logisticsMetricLabel('parcelStdDev') }}</output>
+            </span>
+            <input type="range" [value]="scenario.logistics.parcelStdDev"
+              (input)="setLogisticsMetric('parcelStdDev', $any($event.target).value, 2)"
+              min="0" max="2" step="0.05" aria-label="Unterschiede bei der Paketanzahl">
+            <span class="range-scale"><span>gleichmäßig</span><span>mittel</span><span>stark</span></span>
           </label>
-          <div class="shares" title="Anteile der Zustellziele: nach Hause, an den Arbeitsplatz oder an eine Packstation">
-            <label>Anteil HOME
-              <input type="number" [(ngModel)]="scenario.logistics.shareHome" min="0" max="1" step="0.05">
+          <div class="linked-shares"
+            title="Verteilt alle Pakete auf Zuhause, Arbeitsplatz und Packstation. Beim Verschieben eines Reglers werden die beiden anderen proportional angepasst; die Summe bleibt immer 100 Prozent.">
+            <div class="linked-shares-head">
+              <strong>Zustellorte</strong>
+              <span class="sum-badge" [class.invalid]="deliveryShareTotalPercent !== 100">
+                Summe {{ deliveryShareTotalPercent }} %
+              </span>
+            </div>
+            <div class="share-composition" role="img"
+              [attr.aria-label]="'Zustellanteile: Zuhause ' + deliverySharePercent('shareHome')
+                + ' Prozent, Arbeitsplatz ' + deliverySharePercent('shareWork')
+                + ' Prozent, Packstation ' + deliverySharePercent('sharePackstation') + ' Prozent'">
+              <span class="home" [style.width.%]="deliverySharePercent('shareHome')"></span>
+              <span class="work" [style.width.%]="deliverySharePercent('shareWork')"></span>
+              <span class="packstation" [style.width.%]="deliverySharePercent('sharePackstation')"></span>
+            </div>
+            <label class="range-field share-home" title="Anteil der Pakete, die an die Wohnadresse zugestellt werden.">
+              <span class="range-label"><span><i></i>Zuhause</span>
+                <output>{{ deliverySharePercent('shareHome') }} %</output></span>
+              <input type="range" [value]="deliverySharePercent('shareHome')"
+                [style.--share-progress]="deliverySharePercent('shareHome') + '%'"
+                (input)="setDeliverySharePercent('shareHome', $any($event.target).value)"
+                min="0" max="100" step="1" aria-label="Zustellanteil Zuhause">
             </label>
-            <label>WORK
-              <input type="number" [(ngModel)]="scenario.logistics.shareWork" min="0" max="1" step="0.05">
+            <label class="range-field share-work" title="Anteil der Pakete, die an den Arbeitsplatz zugestellt werden.">
+              <span class="range-label"><span><i></i>Arbeitsplatz</span>
+                <output>{{ deliverySharePercent('shareWork') }} %</output></span>
+              <input type="range" [value]="deliverySharePercent('shareWork')"
+                [style.--share-progress]="deliverySharePercent('shareWork') + '%'"
+                (input)="setDeliverySharePercent('shareWork', $any($event.target).value)"
+                min="0" max="100" step="1" aria-label="Zustellanteil Arbeitsplatz">
             </label>
-            <label>PACKSTATION
-              <input type="number" [(ngModel)]="scenario.logistics.sharePackstation" min="0" max="1" step="0.05">
+            <label class="range-field share-packstation" title="Anteil der Pakete, die an eine Packstation oder einen Paketautomaten zugestellt werden.">
+              <span class="range-label"><span><i></i>Packstation</span>
+                <output>{{ deliverySharePercent('sharePackstation') }} %</output></span>
+              <input type="range" [value]="deliverySharePercent('sharePackstation')"
+                [style.--share-progress]="deliverySharePercent('sharePackstation') + '%'"
+                (input)="setDeliverySharePercent('sharePackstation', $any($event.target).value)"
+                min="0" max="100" step="1" aria-label="Zustellanteil Packstation">
             </label>
           </div>
           @if (hasTarget('logitopp')) {
@@ -400,12 +460,12 @@
               </label>
               <div class="shares"
                 title="Anteile der Abholorte für Kundenretouren; HOME und WORK müssen zusammen 1 ergeben">
-                <label>Abholung HOME
+                <label title="Anteil der Kundenretouren, die an der Wohnadresse abgeholt werden">Abholung HOME
                   <input type="number"
                     [(ngModel)]="scenario.logistics.returns.pickupShares.home"
                     min="0" max="1" step="0.05">
                 </label>
-                <label>WORK
+                <label title="Anteil der Kundenretouren, die am Arbeitsplatz abgeholt werden">WORK
                   <input type="number"
                     [(ngModel)]="scenario.logistics.returns.pickupShares.work"
                     min="0" max="1" step="0.05">
@@ -435,7 +495,7 @@
         @if (scenario.logistics.depots.length > 0) {
           <div class="depot-table">
             <div class="depot depot-header">
-              <span class="depot-name">Name</span>
+              <span class="depot-name" title="Anzeigename des Verteilzentrums">Name</span>
               <span title="Fahrzeugtyp / Effizienzprofil der Zustellflotte">Fahrzeug</span>
               <span title="Anzahl Zusteller">Zusteller</span>
               <span title="Anteil am Paketaufkommen (wird automatisch normiert)">Anteil</span>
@@ -535,7 +595,18 @@
                 <tr><td>Haushalte</td><td>{{ job.summary['households'] }}</td></tr>
                 <tr><td>Pkw</td><td>{{ job.summary['cars'] }}</td></tr>
                 <tr><td>Depots</td><td>{{ job.summary['depots'] }}</td></tr>
-                <tr><td>Einwohner-Quelle</td><td>{{ job.summary['populationSource'] }}</td></tr>
+                <tr title="Tatsächlich verwendete Quelle der Gesamtbevölkerung einschließlich amtlichem Stichtag">
+                  <td>Einwohner-Quelle</td>
+                  <td>
+                    {{ job.summary['populationSourceLabel'] || job.summary['populationSource'] }}
+                    @if (job.summary['populationReferenceDate']) {
+                      (Stichtag {{ job.summary['populationReferenceDate'] }})
+                    }
+                    @if (job.summary['populationSourceUrl']) {
+                      <a [href]="$any(job.summary)['populationSourceUrl']" target="_blank" rel="noopener">Quelle</a>
+                    }
+                  </td>
+                </tr>
                 <tr><td>OSM-Daten</td><td>{{ job.summary['osmDataUsed'] ? 'ja' : 'nein (synthetisch)' }}</td></tr>
               </table>
             </div>

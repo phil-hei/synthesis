@@ -34,7 +34,10 @@ export interface ReturnDemand {
 
 export interface RegionEstimate {
   estimatedPopulation: number;
-  source: 'osm-places' | 'none' | 'unavailable';
+  source: 'zensus-2022' | 'osm-places' | 'none' | 'unavailable';
+  sourceLabel: string;
+  referenceDate: string;
+  sourceUrl: string;
   places: { name: string; type: string; population: number }[];
 }
 
@@ -52,6 +55,7 @@ export interface Scenario {
     personsPerKm2: number;
     samplingFraction: number;
     seed: number;
+    /** @deprecated Kompatibilitätsfeld; POI-/Siedlungsdaten werden serverseitig automatisch gewählt. */
     useOsmData: boolean;
     useRealRouting: boolean;
     externalTrips: boolean;
@@ -157,6 +161,7 @@ export interface CommuterUploadSummary {
   coverage: number;
   skippedAggregateRows: number;
   unresolvedMunicipalities: number;
+  workplaceMargin: WorkplaceMarginUploadSummary | null;
 }
 
 export interface WorkplaceMarginUploadSummary {

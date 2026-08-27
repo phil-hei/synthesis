@@ -9,6 +9,7 @@ public class SynthesisProperties {
     private String dataDir = "data";
     private int maxZones = 600;
     private Overpass overpass = new Overpass();
+    private Census census = new Census();
     private Simulation simulation = new Simulation();
     private Actitopp actitopp = new Actitopp();
     private Sumo sumo = new Sumo();
@@ -204,6 +205,8 @@ public class SynthesisProperties {
     }
 
     public static class Overpass {
+        /** Live POI/place queries; scenario snapshots remain usable when this is disabled. */
+        private boolean liveDataEnabled = true;
         private String endpoint = "https://overpass-api.de/api/interpreter";
         /**
          * Optionale lokale OSM-XML-Datei für den Straßennetz-Import. Ist sie gesetzt,
@@ -223,6 +226,8 @@ public class SynthesisProperties {
          */
         private int roadNetworkTimeoutSeconds = 180;
 
+        public boolean isLiveDataEnabled() { return liveDataEnabled; }
+        public void setLiveDataEnabled(boolean liveDataEnabled) { this.liveDataEnabled = liveDataEnabled; }
         public String getEndpoint() { return endpoint; }
         public void setEndpoint(String endpoint) { this.endpoint = endpoint; }
         public String getRoadNetworkFile() { return roadNetworkFile; }
@@ -247,6 +252,37 @@ public class SynthesisProperties {
             }
             return all;
         }
+    }
+
+    /** Amtliches Zensus-2022-Bevölkerungsraster für Deutschland. */
+    public static class Census {
+        private boolean enabled = true;
+        private String version = "zensus-2022-2024-10-08";
+        private String referenceDate = "2022-05-15";
+        private String sourceUrl =
+                "https://www.destatis.de/static/DE/zensus/gitterdaten/Zensus2022_Bevoelkerungszahl.zip";
+        private String archiveSha256 =
+                "1a8428d31eab264c8717bfdcbf40fbd66c217edb2e2a98d0e67741bd8a1a941a";
+        private String gridEntry = "Zensus2022_Bevoelkerungszahl_100m-Gitter.csv";
+        private int timeoutSeconds = 180;
+        private int maxArchiveMb = 64;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public String getVersion() { return version; }
+        public void setVersion(String version) { this.version = version; }
+        public String getReferenceDate() { return referenceDate; }
+        public void setReferenceDate(String referenceDate) { this.referenceDate = referenceDate; }
+        public String getSourceUrl() { return sourceUrl; }
+        public void setSourceUrl(String sourceUrl) { this.sourceUrl = sourceUrl; }
+        public String getArchiveSha256() { return archiveSha256; }
+        public void setArchiveSha256(String archiveSha256) { this.archiveSha256 = archiveSha256; }
+        public String getGridEntry() { return gridEntry; }
+        public void setGridEntry(String gridEntry) { this.gridEntry = gridEntry; }
+        public int getTimeoutSeconds() { return timeoutSeconds; }
+        public void setTimeoutSeconds(int timeoutSeconds) { this.timeoutSeconds = timeoutSeconds; }
+        public int getMaxArchiveMb() { return maxArchiveMb; }
+        public void setMaxArchiveMb(int maxArchiveMb) { this.maxArchiveMb = maxArchiveMb; }
     }
 
     /**
@@ -369,6 +405,8 @@ public class SynthesisProperties {
     public void setMaxZones(int maxZones) { this.maxZones = maxZones; }
     public Overpass getOverpass() { return overpass; }
     public void setOverpass(Overpass overpass) { this.overpass = overpass; }
+    public Census getCensus() { return census; }
+    public void setCensus(Census census) { this.census = census; }
     public Simulation getSimulation() { return simulation; }
     public void setSimulation(Simulation simulation) { this.simulation = simulation; }
     public Actitopp getActitopp() { return actitopp; }

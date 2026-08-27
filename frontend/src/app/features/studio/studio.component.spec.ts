@@ -19,8 +19,11 @@ describe('StudioComponent', () => {
     deleteOsmData: ReturnType<typeof vi.fn>;
     deleteCommuters: ReturnType<typeof vi.fn>;
     deleteWorkplaceMargins: ReturnType<typeof vi.fn>;
+    uploadCommuters: ReturnType<typeof vi.fn>;
     generate: ReturnType<typeof vi.fn>;
     generationStatus: ReturnType<typeof vi.fn>;
+    previewZones: ReturnType<typeof vi.fn>;
+    estimateRegion: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -37,8 +40,16 @@ describe('StudioComponent', () => {
       deleteOsmData: vi.fn(() => of(undefined)),
       deleteCommuters: vi.fn(() => of(undefined)),
       deleteWorkplaceMargins: vi.fn(() => of(undefined)),
+      uploadCommuters: vi.fn(),
       generate: vi.fn(() => of(job('QUEUED'))),
-      generationStatus: vi.fn(() => of(job('RUNNING')))
+      generationStatus: vi.fn(() => of(job('RUNNING'))),
+      previewZones: vi.fn(() => of({
+        type: 'FeatureCollection', features: [], cellSizeMeters: 500, autoAdjusted: false
+      })),
+      estimateRegion: vi.fn(() => of({
+        estimatedPopulation: 0, source: 'none', sourceLabel: '', referenceDate: '',
+        sourceUrl: '', places: []
+      }))
     };
 
     await TestBed.configureTestingModule({
@@ -116,6 +127,300 @@ describe('StudioComponent', () => {
     expect(fixture.componentInstance.message).toBe('Upload-Status konnte nicht geladen werden');
   });
 
+  it('refreshes zones and the automatic population when a saved scenario is selected', () => {
+    const saved = scenario('saved');
+    saved.region = { minLat: 48.84, minLon: 8.18, maxLat: 48.87, maxLon: 8.23 };
+    api.estimateRegion.mockReturnValue(of({
+      estimatedPopulation: 1234, source: 'zensus-2022', sourceLabel: 'Destatis Zensus 2022',
+      referenceDate: '2022-05-15', sourceUrl: 'https://example.test/zensus.zip', places: []
+    }));
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenarios = [saved];
+    component.selectedScenarioId = 'saved';
+    vi.spyOn(component as unknown as { drawRegion(): void }, 'drawRegion')
+      .mockImplementation(() => undefined);
+    const preview = vi.spyOn(component, 'previewZones').mockImplementation(() => undefined);
+
+    component.onScenarioSelected();
+
+    expect(preview).toHaveBeenCalledOnce();
+    expect(api.estimateRegion).toHaveBeenCalledWith(saved.region);
+    expect(component.displayedTotalPersons).toBe(1234);
+    expect(component.estimateInfo).toContain('1.234 Einwohner');
+  });
+
+  it('refreshes the preview after zoning controls change', () => {
+    const draft = scenario('');
+    draft.region = { minLat: 48.84, minLon: 8.18, maxLat: 48.87, maxLon: 8.23 };
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = draft;
+    const preview = vi.spyOn(component, 'previewZones').mockImplementation(() => undefined);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const zoningSelect = element.querySelector<HTMLSelectElement>(
+      'label[title^="Zonierungs-Gitter"] select');
+    expect(zoningSelect).not.toBeNull();
+    zoningSelect!.value = 'inspire';
+    zoningSelect!.dispatchEvent(new Event('change'));
+
+    expect(preview).toHaveBeenCalledOnce();
+    expect(preview).toHaveBeenCalledWith(true);
+  });
+
+  it('writes the effective cell size back when the preview must use a coarser grid', () => {
+    api.previewZones.mockReturnValue(of({
+      type: 'FeatureCollection', features: [], cellSizeMeters: 10000, autoAdjusted: true
+    }));
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const draft = scenario('draft');
+    draft.region = { minLat: 47.2, minLon: 5.8, maxLat: 55.1, maxLon: 15.1 };
+    draft.zoning.cellSizeMeters = 500;
+    component.scenario = draft;
+
+    component.previewZones();
+
+    expect(draft.zoning.cellSizeMeters).toBe(10000);
+    expect(component.zonePreviewInfo).toContain('Auf 10.000 m angepasst');
+    expect(component.zonePreviewInfo).toContain('tatsächlich verwendete Wert steht jetzt im Feld');
+    expect(component.message).toContain('10.000 m angepasst');
+  });
+
+  it('presents the sampling fraction as a synchronized percentage slider', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('draft');
+    component.scenario.population.samplingFraction = 0.25;
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const slider = element.querySelector<HTMLInputElement>('input[aria-label="Stichprobenanteil in Prozent"]');
+    expect(slider?.type).toBe('range');
+    expect(slider?.value).toBe('25');
+    expect(slider?.min).toBe('5');
+    expect(slider?.max).toBe('100');
+    expect(element.querySelector('.range-label output')?.textContent).toContain('25 %');
+
+    slider!.value = '40';
+    slider!.dispatchEvent(new Event('input'));
+    expect(component.scenario.population.samplingFraction).toBe(0.4);
+  });
+
+  it('provides an explanatory tooltip for every rendered form control', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const draft = scenario('draft');
+    draft.targetModels = ['logitopp', 'sumo'];
+    draft.population.calibrateModeChoice = true;
+    draft.population.publicTransport = true;
+    draft.logistics.returns.enabled = true;
+    fixture.componentInstance.scenario = draft;
+    fixture.detectChanges();
+
+    const controls = Array.from((fixture.nativeElement as HTMLElement)
+      .querySelectorAll<HTMLElement>('input, select, textarea'));
+    const withoutTooltip = controls.filter(control => !control.closest('[title]'));
+
+    expect(withoutTooltip).toEqual([]);
+  });
+
+  it('shows OSM data as an automatic source without a scenario toggle', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('draft');
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const automaticSource = element.querySelector('.automatic-source');
+    expect(automaticSource?.textContent).toContain('OSM-Ortsdaten werden automatisch geladen');
+    expect(automaticSource?.textContent).toContain('Overpass');
+    expect(automaticSource?.querySelector('input')).toBeNull();
+    expect(element.textContent).not.toContain('OSM-Ortsdatensnapshot hochladen');
+    expect(Array.from(element.querySelectorAll('label')).some(label =>
+      label.textContent?.includes('OSM-Daten nutzen'))).toBe(false);
+  });
+
+  it('separates OSM place snapshots from road-network routing', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('draft');
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const groups = Array.from(element.querySelectorAll<HTMLElement>('.source-group'));
+    expect(groups[0].textContent).toContain('Orte und Einrichtungen');
+    expect(groups[0].querySelector('.automatic-source')?.getAttribute('title'))
+      .toContain('OSM-Schnittstelle Overpass');
+    expect(groups[1].textContent).toContain('Straßennetz und Routing');
+    expect(groups[1].textContent).toContain('Fahrzeiten werden automatisch auf dem Straßennetz berechnet');
+    expect(groups[1].textContent).not.toContain('Manuelles Straßennetz als Fallback hochladen');
+  });
+
+  it('offers a manual road-network upload only after automatic routing fell back', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const draft = scenario('draft');
+    draft.population.useRealRouting = true;
+    fixture.componentInstance.scenario = draft;
+    fixture.componentInstance.job = {
+      ...job('DONE'),
+      summary: { matrixSource: 'beeline-estimate' }
+    };
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Manuelles Straßennetz als Fallback hochladen');
+    expect(text).toContain('letzte Routingversuch auf Luftlinie zurückfiel');
+  });
+
+  it('keeps the difficult workplace-margin upload out of the standard UI', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('draft');
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('Amtliche Auspendlerquote hochladen');
+    expect(text).not.toContain('Arbeitsplatz-Randwert');
+    expect(text).toContain('Pendlermatrix hochladen');
+  });
+
+  it('shows the automatically bundled BA outcommuter share after a commuter upload', () => {
+    api.uploadCommuters.mockReturnValue(of({
+      name: 'commuters.csv', relations: 2, totalCommuters: 900,
+      relationsWithHomeInRegion: 2, source: 'upload-ba-pendler-vg250',
+      exportTotalCommuters: 1000, coverage: 0.9, skippedAggregateRows: 1,
+      unresolvedMunicipalities: 0,
+      workplaceMargin: {
+        name: 'workplace-margins.csv', source: 'ba-gemeindedaten-2025',
+        date: '2025-06-30', municipalities: 1, residentWorkers: 22971,
+        outboundWorkers: 13723, externalShare: 13723 / 22971,
+        unresolvedMunicipalities: 0
+      }
+    }));
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('saved');
+    const input = document.createElement('input');
+    const file = new File(['test'], 'pendler.csv', { type: 'text/csv' });
+    Object.defineProperty(input, 'files', { value: [file] });
+
+    fixture.componentInstance.onCommutersSelected({ target: input } as unknown as Event);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.workplaceMarginUpload?.source)
+      .toBe('ba-gemeindedaten-2025');
+    expect(fixture.componentInstance.message).toContain(
+      'amtliche Auspendlerquote 59,7 % automatisch zugeordnet');
+    expect((fixture.nativeElement as HTMLElement).textContent)
+      .toContain('Amtliche Auspendlerquote automatisch zugeordnet');
+  });
+
+  it('keeps the three delivery sliders at exactly 100 percent', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const draft = scenario('draft');
+    draft.logistics.shareHome = 0.8;
+    draft.logistics.shareWork = 0.1;
+    draft.logistics.sharePackstation = 0.1;
+    fixture.componentInstance.scenario = draft;
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector<HTMLInputElement>('input[aria-label="Pakete je Person und Woche"]')?.type)
+      .toBe('range');
+    expect(element.querySelector<HTMLInputElement>('input[aria-label="Pakete je Person und Woche"]')?.max)
+      .toBe('10');
+    expect(element.querySelector<HTMLInputElement>('input[aria-label="Unterschiede bei der Paketanzahl"]')?.type)
+      .toBe('range');
+    expect(element.querySelectorAll('.linked-shares input[type="range"]')).toHaveLength(3);
+
+    fixture.componentInstance.setDeliverySharePercent('shareHome', 60);
+    fixture.detectChanges();
+
+    expect(draft.logistics.shareHome).toBe(0.6);
+    expect(draft.logistics.shareWork).toBe(0.2);
+    expect(draft.logistics.sharePackstation).toBe(0.2);
+    expect(fixture.componentInstance.deliveryShareTotalPercent).toBe(100);
+    expect(element.querySelector('.sum-badge')?.textContent).toContain('Summe 100 %');
+  });
+
+  it('offers understandable random variants without exposing the internal seed', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('draft');
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const randomVariant = Array.from(element.querySelectorAll('label')).find(label =>
+      label.textContent?.includes('Bei jedem Lauf neue Zufallsvariante'));
+    expect(randomVariant?.querySelector<HTMLInputElement>('input')?.type).toBe('checkbox');
+    expect(randomVariant?.getAttribute('title')).toContain(
+      'automatisch eine neue interne Zufallszahl gewählt');
+    expect(element.textContent).not.toContain('42');
+  });
+
+  it('persists a new internal seed before generating a random variant', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const saved = scenario('saved');
+    component.scenario = saved;
+    component.randomizeEachRun = true;
+    vi.spyOn(component as unknown as { createRandomSeed(): number }, 'createRandomSeed')
+      .mockReturnValue(987654321);
+    api.updateScenario.mockImplementation((value: Scenario) => of(value));
+
+    component.generate();
+
+    expect(saved.population.seed).toBe(987654321);
+    expect(api.updateScenario).toHaveBeenCalledWith(saved);
+    expect(api.generate).toHaveBeenCalledWith('saved');
+  });
+
+  it('shows the census estimate in the total field without persisting it as manual', () => {
+    api.estimateRegion.mockReturnValue(of({
+      estimatedPopulation: 52341,
+      source: 'zensus-2022',
+      sourceLabel: 'Destatis Zensus 2022',
+      referenceDate: '2022-05-15',
+      sourceUrl: 'https://www.destatis.de/zensus2022',
+      places: []
+    }));
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const draft = scenario('draft');
+    draft.region = { minLat: 48.84, minLon: 8.18, maxLat: 48.87, maxLon: 8.23 };
+    draft.population.totalPersons = null;
+    fixture.componentInstance.scenario = draft;
+
+    (fixture.componentInstance as unknown as { estimatePopulation(): void }).estimatePopulation();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.estimateInfo)
+      .toContain('Destatis Zensus 2022, Stichtag 15.05.2022');
+    expect(fixture.componentInstance.estimateSourceUrl)
+      .toBe('https://www.destatis.de/zensus2022');
+    const totalInput = fixture.nativeElement.querySelector(
+      'input[aria-label="Einwohner gesamt"]') as HTMLInputElement;
+    expect(totalInput.valueAsNumber).toBe(52341);
+    expect(fixture.nativeElement.textContent).toContain(
+      'Automatisch ermittelt – Bearbeiten setzt eine manuelle Vorgabe.');
+    expect(draft.population.totalPersons).toBeNull();
+
+    totalInput.value = '53000';
+    totalInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(draft.population.totalPersons).toBe(53000);
+  });
+
   it('reports removal failures and resets every upload busy state', () => {
     const failure = throwError(() => new Error('offline'));
     api.deletePopulationGrid.mockReturnValue(failure);
@@ -138,7 +443,7 @@ describe('StudioComponent', () => {
 
     fixture.componentInstance.removeOsmData();
     expect(fixture.componentInstance.osmDataUploadBusy).toBe(false);
-    expect(fixture.componentInstance.message).toBe('OSM-Datensnapshot konnte nicht entfernt werden');
+    expect(fixture.componentInstance.message).toBe('OSM-Ortsdatensnapshot konnte nicht entfernt werden');
 
     fixture.componentInstance.removeCommuters();
     expect(fixture.componentInstance.commuterUploadBusy).toBe(false);
@@ -147,7 +452,7 @@ describe('StudioComponent', () => {
     fixture.componentInstance.removeWorkplaceMargins();
     expect(fixture.componentInstance.workplaceMarginUploadBusy).toBe(false);
     expect(fixture.componentInstance.message)
-      .toBe('Arbeitsplatz-Randwert konnte nicht entfernt werden');
+      .toBe('Amtliche Auspendlerquote konnte nicht entfernt werden');
   });
 
   it('rejects saving before a region has been selected', () => {

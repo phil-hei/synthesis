@@ -3,8 +3,8 @@ name: synthesis-config-and-flags
 description: >
   Vollständiger Katalog aller Konfigurationsachsen des SyntheSis-Repos: Szenario-Flags
   (Scenario.java, z. B. behaviorSource, targetModels, sumoFeedback, publicTransport,
-  calibrateModeChoice, llmModeChoice, useOsmData, useRealRouting, samplingFraction) und
-  Betriebs-Properties (SynthesisProperties, Prefix synthesis.: overpass, simulation, actitopp,
+  calibrateModeChoice, llmModeChoice, useRealRouting, samplingFraction sowie das Legacy-Feld useOsmData) und
+  Betriebs-Properties (SynthesisProperties, Prefix synthesis.: census, overpass, simulation, actitopp,
   sumo, transit inkl. GTFS-Feed-Registry, llm) samt Defaults, Konsumenten und Gates. Laden, WENN
   du wissen musst (a) welches Flag/Property Verhalten X steuert, (b) was der Default von Y ist
   (inkl. berechneter Defaults aus $SUMO_HOME), (c) ob ein Feature produktiv oder experimentell
@@ -29,10 +29,10 @@ Dieses Dokument ist der **Ground-Truth-Katalog** aller Konfiguration im SyntheSi
    (`backend/src/main/java/de/synthesis/SynthesisProperties.java`).
 3. **Env-Variablen** – Maschinen-Setup (`SUMO_HOME`, `SYNTHESIS_TRANSIT_VENV`).
 
-**Merkregel:** Ein Feature läuft nur, wenn **Szenario-Flag UND Betriebs-Property UND
-Verfügbarkeit** (Binary/venv/LLM erreichbar) zusammenkommen – sonst setzt die Pipeline die Stufe
-auf `SKIPPED` mit Log-Hinweis (bewusste Abwahl/fehlende Voraussetzung), bzw. `FAILED` bei echtem
-Fehler.
+**Merkregel:** Feature-Gates kombinieren je nach Funktion Szenario-Flag, Betriebs-Property und
+Verfügbarkeit (Binary/venv/LLM erreichbar). OSM-POI-/Siedlungsdaten sind die bewusste Ausnahme:
+Sie werden automatisch als Snapshot → Live-Overpass → synthetischer Fallback gewählt und haben
+keinen Szenario-Schalter mehr.
 
 ## Wann diesen Skill NICHT nutzen
 
@@ -62,8 +62,8 @@ driften, daher nur Block + Bedienelement).
 | `name` | String | `"Neues Szenario"` | Anzeigename; Studio-Block „Szenario" | produktiv |
 | `createdAt` | Instant | – | Metadatum | produktiv |
 | `region` | Region (`minLat/minLon/maxLat/maxLon`) | `null` bis Karte gezeichnet | Bounding-Box aller Stufen (Zonierung, OSM, Routing, GTFS-Feed-Auswahl) | produktiv |
-| `zoning.cellSizeMeters` | double | `1000` | Kantenlänge quadratischer Rasterzelle (m); `GridZoning.autoCellSize` vergröbert automatisch bis zum `synthesis.max-zones`-Limit. UI: Block „Szenario", Zahlenfeld „Zellgröße Zonenraster (m)" | produktiv |
-| `zoning.mode` | String | Feld-Default `"grid"`; **`/defaults` liefert `"inspire"`** (Neuanlagen, seit 2026-07-16) | Zonierungs-Modus (seit 2026-07-13, Commit `cb2f40a`): `grid` = metrisches Bbox-Raster (global) \| `inspire` = INSPIRE-/Zensus-Gitter (EPSG:3035/ETRS89-LAEA, **nur Europa**, flächengleich). Bei `inspire` quantisiert `InspireGridZoning.pickResolution` die `cellSizeMeters` auf die kanonischen Auflösungen 100 m/1 km/10 km; `Zone.name` trägt die INSPIRE-Zell-ID (`CRS3035RES…mN…E…`), Containment läuft in LAEA-Metern (`Zone.laeaE/laeaN/laeaRes`). **Europa-Guard:** liegt die Region außerhalb des EPSG:3035-Bereichs (`Epsg3035.covers`), fallen Preview + Zonierungs-Stufe aufs Bbox-Raster zurück (Job-Log-Hinweis). Der Feld-Default bleibt `grid`, damit persistierte Alt-Szenarien ohne `mode`-Key ihr Raster behalten. Job-Summary: `zoningMode` (beide Modi). UI: Block „Szenario", Select „Zonierung" | produktiv |
+| `zoning.cellSizeMeters` | double | `100` | Tatsächlich verwendete Kantenlänge quadratischer Rasterzellen (m). Bei neuer/neu gezeichneter Region fragt das Studio mit 100 m an; `GridZoning.autoCellSize` ermittelt in 50-m-Schritten die feinste Auflösung innerhalb von `synthesis.max-zones` und die UI schreibt den effektiven Wert zurück. | produktiv |
+| `zoning.mode` | String | `"grid"` (auch über `/defaults`) | Zonierungs-Modus: `grid` = automatisch fein aufgelöstes metrisches Bbox-Raster (global, empfohlener Default) \| `inspire` = INSPIRE-/Zensus-Gitter (EPSG:3035/ETRS89-LAEA, **nur Europa**, flächengleich). Bei `inspire` quantisiert `InspireGridZoning.pickResolution` weiterhin auf die kanonischen Auflösungen 100 m/1 km/10 km; `Zone.name` trägt die INSPIRE-Zell-ID (`CRS3035RES…mN…E…`), Containment läuft in LAEA-Metern (`Zone.laeaE/laeaN/laeaRes`). **Europa-Guard:** außerhalb des EPSG:3035-Bereichs fällt die Pipeline aufs Bbox-Raster zurück. Job-Summary: `zoningMode` (beide Modi). | produktiv |
 | `targetModels` | List\<String\> | `["logitopp", "mobilecity"]` | **Achse B**, Mehrfachauswahl: `logitopp` \| `mobilecity` \| `sumo`. UI: Block „Modellierung", Checkbox-Gruppe „Zielmodell" (`hasTarget(...)`/`toggleTarget(...)`) | produktiv (`sumo` nicht im Default) |
 
 **`targets()`-Helper (wichtig!):** Leere oder `null` Liste fällt auf `["logitopp", "mobilecity"]`
@@ -80,11 +80,11 @@ UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellier
 
 | Feld | Typ | Default | Wirkung / Konsument | Status |
 |---|---|---|---|---|
-| `totalPersons` | Integer | `null` | Einwohner gesamt; `null` = Schätzung über `personsPerKm2`. Beim Region-Setzen aus OSM-place-Nodes vorbefüllt. Konsument: `PopulationEstimator`/`PopulationGenerator` | produktiv |
+| `totalPersons` | Integer | `null` | Optionale manuelle Einwohnerzahl. `null` aktiviert: alternatives Upload-Raster → Destatis Zensus 2022 → OSM-Siedlungsschätzung → `personsPerKm2`. Der UI-Quellenhinweis schreibt bewusst nicht in dieses Feld zurück, damit die Manifest-Provenienz korrekt bleibt. | produktiv |
 | `personsPerKm2` | double | `1500` | Fallback-Dichte, wenn `totalPersons` leer und OSM nichts liefert | produktiv |
-| `samplingFraction` | double | `1.0` | Anteil synthetisierter Bevölkerung (mobiTopp `fractionOfPopulation`). Konsumenten: `PopulationGenerator` (Zonen-Sampling), `SimulationRunner` (an logiTopp durchgereicht), `ComparisonController` (Vergleichs-Metadatum) | produktiv |
+| `samplingFraction` | double | `1.0` | Anteil synthetisierter Bevölkerung (mobiTopp `fractionOfPopulation`). API/Persistenz bleiben `(0, 1]`; das Studio zeigt 5–100 % als Regler und der Vergleich als Prozentwert. Konsumenten: `PopulationGenerator` (Zonen-Sampling), `SimulationRunner` (an logiTopp durchgereicht), `ComparisonController` (Vergleichs-Metadatum) | produktiv |
 | `seed` | long | `42` | Zufalls-Seed – gleicher Seed + gleiche Parameter = identisches Ergebnis. Konsumenten: Pipeline-`random`, `GtaBehaviorRunner`/`LlmModeChoiceRunner` (baseSeed) | produktiv |
-| `useOsmData` | boolean | `true` | POIs/Siedlungsdaten via Overpass laden; bei `false` Stufe „OSM-Daten (POIs)" SKIPPED, Fallback synthetisch. Konsument: `GenerationService` → `OverpassClient` | produktiv |
+| `useOsmData` | boolean | `true` | **@Deprecated, zur JSON-Kompatibilität behalten und zur Laufzeit ignoriert.** Die Quelle wird automatisch als Szenario-Snapshot → Live-Overpass → synthetischer Fallback gewählt; im Studio gibt es dafür keine Checkbox mehr. | Legacy |
 | `useRealRouting` | boolean | `true` | Echte Reisezeit-/Distanzmatrizen via GraphHopper (OSM-Straßennetz) in Stufe „Matrizen"; bei `false`/Fehlschlag Luftlinie. Konsument: `GenerationService` → `RoutingEngine`/`MatrixGenerator` | produktiv |
 | `externalTrips` | boolean | `true` | Externe Zielzonen um das Gebiet, damit ein Teil der Wege es verlässt (realistische Weglängen). Konsument: `GenerationService` → `ExternalZones` | produktiv |
 | `behaviorSource` | String | `"actitopp"` | **Achse A**: `actitopp` (KIT, kalibriert) \| `gta` (LLM-Agenten, **experimentell**, Fallback actiTopp) \| `template` (einfacher Generator; **nicht** im UI-Select, nur Legacy-Fallback). Konsument: Stufe „Aktivitätenpläne" via `behaviorSourceEffective()` → `GtaBehaviorRunner`/`ActitoppRunner`/`ActivityGenerator`. UI: Select „Verhaltensmodell" | `actitopp` produktiv; `gta` **experimentell** |
@@ -132,8 +132,9 @@ Gate in `synthesis-change-control`):** `calibrateModeChoice`, `calibrateDistance
 `publicTransport`, `behaviorSource = "gta"` (+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
 Ziel `sumo` in `targetModels` ist funktionsfähig, aber **nicht** im Default enthalten.
 
-**Produktiv-Default (an, ohne Zutun):** `useOsmData`, `useRealRouting`, `externalTrips`,
-`useKitPopulation`, `behaviorSource = "actitopp"`, Targets `logitopp` + `mobilecity`.
+**Produktiv-Default (an, ohne Zutun):** automatische OSM-Datenquellenwahl,
+`useRealRouting`, `externalTrips`, `useKitPopulation`, `behaviorSource = "actitopp"`,
+Targets `logitopp` + `mobilecity`.
 
 ---
 
@@ -150,18 +151,32 @@ Keys mitpflegen.
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
-| `synthesis.data-dir` | `data` | Wurzel für Szenarien (`data/scenarios/<id>`), `llm-cache`, `gtfs-cache` | `ScenarioRepository`, `GenerationService` |
+| `synthesis.data-dir` | `data` | Wurzel für Szenarien (`data/scenarios/<id>`), `llm-cache`, `gtfs-cache`, `census-cache` | `ScenarioRepository`, `GenerationService` |
 | `synthesis.max-zones` | `600` | Zonen-Obergrenze; `GridZoning.autoCellSize` vergröbert die Zellgröße automatisch, `InspireGridZoning.pickResolution` weicht analog auf die nächstgröbere kanonische Auflösung aus | `GenerationService` → `GridZoning`/`InspireGridZoning` |
 
 ### 2.1 `synthesis.overpass` (OSM-Datenquelle)
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
+| `live-data-enabled` | `true` | Zentraler Betriebs-/Testschalter für Live-POI-/Place-Abfragen. Ein Szenario-Snapshot bleibt auch bei `false` nutzbar; ohne Snapshot nutzt die Pipeline synthetische Daten. Kein Nutzerparameter im Studio. | `GenerationService` |
 | `endpoint` | `https://overpass-api.de/api/interpreter` | Primärer Overpass-Server | `OverpassClient` |
 | `mirrors` | `["https://overpass.kumi.systems/api/interpreter", "https://overpass.private.coffee/api/interpreter"]` | Ausweich-Endpunkte bei 504/429; `allEndpoints()` = primär + Mirrors, dedupliziert | `OverpassClient` |
 | `timeout-seconds` | `30` | HTTP-Timeout | `OverpassClient` |
 
-### 2.2 `synthesis.simulation` (logiTopp, Stufe „Simulation (logiTopp)")
+### 2.2 `synthesis.census` (amtliches Bevölkerungsraster Deutschland)
+
+| Key | Default | Zweck | Konsument |
+|---|---|---|---|
+| `enabled` | `true` | Automatische Zensus-Quelle zentral deaktivierbar; kein Szenario-Schalter | `CensusPopulationSource` |
+| `version` | `zensus-2022-2024-10-08` | Stabiler Cache-/Manifest-Versionsbezeichner des geprüften Archivs | `CensusPopulationSource` |
+| `reference-date` | `2022-05-15` | Amtlicher Zensus-Stichtag für UI und Manifest | `GenerationService` |
+| `source-url` | Destatis `Zensus2022_Bevoelkerungszahl.zip` | Amtliches ZIP mit 100-m-/1-km-/10-km-CSV | `CensusPopulationSource` |
+| `archive-sha256` | `1a8428…a941a` | Erlaubter Inhalt; Abweichung führt ohne Cache-Vergiftung zum OSM-/Dichte-Fallback | `CensusPopulationSource` |
+| `grid-entry` | `Zensus2022_Bevoelkerungszahl_100m-Gitter.csv` | Aus dem ZIP atomar extrahierter Rastereintrag | `CensusPopulationSource` |
+| `timeout-seconds` | `180` | HTTP-Zeitbudget des einmaligen Downloads | `CensusPopulationSource` |
+| `max-archive-mb` | `64` | Download-Obergrenze (amtlicher Stand: ca. 18 MB komprimiert) | `CensusPopulationSource` |
+
+### 2.3 `synthesis.simulation` (logiTopp, Stufe „Simulation (logiTopp)")
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
@@ -171,7 +186,7 @@ Keys mitpflegen.
 | `calibration-iterations` | `8` | Max. Iterationen der Modal-Split-Kalibrierung (je Iteration ein Sim-Lauf) | Kalibrierschleife (`ModeChoiceCalibrator`) |
 | `calibration-tolerance` | `0.02` | Abbruch, wenn RMSE der Modus-Anteile zum Ziel darunter liegt | Kalibrierschleife |
 
-### 2.3 `synthesis.actitopp` (KIT actiTopp, Stufe „Aktivitätenpläne")
+### 2.4 `synthesis.actitopp` (KIT actiTopp, Stufe „Aktivitätenpläne")
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
@@ -179,7 +194,7 @@ Keys mitpflegen.
 | `project-dir` | `../validation/actitoppNG` | actitoppNG-Projekt (`gradlew` + `runSynthesis`) | `ActitoppRunner` |
 | `timeout-minutes` | `20` | Timeout des Gradle-Laufs | `ActitoppRunner` |
 
-### 2.4 `synthesis.sumo` (Zielmodell SUMO, Stufen „SUMO (Verkehr)" + „Netz-Feedback")
+### 2.5 `synthesis.sumo` (Zielmodell SUMO, Stufen „SUMO (Verkehr)" + „Netz-Feedback")
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
@@ -205,7 +220,7 @@ Keys mitpflegen.
 Der Framework-Fallback verwendet den Installer-Symlink `Versions/Current` indirekt und enthält
 keine Versionsnummer. Verifiziert mit SUMO 1.27.1 am 2026-08-11.
 
-### 2.5 `synthesis.transit` (ÖV-Zielmodell, Phase C – Gegenstück zum Szenario-Flag `publicTransport`)
+### 2.6 `synthesis.transit` (ÖV-Zielmodell, Phase C – Gegenstück zum Szenario-Flag `publicTransport`)
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
@@ -230,7 +245,7 @@ Neue Verbünde: in `application.yml` unter `synthesis.transit.feeds` ergänzen. 
 YAML-Liste **ersetzt** den Java-Default komplett – KVV dann mit auflisten. Kein Feed für die
 Region + kein Upload → ÖV entfällt mit Log-Hinweis.
 
-### 2.6 `synthesis.llm` (Achse A GTA + LLM-Moduswahl)
+### 2.7 `synthesis.llm` (Achse A GTA + LLM-Moduswahl)
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
@@ -354,7 +369,7 @@ aktualisieren und den Stand-Vermerk unten anpassen.
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-17.** Ground Truth vollständig gelesen und übertragen aus:
+- **Stand: 2026-08-25.** Ground Truth vollständig gelesen und übertragen aus:
   `backend/src/main/java/de/synthesis/scenario/Scenario.java`,
   `backend/src/main/java/de/synthesis/SynthesisProperties.java`,
   `backend/src/main/resources/application.yml`,

@@ -76,6 +76,8 @@ class ScenarioControllerTest {
     void defaultsExposeDisabledReturnDemand() {
         Scenario defaults = controller.defaults();
 
+        assertEquals("grid", defaults.zoning.mode);
+        assertEquals(100.0, defaults.zoning.cellSizeMeters);
         assertFalse(defaults.population.correctDistanceDecay,
                 "Experimenteller Distanz-Abkling-Hebel muss standardmäßig aus sein");
         assertNotNull(defaults.logistics.returns);

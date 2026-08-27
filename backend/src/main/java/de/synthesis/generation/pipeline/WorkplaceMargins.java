@@ -1,6 +1,9 @@
 package de.synthesis.generation.pipeline;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
@@ -13,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
@@ -24,6 +28,9 @@ public final class WorkplaceMargins {
 
     public static final String NAME = "workplace-margins.csv";
     public static final String SOURCE = "regionalstatistik-13111-08-02-5-B";
+    public static final String BA_SOURCE = "ba-gemeindedaten-2025";
+    public static final String BA_RESOURCE = "/reference/ba-workplace-margins-2025.csv";
+    public static final LocalDate BA_REFERENCE_DATE = LocalDate.of(2025, 6, 30);
 
     public record Observation(String municipalityCode, String municipalityName,
                               LocalDate date, long residentWorkers, long outboundWorkers) {
@@ -32,9 +39,16 @@ public final class WorkplaceMargins {
     public record Export(List<Observation> observations) {
     }
 
-    public record Margin(LocalDate date, int municipalities, long residentWorkers,
+    public record Margin(String source, LocalDate date, int municipalities, long residentWorkers,
                          long outboundWorkers, double externalShare,
                          int unresolvedMunicipalities) {
+
+        public Margin(LocalDate date, int municipalities, long residentWorkers,
+                      long outboundWorkers, double externalShare,
+                      int unresolvedMunicipalities) {
+            this(SOURCE, date, municipalities, residentWorkers, outboundWorkers,
+                    externalShare, unresolvedMunicipalities);
+        }
     }
 
     private record Key(String municipalityCode, String municipalityName, LocalDate date) {
@@ -147,13 +161,67 @@ public final class WorkplaceMargins {
             throw new IllegalArgumentException("Unplausibler Arbeitsplatz-Randwert: Wohnort="
                     + resident + ", Auspendelnde=" + outbound);
         }
-        return new Margin(latest, selected.size(), resident, outbound,
+        return new Margin(SOURCE, latest, selected.size(), resident, outbound,
                 (double) outbound / resident, unresolved);
+    }
+
+    /**
+     * Resolves one municipality from the versioned BA 2025 reference table bundled with the
+     * backend. Values hidden by official statistical confidentiality are deliberately absent.
+     */
+    public static Optional<Margin> bundledBaMargin(String municipalityCode) throws IOException {
+        if (municipalityCode == null || !municipalityCode.matches("\\d{8}")) {
+            throw new IllegalArgumentException("Ungültiger Gemeindeschlüssel: " + municipalityCode);
+        }
+        InputStream input = WorkplaceMargins.class.getResourceAsStream(BA_RESOURCE);
+        if (input == null) {
+            throw new IOException("Gebündelte BA-Gemeindedaten fehlen: " + BA_RESOURCE);
+        }
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(input, StandardCharsets.UTF_8))) {
+            String headerLine = null;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.isBlank() && !line.startsWith("#")) {
+                    headerLine = line;
+                    break;
+                }
+            }
+            if (headerLine == null) {
+                throw new IllegalArgumentException("Gebündelte BA-Gemeindedaten sind leer");
+            }
+            List<String> header = csvRow(headerLine);
+            int codeColumn = column(header, "municipalityCode");
+            int residentColumn = column(header, "residentWorkers");
+            int outboundColumn = column(header, "outboundWorkers");
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+                List<String> row = csvRow(line);
+                if (row.size() != header.size()) {
+                    throw new IllegalArgumentException(
+                            "Gebündelte BA-Gemeindedaten haben eine ungültige Spaltenzahl");
+                }
+                if (!municipalityCode.equals(row.get(codeColumn).trim())) {
+                    continue;
+                }
+                long resident = Long.parseLong(row.get(residentColumn).trim());
+                long outbound = Long.parseLong(row.get(outboundColumn).trim());
+                if (resident <= 0 || outbound < 0 || outbound > resident) {
+                    throw new IllegalArgumentException("Unplausible BA-Auspendlerquote für "
+                            + municipalityCode);
+                }
+                return Optional.of(new Margin(BA_SOURCE, BA_REFERENCE_DATE, 1, resident,
+                        outbound, (double) outbound / resident, 0));
+            }
+        }
+        return Optional.empty();
     }
 
     public static void writeNormalized(Path file, Margin margin) throws IOException {
         Files.writeString(file, "source;date;municipalities;residentWorkers;outboundWorkers;externalShare\n"
-                + SOURCE + ";" + margin.date() + ";" + margin.municipalities() + ";"
+                + margin.source() + ";" + margin.date() + ";" + margin.municipalities() + ";"
                 + margin.residentWorkers() + ";" + margin.outboundWorkers() + ";"
                 + String.format(Locale.ROOT, "%.12f", margin.externalShare()) + "\n");
     }
@@ -168,7 +236,8 @@ public final class WorkplaceMargins {
         if (row.size() != header.size()) {
             throw new IllegalArgumentException("Arbeitsplatz-Randwert hat eine ungültige Spaltenzahl");
         }
-        if (!SOURCE.equals(row.get(column(header, "source")))) {
+        String source = row.get(column(header, "source"));
+        if (!SOURCE.equals(source) && !BA_SOURCE.equals(source)) {
             throw new IllegalArgumentException("Unbekannte Arbeitsplatz-Randwertquelle");
         }
         LocalDate date = LocalDate.parse(row.get(column(header, "date")));
@@ -181,7 +250,7 @@ public final class WorkplaceMargins {
                 || Math.abs(share - (double) outbound / resident) > 1e-9) {
             throw new IllegalArgumentException("Normalisierter Arbeitsplatz-Randwert ist unplausibel");
         }
-        return new Margin(date, municipalities, resident, outbound, share, 0);
+        return new Margin(source, date, municipalities, resident, outbound, share, 0);
     }
 
     private static Observation observation(Key key, Measures measures) {

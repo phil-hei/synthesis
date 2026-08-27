@@ -199,6 +199,7 @@ describe('ComparisonComponent', () => {
     expect(text).toContain('MiD 2017');
     expect(text).toContain('Ohne Simulationsergebnis (nur Parameter): Ohne Ergebnis');
     expect(text).toContain('12.5 km');
+    expect(text).toContain('100 %');
     expect((fixture.nativeElement as HTMLElement).querySelector('.group td')
       ?.getAttribute('colspan')).toBe('4');
   });

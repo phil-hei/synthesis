@@ -19,6 +19,10 @@ scripts/preflight.sh core
 scripts/dev.sh
 ```
 
+`scripts/dev.sh` wartet auf erfolgreiche HTTP-Healthchecks beider Anwendungen. Bereits laufende
+SyntheSis-Prozesse werden wiederverwendet; eine fremde Belegung von Port 8090 oder 4300 führt zu
+einer verständlichen Fehlermeldung statt zu einem undurchsichtigen Doppelstart.
+
 Der vollständige Neuaufbau der externen Laufumgebung ist in
 [docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md) beschrieben.
 
@@ -46,16 +50,16 @@ reproduzierbar für KPI-Auswertung, Kalibrierung, SUMO und weitere Zielmodelle b
 Modus-, Ziel- und Routenentscheidungen sind Ergebnisse des Laufs; die Zeitstempel bleiben
 geplante Zeiten. Das ist bewusst ein SyntheSis-Vertrag und keine FleetPy-Dateischnittstelle.
 
-Für reproduzierbares Routing kann jedes gespeicherte Szenario ein eigenes **OSM-XML-Straßennetz**
-hochladen. Der Upload wird als OSM-Dokument mit `highway`-Wegen geprüft, muss die gewählte Region
-vollständig abdecken und gewinnt vor globaler Server-Datei und Overpass; Quelle und SHA-256-Kürzel
-stehen im Lauf-Manifest. Zusätzlich kann eine normalisierte **Pendler-OD-Matrix**
+Das OSM-Straßennetz wird für das Routing automatisch über Overpass geladen und mit Quelle sowie
+SHA-256 im Lauf-Manifest dokumentiert. Nur wenn dieser Abruf tatsächlich auf Luftlinie zurückfällt,
+bietet das Studio einen manuellen **OSM-XML-Straßennetz**-Upload an. Zusätzlich kann eine
+normalisierte **Pendler-OD-Matrix**
 (`homeLat;homeLon;workLat;workLon;commuters`) oder direkt ein amtlicher BA-CSV-Export
 **„Auspendler Gemeinden“** Arbeitsziele verankern. BA-Gemeindeschlüssel werden über die
-BKG-VG250-Gemeindepunkte aufgelöst. Weil der BA-Export nur Auspendler enthält, steuert er bedingt
-die Ziele bereits gewählter Außenbeziehungen. Optional setzt ein amtlicher Flat-File-CSV-Export
-der Regionalstatistik-Tabelle **13111-08-02-5-B** über `PEN092 / ERW033` zusätzlich deren Anteil;
-ohne diesen zweiten Upload bleibt die unbehandelte WORK-Gravitation maßgeblich. Externe Relationen
+BKG-VG250-Gemeindepunkte aufgelöst. Weil der BA-Export nur Auspendler enthält, ordnet das Backend
+automatisch die passende Außenquote aus den versionierten **BA-Gemeindedaten 2025** zu
+(10.152 veröffentlichte Gemeinden; Stichtag, URL und Original-SHA-256 belegt). Amtlich geheim
+gehaltene Werte werden nicht geschätzt. Externe Relationen
 verschieben die acht Außenanker auf pendlergewichtete reale Arbeitsortkoordinaten. PBF-Unterstützung bleibt
 ein getrennter nächster Adapter; ohne Uploads gelten unverändert die Overpass-/Luftlinien- und
 Gravitations-Fallbacks.

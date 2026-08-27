@@ -162,6 +162,45 @@ ohnehin als getrennte binäre Indikatoren nutzt, dürfen genau diese in einer
 neuen Präregistrierung einzeln geprüft werden; neue Datenkategorien sind das
 nicht.
 
+**Kontinuierlicher Prädiktor braucht beide Abdeckungsgates (FA-000,
+2026-08-24):** Auch eine Within-Cell-Regression darf Zellen ohne Variation des
+Prädiktors nicht als Evidenz zählen. Für jede Elternzelle `n`, `sum(x)`,
+`sum(x²)`, `sum(y)`, `sum(y²)` und `sum(x*y)` sammeln, lokal zentrieren und
+erst dann `Sxx`, `Syy`, `Sxy` poolen. FA-000 deckte damit 97,7036 % der
+OZ-Restvarianz, aber nur 58,8515 % statt mindestens 60 % der Entscheidungen
+ab. Dann trotz hoher SSE-Abdeckung weder `R²` noch Steigung interpretieren und
+die Transformation nicht post hoc wechseln.
+
+**Direkter Utility-Gegenlauf ohne Verhaltensänderung (FU-000, 2026-08-24):**
+Einen additiven Kandidatenbeitrag je Alternative separat berechnen,
+`U_counterfactual=U_full-U_component` bilden und nur daraus eine zweite
+Wahrscheinlichkeitskarte erzeugen; die echte Auswahl bleibt auf `U_full`.
+Beide Karten je Entscheidung auf Endlichkeit, Nichtnegativität und Summe eins
+prüfen. Für einen komponentenbedingten Log-Odds-Prädiktor keine Massen
+clippen: `0<p_full,p_counterfactual<1` ist ein technischer Gate. Ein großer
+Mittelwertunterschied im Gegenlauf ist eine Niveauwirkung und ersetzt nicht
+ein vorab festgelegtes Varianz-/Dominanzgate.
+
+**Komplementäre Top-Level-Beiträge getrennt präregistrieren (OU-000,
+2026-08-24):** Nach einem kombinierten Utility-Gegenlauf dessen Teilbeiträge
+nicht post hoc aufspalten. Ein komplementärer Beitrag darf in einer neuen
+Präregistrierung geprüft werden, wenn seine Terme disjunkt zur abgeschlossenen
+Komponente sind. OU-000 fasste deshalb die beiden ausgangsseitigen Nicht-FIX-
+Logsummen zusammen und ließ die zuvor geprüften FIX-Logsummen unangetastet.
+Auch hier gilt: 2,3376→10,0636 % mittlere Langwegmasse ohne die Komponente ist
+eine Niveauwirkung; die Dominanzfrage entschied separat das vorab fixierte
+Within-Cell-`R²` von nur 5,1121 %.
+
+**Disjunkte Utility-Zerlegung vor gemeinsamer Kompositionsprüfung (DU-000,
+2026-08-24):** Erst die obersten additiven Blöcke quellengetreu und ohne
+Überlappung definieren. FU-/OU-/DU-000 zerlegen so FIX-Logsummen,
+Origin-Logsummen und Zielstruktur; jede Sonde lässt reale Auswahl und
+Vollutility unverändert. Wenn kein Einzelblock das vorab gesetzte Dominanzgate
+erreicht (32,6632/5,1121/17,8117 %), die Anteile nicht addieren: Die
+Prädiktoren stammen aus separaten nichtlinearen Gegenläufen und können
+korrelieren. Der nächste Test muss eine gemeinsame Kompositionshypothese samt
+multivariater Identität neu präregistrieren.
+
 ## 3. Skripte (read-only, Python3-Stdlib)
 
 Alle Skripte akzeptieren als `argv[1]` **entweder** einen Szenario-Ordner
@@ -368,4 +407,16 @@ Wenn `summary.json` auffällig ist, eine Ebene tiefer gehen (alles unter
   `docs/05-validierung.md`.
 - **Ergänzung 2026-08-24:** PC-000 belegt den technischen Abbruch einer
   Mehrkategorie-Komponente trotz bestandener SSE-Abdeckung; Evidenz in
+  `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** FA-000 überträgt denselben Vorrang technischer
+  Abdeckung auf kontinuierliche, innerhalb der Elternzellen zentrierte
+  Prädiktoren; Evidenz in `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** FU-000 belegt das verhaltensneutrale Muster eines
+  kandidatenbezogenen Utility-Gegenlaufs und die Trennung von Niveauwirkung
+  und Varianzerklärung; Evidenz in `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** OU-000 belegt die neue Präregistrierung eines zum
+  abgeschlossenen Kandidaten disjunkten Top-Level-Beitrags, ohne dessen
+  Teilbeiträge nachträglich zu zerlegen; Evidenz in `docs/05-validierung.md`.
+- **Ergänzung 2026-08-24:** DU-000 schließt die disjunkte Top-Level-Zerlegung
+  und sperrt die Addition einzelner Gegenlauf-`R²`; Evidenz in
   `docs/05-validierung.md`.

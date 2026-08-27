@@ -44,7 +44,7 @@ flowchart LR
 | Modul | Verantwortung |
 |---|---|
 | `scenario` | Szenario-Aggregat, REST-API, Validierung, Metadaten-Endpoint für UI-Formulare |
-| `geodata` | Rohdaten-Beschaffung mit Cache: OSM-Extrakt (Overpass / Geofabrik-PBF-Clip), GTFS-Feed-Clip, Zensus-Raster-Clip |
+| `geodata` | Rohdaten-Beschaffung mit Cache: OSM-Extrakt (Overpass / Geofabrik-PBF-Clip), GTFS-Feed-Clip, amtliches Zensus-2022-Raster (`CensusPopulationSource`: URL+SHA-256, zentral unter `data/census-cache/`, regionaler 100-m-Filter) |
 | `zoning` | Zonen aus OSM-Admin-Grenzen oder H3/Grid; erzeugt `zones.csv`, GeoJSON, MobileCity-District-Artefakte |
 | `datasynthesis` | Provider-Slots je Datenebene (echt/öffentlich/synthetisch, siehe 02): Strukturdaten, Attraktivitäten, Survey-Template, Pendler, Depots |
 | `matrices` | Zentroid-Bestimmung, Matrix-Berechnung via GraphHopper/R5, Visum-MTX-Export + Matrix-YAMLs |
@@ -73,7 +73,7 @@ Jede Stufe: deklarierte Inputs/Outputs, idempotent, Seed-gesteuert reproduzierba
 | 2 Zonierung | Region, Modus, Auflösung | `zones.geojson`, `zones.csv`, `zone-to-community.csv`, `districts.gpkg`+`districts.xlsx` (MC) |
 | 3 Strukturdaten | Zonen + Zensus/Synthese | `SynthesisZoneTargets.csv` |
 | 4 Attraktivitäten | Zonen + OSM-POIs | `attractivities.csv` |
-| 5 Pendler | Zonen + normalisierte Koordinaten-OD oder amtlicher BA-Export `Auspendler Gemeinden` (AGS-Auflösung über BKG VG250); optional Regionalstatistik `13111-08-02-5-B` als Außenquote `PEN092/ERW033`. Randwert entscheidet innen/außen, BA verteilt bedingt die Außenziele; ohne Randwert bleibt die fixierte WORK-Gravitation aktiv | `population/commuters.csv` (gemappte Zonenrelationen), Manifest-/Job-Provenienz für Randwert |
+| 5 Pendler | Zonen + normalisierte Koordinaten-OD oder amtlicher BA-Export `Auspendler Gemeinden` (AGS-Auflösung über BKG VG250); der BA-Export erhält automatisch seinen Wohnort-Randwert aus den versionierten BA-Gemeindedaten 2025. Randwert entscheidet innen/außen, BA verteilt bedingt die Außenziele; ohne veröffentlichten Randwert bleibt die fixierte WORK-Gravitation aktiv | `population/commuters.csv`, `uploads/workplace-margins.csv`, Manifest-/Job-Provenienz |
 | 6 Matrizen | Zonen + OSM/GTFS-Routing | `*_TTC/COST/DIS.mtx.bz2`, Matrix-YAMLs |
 | 7 Long-Term | 3–6 + Survey-Template | `person/household/activity/car/fixedDestination.csv` |
 | 8 Short-Term + logiTopp | 7 + Matrizen + Logistik-Parameter | Raw-Wege-/Touren-CSVs, Zustell-, Abhol- und Paketstatus-Events; native Wege/Legs sowie 15-Minuten-Zonen-/OD-Profile unter `demand/` |

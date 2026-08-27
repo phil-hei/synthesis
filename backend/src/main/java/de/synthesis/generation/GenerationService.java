@@ -12,6 +12,7 @@ import de.synthesis.generation.pipeline.ActivityGenerator;
 import de.synthesis.generation.pipeline.AttractivityCalculator;
 import de.synthesis.generation.pipeline.CsvArtifacts;
 import de.synthesis.generation.pipeline.CommuterMatrix;
+import de.synthesis.generation.pipeline.CensusPopulationSource;
 import de.synthesis.generation.pipeline.ExternalZones;
 import de.synthesis.generation.pipeline.FeedbackMath;
 import de.synthesis.generation.pipeline.GeoJson;
@@ -73,6 +74,7 @@ public class GenerationService {
 
     private final ScenarioRepository scenarios;
     private final OverpassClient overpass;
+    private final CensusPopulationSource census;
     private final SynthesisProperties properties;
     private final ObjectMapper mapper;
     private final Map<String, GenerationJob> jobs = new ConcurrentHashMap<>();
@@ -85,6 +87,7 @@ public class GenerationService {
                              SynthesisProperties properties, ObjectMapper mapper) {
         this.scenarios = scenarios;
         this.overpass = overpass;
+        this.census = new CensusPopulationSource(properties.getCensus());
         this.properties = properties;
         this.mapper = mapper;
     }
@@ -129,18 +132,31 @@ public class GenerationService {
                 effective, effective != cellSizeMeters);
     }
 
-    public record RegionEstimate(long estimatedPopulation, String source,
+    public record RegionEstimate(long estimatedPopulation, String source, String sourceLabel,
+                                 String referenceDate, String sourceUrl,
                                  List<PlaceInfo> places) {
         public record PlaceInfo(String name, String type, long population) {
         }
     }
 
-    /** Live population estimate for a region from OSM settlement nodes (no persistence). */
+    /** Amtliche Zensus-Schätzung für Deutschland, danach OSM-Siedlungsdaten (ohne Persistenz). */
     public RegionEstimate estimateRegion(Scenario.Region region) {
+        Optional<CensusPopulationSource.Resolved> censusEstimate = census.resolve(region,
+                censusCacheDir(), ignored -> { });
+        if (censusEstimate.isPresent()) {
+            CensusPopulationSource.Resolved resolved = censusEstimate.get();
+            long total = Math.round(resolved.grid().totalPopulation());
+            CensusPopulationSource.Provenance p = resolved.provenance();
+            return new RegionEstimate(total, "zensus-2022", "Destatis Zensus 2022",
+                    p.referenceDate(), p.url(), List.of());
+        }
+        if (!properties.getOverpass().isLiveDataEnabled()) {
+            return new RegionEstimate(0, "none", "", "", "", List.of());
+        }
         try {
             List<OverpassClient.Place> places = overpass.fetchPlaces(region);
             if (places.isEmpty()) {
-                return new RegionEstimate(0, "none", List.of());
+                return new RegionEstimate(0, "none", "", "", "", List.of());
             }
             long estimate = PopulationEstimator.estimateForRegion(region, places);
             List<RegionEstimate.PlaceInfo> infos = places.stream()
@@ -148,9 +164,22 @@ public class GenerationService {
                     .limit(8)
                     .map(p -> new RegionEstimate.PlaceInfo(p.name(), p.type(), p.population()))
                     .toList();
-            return new RegionEstimate(estimate, "osm-places", infos);
+            return new RegionEstimate(estimate, "osm-places", "OSM-Siedlungsdaten",
+                    "", properties.getOverpass().getEndpoint(), infos);
         } catch (Exception e) {
-            return new RegionEstimate(0, "unavailable", List.of());
+            return new RegionEstimate(0, "unavailable", "", "", "", List.of());
+        }
+    }
+
+    private Path censusCacheDir() {
+        return Path.of(properties.getDataDir()).resolve("census-cache");
+    }
+
+    private record PopulationProvenance(String source, String label, String version,
+                                        String referenceDate, String url, String sha256,
+                                        String license, String attribution) {
+        static PopulationProvenance none() {
+            return new PopulationProvenance("not-used", "", "", "", "", "", "", "");
         }
     }
 
@@ -171,7 +200,9 @@ public class GenerationService {
         List<OverpassClient.Poi> pois = List.of();
         List<OverpassClient.Place> places = List.of();
         String populationSource;
+        String populationSourceLabel;
         String distributionSource;
+        PopulationProvenance populationProvenance = PopulationProvenance.none();
         int totalPersons;
         PopulationGenerator populationGenerator;
         PopulationGenerator.Result population;
@@ -313,14 +344,9 @@ public class GenerationService {
 
     // --- Stufe 2: OSM-Daten -------------------------------------------------------
 
-    /** POIs + Siedlungsdaten (optional, mit Fallback). Befüllt ctx.pois/ctx.places. */
+    /** POIs + Siedlungsdaten (automatische Quelle mit Fallback). Befüllt ctx.pois/ctx.places. */
     private void stageOsmData(PipelineContext ctx) {
         GenerationJob job = ctx.job;
-        if (!ctx.scenario.population.useOsmData) {
-            job.stage("OSM-Daten (POIs)").status = "SKIPPED";
-            job.log("OSM-Abruf deaktiviert, nutze synthetische Daten");
-            return;
-        }
         Path snapshot = scenarios.uploadsDir(ctx.scenario.id).resolve(OsmDataSnapshot.NAME);
         if (Files.isRegularFile(snapshot)) {
             try {
@@ -339,6 +365,11 @@ public class GenerationService {
                 throw new IllegalStateException("OSM-Datensnapshot ist nicht mehr gültig: "
                         + e.getMessage(), e);
             }
+        }
+        if (!properties.getOverpass().isLiveDataEnabled()) {
+            job.stage("OSM-Daten (POIs)").status = "SKIPPED";
+            job.log("Live-Overpass zentral deaktiviert, nutze synthetische Daten");
+            return;
         }
         ctx.osmDataSource = "overpass-live";
         try {
@@ -387,7 +418,7 @@ public class GenerationService {
     // --- Zwischenschritt: Einwohnerzahl + räumliche Verteilung --------------------
 
     /**
-     * Bestimmt Gesamteinwohner (Nutzerwert > Upload-Raster > OSM-Schätzung > Dichte) und
+     * Bestimmt Gesamteinwohner (Nutzerwert > Upload-Raster > Zensus 2022 > OSM > Dichte) und
      * verteilt sie auf die Zonen. Befüllt ctx.populationGenerator/totalPersons/
      * populationSource/distributionSource. Kein eigener Pipeline-Schritt (Logs erscheinen
      * zwischen den Stufen), muss aber vor den Attraktivitäten laufen (Private_* hängen davon ab).
@@ -396,52 +427,92 @@ public class GenerationService {
         Scenario scenario = ctx.scenario;
         GenerationJob job = ctx.job;
 
-        // Hochgeladenes Bevölkerungsraster (Zensus o. ä.) hat Vorrang vor allen anderen Quellen
-        double[] uploadWeights = null;
-        long uploadPopulation = 0;
+        // Alternative/neuere Uploads gewinnen vor dem backendseitig versionierten Zensus 2022.
+        double[] gridWeights = null;
+        long gridPopulation = 0;
+        String gridSource = null;
         Path gridFile = scenarios.uploadsDir(scenario.id).resolve("population-grid.csv");
         if (Files.exists(gridFile)) {
-            PopulationGridParser.ParseResult grid = PopulationGridParser.parse(gridFile);
-            uploadWeights = new double[ctx.zones.size()];
+            PopulationGridParser.ParseResult grid = PopulationGridParser.parse(gridFile, scenario.region);
+            gridWeights = new double[ctx.zones.size()];
             for (PopulationGridParser.GridPoint point : grid.points()) {
                 int index = GridZoning.zoneIndexOf(ctx.zones, point.lat(), point.lon());
                 if (index >= 0) {
-                    uploadWeights[index] += point.population();
-                    uploadPopulation += Math.round(point.population());
+                    gridWeights[index] += point.population();
+                    gridPopulation += Math.round(point.population());
                 }
             }
-            if (uploadPopulation > 0) {
-                job.log("Bevölkerungsraster-Upload (" + grid.format() + "): " + uploadPopulation
+            if (gridPopulation > 0) {
+                gridSource = "upload-grid";
+                ctx.populationProvenance = new PopulationProvenance("scenario-upload:population-grid.csv",
+                        "Hochgeladenes Bevölkerungsraster", "", "", "",
+                        OsmDataSnapshot.sha256(gridFile), "", "");
+                job.log("Bevölkerungsraster-Upload (" + grid.format() + "): " + gridPopulation
                         + " Einwohner in der Region");
             } else {
-                uploadWeights = null;
+                gridWeights = null;
                 job.log("Bevölkerungsraster-Upload enthält keine Punkte in der Region – wird ignoriert");
+            }
+        }
+
+        if (gridWeights == null) {
+            Optional<CensusPopulationSource.Resolved> resolved = census.resolve(
+                    scenario.region, censusCacheDir(), job::log);
+            if (resolved.isPresent()) {
+                PopulationGridParser.ParseResult grid = resolved.get().grid();
+                gridWeights = new double[ctx.zones.size()];
+                for (PopulationGridParser.GridPoint point : grid.points()) {
+                    int index = GridZoning.zoneIndexOf(ctx.zones, point.lat(), point.lon());
+                    if (index >= 0) {
+                        gridWeights[index] += point.population();
+                        gridPopulation += Math.round(point.population());
+                    }
+                }
+                if (gridPopulation > 0) {
+                    CensusPopulationSource.Provenance p = resolved.get().provenance();
+                    gridSource = "census-2022";
+                    ctx.populationProvenance = new PopulationProvenance(p.source(),
+                            "Destatis Zensus 2022", p.version(), p.referenceDate(), p.url(),
+                            p.archiveSha256(), p.license(), p.attribution());
+                    job.log("Amtliches Zensus-2022-Raster: " + gridPopulation
+                            + " Einwohner in der Region (Stichtag " + p.referenceDate() + ")");
+                } else {
+                    gridWeights = null;
+                }
             }
         }
 
         if (scenario.population.totalPersons != null) {
             ctx.totalPersons = scenario.population.totalPersons;
             ctx.populationSource = "user-defined";
-        } else if (uploadWeights != null) {
-            ctx.totalPersons = (int) uploadPopulation;
-            ctx.populationSource = "upload-grid";
+            ctx.populationSourceLabel = "Manuelle Einwohnerzahl";
+        } else if (gridWeights != null) {
+            ctx.totalPersons = (int) gridPopulation;
+            ctx.populationSource = gridSource;
+            ctx.populationSourceLabel = "upload-grid".equals(gridSource)
+                    ? "Hochgeladenes Bevölkerungsraster" : "Destatis Zensus 2022";
         } else if (!ctx.places.isEmpty()) {
             ctx.totalPersons = (int) PopulationEstimator.estimateForRegion(scenario.region, ctx.places);
             ctx.populationSource = "osm-places-estimate";
+            ctx.populationSourceLabel = "OSM-Siedlungsdaten (Schätzung)";
+            ctx.populationProvenance = new PopulationProvenance(ctx.osmDataSource,
+                    ctx.populationSourceLabel, "", "", properties.getOverpass().getEndpoint(),
+                    ctx.osmDataSha256, "ODbL", "OpenStreetMap contributors");
             job.log("Einwohner aus OSM-Siedlungsdaten geschätzt: " + ctx.totalPersons);
         } else {
             ctx.totalPersons = (int) Math.round(ctx.zones.stream().mapToDouble(z -> z.areaKm2).sum()
                     * scenario.population.personsPerKm2);
             ctx.populationSource = "density-estimate";
+            ctx.populationSourceLabel = "Dichteannahme";
             job.log("Einwohner über Dichteannahme geschätzt: " + ctx.totalPersons);
         }
         ctx.populationGenerator = new PopulationGenerator(
                 ctx.zones, ctx.random, scenario.population.seed);
         int[] poiCounts = countPoisPerZone(ctx.zones, ctx.pois);
-        double[] weights = uploadWeights != null
-                ? uploadWeights
+        double[] weights = gridWeights != null
+                ? gridWeights
                 : ctx.places.isEmpty() ? null : PopulationEstimator.zoneWeights(ctx.zones, ctx.places);
-        ctx.distributionSource = uploadWeights != null ? "upload-grid"
+        ctx.distributionSource = gridWeights != null ? gridSource
                 : !ctx.places.isEmpty() ? "osm-places"
                 : !ctx.pois.isEmpty() ? "poi-density" : "uniform-noise";
         ctx.populationGenerator.distributePopulation(
@@ -527,12 +598,12 @@ public class GenerationService {
         try {
             WorkplaceMargins.Margin margin = WorkplaceMargins.readNormalized(file);
             if (!ctx.externalCommuterDistributionAvailable) {
-                ctx.workplaceMarginSource = WorkplaceMargins.SOURCE + "-not-applied";
+                ctx.workplaceMarginSource = margin.source() + "-not-applied";
                 ctx.job.log("Arbeitsplatz-Randwert vorhanden, aber ohne externe Pendler-OD nicht angewendet");
                 return;
             }
             ctx.populationGenerator.useExternalWorkShare(margin.externalShare());
-            ctx.workplaceMarginSource = WorkplaceMargins.SOURCE;
+            ctx.workplaceMarginSource = margin.source();
             ctx.job.summary.put("workplaceMarginSource", ctx.workplaceMarginSource);
             ctx.job.summary.put("workplaceMarginDate", margin.date().toString());
             ctx.job.summary.put("residentWorkers", margin.residentWorkers());
@@ -729,10 +800,12 @@ public class GenerationService {
 
     private void stageManifest(PipelineContext ctx) throws IOException {
         writeManifest(ctx.artifacts, ctx.scenario, ctx.job, ctx.zones.size(), ctx.population,
-                ctx.logistics, !ctx.pois.isEmpty(), ctx.populationSource, ctx.totalPersons,
+                ctx.logistics, !ctx.pois.isEmpty(), ctx.populationSource,
+                ctx.populationSourceLabel, ctx.totalPersons,
                 ctx.logisticsGenerator.sources(), ctx.distributionSource, ctx.matrixSource,
                 ctx.roadNetworkSource, ctx.commuterSource, ctx.workplaceMarginSource,
-                ctx.osmDataSource, ctx.osmDataSha256, ctx.roadNetworkSha256);
+                ctx.osmDataSource, ctx.osmDataSha256, ctx.roadNetworkSha256,
+                ctx.populationProvenance);
     }
 
     // --- Stufe 11: Simulation logiTopp (Achse B) ----------------------------------------------
@@ -1250,6 +1323,15 @@ public class GenerationService {
         GenerationJob job = ctx.job;
         job.summary.put("zones", ctx.zones.size());
         job.summary.put("populationSource", ctx.populationSource);
+        job.summary.put("populationSourceLabel", ctx.populationSourceLabel);
+        if (!"user-defined".equals(ctx.populationSource)
+                && !ctx.populationProvenance.referenceDate().isBlank()) {
+            job.summary.put("populationReferenceDate", ctx.populationProvenance.referenceDate());
+        }
+        if (!"user-defined".equals(ctx.populationSource)
+                && !ctx.populationProvenance.url().isBlank()) {
+            job.summary.put("populationSourceUrl", ctx.populationProvenance.url());
+        }
         job.summary.put("populationDistribution", ctx.distributionSource);
         job.summary.put("persons", ctx.population.persons().size());
         job.summary.put("households", ctx.population.householdCount());
@@ -1454,12 +1536,14 @@ public class GenerationService {
 
     private void writeManifest(Path artifacts, Scenario scenario, GenerationJob job, int zoneCount,
                                PopulationGenerator.Result population, LogisticsGenerator.Result logistics,
-                               boolean osmUsed, String populationSource, int totalPersons,
+                               boolean osmUsed, String populationSource, String populationSourceLabel,
+                               int totalPersons,
                                LogisticsGenerator.Sources logisticsSources,
                                String distributionSource, String matrixSource,
                                String roadNetworkSource, String commuterSource,
                                String workplaceMarginSource, String osmDataSource,
-                               String osmDataSha256, String roadNetworkSha256) throws IOException {
+                               String osmDataSha256, String roadNetworkSha256,
+                               PopulationProvenance populationProvenance) throws IOException {
         ObjectNode manifest = mapper.createObjectNode();
         manifest.put("scenarioId", scenario.id);
         manifest.put("scenarioName", scenario.name);
@@ -1488,9 +1572,36 @@ public class GenerationService {
         quality.put("depots", !scenario.logistics.depots.isEmpty() ? "user-defined"
                 : logisticsSources.depotsFromOsm() ? "osm-pois" : "auto-placed");
         quality.put("packstations", logisticsSources.packstationsFromOsm() ? "osm-pois" : "synthetic");
-        manifest.putObject("populationEstimate").put("totalPersons", totalPersons);
+        ObjectNode populationEstimate = manifest.putObject("populationEstimate");
+        populationEstimate.put("totalPersons", totalPersons);
+        populationEstimate.put("source", populationSource);
+        populationEstimate.put("sourceLabel", populationSourceLabel);
+        if (!"user-defined".equals(populationSource)
+                && !populationProvenance.referenceDate().isBlank()) {
+            populationEstimate.put("referenceDate", populationProvenance.referenceDate());
+        }
 
         ObjectNode inputs = manifest.putObject("inputProvenance");
+        ObjectNode populationInput = inputs.putObject("population");
+        populationInput.put("source", populationProvenance.source());
+        if (!populationProvenance.version().isBlank()) {
+            populationInput.put("version", populationProvenance.version());
+        }
+        if (!populationProvenance.referenceDate().isBlank()) {
+            populationInput.put("referenceDate", populationProvenance.referenceDate());
+        }
+        if (!populationProvenance.url().isBlank()) {
+            populationInput.put("url", populationProvenance.url());
+        }
+        if (!populationProvenance.sha256().isBlank()) {
+            populationInput.put("sha256", populationProvenance.sha256());
+        }
+        if (!populationProvenance.license().isBlank()) {
+            populationInput.put("license", populationProvenance.license());
+        }
+        if (!populationProvenance.attribution().isBlank()) {
+            populationInput.put("attribution", populationProvenance.attribution());
+        }
         ObjectNode osmData = inputs.putObject("osmData");
         osmData.put("source", osmDataSource);
         if (!osmDataSha256.isBlank()) {

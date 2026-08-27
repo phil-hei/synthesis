@@ -22,6 +22,21 @@ class SynthesisPropertiesTest {
     }
 
     @Test
+    void liveOverpassDataIsEnabledByDefault() {
+        assertThat(new SynthesisProperties().getOverpass().isLiveDataEnabled()).isTrue();
+    }
+
+    @Test
+    void census2022ArchiveIsPinnedByVersionAndSha256() {
+        SynthesisProperties.Census census = new SynthesisProperties().getCensus();
+
+        assertThat(census.isEnabled()).isTrue();
+        assertThat(census.getReferenceDate()).isEqualTo("2022-05-15");
+        assertThat(census.getSourceUrl()).contains("Zensus2022_Bevoelkerungszahl.zip");
+        assertThat(census.getArchiveSha256()).matches("[0-9a-f]{64}");
+    }
+
+    @Test
     void sumoRootFallbackCarriesNoHardcodedVersion() {
         // Ohne $SUMO_HOME und ohne sumo im PATH bleibt nur das macOS-Framework. Der Pfad
         // muss über die Installer-Symlinks laufen, sonst bricht jedes SUMO-Update den Default.

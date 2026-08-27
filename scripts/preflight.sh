@@ -44,6 +44,7 @@ else
   fail "Node"
 fi
 has npm && ok "npm $(npm --version)" || fail "npm"
+has curl && ok "curl" || fail "curl (für Start- und Healthchecks)"
 
 [[ -f $SYNTHESIS_ROOT/backend/pom.xml ]] && ok "Backend-Projekt" || fail "backend/pom.xml"
 [[ -f $SYNTHESIS_ROOT/frontend/package-lock.json ]] && ok "Frontend-Lockfile" || fail "frontend/package-lock.json"

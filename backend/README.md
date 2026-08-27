@@ -35,9 +35,9 @@ java -jar target/synthesis-backend-0.1.0-SNAPSHOT.jar
 1. **Zonierung** – Quadratraster über der Region (`GridZoning`); die Zellgröße wird automatisch
    auf die feinste Auflösung angehoben, die das Zonenlimit (`synthesis.max-zones`, Default 600)
    einhält – die Matrizen wachsen mit O(n²)
-2. **OSM-Daten** – POIs + Siedlungsdaten (place-Nodes mit Einwohnerzahl) via Overpass (`OverpassClient`); daraus Einwohner-Schätzung und räumliche Bevölkerungsverteilung (`PopulationEstimator`, Gauß-Footprint je Siedlung); Fallback auf synthetische Daten / Dichteannahme
+2. **OSM-Daten** – POIs + Siedlungsdaten (place-Nodes mit Einwohnerzahl) automatisch aus Szenario-Snapshot oder Overpass (`OverpassClient`); Fallback auf synthetische POIs. Die Einwohnerzahl nutzt OSM erst nach einem nicht verfügbaren Zensus-Raster.
 3. **Attraktivitäten** – zonale Attraktivität je Aktivitätstyp (`AttractivityCalculator`) → `zones.csv`, `attractivities.csv`, `zones.geojson`. Optional Ring externer Zielzonen (`ExternalZones`, Flag `externalTrips`): Ziele außerhalb des Gebiets ohne Einwohner, damit ein Teil der Wege das Gebiet verlässt (realistischere Weglängen; Luftlinien-Impedanz)
-4. **Bevölkerungssynthese** – Haushalte/Personen/Pkw/feste Ziele (`PopulationGenerator`) → `household.csv`, `person.csv`, `car.csv`, `fixedDestination.csv`. Haushaltskompositionen optional aus einem **KIT-synthetisierten Demografie-Sample** (`PopulationSample`, Flag `useKitPopulation`, Resource `kit-population-sample.csv` aus KIT populationsynthesis/IPU: echte Alters-/Geschlechts-/Haushaltsgrößen-Verteilung), sonst Ad-hoc-Ziehung; Erwerbsstatus weiter altersbasiert. Quellen-Priorität für Einwohnerzahl und räumliche Verteilung: hochgeladenes Bevölkerungsraster (`PopulationGridParser`: Zensus-2022-Gitter in EPSG:3035 via `Epsg3035` oder generische lat/lon/population-CSV) → OSM-Siedlungsdaten → Dichteannahme
+4. **Bevölkerungssynthese** – Haushalte/Personen/Pkw/feste Ziele (`PopulationGenerator`) → `household.csv`, `person.csv`, `car.csv`, `fixedDestination.csv`. Haushaltskompositionen optional aus einem **KIT-synthetisierten Demografie-Sample** (`PopulationSample`, Flag `useKitPopulation`, Resource `kit-population-sample.csv` aus KIT populationsynthesis/IPU: echte Alters-/Geschlechts-/Haushaltsgrößen-Verteilung), sonst Ad-hoc-Ziehung; Erwerbsstatus weiter altersbasiert. Quellen-Priorität: manuelle Gesamtzahl → hochgeladenes alternatives/neueres Raster → automatisch gecachtes, per SHA-256 geprüftes Destatis-Zensus-2022-100-m-Raster (`CensusPopulationSource`) → OSM-Siedlungsdaten → Dichteannahme; deren Quelle, Stichtag und Hash stehen im Manifest. Ein amtlicher BA-Auspendlerexport erhält seine Außenquote automatisch aus der versionierten Resource `reference/ba-workplace-margins-2025.csv` (10.152 Gemeinden, Stichtag 30.06.2025, Original-URL+SHA-256 im Ressourcenheader; verwendete Quelle und Datum in Job-Zusammenfassung und Manifest-Qualitätsfeld).
 5. **Aktivitätenpläne** – Wochenpläne je Person. Primär über das kalibrierte KIT-Modell **actiTopp** (`ActitoppRunner` ruft den Gradle-Task `runSynthesis` im `actitoppNG`-Projekt; `ActivityGenerator.generateFromActitopp` übersetzt die actiTopp-Aktivitätstypen in die Legacy-Codes), Fallback auf den einfachen Template-Generator (`ActivityGenerator.generate`) bei Abschaltung/Fehler → `activity.csv`. Voraussetzung für actiTopp: jede Person hat ein festes WORK- und EDUCATION-Ziel (`fixedDestination.csv`), da actiTopp selbst entscheidet, wer arbeitet/lernt
 6. **Matrizen** – Reisezeit/Kosten/Distanz je Modus, Visum-`$V;D3`-Format (`MatrixGenerator`, `VisumMatrixWriter`) → `*.mtx.bz2` + Matrix-YAMLs. Auto/Rad/Fuß über echtes Routing auf dem OSM-Straßennetz (`RoutingEngine`, eingebettetes GraphHopper; Netz via Overpass als OSM-XML); ÖV und Kosten aus der Auto-Distanz abgeleitet. Bei deaktiviertem `useRealRouting` oder nicht erreichbarem Netz: Luftlinie × Umwegfaktor (Fallback je Relation)
 7. **Logistik** – Verteilzentren, Packstationen, Zustelldienste, Paketnachfrage- und logiTopp-Choice-Model-Parameter (`LogisticsGenerator`)
@@ -70,7 +70,7 @@ DELETE /api/scenarios/{id}             Szenario löschen
 POST   /api/scenarios/{id}/generate    Pipeline starten (202)
 GET    /api/scenarios/{id}/generation  Pipeline-Status (Polling)
 POST   /api/preview/zones              Zonen-Vorschau als GeoJSON (ohne Persistenz)
-POST   /api/region/estimate            Einwohner-Schätzung aus OSM-Siedlungsdaten (place-Nodes)
+POST   /api/region/estimate            Einwohnerzahl: Zensus 2022, danach OSM-/Dichte-Fallback
 POST   /api/scenarios/{id}/uploads/population-grid   Bevölkerungsraster-Upload (CSV, multipart)
 GET    /api/scenarios/{id}/uploads     Liste der Uploads
 DELETE /api/scenarios/{id}/uploads/population-grid   Upload entfernen
@@ -88,6 +88,12 @@ synthesis:
   overpass:
     endpoint: https://overpass-api.de/api/interpreter
     timeout-seconds: 30
+  census:
+    enabled: true
+    version: zensus-2022-2024-10-08
+    reference-date: 2022-05-15
+    source-url: https://www.destatis.de/static/DE/zensus/gitterdaten/Zensus2022_Bevoelkerungszahl.zip
+    archive-sha256: 1a8428d31eab264c8717bfdcbf40fbd66c217edb2e2a98d0e67741bd8a1a941a
   simulation:
     enabled: true                               # Stufe 10 an/aus
     project-dir: ../validation/mobitopp-rastatt # Legacy-Projekt mit runDeliverySynthesis

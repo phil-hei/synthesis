@@ -11,6 +11,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.synthesis.scenario.Scenario;
+
 /**
  * Reads point-based population grids from CSV. Three dialects are detected via
  * the header row:
@@ -43,6 +45,11 @@ public final class PopulationGridParser {
     }
 
     public static ParseResult parse(Path file) throws IOException {
+        return parse(file, null);
+    }
+
+    /** Liest nur Punkte innerhalb der Region; wichtig für das deutschlandweite 100-m-Raster. */
+    public static ParseResult parse(Path file, Scenario.Region region) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             String headerLine = reader.readLine();
             if (headerLine == null) {
@@ -80,6 +87,8 @@ public final class PopulationGridParser {
 
             List<GridPoint> points = new ArrayList<>();
             long skipped = 0;
+            double[] laeaBounds = region != null && (zensus || gridId)
+                    ? laeaBounds(region) : null;
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] cells = line.split(String.valueOf(delimiter), -1);
@@ -92,18 +101,29 @@ public final class PopulationGridParser {
                     double lat;
                     double lon;
                     if (zensus) {
-                        double[] latLon = Epsg3035.toLatLon(
-                                parseNumber(cells[xCol]), parseNumber(cells[yCol]));
+                        double easting = parseNumber(cells[xCol]);
+                        double northing = parseNumber(cells[yCol]);
+                        if (!withinLaeaBounds(easting, northing, laeaBounds)) {
+                            continue;
+                        }
+                        double[] latLon = Epsg3035.toLatLon(easting, northing);
                         lat = latLon[0];
                         lon = latLon[1];
                     } else if (gridId) {
                         double[] centre = gridIdToCentre(cells[gridIdCol]);
+                        if (!withinLaeaBounds(centre[0], centre[1], laeaBounds)) {
+                            continue;
+                        }
                         double[] latLon = Epsg3035.toLatLon(centre[0], centre[1]);
                         lat = latLon[0];
                         lon = latLon[1];
                     } else {
                         lat = parseNumber(cells[latCol]);
                         lon = parseNumber(cells[lonCol]);
+                    }
+                    if (region != null && (lat < region.minLat || lat > region.maxLat
+                            || lon < region.minLon || lon > region.maxLon)) {
+                        continue;
                     }
                     points.add(new GridPoint(lat, lon, population));
                 } catch (RuntimeException e) {
@@ -114,6 +134,37 @@ public final class PopulationGridParser {
                     : gridId ? "inspire-grid-id-epsg3035" : "wgs84-punkte";
             return new ParseResult(points, format, skipped);
         }
+    }
+
+    private static double[] laeaBounds(Scenario.Region region) {
+        double[][] samples = {
+                Epsg3035.fromLatLon(region.minLat, region.minLon),
+                Epsg3035.fromLatLon(region.minLat, region.maxLon),
+                Epsg3035.fromLatLon(region.maxLat, region.minLon),
+                Epsg3035.fromLatLon(region.maxLat, region.maxLon),
+                Epsg3035.fromLatLon((region.minLat + region.maxLat) / 2, region.minLon),
+                Epsg3035.fromLatLon((region.minLat + region.maxLat) / 2, region.maxLon),
+                Epsg3035.fromLatLon(region.minLat, (region.minLon + region.maxLon) / 2),
+                Epsg3035.fromLatLon(region.maxLat, (region.minLon + region.maxLon) / 2)
+        };
+        double minE = Double.POSITIVE_INFINITY;
+        double maxE = Double.NEGATIVE_INFINITY;
+        double minN = Double.POSITIVE_INFINITY;
+        double maxN = Double.NEGATIVE_INFINITY;
+        for (double[] sample : samples) {
+            minE = Math.min(minE, sample[0]);
+            maxE = Math.max(maxE, sample[0]);
+            minN = Math.min(minN, sample[1]);
+            maxN = Math.max(maxN, sample[1]);
+        }
+        // Großzügiger Rand fängt die leichte Krümmung geografischer Bbox-Kanten in LAEA ab;
+        // die exakte Lat/Lon-Prüfung erfolgt danach.
+        return new double[]{minE - 50_000, maxE + 50_000, minN - 50_000, maxN + 50_000};
+    }
+
+    private static boolean withinLaeaBounds(double easting, double northing, double[] bounds) {
+        return bounds == null || (easting >= bounds[0] && easting <= bounds[1]
+                && northing >= bounds[2] && northing <= bounds[3]);
     }
 
     /** Langform: volle LAEA-Meter (Eurostat Census 2021, Zensus 2022 GITTER_ID). */

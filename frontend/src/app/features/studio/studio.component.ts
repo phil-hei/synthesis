@@ -25,6 +25,9 @@ import {
 } from '../../core/models/results.model';
 import type { LineString, Polygon } from 'geojson';
 
+type DeliveryShareKey = 'shareHome' | 'shareWork' | 'sharePackstation';
+type LogisticsMetricKey = 'parcelsPerPersonWeek' | 'parcelStdDev';
+
 @Component({
   selector: 'app-studio',
   imports: [CommonModule, FormsModule],
@@ -43,7 +46,10 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   busy = false;
   message = '';
   scenarioListError = '';
+  zonePreviewInfo = '';
   estimateInfo = '';
+  estimateSourceUrl = '';
+  estimatedPopulation: number | null = null;
   upload: UploadSummary | null = null;
   uploadBusy = false;
   roadNetworkUpload: RoadNetworkUploadSummary | null = null;
@@ -54,6 +60,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   commuterUploadBusy = false;
   workplaceMarginUpload: WorkplaceMarginUploadSummary | null = null;
   workplaceMarginUploadBusy = false;
+  randomizeEachRun = false;
 
   simKpis: SimKpis | null = null;
   sumoSummary: SumoSummary | null = null;
@@ -123,16 +130,22 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stopPolling();
     this.api.scenarioDefaults().subscribe({
       next: defaults => {
+        if (defaults) {
+          defaults.population.useRealRouting = true;
+        }
         this.scenario = defaults;          // region ist hier null: noch kein Rechteck
         this.selectedScenarioId = '';
         this.job = null;
         this.artifacts = [];
         this.estimateInfo = '';
+        this.estimateSourceUrl = '';
+        this.estimatedPopulation = null;
         this.upload = null;
         this.roadNetworkUpload = null;
         this.osmDataUpload = null;
         this.commuterUpload = null;
         this.message = '';
+        this.zonePreviewInfo = '';
         this.clearSimulation();
         this.drawRegion();
         this.zoneLayer?.remove();
@@ -150,15 +163,23 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     this.scenario = JSON.parse(JSON.stringify(selected));
+    this.scenario!.population.useRealRouting = true;
     this.job = null;
     this.artifacts = [];
     this.estimateInfo = '';
+    this.estimateSourceUrl = '';
+    this.estimatedPopulation = null;
+    this.zonePreviewInfo = '';
     this.clearSimulation();
     this.loadUploads();
     this.zoneLayer?.remove();
     this.drawRegion();
     this.drawDepots();
     this.fitRegion();
+    if (selected.region) {
+      this.previewZones();
+      this.estimatePopulation();
+    }
     if (selected.id) {
       this.api.generationStatus(selected.id).subscribe({
         next: job => {
@@ -245,12 +266,90 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   // --- Modellierung (Zwei-Achsen-Auswahl) ------------------------------------
 
   readonly calibrationModes = [
-    { key: 'pedestrian', label: 'Fuß' },
-    { key: 'bike', label: 'Rad' },
-    { key: 'car', label: 'MIV (Fahrer)' },
-    { key: 'passenger', label: 'MIV (Mitf.)' },
-    { key: 'publicTransport', label: 'ÖV' },
+    { key: 'pedestrian', label: 'Fuß', title: 'Zielanteil aller Wege, die zu Fuß zurückgelegt werden.' },
+    { key: 'bike', label: 'Rad', title: 'Zielanteil aller Wege, die mit dem Fahrrad zurückgelegt werden.' },
+    { key: 'car', label: 'MIV (Fahrer)', title: 'Zielanteil aller Wege als Fahrer eines Pkw.' },
+    { key: 'passenger', label: 'MIV (Mitf.)', title: 'Zielanteil aller Wege als Mitfahrer in einem Pkw.' },
+    { key: 'publicTransport', label: 'ÖV', title: 'Zielanteil aller Wege mit öffentlichen Verkehrsmitteln.' },
   ];
+
+  /** UI-Prozentwert; das Szenario-/API-Modell behält seinen Anteil im Intervall (0, 1]. */
+  get samplingPercent(): number {
+    return Math.round((this.scenario?.population.samplingFraction ?? 1) * 100);
+  }
+
+  set samplingPercent(value: number | string) {
+    if (!this.scenario) {
+      return;
+    }
+    const percent = Number(value);
+    if (Number.isFinite(percent)) {
+      this.scenario.population.samplingFraction = Math.min(100, Math.max(5, percent)) / 100;
+    }
+  }
+
+  logisticsMetricLabel(key: LogisticsMetricKey): string {
+    const value = this.scenario?.logistics[key] ?? 0;
+    return value.toLocaleString('de-DE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  setLogisticsMetric(key: LogisticsMetricKey, value: number | string, maximum: number): void {
+    if (!this.scenario) {
+      return;
+    }
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      this.scenario.logistics[key] = Math.round(
+        Math.min(maximum, Math.max(0, parsed)) * 100) / 100;
+    }
+  }
+
+  deliverySharePercent(key: DeliveryShareKey): number {
+    return Math.round((this.scenario?.logistics[key] ?? 0) * 100);
+  }
+
+  get deliveryShareTotalPercent(): number {
+    if (!this.scenario) {
+      return 0;
+    }
+    return Math.round((this.scenario.logistics.shareHome
+      + this.scenario.logistics.shareWork
+      + this.scenario.logistics.sharePackstation) * 100);
+  }
+
+  /** Der manuelle Netz-Upload erscheint erst, wenn ein angeforderter Routinglauf zurückfiel. */
+  get roadNetworkFallbackNeeded(): boolean {
+    return this.scenario?.population.useRealRouting === true
+      && this.job?.summary?.['matrixSource'] === 'beeline-estimate';
+  }
+
+  /** Hält alle drei Zustellanteile als ganze Prozentwerte exakt bei zusammen 100 %. */
+  setDeliverySharePercent(key: DeliveryShareKey, value: number | string): void {
+    if (!this.scenario) {
+      return;
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+    const target = Math.min(100, Math.max(0, Math.round(parsed)));
+    const keys: DeliveryShareKey[] = ['shareHome', 'shareWork', 'sharePackstation'];
+    const others = keys.filter(candidate => candidate !== key);
+    const firstOld = this.deliverySharePercent(others[0]);
+    const secondOld = this.deliverySharePercent(others[1]);
+    const remaining = 100 - target;
+    const otherTotal = firstOld + secondOld;
+    const first = otherTotal > 0
+      ? Math.round(remaining * firstOld / otherTotal)
+      : Math.floor(remaining / 2);
+    const second = remaining - first;
+    this.scenario.logistics[key] = target / 100;
+    this.scenario.logistics[others[0]] = first / 100;
+    this.scenario.logistics[others[1]] = second / 100;
+  }
 
   /**
    * Regionstyp-Vorlagen für den Kalibrierungs-Zielwert (RegioStaR-Raumtypen).
@@ -368,10 +467,10 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     this.afterRegionChanged();
   }
 
-  /** Nach Regionsänderung: Rechteck zeichnen, Zonenvorschau, Einwohner aus OSM schätzen. */
+  /** Nach Regionsänderung: Rechteck zeichnen, Zonenvorschau, amtliche/OSM-Einwohner prüfen. */
   private afterRegionChanged(): void {
     this.drawRegion();
-    this.previewZones();
+    this.previewZones(true);
     this.estimatePopulation();
   }
 
@@ -379,41 +478,87 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.scenario?.region) {
       return;
     }
-    this.estimateInfo = 'Einwohner werden aus OSM geschätzt…';
+    this.estimateInfo = 'Einwohnerquelle wird geprüft (Zensus 2022 → OSM → Dichte)…';
+    this.estimateSourceUrl = '';
+    this.estimatedPopulation = null;
     this.api.estimateRegion(this.scenario.region).subscribe({
       next: estimate => {
-        if (estimate.source === 'osm-places' && estimate.estimatedPopulation > 0) {
+        this.estimateSourceUrl = estimate.sourceUrl;
+        if (estimate.source === 'zensus-2022' && estimate.estimatedPopulation > 0) {
+          this.estimatedPopulation = estimate.estimatedPopulation;
+          const reference = estimate.referenceDate
+            ? `, Stichtag ${estimate.referenceDate.split('-').reverse().join('.')}` : '';
+          this.estimateInfo = `${estimate.estimatedPopulation.toLocaleString('de-DE')} Einwohner `
+            + `(${estimate.sourceLabel}${reference})`;
+        } else if (estimate.source === 'osm-places' && estimate.estimatedPopulation > 0) {
+          this.estimatedPopulation = estimate.estimatedPopulation;
           const names = estimate.places.slice(0, 3).map(p => p.name).join(', ');
           this.estimateInfo = `≈ ${estimate.estimatedPopulation.toLocaleString('de-DE')} Einwohner `
             + `(OSM-Siedlungsdaten: ${names}${estimate.places.length > 3 ? ', …' : ''})`;
-          if (this.scenario && this.scenario.population.totalPersons == null) {
-            this.scenario.population.totalPersons = estimate.estimatedPopulation;
-          }
         } else {
-          this.estimateInfo = 'Keine OSM-Einwohnerdaten gefunden – es gilt die Dichte-Schätzung';
+          this.estimateInfo = 'Keine Zensus-/OSM-Einwohnerdaten gefunden – es gilt die Dichte-Schätzung';
         }
       },
-      error: () => this.estimateInfo = 'Einwohner-Schätzung nicht verfügbar'
+      error: () => {
+        this.estimateSourceUrl = '';
+        this.estimatedPopulation = null;
+        this.estimateInfo = 'Einwohner-Schätzung nicht verfügbar';
+      }
     });
   }
 
-  previewZones(): void {
+  /** Zeigt die automatische Schätzung, ohne sie als manuelle Szenario-Vorgabe zu persistieren. */
+  get displayedTotalPersons(): number | null {
+    return this.scenario?.population.totalPersons ?? this.estimatedPopulation;
+  }
+
+  onTotalPersonsChanged(value: number | string | null): void {
+    if (!this.scenario) {
+      return;
+    }
+    if (value === null || value === '') {
+      this.scenario.population.totalPersons = null;
+      return;
+    }
+    const parsed = Number(value);
+    this.scenario.population.totalPersons = Number.isFinite(parsed)
+      ? Math.max(0, Math.round(parsed)) : null;
+  }
+
+  previewZones(useFinestResolution = false): void {
     if (!this.scenario?.region) {
       this.message = 'Bitte zuerst eine Region auf der Karte zeichnen';
       return;
     }
-    this.api.previewZones(this.scenario.region, this.scenario.zoning.cellSizeMeters,
+    const requested = useFinestResolution ? 100 : this.scenario.zoning.cellSizeMeters;
+    this.api.previewZones(this.scenario.region, requested,
         this.scenario.zoning.mode).subscribe({
       next: geojson => {
         this.zoneLayer?.remove();
         this.zoneLayer = L.geoJSON<ZoneFeatureProperties, Polygon>(geojson, {
           style: { color: '#15314f', weight: 1, fillOpacity: 0.05 }
         }).addTo(this.map);
-        if (geojson.autoAdjusted && this.scenario) {
+        if (this.scenario) {
           this.scenario.zoning.cellSizeMeters = geojson.cellSizeMeters;
-          this.message = `${geojson.features.length} Zonen – Zellgröße automatisch auf `
-            + `${geojson.cellSizeMeters} m erhöht (Zonenlimit)`;
+        }
+        if (useFinestResolution) {
+          const standardNote = this.scenario?.zoning.mode === 'inspire'
+            ? ' (feinste passende INSPIRE-Standardstufe: 100 m, 1 km oder 10 km)'
+            : ' (feinste Auflösung innerhalb des Limits von 600 Zonen)';
+          this.zonePreviewInfo = `Automatisch vorgeschlagen: `
+            + `${geojson.cellSizeMeters.toLocaleString('de-DE')} m${standardNote}.`;
+          this.message = `${geojson.features.length} Zonen – automatisch `
+            + `${geojson.cellSizeMeters.toLocaleString('de-DE')} m vorgeschlagen`;
+        } else if (geojson.autoAdjusted) {
+          const reason = this.scenario?.zoning.mode === 'inspire'
+            ? 'INSPIRE-Standardstufe und 600-Zonen-Limit'
+            : '600-Zonen-Limit';
+          this.zonePreviewInfo = `Auf ${geojson.cellSizeMeters.toLocaleString('de-DE')} m angepasst `
+            + `(${reason}). Der tatsächlich verwendete Wert steht jetzt im Feld.`;
+          this.message = `${geojson.features.length} Zonen – Zellgröße auf `
+            + `${geojson.cellSizeMeters.toLocaleString('de-DE')} m angepasst`;
         } else {
+          this.zonePreviewInfo = '';
           this.message = `${geojson.features.length} Zonen`;
         }
       },
@@ -513,7 +658,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     input.value = '';
     if (!file || !this.scenario?.id) {
       if (!this.scenario?.id) {
-        this.message = 'Bitte Szenario zuerst speichern, dann OSM-Datensnapshot hochladen';
+        this.message = 'Bitte Szenario zuerst speichern, dann OSM-Ortsdatensnapshot hochladen';
       }
       return;
     }
@@ -522,11 +667,12 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       next: summary => {
         this.osmDataUpload = summary;
         this.osmDataUploadBusy = false;
-        this.message = `OSM-Datensnapshot übernommen (${summary.pois.toLocaleString('de-DE')} POIs)`;
+        this.message = `OSM-Ortsdatensnapshot übernommen (${summary.pois.toLocaleString('de-DE')} POIs)`;
       },
       error: err => {
         this.osmDataUploadBusy = false;
-        this.message = 'OSM-Datensnapshot fehlgeschlagen: ' + (err.error?.message ?? err.message);
+        this.message = 'OSM-Ortsdatensnapshot fehlgeschlagen: '
+          + (err.error?.message ?? err.message);
       }
     });
   }
@@ -540,11 +686,11 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       next: () => {
         this.osmDataUpload = null;
         this.osmDataUploadBusy = false;
-        this.message = 'OSM-Datensnapshot entfernt; POIs und Siedlungen werden wieder live geladen';
+        this.message = 'OSM-Ortsdatensnapshot entfernt; Orte und Einrichtungen werden wieder live geladen';
       },
       error: () => {
         this.osmDataUploadBusy = false;
-        this.message = 'OSM-Datensnapshot konnte nicht entfernt werden';
+        this.message = 'OSM-Ortsdatensnapshot konnte nicht entfernt werden';
       }
     });
   }
@@ -563,11 +709,17 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     this.api.uploadCommuters(this.scenario.id, file).subscribe({
       next: summary => {
         this.commuterUpload = summary;
+        this.workplaceMarginUpload = summary.workplaceMargin;
         this.commuterUploadBusy = false;
         const coverage = summary.source === 'upload-ba-pendler-vg250'
           ? `, ${(summary.coverage * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 })} % BA-Abdeckung`
           : '';
-        this.message = `Pendlermatrix übernommen (${summary.relations.toLocaleString('de-DE')} Relationen${coverage})`;
+        const margin = summary.workplaceMargin
+          ? `; amtliche Auspendlerquote ${(summary.workplaceMargin.externalShare * 100)
+            .toLocaleString('de-DE', { maximumFractionDigits: 1 })} % automatisch zugeordnet`
+          : '';
+        this.message = `Pendlermatrix übernommen (${summary.relations.toLocaleString('de-DE')} `
+          + `Relationen${coverage}${margin})`;
       },
       error: err => {
         this.commuterUploadBusy = false;
@@ -584,6 +736,10 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     this.api.deleteCommuters(this.scenario.id).subscribe({
       next: () => {
         this.commuterUpload = null;
+        if (this.workplaceMarginUpload?.source === 'ba-gemeindedaten-2025'
+            || this.workplaceMarginUpload?.source === '') {
+          this.workplaceMarginUpload = null;
+        }
         this.commuterUploadBusy = false;
         this.message = 'Pendlermatrix entfernt; Arbeitsziele nutzen wieder das Gravitationsmodell';
       },
@@ -600,7 +756,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     input.value = '';
     if (!file || !this.scenario?.id) {
       if (!this.scenario?.id) {
-        this.message = 'Bitte Szenario zuerst speichern, dann Arbeitsplatz-Randwert hochladen';
+        this.message = 'Bitte Szenario zuerst speichern, dann die amtliche Auspendlerquote hochladen';
       }
       return;
     }
@@ -609,12 +765,13 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       next: summary => {
         this.workplaceMarginUpload = summary;
         this.workplaceMarginUploadBusy = false;
-        this.message = `Arbeitsplatz-Randwert übernommen (${(summary.externalShare * 100)
+        this.message = `Amtliche Auspendlerquote übernommen (${(summary.externalShare * 100)
           .toLocaleString('de-DE', { maximumFractionDigits: 2 })} % Auspendelnde)`;
       },
       error: err => {
         this.workplaceMarginUploadBusy = false;
-        this.message = 'Randwert-Upload fehlgeschlagen: ' + (err.error?.message ?? err.message);
+        this.message = 'Upload der Auspendlerquote fehlgeschlagen: '
+          + (err.error?.message ?? err.message);
       }
     });
   }
@@ -628,11 +785,11 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       next: () => {
         this.workplaceMarginUpload = null;
         this.workplaceMarginUploadBusy = false;
-        this.message = 'Arbeitsplatz-Randwert entfernt; Außenquote nutzt wieder das Gravitationsmodell';
+        this.message = 'Amtliche Auspendlerquote entfernt; Arbeitsziele nutzen wieder die Standardschätzung';
       },
       error: () => {
         this.workplaceMarginUploadBusy = false;
-        this.message = 'Arbeitsplatz-Randwert konnte nicht entfernt werden';
+        this.message = 'Amtliche Auspendlerquote konnte nicht entfernt werden';
       }
     });
   }
@@ -673,7 +830,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
           this.commuterUpload = {
             name: commuters.name, relations: 0, totalCommuters: 0,
             relationsWithHomeInRegion: 0, source: '', exportTotalCommuters: 0,
-            coverage: 0, skippedAggregateRows: 0, unresolvedMunicipalities: 0
+            coverage: 0, skippedAggregateRows: 0, unresolvedMunicipalities: 0,
+            workplaceMargin: null
           };
         }
         const workplaceMargins = list.find(u => u.name === 'workplace-margins.csv');
@@ -754,7 +912,23 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       this.message = 'Bitte zuerst speichern';
       return;
     }
-    this.api.generate(this.scenario.id).subscribe({
+    if (this.randomizeEachRun) {
+      this.scenario.population.seed = this.createRandomSeed();
+      this.api.updateScenario(this.scenario).subscribe({
+        next: saved => {
+          this.scenario = saved;
+          this.startGeneration(saved.id ?? this.selectedScenarioId);
+        },
+        error: err => this.message = 'Zufallsvariante konnte nicht gespeichert werden: '
+          + (err.error?.message ?? err.message)
+      });
+      return;
+    }
+    this.startGeneration(this.scenario.id);
+  }
+
+  private startGeneration(scenarioId: string): void {
+    this.api.generate(scenarioId).subscribe({
       next: job => {
         this.job = job;
         this.artifacts = [];
@@ -762,6 +936,13 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: err => this.message = 'Fehler: ' + (err.error?.message ?? err.message)
     });
+  }
+
+  /** Erzeugt nur den neuen reproduzierbaren Lauf-Seed; die Pipeline leitet alles Weitere davon ab. */
+  private createRandomSeed(): number {
+    const values = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(values);
+    return values[0] || 1;
   }
 
   private startPolling(scenarioId: string): void {

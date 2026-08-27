@@ -457,6 +457,54 @@ Utility-Schalter einzeln; alle bestehen beide 60-%-Abdeckungsgates.
 oder Verfügbarkeitssonde und keine Dosis. Der nächste Schritt braucht neue,
 vorab fixierte Mechanismusforensik außerhalb dieser Merkmalsklassen.
 
+**⛔ Fixziel-Ankerdistanz technisch unentscheidbar (2026-08-24):** FA-000
+regressiert `log1p` der Origin-Fixziel-Distanz innerhalb identischer
+Zweck-Ausgangszellen gegen die Langwegmasse. Utility, Demand und alle früheren
+Aggregate sind exakt; Fixzonen und Distanzen sind vollständig gültig. Nach
+Ausschluss von Zellen ohne Within-Varianz bleiben aber nur 11.263/19.138 =
+**58,8515 %** statt mindestens 60 % der Entscheidungen, obwohl 97,7036 % der
+OZ-Restvarianz abgedeckt sind. Rohe Steigung und 13,2780 % Erklärungsanteil
+sind daher nicht interpretierbar. **Regel:** Abdeckung nicht senken und keine
+andere Transformation/Klassierung derselben Ankerdistanz nachschieben. Ein
+neuer Mechanismus muss vorab direkt an den kandidatenbezogenen `*_FIX`-
+Utilitybeiträgen oder einer anderen situativen Struktur ansetzen; keine Dosis.
+
+**❌ Direkter Fixziel-Utilitybeitrag nicht dominant (2026-08-24):** FU-000
+entfernt in einem rein diagnostischen zweiten Wahrscheinlichkeitslauf exakt
+die zwei additiven FIX-Logsummen je Kandidat. Vollutility, Auswahl, Demand und
+frühere Aggregate bleiben identisch. Die Prüfung ist mit 76,5336 %
+Entscheidungs- und praktisch 100 % SSE-Abdeckung interpretierbar; positive
+Steigung, aber nur **32,6632 %** statt mindestens 50 % Erklärung. Ohne
+FIX-Terme steigt die mittlere Langwegmasse deskriptiv 2,3376→6,8881 %; der
+Beitrag wirkt also auf das Niveau, dominiert aber nicht die Restvarianz.
+**Regel:** keine post-hoc Aufteilung der FIX-Logsummen und keine Dosis. Der
+nächste Schritt braucht einen neuen, vorab fixierten Mechanismus außerhalb des
+kombinierten Fixzielbeitrags.
+
+**❌ Direkter Origin-Utilitybeitrag nicht dominant (2026-08-24):** OU-000
+entfernt in einem rein diagnostischen zweiten Wahrscheinlichkeitslauf exakt
+die beiden ausgangsseitigen Nicht-FIX-Logsummen je Kandidat. Vollutility,
+Auswahl, Demand und frühere Aggregate bleiben identisch. Die Prüfung ist mit
+76,5336 % Entscheidungs- und praktisch 100 % SSE-Abdeckung interpretierbar;
+positive Steigung, aber nur **5,1121 %** statt mindestens 50 % Erklärung. Ohne
+Origin-Terme steigt die mittlere Langwegmasse deskriptiv 2,3376→10,0636 %;
+der Beitrag wirkt stark auf das Niveau, dominiert aber nicht die Restvarianz.
+**Regel:** keine post-hoc Aufteilung der Origin-Logsummen und keine Dosis. Der
+nächste Schritt braucht einen neuen, vorab fixierten Mechanismus außerhalb der
+kombinierten Origin- und FIX-Beiträge.
+
+**❌ Direkter Zielstruktur-Utilitybeitrag nicht dominant (2026-08-24):**
+DU-000 entfernt in einem rein diagnostischen Gegenlauf den verbleibenden,
+disjunkten Block aus Attraktivitäts-Logsum sowie direkten Kurzband- und
+Intrazonal-Termen. Der Lauf ist mit 76,5336 % Entscheidungs- und praktisch
+100 % SSE-Abdeckung interpretierbar; positive Steigung, aber nur
+**17,8117 %** statt mindestens 50 % Erklärung. Ohne Zielstruktur-Block steigt
+die mittlere Langwegmasse nur 2,3376→2,9077 %. FU-/OU-/DU-000 decken nach
+Quellformel die vollständige Top-Level-Utility disjunkt ab; einzeln erklärt
+kein Block mindestens 50 %. **Regel:** keine Einzeltermzerlegung und keine
+Dosis. Nächster zulässiger Mechanismus ist eine neu präregistrierte gemeinsame
+Kompositions-/Kompensationsprüfung der drei Blöcke.
+
 **Option B — Gebietsgröße (✅ getestet 2026-07-12, These bestätigt):** Zwei kontrollierte
 Offline-Läufe (je 4000 Personen, nur die Fläche unterschiedlich) → Ø 2,58 km (10 km) →
 **4,95 km** (55 km), Fernwege >10 km 0 %→13,3 %. Fläche IST der Hebel für den absoluten Ø.

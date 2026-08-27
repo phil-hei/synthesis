@@ -84,6 +84,27 @@ class PopulationGridParserTest {
     }
 
     @Test
+    void nationalGridCanBeFilteredToTheScenarioRegionWhileStreaming() throws IOException {
+        double[] rastatt = Epsg3035.fromLatLon(48.86, 8.20);
+        double[] berlin = Epsg3035.fromLatLon(52.52, 13.40);
+        Path file = dir.resolve("deutschland.csv");
+        Files.writeString(file, "GITTER_ID_100m;x_mp_100m;y_mp_100m;Einwohner\n"
+                + "r;" + rastatt[0] + ";" + rastatt[1] + ";250\n"
+                + "b;" + berlin[0] + ";" + berlin[1] + ";500\n");
+        de.synthesis.scenario.Scenario.Region region = new de.synthesis.scenario.Scenario.Region();
+        region.minLat = 48.84;
+        region.maxLat = 48.88;
+        region.minLon = 8.17;
+        region.maxLon = 8.24;
+
+        PopulationGridParser.ParseResult result = PopulationGridParser.parse(file, region);
+
+        assertEquals(1, result.points().size());
+        assertEquals(250, result.totalPopulation(), 1e-9);
+        assertEquals(0, result.skippedLines(), "herausgefilterte Regionen sind keine Parsefehler");
+    }
+
+    @Test
     void unknownHeaderFailsWithHelpfulMessage() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
                 () -> parse("unknown.csv", "foo;bar\n1;2\n"));

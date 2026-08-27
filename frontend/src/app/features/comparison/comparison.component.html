@@ -66,9 +66,9 @@
             }
           </tr>
           <tr>
-            <td>Stichprobenanteil</td>
+            <td title="Anteil der regionalen Bevölkerung, der synthetisiert und simuliert wurde">Stichprobenanteil</td>
             @for (e of entries; track e) {
-              <td>{{ e.params.samplingFraction }}</td>
+              <td>{{ e.params.samplingFraction * 100 | number:'1.0-0' }} %</td>
             }
             @if (mid) {
               <td></td>

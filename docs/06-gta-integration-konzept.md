@@ -1030,6 +1030,9 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Verifiziert per Live-API: `/defaults` → `inspire`; Alt-Szenario ohne Key lädt weiter `grid`.
   Tests: `coversOnlyTheEuropeanAreaOfUse` (Epsg3035Test), E2E
   `inspireRequestOutsideEuropeFallsBackToGrid` (New-York-Bbox → Grid-Zonen); Suite 37/37.
+  **Abgelöst am 2026-08-26:** Wegen des großen Sprungs von 1 km auf 10 km bei mehr als 600
+  INSPIRE-Zellen starten Neuanlagen wieder im frei auflösbaren `grid`-Modus. INSPIRE bleibt als
+  bewusst wählbares amtliches Standardraster erhalten.
 - **✅ Bevölkerungs-Upload liest INSPIRE-/Eurostat-Zell-IDs + gtfs.de in der Feed-Registry
   (2026-07-17):** Dritter Parser-Dialekt in `PopulationGridParser`: Zell-IDs
   `CRS3035RES<res>mN…E…` (Eurostat Census Grid 2021, Spalte `GRD_ID`+`T`; Zensus-Dateien ohne
@@ -1268,6 +1271,112 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   logiTopp-Golden-Lauf im Volltest, vorkonfiguriertes Runner-/Container-Image,
   self-hosted Overpass oder gebündelter GraphHopper-PBF-Extrakt sowie abschließende
   GPL-Arm's-length-Dokumentation.
+- **✅ Zonenvorschau konsistent nachgeführt (2026-08-25):** Beim Laden eines gespeicherten
+  Szenarios sowie nach Änderungen an Zellgröße oder Zonierungsmodus fordert das Studio das
+  aktuelle Raster unmittelbar neu an. INSPIRE-Zellen werden im GeoJSON aus ihren vier echten,
+  nach WGS84 transformierten EPSG:3035-Ecken aufgebaut; die zuvor verwendeten geografischen
+  Bounding-Boxen erzeugten in Leaflet sichtbare Scheinlücken beziehungsweise doppelte Kanten.
+  Die fachliche LAEA-Partition und persistierte Szenarien bleiben unverändert. **Verifiziert:**
+  `GeoJsonTest`, `InspireGridZoningTest`, Backend-Suite 142 Tests (7 externe Skips),
+  Angular/Vitest-Suite 26/26 grün, Produktions-AOT-Build und Browserprüfung (gespeichertes
+  INSPIRE-Szenario lädt mit Raster; Wechsel auf Bbox aktualisiert auf 16 Zonen).
+- **✅ Studio-Parameter verständlicher geführt (2026-08-25):** Der intern weiterhin als
+  Anteil `(0, 1]` persistierte `samplingFraction` wird im Studio als synchroner Prozent-Regler
+  (5–100 %) und im Szenario-Vergleich als Prozentwert dargestellt. Alle gerenderten
+  Eingabefelder besitzen einen eigenen oder geerbten Erklärungstext. Der wirkungsarme
+  Szenario-Schalter `useOsmData` ist aus dem Studio entfernt und bleibt nur als ignoriertes
+  Legacy-JSON-Feld erhalten: Die Pipeline wählt nun immer automatisch Szenario-Snapshot →
+  Live-Overpass → synthetischen Fallback. Nur der Betriebs-/Testschalter
+  `synthesis.overpass.live-data-enabled=false` unterbindet Live-Abfragen; vorhandene Snapshots
+  bleiben nutzbar. **Verifiziert:** `StudioComponent`-Interaktionstests prüfen Prozentbindung,
+  Tooltip-Abdeckung und fehlenden OSM-Schalter; `GenerationPipelineE2ETest` beweist, dass ein
+  Snapshot trotz Legacy-Wert `false` verwendet wird und Offline-Läufe Live-Overpass zentral
+  deaktivieren können; `SynthesisPropertiesTest` sichert den produktiven Default `true`.
+- **✅ Amtliches Zensus-2022-Raster automatisch integriert (2026-08-25):**
+  `CensusPopulationSource` lädt für Deutschlandregionen das Destatis-Archiv
+  `Zensus2022_Bevoelkerungszahl.zip` einmalig nach `data/census-cache/`, akzeptiert es nur mit
+  dem fest hinterlegten SHA-256
+  `1a8428d31eab264c8717bfdcbf40fbd66c217edb2e2a98d0e67741bd8a1a941a` und extrahiert das
+  100-m-Raster atomar. `PopulationGridParser` filtert das deutschlandweite CSV beim Einlesen
+  auf die Szenario-Bbox. Die Quellenleiter lautet nun: manuelle Gesamtzahl → alternatives oder
+  neueres Upload-Raster → Zensus 2022 → OSM-Siedlungsschätzung → Dichteannahme. Ein
+  Download-, Format- oder Hashfehler blockiert keinen Lauf, sondern aktiviert den nächsten
+  Fallback. Studio und Manifest zeigen Quelle und Stichtag 15.05.2022; das Manifest hält
+  zusätzlich Version, URL, SHA-256, Lizenz und Namensnennung fest. Der CSV-Upload bleibt für
+  alternative beziehungsweise neuere Raster bestehen. **Verifiziert:** Das echte amtliche ZIP
+  wurde gegen URL, Hash, Eintragsnamen und Header geprüft; `CensusPopulationSourceTest` deckt
+  Download, Hash-Ablehnung, Cache-Wiederverwendung, Deutschland-Guard und Regionsfilter ab;
+  `GenerationPipelineE2ETest` führt die Offline-Pipeline mit einem hashgeprüften Zensus-ZIP bis
+  zur Manifest-Provenienz aus. Der reale Laufzeitabruf für den Rastatt-Ausschnitt lieferte
+  65.960 Einwohner, Quelle `Destatis Zensus 2022`, Stichtag 15.05.2022; das gecachte ZIP hatte
+  exakt den erwarteten SHA-256. Gesamtgates: Backend 148 Tests grün (7 umgebungsbedingt
+  übersprungen), Frontend 30/30 Tests und Produktions-Build grün; Browserprüfung ohne
+  Laufzeitfehler bestätigte Quelle, Stichtag, Prozentregler und Tooltip-Texte in der UI.
+  **UI-Nachschärfung (2026-08-25):** Das Feld „Einwohner gesamt“ zeigt die automatisch
+  ermittelte Zensus-/OSM-Zahl nun direkt an, hält `totalPersons` aber bis zu einer bewussten
+  Bearbeitung weiterhin leer. Dadurch bleibt die automatische Quellenprovenienz korrekt;
+  Bearbeiten erzeugt eine manuelle Vorgabe, Leeren aktiviert wieder die Automatik.
+  **Verifiziert:** Frontend 30/30 Tests und AOT-Produktions-Build grün; Browserlauf zeigte
+  652.725 Zensus-Einwohner direkt im Feld, Stichtag 15.05.2022, keine Konsolenfehler.
+- **✅ OSM-Eingaben getrennt und Logistikregler gekoppelt (2026-08-26):** Das Studio trennt
+  den „OSM-Ortsdatensnapshot“ für Ziele, Bevölkerung, Depots und Packstationen sichtbar vom
+  separaten Straßennetz für echtes Routing; Tooltips erklären, dass der Snapshot kein
+  routbares Netz enthält. Der bisherige „Arbeitsplatz-Randwert“ heißt nun „Amtliche
+  Auspendlerquote“: Er bestimmt den Anteil der Arbeitsziele außerhalb der Region, während eine
+  externe Pendlermatrix deren räumliche Verteilung vorgibt. Pakete je Person, Unterschiede
+  zwischen Personen sowie die Zustellanteile Zuhause/Arbeitsplatz/Packstation werden als
+  Regler dargestellt. Beim Verschieben eines Zustellanteils verteilt das Studio den Rest
+  proportional auf die beiden anderen und hält die Summe exakt bei 100 %. **Verifiziert:**
+  Angular/Vitest-Suite 34/34 grün und Produktions-AOT-Build erfolgreich; der Browserlauf
+  bestätigte für den Zuhause-Regler 80/10/10 % → 60/20/20 % bei weiterhin 100 % Summe.
+  **UI-Nachschärfung (2026-08-26):** Der manuelle OSM-Ortsdatensnapshot-Upload ist aus dem
+  Standard-Studio entfernt. Ortsdaten werden beim Generieren automatisch über Overpass geladen,
+  als `osm-data.json` mit SHA-256 im Lauf dokumentiert und fallen bei Nichterreichbarkeit auf
+  synthetische Daten zurück; vorhandene eingefrorene Szenario-Snapshots bleiben sichtbar und
+  entfernbar. Auch der schwer beschaffbare Upload der amtlichen Auspendlerquote ist aus dem
+  Standard-Studio entfernt: Er wirkt nur zusammen mit einer externen Pendler-OD-Verteilung und
+  bleibt für bestehende beziehungsweise per API vorbereitete Szenarien rückwärtskompatibel. Eine
+  automatische amtliche Zuordnung folgt in der nachstehenden Nachschärfung. **Verifiziert:** Frontend 34/34 Tests,
+  AOT-Produktions-Build und Browserprüfung; direkter Backend-Aufruf auf Port 8090 sowie
+  Frontend-Proxy lieferten HTTP 200.
+  **Weitere UI-Nachschärfung (2026-08-26):** Bei einer neuen oder neu gezeichneten Region fragt
+  das Studio ab 100 m an, berechnet in 50-m-Schritten die feinste Zellgröße innerhalb des
+  600-Zonen-Limits und schreibt den tatsächlich verwendeten Wert ins Feld. Der praktische
+  Neuanlagen-Default ist wieder das frei auflösbare Bbox-Raster; das INSPIRE-Gitter bleibt als
+  bewusste Option mit seinen festen Stufen 100 m/1 km/10 km. Routingzeiten werden als automatische Kette
+  OSM/Overpass → GraphHopper → Luftlinien-Fallback erklärt; ein manueller
+  Straßennetz-Upload erscheint nur noch, wenn der letzte Lauf tatsächlich auf Luftlinie
+  zurückfiel. Die interne Seed-Zahl ist aus dem Standardformular entfernt: Eine Checkbox wählt
+  bei Bedarf vor jedem Lauf kryptographisch eine neue Variante und persistiert deren Seed für
+  die Reproduzierbarkeit. Der Paket-Regler reicht nun von 0 bis 10 Paketen je Person und Woche;
+  Zensus-Raster und Gebietsgrenzen sind in Alltagssprache erklärt. **Verifiziert:**
+  Frontend 37/37 Tests und AOT-Produktions-Build grün.
+  **✅ Gemeinsamen Entwicklungsstart gehärtet (2026-08-26):** `scripts/dev.sh` wartet nun auf
+  erfolgreiche HTTP-Healthchecks von Backend und Frontend, verwendet bereits laufende gesunde
+  SyntheSis-Prozesse wieder und unterscheidet sie von fremden Portbelegungen. Damit führt ein
+  erneuter Start nicht mehr zu einem konkurrierenden Maven-/Angular-Prozess oder einer verfrühten
+  Erfolgsmeldung. `scripts/preflight.sh core` prüft zusätzlich das dafür benötigte `curl`.
+  Der Browser-Abnahmelauf deckte dabei einen unabhängigen Wiederladefehler auf: Bei gespeicherten
+  Szenarien wurde zwar das Zonenraster, nicht aber die automatische Zensus-/OSM-Einwohneranzeige
+  neu angefragt. `onScenarioSelected()` aktualisiert jetzt beides; ein Roundtrip-Szenario behielt
+  750 m Rasterauflösung und zeigte nach dem Neuladen erneut den Zensuswert im Einwohnerfeld.
+  **Verifiziert (2026-08-27):** 150 Backend-Tests ohne Fehler (7 umgebungsabhängige Skips),
+  38/38 Frontend-Tests, Angular-Produktionsbuild, idempotenter gemeinsamer Start und
+  Browser-Roundtrip mit 652.725 Zensus-Einwohnern; das temporäre Abnahmeszenario wurde danach
+  wieder entfernt.
+  **✅ Amtliche Auspendlerquote backendseitig automatisiert (2026-08-26):** Der zunächst
+  geprüfte GENESIS-Gastzugang darf die vollständige Tabelle `13111-08-02-5-B` nicht exportieren.
+  Als belastbare zweite amtliche Quelle dient deshalb der frei verfügbare BA-Jahresdatensatz
+  „Gemeindedaten der sozialversicherungspflichtig Beschäftigten nach Wohn- und Arbeitsort“ 2025.
+  Das Backend enthält daraus 10.152 nutzbare Gemeindewerte mit Stichtag 30.06.2025; URL und
+  SHA-256 der 1,5-MB-Originaldatei sind im Ressourcenheader festgehalten. 600 von der BA
+  geheim gehaltene Kleingemeindewerte bleiben bewusst aus, statt geschätzt zu werden. Beim
+  Upload eines BA-Exports „Auspendler Gemeinden“ ordnet `UploadController` den passenden
+  Randwert automatisch zu und entfernt ihn wieder, wenn die zugehörige Pendlermatrix entfernt
+  oder durch eine generische OD-Matrix ersetzt wird. Explizite alte Regionalstatistik-Uploads
+  bleiben rückwärtskompatibel. **Verifiziert:** Backend 149 Tests grün (7 externe Skips),
+  Frontend 38/38 Tests und AOT-Produktions-Build grün; der Rastatt-Referenzwert bleibt
+  13.723/22.971 = 59,7405 %.
 
 ### Phase 5 – Externe Klärungen (nicht-technisch, parallel)
 - **Takomat:** MobileCity-Import finalisieren (Netz-/TEC-/MOD-Tabellen, Messagepack,

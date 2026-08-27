@@ -48,9 +48,12 @@ kein Hinweis: Der Abgleich kostet einen `cp`, ein übersehener Hinweis kostet Ta
 Vor dem Kopieren die Richtung prüfen — welcher Baum der neuere ist, entscheidet der
 Inhalt, nicht der Zeitstempel.
 
-`scripts/dev.sh` startet nur eigene Kindprozesse und beendet beim Abbruch auch nur
-diese. Laufzeitlogs liegen gitignoriert unter `.runtime/logs/`. Ein bereits extern
-laufender Ollama-Server wird weiterverwendet.
+`scripts/dev.sh` prüft Backend und Frontend per HTTP und meldet die Anwendung erst nach beiden
+erfolgreichen Healthchecks als bereit. Bereits laufende SyntheSis-Prozesse werden wiederverwendet;
+eine fremde Belegung von Port 8090 oder 4300 bricht mit einer konkreten Meldung ab. Neu gestartete
+Kindprozesse werden beim Abbruch beendet, bereits vorhandene Prozesse bleiben unberührt.
+Laufzeitlogs liegen gitignoriert unter `.runtime/logs/`. Ein bereits extern laufender
+Ollama-Server wird weiterverwendet.
 
 ## CI
 

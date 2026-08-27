@@ -47,7 +47,7 @@ public class Scenario {
 
     public static class Zoning {
         /** Edge length of a square grid cell in meters. */
-        public double cellSizeMeters = 1000;
+        public double cellSizeMeters = 100;
         /**
          * Zonierungs-Modus: {@code "grid"} = metrisches Bbox-Raster (global, Default) |
          * {@code "inspire"} = EPSG:3035/Zensus-Gitter (europäisch, flächengleich, Zensus-aligned).
@@ -62,7 +62,11 @@ public class Scenario {
         /** Fraction of the regional population synthesized and exported to downstream models. */
         public double samplingFraction = 1.0;
         public long seed = 42;
-        /** Fetch POIs from OSM (Overpass) for attractivities; falls back to synthetic on failure. */
+        /**
+         * Legacy compatibility field. OSM POI/place data is now selected automatically
+         * (scenario snapshot, live Overpass, synthetic fallback) and this value is ignored.
+         */
+        @Deprecated
         public boolean useOsmData = true;
         /** Build real travel-time/distance matrices via GraphHopper (OSM road network); falls back to beeline. */
         public boolean useRealRouting = true;

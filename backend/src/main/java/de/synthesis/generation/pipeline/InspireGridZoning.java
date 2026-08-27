@@ -27,7 +27,8 @@ public final class InspireGridZoning {
 
     /**
      * Auflösung, die der gewünschten Zellgröße am nächsten kommt (log-Maß) und deren Gitter unter
-     * dem Zonenlimit bleibt; nötigenfalls gröber. Bei Default 1000 m ergibt das 1 km (wie heute).
+     * dem Zonenlimit bleibt; nötigenfalls gröber. Der praktische Neuanlagen-Default ist das frei
+     * auflösbare Bbox-Raster; diese Methode wird nur bei bewusst gewähltem INSPIRE-Modus genutzt.
      */
     public static int pickResolution(Scenario.Region region, double requestedMeters, int maxZones) {
         int target = RESOLUTIONS[0];

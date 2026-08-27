@@ -74,13 +74,15 @@ wie belastbar ein Szenario ist.
   [BKG-VG250-Gemeindepunkte](https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-250-000-stand-01-01-vg250-01-01.html)
   auf. Die normalisierten Koordinaten bleiben unabhängig von laufabhängigen Zonen-IDs.
   Der BA-Auspendlerexport enthält keine innergemeindlichen Beschäftigten und ist daher eine
-  bedingte Zielverteilung für bereits vom Gravitationsmodell gewählte Außenbeziehungen. Externe
+  bedingte Zielverteilung. Das Backend ordnet beim Upload automatisch die passende Außenquote
+  aus den versionierten BA-Gemeindedaten 2025 zu. Externe
   Ziele werden derzeit auf acht richtungsgetrennte, pendlergewichtete Arbeitsortanker verdichtet;
   die unbehandelte WORK-Gravitationsverteilung wird vor deren Verschiebung fixiert.
-- **Optionaler Arbeitsplatz-Randwert:** Flat-File-CSV der Regionalstatistik-Tabelle
-  `13111-08-02-5-B`. SyntheSis liest den neuesten im Export enthaltenen Stichtag und setzt die Außenquote
-  als `PEN092` (Auspendelnde) / `ERW033` (SvB am Wohnort). Der Randwert wird nur zusammen mit
-  einer externen Pendler-OD angewendet; der BA-Export bestimmt dann das Ziel bedingt auf „außen“.
+- **Automatischer Arbeitsplatz-Randwert:** Die gebündelte Referenz enthält 10.152 veröffentlichte
+  Gemeindewerte aus den BA-Gemeindedaten 2025 (Stichtag 30.06.2025); URL und SHA-256 der
+  Originaldatei stehen im Ressourcenheader. 600 amtlich geheim gehaltene Werte fehlen bewusst.
+  Ein älterer Flat-File-Import der Regionalstatistik-Tabelle `13111-08-02-5-B` bleibt per API
+  rückwärtskompatibel.
 - **Stufe synthetisch:** Gravitationsmodell über Einwohner × Arbeitsplatz-Attraktivität × Distanzwiderstand.
 
 ### F. Reisezeit-/Kosten-/Distanzmatrizen — vollständig berechenbar
@@ -139,11 +141,11 @@ sagt, was die Pipeline heute damit macht.
 
 | Quelle | Inhalt / Format | Lizenz | Status in der Pipeline |
 |---|---|---|---|
-| **Zensus 2022 Gitterdaten** — `destatis.de/static/DE/zensus/gitterdaten/` (zensus2022.de leitet inzwischen auf destatis um) | Einwohner, Altersklassen, Ø-Haushaltsgröße, Wohnungen, Miete u. a.; 100 m/1 km/10 km, CSV in EPSG:3035 | dl-de/by-2-0 | ✅ Upload-Slot (`PopulationGridParser`, Dialekte `x_mp_*` und `GITTER_ID_*`); ⏳ offen: Auto-Fetch (P2b) + Alter/Haushalte als Synthese-Randsummen (P3) |
+| **Zensus 2022 Gitterdaten** — `destatis.de/static/DE/zensus/gitterdaten/` (zensus2022.de leitet inzwischen auf destatis um) | Einwohner, Altersklassen, Ø-Haushaltsgröße, Wohnungen, Miete u. a.; 100 m/1 km/10 km, CSV in EPSG:3035 | dl-de/by-2-0 | ✅ Bevölkerungszahl automatisch: versionierter URL+SHA-256-Download, zentraler Cache, 100-m-Bbox-Filter und Manifest-Provenienz (`CensusPopulationSource`); ✅ Upload-Slot für alternative/neuere Raster; ⏳ Alter/Haushalte als Synthese-Randsummen (P3) |
 | **Eurostat Census Grid 2021** — GISCO, `ec.europa.eu/eurostat/web/gisco/geodata/grids` | Bevölkerung EU-weit (30 Länder), 1 km; GPKG/CSV/Parquet, EPSG:3035 | CC BY | ✅ Upload-Slot (Dialekt `GRD_ID`+`T`, seit 2026-07-17); passt verlustfrei auf die INSPIRE-Zonierung |
 | **gtfs.de / DELFI** — `download.gtfs.de` | GTFS deutschlandweit, täglich neu; Subsets de_full/de_nv/de_rv/de_fv; de_nv ~223 MB (Stand 2026-07) | CC BY 4.0 | ✅ Default-Registry-Eintrag `gtfs-de-nahverkehr` (nach Verbund-Feeds; über `max-feed-mb`-Default → Hinweis statt Auto-Download) |
-| **Regionalstatistik, Tabelle 13111-08-02-5-B** — `regionalstatistik.de` | SvB am Arbeits-/Wohnort sowie Ein-/Auspendelnde je Gemeinde; Flat-File-CSV | dl-de/by-2-0 | ✅ direkter Flat-File-Import; `PEN092 / ERW033` setzt den Außenarbeitsplatz-Randwert. Live-Webservice kann eine Anmeldung verlangen, deshalb bewusster Datei-Upload |
-| **BA-Pendlerstatistik / Pendleratlas** — `statistik.arbeitsagentur.de` | Ein-/Auspendler-Verflechtungen je Gemeinde, jährlich; interaktive Statistik exportiert CSV | frei mit Quellenvermerk | ✅ direkter BA-Dialekt + normalisierter OD-Upload; AGS→Punkt über amtliches BKG VG250; BA-Ziele bedingt auf die 13111-Außenquote bzw. ohne Randwert auf die Gravitation. Offen: breitere Regionsvalidierung |
+| **Regionalstatistik, Tabelle 13111-08-02-5-B** — `regionalstatistik.de` | SvB am Arbeits-/Wohnort sowie Ein-/Auspendelnde je Gemeinde; Flat-File-CSV | dl-de/by-2-0 | ✅ direkter Flat-File-Import bleibt als API-/Legacy-Pfad; der vollständige GENESIS-Export ist für GAST nicht freigeschaltet |
+| **BA-Pendlerstatistik / Pendleratlas + BA-Gemeindedaten 2025** — `statistik.arbeitsagentur.de` | Ein-/Auspendler-Verflechtungen und Wohnortbeschäftigte je Gemeinde, jährlich | frei mit Quellenvermerk | ✅ direkter BA-Dialekt + normalisierter OD-Upload; AGS→Punkt über amtliches BKG VG250; ✅ automatische Außenquote aus 10.152 versionierten Gemeindewerten, Original-URL+SHA-256 belegt; 600 geheim gehaltene Werte bewusst nicht ersetzt |
 | **MiD 2023** — `mobilitaet-in-deutschland.de` (Ergebnisbericht seit 2025-11-21) | Modal-Split (Fuß 26 %, Rad 11 %, ÖV 11 %), Wegelängen, RegioStaR-Auswertungen | Berichte frei; Mikrodaten nur lizenziert | ⏳ offen (P5): Kalibrieranker-Update (heute MiD 2017 — eigener Change-Control-Zyklus, verschiebt Kalibrierziele); Mikrodaten bleiben Provider-Slot (Ebene D) |
 | **BASt-Dauerzählstellen** — `bast.de` | 2 116 automatische Zählstellen (BAB + Bundesstraßen), Stundenwerte ab 2003 | offen | ⏳ offen (P5): SUMO-Validierung (edgeData vs. Zählwerte) |
 | **Transitous / european-transport-feeds** — `transitous.org`, `eu.data.public-transport.earth` | >1 800 GTFS-Feeds aus 55 Ländern; EU-NAP-Verzeichnis | je Feed | Registry-Quelle für Europa-Szenarien (manuell eintragen) |
@@ -166,7 +168,7 @@ sagt, was die Pipeline heute damit macht.
 
 1. **P1 ✅ (2026-07-17):** GTFS-Registry um den gtfs.de-DE-Feed ergänzt (Verbund-Feeds gewinnen).
 2. **P2a ✅ (2026-07-17):** Eurostat-/INSPIRE-ID-Dialekt im `PopulationGridParser`.
-3. **P2b ⏳:** Zensus-Auto-Fetch (Download + Cache + Bbox-Filter) → Qualitätsstufe „öffentlich" ohne Upload.
+3. **P2b ✅ (2026-08-25):** Zensus-Auto-Fetch (Download + SHA-256-Prüfung + Cache + Bbox-Filter) → Qualitätsstufe „öffentlich" ohne Upload; Stichtag, URL, Version, Lizenz und Hash im Manifest.
 4. **P3 ⏳:** Zensus-Altersklassen/Haushaltsgrößen als echte Synthese-Randsummen (auch MobileCity `REGdistricts`).
 5. **P4 ✅/🟡 (2026-08-03):** Normalisierter Pendler-OD-Upload, direkter BA-CSV-Adapter mit
    BKG-VG250-Auflösung und Regionalstatistik-13111-Randwert umgesetzt. Drei kontrollierte Seeds

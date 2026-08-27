@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.generation.pipeline.OverpassClient;
 import de.synthesis.generation.pipeline.OsmDataSnapshot;
+import de.synthesis.generation.pipeline.CensusPopulationSource;
+import de.synthesis.generation.pipeline.Epsg3035;
 import de.synthesis.generation.pipeline.CommuterMatrix;
 import de.synthesis.generation.pipeline.WorkplaceMargins;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
@@ -14,8 +16,13 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -46,6 +53,7 @@ class GenerationPipelineE2ETest {
         SynthesisProperties props = new SynthesisProperties();
         props.setDataDir(dataDir.toString());
         props.getSimulation().setEnabled(false);
+        props.getCensus().setEnabled(false);
         ObjectMapper mapper = new ObjectMapper();
         ScenarioRepository repo = new ScenarioRepository(mapper, props);
         GenerationService service = new GenerationService(
@@ -61,7 +69,7 @@ class GenerationPipelineE2ETest {
         scenario.region.maxLat = 48.87;
         scenario.region.maxLon = 8.22;
         scenario.population.totalPersons = 250;
-        scenario.population.useOsmData = true;       // offline: eingefrorener OSM-Snapshot
+        scenario.population.useOsmData = false;      // Legacy-Wert: Snapshot wird trotzdem automatisch genutzt
         scenario.population.useRealRouting = false;  // offline: Luftlinien-Matrizen
         scenario.population.behaviorSource = "template"; // kein Gradle/LLM nötig
         scenario.population.calibrateModeChoice = false;
@@ -149,6 +157,12 @@ class GenerationPipelineE2ETest {
         SynthesisProperties props = new SynthesisProperties();
         props.setDataDir(dataDir.toString());
         props.getSimulation().setEnabled(false);
+        props.getOverpass().setLiveDataEnabled(false);
+        props.getCensus().setVersion("e2e-census");
+        props.getCensus().setGridEntry("population.csv");
+        Path censusArchive = dataDir.resolve(
+                "census-cache/e2e-census/Zensus2022_Bevoelkerungszahl.zip");
+        props.getCensus().setArchiveSha256(writeCensusArchive(censusArchive, 48.86, 8.20, 250));
         ObjectMapper mapper = new ObjectMapper();
         ScenarioRepository repo = new ScenarioRepository(mapper, props);
         GenerationService service = new GenerationService(
@@ -163,8 +177,6 @@ class GenerationPipelineE2ETest {
         scenario.region.maxLat = 48.87;
         scenario.region.maxLon = 8.22;
         scenario.zoning.mode = "inspire";            // ← INSPIRE/EPSG:3035-Gitter
-        scenario.population.totalPersons = 250;
-        scenario.population.useOsmData = false;
         scenario.population.useRealRouting = false;
         scenario.population.behaviorSource = "template";
         scenario.targetModels = new java.util.ArrayList<>(List.of("logitopp", "mobilecity"));
@@ -182,10 +194,16 @@ class GenerationPipelineE2ETest {
             assertTrue(!"FAILED".equals(stage.status), "Stufe fehlgeschlagen: " + stage.name);
         }
         assertEquals("inspire", job.summary.get("zoningMode"));
+        assertEquals("census-2022", job.summary.get("populationSource"));
         String zonesCsv = Files.readString(
                 repo.artifactsDir(scenario.id).resolve("zone-repository/zones.csv"));
         assertTrue(zonesCsv.contains("CRS3035RES"),
                 "zones.csv muss INSPIRE-Zell-IDs enthalten");
+        var manifest = mapper.readTree(repo.artifactsDir(scenario.id).resolve("manifest.json").toFile());
+        assertEquals("destatis-zensus-2022",
+                manifest.path("inputProvenance").path("population").path("source").asText());
+        assertEquals("2022-05-15",
+                manifest.path("inputProvenance").path("population").path("referenceDate").asText());
     }
 
     @Test
@@ -197,6 +215,8 @@ class GenerationPipelineE2ETest {
         SynthesisProperties props = new SynthesisProperties();
         props.setDataDir(dataDir.toString());
         props.getSimulation().setEnabled(false);
+        props.getOverpass().setLiveDataEnabled(false);
+        props.getCensus().setEnabled(false);
         ObjectMapper mapper = new ObjectMapper();
         ScenarioRepository repo = new ScenarioRepository(mapper, props);
         GenerationService service = new GenerationService(
@@ -211,7 +231,6 @@ class GenerationPipelineE2ETest {
         scenario.region.maxLat = 48.87;
         scenario.region.maxLon = 8.22;
         scenario.population.totalPersons = 50;
-        scenario.population.useOsmData = false;
         scenario.population.useRealRouting = true;
         scenario.population.externalTrips = false;
         scenario.population.behaviorSource = "template";
@@ -268,6 +287,21 @@ class GenerationPipelineE2ETest {
         Path dir = Files.createTempDirectory(prefix);
         tempDirs.add(dir);
         return dir;
+    }
+
+    private static String writeCensusArchive(Path archive, double lat, double lon, int population)
+            throws Exception {
+        Files.createDirectories(archive.getParent());
+        double[] laea = Epsg3035.fromLatLon(lat, lon);
+        String csv = "GITTER_ID_100m;x_mp_100m;y_mp_100m;Einwohner\n"
+                + String.format(Locale.ROOT, "cell;%.3f;%.3f;%d%n", laea[0], laea[1], population);
+        try (OutputStream output = Files.newOutputStream(archive);
+             ZipOutputStream zip = new ZipOutputStream(output)) {
+            zip.putNextEntry(new ZipEntry("population.csv"));
+            zip.write(csv.getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+        }
+        return CensusPopulationSource.sha256(archive);
     }
 
     private static void deleteRecursively(Path dir) {

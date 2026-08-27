@@ -64,7 +64,8 @@ public class UploadController {
     public record CommuterUploadSummary(String name, int relations, long totalCommuters,
                                         int relationsWithHomeInRegion, String source,
                                         long exportTotalCommuters, double coverage,
-                                        int skippedAggregateRows, int unresolvedMunicipalities) {
+                                        int skippedAggregateRows, int unresolvedMunicipalities,
+                                        WorkplaceMarginUploadSummary workplaceMargin) {
     }
 
     public record WorkplaceMarginUploadSummary(String name, String source, String date,
@@ -193,6 +194,8 @@ public class UploadController {
         Files.createDirectories(dir);
         Path temporary = Files.createTempFile(dir, "commuters-", ".csv");
         Path normalized = null;
+        Path normalizedMargin = null;
+        WorkplaceMarginUploadSummary automaticMargin = null;
         try {
             file.transferTo(temporary.toAbsolutePath());
             CommuterMatrix.ParseResult parsed;
@@ -217,6 +220,15 @@ public class UploadController {
                 exportTotal = adapted.exportTotalCommuters();
                 aggregateRows = adapted.aggregateRows();
                 unresolved = adapted.unresolvedMunicipalities();
+                String homeAgs = export.relations().getFirst().homeAgs();
+                var margin = WorkplaceMargins.bundledBaMargin(homeAgs);
+                if (margin.isPresent()) {
+                    WorkplaceMargins.Margin value = margin.get();
+                    normalizedMargin = Files.createTempFile(dir,
+                            "workplace-margins-automatic-", ".csv");
+                    WorkplaceMargins.writeNormalized(normalizedMargin, value);
+                    automaticMargin = summary(value);
+                }
             } else {
                 parsed = CommuterMatrix.parse(temporary);
                 source = CommuterMatrix.source(temporary);
@@ -233,16 +245,25 @@ public class UploadController {
             }
             moveReplacing(normalized == null ? temporary : normalized,
                     dir.resolve(CommuterMatrix.NAME));
+            Path marginTarget = dir.resolve(WorkplaceMargins.NAME);
+            if (normalizedMargin != null) {
+                moveReplacing(normalizedMargin, marginTarget);
+            } else {
+                removeAutomaticMargin(marginTarget);
+            }
             Files.deleteIfExists(temporary);
             long total = Math.round(parsed.totalCommuters());
             return new CommuterUploadSummary(CommuterMatrix.NAME, parsed.flows().size(),
                     total, relevant, source, exportTotal,
                     exportTotal <= 0 ? 0 : (double) total / exportTotal,
-                    aggregateRows, unresolved);
+                    aggregateRows, unresolved, automaticMargin);
         } catch (IllegalArgumentException e) {
             Files.deleteIfExists(temporary);
             if (normalized != null) {
                 Files.deleteIfExists(normalized);
+            }
+            if (normalizedMargin != null) {
+                Files.deleteIfExists(normalizedMargin);
             }
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (ResponseStatusException e) {
@@ -250,11 +271,17 @@ public class UploadController {
             if (normalized != null) {
                 Files.deleteIfExists(normalized);
             }
+            if (normalizedMargin != null) {
+                Files.deleteIfExists(normalizedMargin);
+            }
             throw e;
         } catch (IOException | RuntimeException e) {
             Files.deleteIfExists(temporary);
             if (normalized != null) {
                 Files.deleteIfExists(normalized);
+            }
+            if (normalizedMargin != null) {
+                Files.deleteIfExists(normalizedMargin);
             }
             throw e;
         }
@@ -299,10 +326,7 @@ public class UploadController {
             WorkplaceMargins.writeNormalized(normalized, margin);
             moveReplacing(normalized, dir.resolve(WorkplaceMargins.NAME));
             Files.deleteIfExists(temporary);
-            return new WorkplaceMarginUploadSummary(WorkplaceMargins.NAME,
-                    WorkplaceMargins.SOURCE, margin.date().toString(), margin.municipalities(),
-                    margin.residentWorkers(), margin.outboundWorkers(), margin.externalShare(),
-                    margin.unresolvedMunicipalities());
+            return summary(margin);
         } catch (IllegalArgumentException e) {
             Files.deleteIfExists(temporary);
             Files.deleteIfExists(normalized);
@@ -359,7 +383,9 @@ public class UploadController {
 
     @DeleteMapping("/commuters")
     public ResponseEntity<Void> deleteCommuters(@PathVariable String id) throws IOException {
-        Files.deleteIfExists(scenarios.uploadsDir(id).resolve(CommuterMatrix.NAME));
+        Path dir = scenarios.uploadsDir(id);
+        Files.deleteIfExists(dir.resolve(CommuterMatrix.NAME));
+        removeAutomaticMargin(dir.resolve(WorkplaceMargins.NAME));
         return ResponseEntity.noContent().build();
     }
 
@@ -367,6 +393,27 @@ public class UploadController {
     public ResponseEntity<Void> deleteWorkplaceMargins(@PathVariable String id) throws IOException {
         Files.deleteIfExists(scenarios.uploadsDir(id).resolve(WorkplaceMargins.NAME));
         return ResponseEntity.noContent().build();
+    }
+
+    private static WorkplaceMarginUploadSummary summary(WorkplaceMargins.Margin margin) {
+        return new WorkplaceMarginUploadSummary(WorkplaceMargins.NAME,
+                margin.source(), margin.date().toString(), margin.municipalities(),
+                margin.residentWorkers(), margin.outboundWorkers(), margin.externalShare(),
+                margin.unresolvedMunicipalities());
+    }
+
+    /** Removes only an automatically coupled BA margin; explicit legacy uploads are preserved. */
+    private static void removeAutomaticMargin(Path file) throws IOException {
+        if (!Files.isRegularFile(file)) {
+            return;
+        }
+        try {
+            if (WorkplaceMargins.BA_SOURCE.equals(WorkplaceMargins.readNormalized(file).source())) {
+                Files.deleteIfExists(file);
+            }
+        } catch (IllegalArgumentException ignored) {
+            // A malformed or unknown explicit file is not silently deleted by another upload.
+        }
     }
 
     private static void moveReplacing(Path source, Path target) throws IOException {
