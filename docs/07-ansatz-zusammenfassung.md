@@ -26,7 +26,7 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 
 | # | Stufe | Was passiert | Wichtigste Artefakte |
 |---|---|---|---|
-| 1 | Zonierung | Region-BBox → Gitter aus Verkehrszellen (Zellgröße, Auto-Anpassung an Zonenlimit) | `zones.csv` |
+| 1 | Zonierung | Region → freies Bbox-Raster, flexibel EPSG:3035-ausgerichtetes Raster oder amtliches INSPIRE-Raster; Zellgröße wird an das szenariospezifische Zonenlimit angepasst | `zones.csv` |
 | 2 | OSM-Daten (POIs) | Szenario-Snapshot oder Overpass: Shops/Amenities/… und bevölkerte `place`-Nodes (synthetischer Fallback nur beim Live-Pfad) | `uploads/osm-data.json` (optional), Provenienz in `manifest.json` |
 | 3 | Attraktivitäten + Pendleranker | Ziel-Attraktivität je Zelle; optional koordinatenbasierte Pendler-OD, externe Arbeitsortanker auf reale gewichtete Ziele verschoben | `attractivities.csv`, `population/commuters.csv` |
 | 4 | Bevölkerungssynthese | Gesamtzahl/Verteilung: manuell → alternatives Upload-Raster → hashgeprüfter Destatis-Zensus 2022 → OSM → Dichte; danach Personen/Haushalte (KIT-Sample oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv`; Provenienz in `manifest.json` |

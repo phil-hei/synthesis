@@ -1351,6 +1351,19 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   die Reproduzierbarkeit. Der Paket-Regler reicht nun von 0 bis 10 Paketen je Person und Woche;
   Zensus-Raster und Gebietsgrenzen sind in Alltagssprache erklärt. **Verifiziert:**
   Frontend 37/37 Tests und AOT-Produktions-Build grün.
+  **✅ Flexible, global ausgerichtete Zonierung und Szenario-Zonenlimit (2026-08-27):** Neben
+  dem freien Bbox-Raster und dem amtlichen INSPIRE-/Zensus-Raster steht nun
+  `zoning.mode=epsg3035` zur Verfügung. Dieser Modus verwendet dasselbe flächengleiche,
+  europaweit feste ETRS89-LAEA-Gitter, erlaubt aber flexible 100-m-Stufen wie 700 m. Seine
+  stabilen Zellcodes beginnen bewusst mit `LAEA3035RES…` statt `CRS3035RES…`, damit
+  nichtamtliche Auflösungen nicht als INSPIRE-konform erscheinen. Der INSPIRE-Modus bleibt
+  unverändert auf 100 m/1 km/10 km beschränkt; außerhalb Europas fallen beide LAEA-Modi auf das
+  freie Raster zurück. `zoning.maxZones` macht die Obergrenze je Szenario einstellbar (Default
+  600, harte Betriebsgrenze `synthesis.max-zones-hard-limit=1200`). Vorschau und Generierung
+  verwenden denselben Wert und schreiben die tatsächlich verwendete Zellgröße zurück in die UI.
+  Ein UI-Hinweis macht sichtbar, dass eine geänderte Zonierung alle zonenabhängigen Artefakte
+  ungültig macht und deshalb neu generiert werden muss. Tests sichern 700-m-Erhalt,
+  100-m-Aufrundung, automatische Vergröberung sowie die API-/Validierungsgrenzen ab.
   **✅ Gemeinsamen Entwicklungsstart gehärtet (2026-08-26):** `scripts/dev.sh` wartet nun auf
   erfolgreiche HTTP-Healthchecks von Backend und Frontend, verwendet bereits laufende gesunde
   SyntheSis-Prozesse wieder und unterscheidet sie von fremden Portbelegungen. Damit führt ein

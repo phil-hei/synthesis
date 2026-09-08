@@ -1,5 +1,6 @@
 package de.synthesis.scenario;
 
+import de.synthesis.SynthesisProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,9 +27,11 @@ public class ScenarioController {
     private static final Set<String> TARGET_MODELS = Set.of("logitopp", "sumo", "mobilecity");
 
     private final ScenarioRepository repository;
+    private final SynthesisProperties properties;
 
-    public ScenarioController(ScenarioRepository repository) {
+    public ScenarioController(ScenarioRepository repository, SynthesisProperties properties) {
         this.repository = repository;
+        this.properties = properties;
     }
 
     @GetMapping
@@ -38,7 +41,9 @@ public class ScenarioController {
 
     @GetMapping("/defaults")
     public Scenario defaults() {
-        return new Scenario();
+        Scenario scenario = new Scenario();
+        scenario.zoning.maxZones = properties.getMaxZones();
+        return scenario;
     }
 
     @GetMapping("/{id}")
@@ -121,7 +126,14 @@ public class ScenarioController {
         if (!Double.isFinite(scenario.zoning.cellSizeMeters) || scenario.zoning.cellSizeMeters < 100) {
             throw badRequest("Zellgröße muss mindestens 100 m betragen");
         }
-        if (!"grid".equals(scenario.zoning.mode) && !"inspire".equals(scenario.zoning.mode)) {
+        if (scenario.zoning.maxZones < 100
+                || scenario.zoning.maxZones > properties.getMaxZonesHardLimit()) {
+            throw badRequest("Maximale Zonenanzahl muss zwischen 100 und "
+                    + properties.getMaxZonesHardLimit() + " liegen");
+        }
+        if (!"grid".equals(scenario.zoning.mode)
+                && !"epsg3035".equals(scenario.zoning.mode)
+                && !"inspire".equals(scenario.zoning.mode)) {
             throw badRequest("Unbekannter Zonierungsmodus");
         }
         String behaviorSource = scenario.population.behaviorSourceEffective();

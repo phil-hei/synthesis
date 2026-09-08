@@ -18,7 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ScenarioControllerTest {
 
-    private final ScenarioController controller = new ScenarioController(null);
+    private final SynthesisProperties properties = new SynthesisProperties();
+    private final ScenarioController controller = new ScenarioController(null, properties);
 
     @Test
     void rejectsMissingScenarioSectionsAsBadRequest() {
@@ -78,6 +79,7 @@ class ScenarioControllerTest {
 
         assertEquals("grid", defaults.zoning.mode);
         assertEquals(100.0, defaults.zoning.cellSizeMeters);
+        assertEquals(600, defaults.zoning.maxZones);
         assertFalse(defaults.population.correctDistanceDecay,
                 "Experimenteller Distanz-Abkling-Hebel muss standardmäßig aus sein");
         assertNotNull(defaults.logistics.returns);
@@ -99,6 +101,24 @@ class ScenarioControllerTest {
         scenario.logistics.returns.model = "linked-lifecycle";
 
         assertBadRequest(scenario, "Unbekanntes Retourenmodell");
+    }
+
+    @Test
+    void acceptsAlignedGridAndRejectsUnsafeZoneLimit(@TempDir Path tempDir) {
+        properties.setDataDir(tempDir.toString());
+        ScenarioRepository repository = new ScenarioRepository(
+                new ObjectMapper().findAndRegisterModules(), properties);
+        ScenarioController realController = new ScenarioController(repository, properties);
+        Scenario scenario = validScenario();
+        scenario.zoning.mode = "epsg3035";
+        scenario.zoning.cellSizeMeters = 700;
+        scenario.zoning.maxZones = 1200;
+
+        assertEquals(HttpStatus.CREATED, realController.create(scenario).getStatusCode());
+
+        scenario = validScenario();
+        scenario.zoning.maxZones = 1201;
+        assertBadRequest(scenario, "Maximale Zonenanzahl muss zwischen 100 und 1200 liegen");
     }
 
     @Test
@@ -160,7 +180,7 @@ class ScenarioControllerTest {
         properties.setDataDir(tempDir.toString());
         ScenarioRepository repository = new ScenarioRepository(
                 new ObjectMapper().findAndRegisterModules(), properties);
-        ScenarioController realController = new ScenarioController(repository);
+        ScenarioController realController = new ScenarioController(repository, properties);
         Scenario scenario = enabledReturns();
         scenario.logistics.returns.shareOfPrivateOrders = 0.35;
         scenario.logistics.returns.pickupShares.home = 0.75;

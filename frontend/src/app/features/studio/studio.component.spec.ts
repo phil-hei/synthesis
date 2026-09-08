@@ -165,10 +165,34 @@ describe('StudioComponent', () => {
     const zoningSelect = element.querySelector<HTMLSelectElement>(
       'label[title^="Zonierungs-Gitter"] select');
     expect(zoningSelect).not.toBeNull();
-    zoningSelect!.value = 'inspire';
+    expect(Array.from(zoningSelect!.options).map(option => option.value))
+      .toEqual(['grid', 'epsg3035', 'inspire']);
+    zoningSelect!.value = 'epsg3035';
     zoningSelect!.dispatchEvent(new Event('change'));
 
     expect(preview).toHaveBeenCalledOnce();
+    expect(preview).toHaveBeenCalledWith();
+  });
+
+  it('recomputes the finest preview when the scenario zone limit changes', () => {
+    const draft = scenario('');
+    draft.region = { minLat: 48.84, minLon: 8.18, maxLat: 48.87, maxLon: 8.23 };
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = draft;
+    const preview = vi.spyOn(component, 'previewZones').mockImplementation(() => undefined);
+    fixture.detectChanges();
+
+    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      'label[title^="Obergrenze der Verkehrszellen"] input');
+    expect(input?.min).toBe('100');
+    expect(input?.max).toBe('1200');
+    input!.value = '1200';
+    input!.dispatchEvent(new Event('input'));
+    input!.dispatchEvent(new Event('change'));
+
+    expect(draft.zoning.maxZones).toBe(1200);
     expect(preview).toHaveBeenCalledWith(true);
   });
 
@@ -186,6 +210,8 @@ describe('StudioComponent', () => {
 
     component.previewZones();
 
+    expect(api.previewZones).toHaveBeenCalledWith(
+      draft.region, 500, 'grid', 600);
     expect(draft.zoning.cellSizeMeters).toBe(10000);
     expect(component.zonePreviewInfo).toContain('Auf 10.000 m angepasst');
     expect(component.zonePreviewInfo).toContain('tatsächlich verwendete Wert steht jetzt im Feld');
@@ -511,7 +537,7 @@ function scenario(id: string): Scenario {
     id,
     name: 'Gespeichertes Szenario',
     region: null,
-    zoning: { cellSizeMeters: 500, mode: 'grid' },
+    zoning: { cellSizeMeters: 500, maxZones: 600, mode: 'grid' },
     targetModels: ['logitopp'],
     population: {
       totalPersons: null, personsPerKm2: 1000, samplingFraction: 1, seed: 42,

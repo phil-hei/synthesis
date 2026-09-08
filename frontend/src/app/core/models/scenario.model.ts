@@ -47,7 +47,11 @@ export interface Scenario {
   createdAt?: string;
   /** Null, solange noch keine Region auf der Karte gesetzt wurde. */
   region: Region | null;
-  zoning: { cellSizeMeters: number; mode: string };
+  zoning: {
+    cellSizeMeters: number;
+    maxZones: number;
+    mode: 'grid' | 'epsg3035' | 'inspire';
+  };
   /** Achse B – Zielmodelle (Mehrfachauswahl): logitopp | sumo | mobilecity. */
   targetModels: string[];
   population: {

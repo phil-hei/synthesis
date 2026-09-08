@@ -27,6 +27,14 @@ class SynthesisPropertiesTest {
     }
 
     @Test
+    void zoneLimitsHaveScenarioDefaultAndQuadraticSafetyCeiling() {
+        SynthesisProperties properties = new SynthesisProperties();
+
+        assertThat(properties.getMaxZones()).isEqualTo(600);
+        assertThat(properties.getMaxZonesHardLimit()).isEqualTo(1200);
+    }
+
+    @Test
     void census2022ArchiveIsPinnedByVersionAndSha256() {
         SynthesisProperties.Census census = new SynthesisProperties().getCensus();
 

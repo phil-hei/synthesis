@@ -14,7 +14,9 @@ import java.util.List;
  *
  * <p><b>Nur Europa:</b> EPSG:3035 ist für den EU/EWR-Raum definiert. Außerhalb → {@link GridZoning}.
  *
- * <p>Die Auflösung ist auf die kanonischen INSPIRE-Stufen (100 m / 1 km / 10 km) quantisiert.
+ * <p>{@link #pickResolution} und {@link #generate} erzeugen amtliche INSPIRE-Stufen. Die
+ * {@code *Aligned}-Methoden verwenden dasselbe feste LAEA-Gitter in freien 100-m-Schritten,
+ * kennzeichnen dessen Zellen aber ausdrücklich nicht als INSPIRE-Zellen.
  */
 public final class InspireGridZoning {
 
@@ -48,7 +50,40 @@ public final class InspireGridZoning {
         return RESOLUTIONS[RESOLUTIONS.length - 1];
     }
 
+    /** Feinste global ausgerichtete 100-m-Stufe, die nicht feiner als der Wunschwert ist und passt. */
+    public static int pickAlignedResolution(Scenario.Region region, double requestedMeters,
+                                            int maxZones) {
+        double rounded = Math.ceil(requestedMeters / 100.0) * 100;
+        if (!Double.isFinite(rounded) || requestedMeters < 100
+                || rounded > Integer.MAX_VALUE || maxZones < 1) {
+            throw new IllegalArgumentException("Ungültige EPSG:3035-Auflösung oder Zonenobergrenze");
+        }
+        int resolution = (int) rounded;
+        while (!fits(region, resolution, maxZones)) {
+            if (resolution > Integer.MAX_VALUE - 100) {
+                throw new IllegalArgumentException("Keine passende EPSG:3035-Auflösung gefunden");
+            }
+            resolution += 100;
+        }
+        return resolution;
+    }
+
     public static List<Zone> generate(Scenario.Region region, int resolutionMeters, int maxZones) {
+        return generate(region, resolutionMeters, maxZones, true);
+    }
+
+    /** Erzeugt ein fest an EPSG:3035 ausgerichtetes, aber nicht amtlich als INSPIRE benanntes Raster. */
+    public static List<Zone> generateAligned(Scenario.Region region, int resolutionMeters,
+                                             int maxZones) {
+        if (resolutionMeters < 100 || resolutionMeters % 100 != 0) {
+            throw new IllegalArgumentException(
+                    "EPSG:3035-ausgerichtete Zellgröße muss ein Vielfaches von 100 m sein");
+        }
+        return generate(region, resolutionMeters, maxZones, false);
+    }
+
+    private static List<Zone> generate(Scenario.Region region, int resolutionMeters, int maxZones,
+                                       boolean inspireCodes) {
         long[] b = snappedBounds(region, resolutionMeters);
         long e0 = b[0];
         long n0 = b[1];
@@ -59,7 +94,7 @@ public final class InspireGridZoning {
         }
         if (cols * rows > maxZones) {
             throw new IllegalArgumentException(String.format(
-                    "INSPIRE-Zonierung ergäbe %d Zonen (max. %d). Region verkleinern oder gröbere "
+                    "EPSG:3035-Zonierung ergäbe %d Zonen (max. %d). Region verkleinern oder gröbere "
                             + "Auflösung wählen.", cols * rows, maxZones));
         }
         double areaKm2 = (resolutionMeters / 1000.0) * (resolutionMeters / 1000.0);
@@ -81,8 +116,10 @@ public final class InspireGridZoning {
                 zone.id = FIRST_ZONE_ID + index;
                 zone.row = r;
                 zone.col = c;
-                // INSPIRE-Zell-ID (Zensus-2022-Format): Auflösung + SW-Ecke in EPSG:3035-Metern
-                zone.name = String.format("CRS3035RES%dmN%dE%d", resolutionMeters, north, east);
+                // Nur kanonische INSPIRE-Zellen tragen den amtlichen CRS3035-Code. Flexible
+                // Stufen bleiben über ihre LAEA-SW-Ecke stabil, behaupten aber keine Konformität.
+                String prefix = inspireCodes ? "CRS3035RES" : "LAEA3035RES";
+                zone.name = String.format("%s%dmN%dE%d", prefix, resolutionMeters, north, east);
                 zone.laeaE = east;
                 zone.laeaN = north;
                 zone.laeaRes = resolutionMeters;

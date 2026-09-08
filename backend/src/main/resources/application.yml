@@ -13,7 +13,8 @@ spring:
 
 synthesis:
   data-dir: data
-  max-zones: 600
+  max-zones: 600                         # Default neuer Szenarien; in der UI pro Szenario einstellbar
+  max-zones-hard-limit: 1200             # Schutzgrenze, da mehrere OD-Matrizen quadratisch wachsen
   overpass:
     live-data-enabled: true                    # POIs/Orte automatisch live laden; Snapshots bleiben bei false nutzbar
     endpoint: https://overpass-api.de/api/interpreter

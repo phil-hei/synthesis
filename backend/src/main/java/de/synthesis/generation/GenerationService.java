@@ -119,17 +119,38 @@ public class GenerationService {
 
     /** Auto-raises the cell size to the finest resolution within the zone limit; honours the zoning mode. */
     public ZonePreview previewZones(Scenario.Region region, double cellSizeMeters, String mode) {
-        // INSPIRE nur im EPSG:3035-Gültigkeitsbereich (Europa) — außerhalb Bbox-Raster zeigen
-        if ("inspire".equalsIgnoreCase(mode)
+        return previewZones(region, cellSizeMeters, mode, null);
+    }
+
+    /** Preview with the scenario-specific limit; null retains the configured default. */
+    public ZonePreview previewZones(Scenario.Region region, double cellSizeMeters, String mode,
+                                    Integer requestedMaxZones) {
+        int maxZones = effectiveMaxZones(requestedMaxZones);
+        // LAEA-Modi nur im EPSG:3035-Gültigkeitsbereich (Europa) — außerhalb Bbox-Raster zeigen
+        if (("inspire".equalsIgnoreCase(mode) || "epsg3035".equalsIgnoreCase(mode))
                 && Epsg3035.covers(region.minLat, region.minLon, region.maxLat, region.maxLon)) {
-            int res = InspireGridZoning.pickResolution(region, cellSizeMeters, properties.getMaxZones());
-            return new ZonePreview(InspireGridZoning.generate(region, res, properties.getMaxZones()),
+            if ("inspire".equalsIgnoreCase(mode)) {
+                int res = InspireGridZoning.pickResolution(region, cellSizeMeters, maxZones);
+                return new ZonePreview(InspireGridZoning.generate(region, res, maxZones),
+                        res, res != cellSizeMeters);
+            }
+            int res = InspireGridZoning.pickAlignedResolution(region, cellSizeMeters, maxZones);
+            return new ZonePreview(InspireGridZoning.generateAligned(region, res, maxZones),
                     res, res != cellSizeMeters);
         }
-        double effective = GridZoning.autoCellSize(region, cellSizeMeters, properties.getMaxZones());
+        double effective = GridZoning.autoCellSize(region, cellSizeMeters, maxZones);
         return new ZonePreview(
-                GridZoning.generate(region, effective, properties.getMaxZones()),
+                GridZoning.generate(region, effective, maxZones),
                 effective, effective != cellSizeMeters);
+    }
+
+    private int effectiveMaxZones(Integer requestedMaxZones) {
+        int maxZones = requestedMaxZones != null ? requestedMaxZones : properties.getMaxZones();
+        if (maxZones < 100 || maxZones > properties.getMaxZonesHardLimit()) {
+            throw new IllegalArgumentException("Maximale Zonenanzahl muss zwischen 100 und "
+                    + properties.getMaxZonesHardLimit() + " liegen");
+        }
+        return maxZones;
     }
 
     public record RegionEstimate(long estimatedPopulation, String source, String sourceLabel,
@@ -306,15 +327,24 @@ public class GenerationService {
     private List<Zone> stageZoning(PipelineContext ctx) {
         Scenario scenario = ctx.scenario;
         GenerationJob job = ctx.job;
-        if ("inspire".equalsIgnoreCase(scenario.zoning.mode)) {
+        int maxZones = effectiveMaxZones(scenario.zoning.maxZones);
+        boolean inspire = "inspire".equalsIgnoreCase(scenario.zoning.mode);
+        boolean aligned = "epsg3035".equalsIgnoreCase(scenario.zoning.mode);
+        if (inspire || aligned) {
             Scenario.Region r = scenario.region;
             if (Epsg3035.covers(r.minLat, r.minLon, r.maxLat, r.maxLon)) {
-                int res = InspireGridZoning.pickResolution(
-                        scenario.region, scenario.zoning.cellSizeMeters, properties.getMaxZones());
-                List<Zone> result = InspireGridZoning.generate(scenario.region, res, properties.getMaxZones());
+                int res = inspire
+                        ? InspireGridZoning.pickResolution(
+                                scenario.region, scenario.zoning.cellSizeMeters, maxZones)
+                        : InspireGridZoning.pickAlignedResolution(
+                                scenario.region, scenario.zoning.cellSizeMeters, maxZones);
+                List<Zone> result = inspire
+                        ? InspireGridZoning.generate(scenario.region, res, maxZones)
+                        : InspireGridZoning.generateAligned(scenario.region, res, maxZones);
                 job.summary.put("cellSizeMeters", res);
-                job.summary.put("zoningMode", "inspire");
-                job.log(result.size() + " Zonen erzeugt (INSPIRE/EPSG:3035, " + res + " m Raster)");
+                job.summary.put("zoningMode", inspire ? "inspire" : "epsg3035");
+                String label = inspire ? "INSPIRE/EPSG:3035" : "EPSG:3035-ausgerichtet";
+                job.log(result.size() + " Zonen erzeugt (" + label + ", " + res + " m Raster)");
                 requireObservableDistanceCalibration(
                         scenario, result, logitoppSimulationAvailable());
                 return result;
@@ -323,13 +353,13 @@ public class GenerationService {
                     + "Fallback auf Bbox-Raster");
         }
         double effective = GridZoning.autoCellSize(
-                scenario.region, scenario.zoning.cellSizeMeters, properties.getMaxZones());
+                scenario.region, scenario.zoning.cellSizeMeters, maxZones);
         if (effective != scenario.zoning.cellSizeMeters) {
             job.log("Zellgröße automatisch von " + Math.round(scenario.zoning.cellSizeMeters)
                     + " m auf " + Math.round(effective) + " m erhöht ("
-                    + properties.getMaxZones() + "-Zonen-Limit)");
+                    + maxZones + "-Zonen-Limit)");
         }
-        List<Zone> result = GridZoning.generate(scenario.region, effective, properties.getMaxZones());
+        List<Zone> result = GridZoning.generate(scenario.region, effective, maxZones);
         job.summary.put("cellSizeMeters", Math.round(effective));
         job.summary.put("zoningMode", "grid");
         job.log(result.size() + " Zonen erzeugt (" + Math.round(effective) + " m Raster)");

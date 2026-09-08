@@ -7,7 +7,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class SynthesisProperties {
 
     private String dataDir = "data";
+    /** Default for new scenarios; individual scenarios may choose a lower or higher limit. */
     private int maxZones = 600;
+    /** Safety ceiling because several downstream matrices grow quadratically with the zone count. */
+    private int maxZonesHardLimit = 1200;
     private Overpass overpass = new Overpass();
     private Census census = new Census();
     private Simulation simulation = new Simulation();
@@ -403,6 +406,8 @@ public class SynthesisProperties {
     public void setDataDir(String dataDir) { this.dataDir = dataDir; }
     public int getMaxZones() { return maxZones; }
     public void setMaxZones(int maxZones) { this.maxZones = maxZones; }
+    public int getMaxZonesHardLimit() { return maxZonesHardLimit; }
+    public void setMaxZonesHardLimit(int maxZonesHardLimit) { this.maxZonesHardLimit = maxZonesHardLimit; }
     public Overpass getOverpass() { return overpass; }
     public void setOverpass(Overpass overpass) { this.overpass = overpass; }
     public Census getCensus() { return census; }

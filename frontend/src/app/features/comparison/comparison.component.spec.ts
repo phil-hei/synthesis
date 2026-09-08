@@ -210,7 +210,7 @@ function scenario(id: string, name: string): Scenario {
     id,
     name,
     region: null,
-    zoning: { cellSizeMeters: 500, mode: 'grid' },
+    zoning: { cellSizeMeters: 500, maxZones: 600, mode: 'grid' },
     targetModels: ['logitopp'],
     population: {
       totalPersons: null,

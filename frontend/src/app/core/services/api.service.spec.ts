@@ -38,11 +38,13 @@ describe('ApiService', () => {
   it('sends the complete zoning contract for a preview', () => {
     const region = { minLat: 48.84, minLon: 8.16, maxLat: 48.88, maxLon: 8.23 };
 
-    service.previewZones(region, 750, 'inspire').subscribe();
+    service.previewZones(region, 750, 'inspire', 900).subscribe();
 
     const request = http.expectOne('/api/preview/zones');
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ region, cellSizeMeters: 750, mode: 'inspire' });
+    expect(request.request.body).toEqual({
+      region, cellSizeMeters: 750, mode: 'inspire', maxZones: 900
+    });
     request.flush({
       type: 'FeatureCollection', features: [], cellSizeMeters: 1000, autoAdjusted: true
     });

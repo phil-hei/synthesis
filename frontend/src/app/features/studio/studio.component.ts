@@ -532,7 +532,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const requested = useFinestResolution ? 100 : this.scenario.zoning.cellSizeMeters;
     this.api.previewZones(this.scenario.region, requested,
-        this.scenario.zoning.mode).subscribe({
+        this.scenario.zoning.mode, this.scenario.zoning.maxZones).subscribe({
       next: geojson => {
         this.zoneLayer?.remove();
         this.zoneLayer = L.geoJSON<ZoneFeatureProperties, Polygon>(geojson, {
@@ -542,17 +542,23 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
           this.scenario.zoning.cellSizeMeters = geojson.cellSizeMeters;
         }
         if (useFinestResolution) {
+          const maxZones = this.scenario?.zoning.maxZones ?? 600;
           const standardNote = this.scenario?.zoning.mode === 'inspire'
             ? ' (feinste passende INSPIRE-Standardstufe: 100 m, 1 km oder 10 km)'
-            : ' (feinste Auflösung innerhalb des Limits von 600 Zonen)';
+            : this.scenario?.zoning.mode === 'epsg3035'
+              ? ` (feinste ausgerichtete 100-m-Stufe innerhalb des Limits von ${maxZones} Zonen)`
+              : ` (feinste Auflösung innerhalb des Limits von ${maxZones} Zonen)`;
           this.zonePreviewInfo = `Automatisch vorgeschlagen: `
             + `${geojson.cellSizeMeters.toLocaleString('de-DE')} m${standardNote}.`;
           this.message = `${geojson.features.length} Zonen – automatisch `
             + `${geojson.cellSizeMeters.toLocaleString('de-DE')} m vorgeschlagen`;
         } else if (geojson.autoAdjusted) {
+          const maxZones = this.scenario?.zoning.maxZones ?? 600;
           const reason = this.scenario?.zoning.mode === 'inspire'
-            ? 'INSPIRE-Standardstufe und 600-Zonen-Limit'
-            : '600-Zonen-Limit';
+            ? `INSPIRE-Standardstufe und ${maxZones}-Zonen-Limit`
+            : this.scenario?.zoning.mode === 'epsg3035'
+              ? `100-m-Stufe und ${maxZones}-Zonen-Limit`
+              : `${maxZones}-Zonen-Limit`;
           this.zonePreviewInfo = `Auf ${geojson.cellSizeMeters.toLocaleString('de-DE')} m angepasst `
             + `(${reason}). Der tatsächlich verwendete Wert steht jetzt im Feld.`;
           this.message = `${geojson.features.length} Zonen – Zellgröße auf `

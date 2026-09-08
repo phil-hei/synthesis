@@ -90,7 +90,7 @@ scenario:
   name: "KA-Südstadt Lastenrad-Depot"
   seed: 42
   region: { type: polygon, geometry: …, source: map-selection }
-  zoning: { mode: osm-admin | h3, resolution: 9, maxZones: 500 }
+  zoning: { mode: grid | epsg3035 | inspire, cellSizeMeters: 700, maxZones: 600 }
   population:
     structuralData: { provider: zensus2022 | synthetic | upload }
     surveyTemplate: { provider: synthetic-default | upload }
@@ -110,6 +110,14 @@ scenario:
   simulation: { days: 7, engine: legacy-logitopp | mobitopp-ng }
   exports: [geojson, mobilecity]
 ```
+
+Die produktive Rasterzonierung bietet drei bewusst getrennte Varianten: `grid` beginnt an der
+jeweiligen Regions-Bbox und erlaubt freie 50-m-Schritte; `epsg3035` rastet europaweit stabil auf
+ETRS89-LAEA ein und erlaubt flexible 100-m-Schritte (z. B. 700 m); `inspire` verwendet nur die
+amtlichen Stufen 100 m, 1 km und 10 km und vergibt INSPIRE-Zellcodes. `maxZones` ist eine
+szenariospezifische Rechenobergrenze (Default 600, harte Schutzgrenze 1.200), da die nachfolgenden
+OD-Matrizen quadratisch wachsen. Eine geänderte Zonierung erfordert eine neue Generierung aller
+zonenabhängigen Artefakte.
 
 Die experimentelle Retourenlogistik erweitert die bestehenden Stufen „Logistik",
 „Short-Term + logiTopp" und „Export"; sie benötigt **keine zusätzliche Pipeline-Stufe**.

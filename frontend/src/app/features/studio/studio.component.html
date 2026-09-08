@@ -44,20 +44,31 @@
             <span class="region-info missing">Noch keine Region gesetzt – auf der Karte zeichnen</span>
           }
         </label>
-        <label title="Tatsächlich verwendete Kantenlänge einer quadratischen Verkehrszelle. Bei einer neuen Region berechnet SyntheSis automatisch die kleinste Zellgröße, die höchstens 600 Zonen erzeugt. Der Wert kann danach manuell geändert werden.">
+        <label title="Tatsächlich verwendete Kantenlänge einer quadratischen Verkehrszelle. Bei einer neuen Region berechnet SyntheSis automatisch die kleinste Zellgröße, die das gewählte Zonenlimit einhält. Der nach der Vorschau tatsächlich verwendete Wert steht immer im Feld.">
           Zellgröße Zonenraster (m) ⓘ
           <input type="number" [(ngModel)]="scenario.zoning.cellSizeMeters"
-            (change)="previewZones()" min="100" step="50">
+            (change)="previewZones()" min="100"
+            [step]="scenario.zoning.mode === 'grid' ? 50 : 100">
           @if (zonePreviewInfo) {
             <small class="field-note zone-warning">{{ zonePreviewInfo }}</small>
           }
         </label>
-        <label title="Zonierungs-Gitter. 'Automatisch fein' berechnet eine praktische Zellgröße in 50-m-Schritten und nutzt das 600-Zonen-Limit bestmöglich aus. 'INSPIRE/Zensus' verwendet bewusst nur die amtlichen Standardstufen 100 m, 1 km oder 10 km.">
+        <label title="Obergrenze der Verkehrszellen. Mehr Zonen liefern mehr räumliches Detail, erhöhen aber Laufzeit und Speicherbedarf quadratisch. 600 ist der robuste Standard, 1.200 die aktuelle Schutzgrenze. Das experimentelle SUMO-Netzfeedback hat unabhängig davon ein engeres Limit.">
+          Maximale Anzahl Zonen ⓘ
+          <input type="number" [(ngModel)]="scenario.zoning.maxZones"
+            (change)="previewZones(true)" min="100" max="1200" step="100">
+          @if (scenario.zoning.maxZones > 1000) {
+            <small class="field-note zone-warning">Hohe Detailstufe: Matrizen und Routing können deutlich länger dauern.</small>
+          }
+        </label>
+        <label title="Zonierungs-Gitter. 'Freies Raster' beginnt an der Regionsgrenze. 'EPSG:3035-ausgerichtet' liegt auf einem europaweit festen, flächengleichen Gitter und erlaubt 100-m-Schritte wie 700 m, ist aber kein amtliches INSPIRE-Raster. 'INSPIRE/Zensus' nutzt ausschließlich die amtlichen Stufen 100 m, 1 km oder 10 km.">
           Zonierungs-Gitter ⓘ
-          <select [(ngModel)]="scenario.zoning.mode" (change)="previewZones(true)">
-            <option value="grid">Automatisch fein (empfohlen)</option>
+          <select [(ngModel)]="scenario.zoning.mode" (change)="previewZones()">
+            <option value="grid">Freies Raster (automatisch fein)</option>
+            <option value="epsg3035">EPSG:3035-ausgerichtet (empfohlen)</option>
             <option value="inspire">INSPIRE/Zensus-Standardraster</option>
           </select>
+          <small class="field-note">Eine andere Zonierung erfordert eine neue Artefakt-Generierung.</small>
         </label>
       </section>
       <section class="block">

@@ -7,6 +7,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Prüft die INSPIRE-/EPSG:3035-Zonierung: Einrasten auf das globale Gitter, INSPIRE-Zell-IDs,
@@ -60,5 +61,36 @@ class InspireGridZoningTest {
         big.maxLat = 52.0;
         big.maxLon = 12.0;
         assertEquals(10000, InspireGridZoning.pickResolution(big, 1000, 600));
+    }
+
+    @Test
+    void flexibleAlignedGridKeeps700MetersWithoutClaimingInspireIds() {
+        int resolution = InspireGridZoning.pickAlignedResolution(rastatt(), 700, 1200);
+        assertEquals(700, resolution);
+
+        List<Zone> zones = InspireGridZoning.generateAligned(rastatt(), resolution, 1200);
+        assertTrue(zones.size() > 10);
+        for (Zone z : zones) {
+            assertEquals(700, z.laeaRes);
+            assertEquals(0, z.laeaE % 700);
+            assertEquals(0, z.laeaN % 700);
+            assertTrue(z.name.startsWith("LAEA3035RES700mN"));
+        }
+    }
+
+    @Test
+    void flexibleAlignedGridRoundsUpAndCoarsensIn100MeterSteps() {
+        assertEquals(800, InspireGridZoning.pickAlignedResolution(rastatt(), 750, 1200));
+        int constrained = InspireGridZoning.pickAlignedResolution(rastatt(), 100, 100);
+        assertEquals(0, constrained % 100);
+        assertTrue(InspireGridZoning.generateAligned(rastatt(), constrained, 100).size() <= 100);
+    }
+
+    @Test
+    void alignedResolutionRejectsOverflowInsteadOfReturningAFineGrid() {
+        for (double requested : new double[]{Double.MAX_VALUE, Double.NaN, Double.POSITIVE_INFINITY}) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> InspireGridZoning.pickAlignedResolution(rastatt(), requested, 600));
+        }
     }
 }
