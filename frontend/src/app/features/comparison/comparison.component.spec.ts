@@ -223,7 +223,6 @@ function scenario(id: string, name: string): Scenario {
       behaviorSource: 'template',
       gtaWhatIf: '',
       sumoFeedback: false,
-      publicTransport: false,
       useKitPopulation: false,
       calibrateModeChoice: false,
       calibrateDistance: false,

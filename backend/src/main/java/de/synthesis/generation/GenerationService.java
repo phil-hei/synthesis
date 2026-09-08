@@ -29,6 +29,7 @@ import de.synthesis.generation.pipeline.ModeChoiceCalibrator;
 import de.synthesis.generation.pipeline.ModeDistanceCalibrator;
 import de.synthesis.generation.pipeline.OverpassClient;
 import de.synthesis.generation.pipeline.OsmDataSnapshot;
+import de.synthesis.generation.pipeline.OsmExternalDestinationCandidates;
 import de.synthesis.generation.pipeline.PopulationEstimator;
 import de.synthesis.generation.pipeline.PopulationGenerator;
 import de.synthesis.generation.pipeline.PopulationGridParser;
@@ -410,7 +411,8 @@ public class GenerationService {
             job.log("Overpass-POIs fehlgeschlagen (" + e.getMessage() + ") – Fallback auf synthetische Daten");
         }
         try {
-            ctx.places = overpass.fetchPlaces(ctx.scenario.region);
+            ctx.places = overpass.fetchPlaces(ctx.scenario.region,
+                    ctx.scenario.population.externalTrips);
             job.log(ctx.places.size() + " Siedlungen (place-Nodes mit Einwohnerzahl) geladen");
         } catch (Exception e) {
             job.log("Overpass-Places fehlgeschlagen (" + e.getMessage() + ") – Bevölkerung über Dichte/POIs");
@@ -456,6 +458,10 @@ public class GenerationService {
     private void preparePopulationDistribution(PipelineContext ctx) throws IOException {
         Scenario scenario = ctx.scenario;
         GenerationJob job = ctx.job;
+        // Zusätzliche Fernsiedlungen sind Diagnosedaten. Für Bevölkerung und Verteilung
+        // gilt auch beim Snapshot-Replay weiterhin der bisherige lokale Abfrageausschnitt.
+        List<OverpassClient.Place> populationPlaces =
+                OverpassClient.populationPlaces(scenario.region, ctx.places);
 
         // Alternative/neuere Uploads gewinnen vor dem backendseitig versionierten Zensus 2022.
         double[] gridWeights = null;
@@ -521,8 +527,8 @@ public class GenerationService {
             ctx.populationSource = gridSource;
             ctx.populationSourceLabel = "upload-grid".equals(gridSource)
                     ? "Hochgeladenes Bevölkerungsraster" : "Destatis Zensus 2022";
-        } else if (!ctx.places.isEmpty()) {
-            ctx.totalPersons = (int) PopulationEstimator.estimateForRegion(scenario.region, ctx.places);
+        } else if (!populationPlaces.isEmpty()) {
+            ctx.totalPersons = (int) PopulationEstimator.estimateForRegion(scenario.region, populationPlaces);
             ctx.populationSource = "osm-places-estimate";
             ctx.populationSourceLabel = "OSM-Siedlungsdaten (Schätzung)";
             ctx.populationProvenance = new PopulationProvenance(ctx.osmDataSource,
@@ -541,9 +547,9 @@ public class GenerationService {
         int[] poiCounts = countPoisPerZone(ctx.zones, ctx.pois);
         double[] weights = gridWeights != null
                 ? gridWeights
-                : ctx.places.isEmpty() ? null : PopulationEstimator.zoneWeights(ctx.zones, ctx.places);
+                : populationPlaces.isEmpty() ? null : PopulationEstimator.zoneWeights(ctx.zones, populationPlaces);
         ctx.distributionSource = gridWeights != null ? gridSource
-                : !ctx.places.isEmpty() ? "osm-places"
+                : !populationPlaces.isEmpty() ? "osm-places"
                 : !ctx.pois.isEmpty() ? "poi-density" : "uniform-noise";
         ctx.populationGenerator.distributePopulation(
                 ctx.totalPersons, ctx.pois.isEmpty() ? null : poiCounts, weights);
@@ -554,6 +560,8 @@ public class GenerationService {
     /** Zell-Attraktivitäten (OSM oder synthetisch) + externe Zielzonen; schreibt zone-repository/. */
     private void stageAttractivities(PipelineContext ctx) throws IOException {
         GenerationJob job = ctx.job;
+        Files.deleteIfExists(ctx.artifacts.resolve("population")
+                .resolve(OsmExternalDestinationCandidates.NAME));
         if (ctx.pois.isEmpty()) {
             AttractivityCalculator.synthetic(ctx.zones, ctx.random);
         } else {
@@ -566,6 +574,7 @@ public class GenerationService {
             job.log(String.format(Locale.ROOT,
                     "%d externe Zielzonen (~%.0f km Radius) für Außenbeziehungen ergänzt",
                     external.size(), ExternalZones.radiusKm()));
+            prepareOsmExternalDestinationCandidates(ctx);
         }
         ctx.populationGenerator.freezeWorkGravity();
         prepareCommuterMapping(ctx);
@@ -578,6 +587,63 @@ public class GenerationService {
                         GeoJson.zonesToFeatureCollection(mapper, ctx.zones)));
         job.log("zones.csv + attractivities.csv geschrieben ("
                 + (ctx.pois.isEmpty() ? "synthetisch" : "OSM-basiert") + ")");
+    }
+
+    /**
+     * Writes the preregistered OSM fallback candidate without changing the active
+     * destination choice. If an official commuter upload exists, the artifact also
+     * contains the promotion metrics against that reference distribution.
+     */
+    private void prepareOsmExternalDestinationCandidates(PipelineContext ctx) {
+        if (ctx.places == null || ctx.places.isEmpty()) {
+            ctx.job.log("OSM-Außenzielkandidat nicht gebildet (keine Siedlungen mit Einwohnerzahl)");
+            return;
+        }
+        CommuterMatrix.ParseResult official = null;
+        Path commuterFile = scenarios.uploadsDir(ctx.scenario.id).resolve(CommuterMatrix.NAME);
+        if (Files.isRegularFile(commuterFile)) {
+            try {
+                official = CommuterMatrix.parse(commuterFile);
+            } catch (IOException | IllegalArgumentException e) {
+                ctx.job.log("OSM-Außenzielkandidat ohne OD-Vergleich (" + e.getMessage() + ")");
+            }
+        }
+        try {
+            OsmExternalDestinationCandidates.Result result =
+                    OsmExternalDestinationCandidates.build(ctx.scenario.region, ctx.places, official);
+            if (result.candidates().isEmpty()) {
+                ctx.job.log("OSM-Außenzielkandidat nicht gebildet (keine Siedlung außerhalb der Region)");
+                return;
+            }
+            Path file = ctx.artifacts.resolve("population")
+                    .resolve(OsmExternalDestinationCandidates.NAME);
+            String sha256 = OsmExternalDestinationCandidates.write(file, result, mapper);
+            ctx.job.summary.put("externalDestinationCandidateSource",
+                    OsmExternalDestinationCandidates.SOURCE);
+            ctx.job.summary.put("externalDestinationCandidateCount", result.candidates().size());
+            ctx.job.summary.put("externalDestinationCandidateSha256", sha256);
+            if (result.evaluation() != null) {
+                var evaluation = result.evaluation();
+                ctx.job.summary.put("externalDestinationDirectionShareMae",
+                        evaluation.directionShareMae());
+                ctx.job.summary.put("externalDestinationMeanDistanceRelativeError",
+                        evaluation.meanDistanceRelativeError());
+                ctx.job.summary.put("externalDestinationShareBeyond20KmDifference",
+                        evaluation.shareBeyond20KmDifference());
+                ctx.job.log(String.format(Locale.ROOT,
+                        "OSM-Außenzielkandidat gegen Pendler-OD: Richtungs-MAE %.3f, "
+                                + "Distanzfehler %.1f %%, >=20-km-Abweichung %.1f Prozentpunkte",
+                        evaluation.directionShareMae(),
+                        evaluation.meanDistanceRelativeError() * 100,
+                        evaluation.shareBeyond20KmDifference() * 100));
+            } else {
+                ctx.job.log(result.candidates().size()
+                        + " OSM-Außenzielkandidaten als Diagnoseartefakt geschrieben");
+            }
+        } catch (IOException e) {
+            ctx.job.log("OSM-Außenzielkandidat konnte nicht geschrieben werden ("
+                    + e.getMessage() + ")");
+        }
     }
 
     /**
@@ -1050,7 +1116,7 @@ public class GenerationService {
         return new DistanceCalibrationOutcome(cal.calibratedDir(), last[0]);
     }
 
-    // --- Stufe 12: SUMO (Achse B) ------------------------------------------------------------
+    // --- Stufe 12: SUMO (nachgelagerte Verkehrssimulation) ----------------------------------
 
     /** Mikroskopische Verkehrssimulation der PKW-Trips + logiTopp-Zustelltouren. */
     private void stageSumo(PipelineContext ctx) {
@@ -1059,7 +1125,7 @@ public class GenerationService {
         Path artifacts = ctx.artifacts;
         if (!scenario.targets().contains("sumo")) {
             job.stage("SUMO (Verkehr)").status = "SKIPPED";
-            job.log("SUMO übersprungen (Zielmodell nicht ausgewählt)");
+            job.log("SUMO übersprungen (Verkehrssimulation nicht ausgewählt)");
             return;
         }
         SumoRunner runner = new SumoRunner(properties.getSumo());
@@ -1072,7 +1138,7 @@ public class GenerationService {
         }
         if (!Files.exists(demandResult)) {
             job.stage("SUMO (Verkehr)").status = "SKIPPED";
-            job.log("SUMO übersprungen (benötigt logiTopp-Trips – bitte Zielmodell logiTopp mitwählen)");
+            job.log("SUMO übersprungen (benötigte logiTopp-Trips fehlen)");
             return;
         }
         try {
@@ -1102,12 +1168,11 @@ public class GenerationService {
     /**
      * Baut den ÖV-Provider für den SUMO-Lauf (Phase C): sobald das Netz steht, wird der GTFS-Feed
      * beschafft (Auto-Fetch nach Region, Upload-Fallback), zugeschnitten und via gtfs2pt.py in die
-     * Fahrplan-Infrastruktur überführt. {@code null} = ohne ÖV (Flag aus oder venv/gtfs2pt fehlt).
+     * Fahrplan-Infrastruktur überführt. {@code null} = kein Feed oder venv/gtfs2pt fehlt.
      */
     private SumoRunner.PtProvider buildPtProvider(PipelineContext ctx) {
-        Scenario scenario = ctx.scenario;
         GenerationJob job = ctx.job;
-        if (!scenario.population.publicTransport || !properties.getTransit().isEnabled()) {
+        if (!properties.getTransit().isEnabled()) {
             return null;
         }
         TransitRunner transit = new TransitRunner(properties.getTransit(),
@@ -1120,13 +1185,13 @@ public class GenerationService {
         Path transitDir = ctx.artifacts.resolve("sumo").resolve("transit");
         Path rawCache = Path.of(properties.getDataDir()).resolve("gtfs-cache");
         Path croppedFeed = transitDir.resolve("feed-cropped.zip");
-        Path uploaded = scenario.population.gtfsUploadPath != null
-                && !scenario.population.gtfsUploadPath.isBlank()
-                ? Path.of(scenario.population.gtfsUploadPath) : null;
+        Path uploaded = ctx.scenario.population.gtfsUploadPath != null
+                && !ctx.scenario.population.gtfsUploadPath.isBlank()
+                ? Path.of(ctx.scenario.population.gtfsUploadPath) : null;
         String date = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
         return net -> {
             Files.createDirectories(transitDir);
-            GtfsSource.Resolved resolved = gtfs.resolve(scenario.region, uploaded, rawCache,
+            GtfsSource.Resolved resolved = gtfs.resolve(ctx.scenario.region, uploaded, rawCache,
                     croppedFeed, job::log);
             if (resolved == null) {
                 return null;
@@ -1564,6 +1629,14 @@ public class GenerationService {
         return counts;
     }
 
+    private void putSummaryNumber(ObjectNode target, String field, Map<String, Object> summary,
+                                  String summaryKey) {
+        Object value = summary.get(summaryKey);
+        if (value instanceof Number number) {
+            target.set(field, mapper.valueToTree(number));
+        }
+    }
+
     private void writeManifest(Path artifacts, Scenario scenario, GenerationJob job, int zoneCount,
                                PopulationGenerator.Result population, LogisticsGenerator.Result logistics,
                                boolean osmUsed, String populationSource, String populationSourceLabel,
@@ -1602,6 +1675,40 @@ public class GenerationService {
         quality.put("depots", !scenario.logistics.depots.isEmpty() ? "user-defined"
                 : logisticsSources.depotsFromOsm() ? "osm-pois" : "auto-placed");
         quality.put("packstations", logisticsSources.packstationsFromOsm() ? "osm-pois" : "synthetic");
+
+        ObjectNode externalRelations = manifest.putObject("externalRelations");
+        externalRelations.put("enabled", scenario.population.externalTrips);
+        externalRelations.put("externalZones", scenario.population.externalTrips
+                ? ExternalZones.count() : 0);
+        externalRelations.put("destinationSource", commuterSource);
+        externalRelations.put("workplaceMarginSource", workplaceMarginSource);
+        Object candidateSource = job.summary.get("externalDestinationCandidateSource");
+        if (candidateSource != null) {
+            ObjectNode candidate = externalRelations.putObject("osmDestinationCandidate");
+            candidate.put("status", "diagnostic-only");
+            candidate.put("source", candidateSource.toString());
+            candidate.put("artifact", "population/"
+                    + OsmExternalDestinationCandidates.NAME);
+            putSummaryNumber(candidate, "count", job.summary,
+                    "externalDestinationCandidateCount");
+            Object candidateSha = job.summary.get("externalDestinationCandidateSha256");
+            if (candidateSha != null) {
+                candidate.put("sha256", candidateSha.toString());
+            }
+            putSummaryNumber(candidate, "directionShareMae", job.summary,
+                    "externalDestinationDirectionShareMae");
+            putSummaryNumber(candidate, "meanDistanceRelativeError", job.summary,
+                    "externalDestinationMeanDistanceRelativeError");
+            putSummaryNumber(candidate, "shareBeyond20KmDifference", job.summary,
+                    "externalDestinationShareBeyond20KmDifference");
+        }
+        externalRelations.put("externalWorkDestinations", population.externalWorkDestinations());
+        externalRelations.put("externalWorkShareActual", population.persons().isEmpty() ? 0
+                : (double) population.externalWorkDestinations() / population.persons().size());
+        Object targetShare = job.summary.get("externalWorkShareTarget");
+        if (targetShare instanceof Number number) {
+            externalRelations.put("externalWorkShareTarget", number.doubleValue());
+        }
         ObjectNode populationEstimate = manifest.putObject("populationEstimate");
         populationEstimate.put("totalPersons", totalPersons);
         populationEstimate.put("source", populationSource);

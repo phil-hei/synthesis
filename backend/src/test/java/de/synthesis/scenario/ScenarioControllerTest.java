@@ -197,6 +197,24 @@ class ScenarioControllerTest {
         assertEquals(0.25, persisted.logistics.returns.pickupShares.work);
     }
 
+    @Test
+    void sumoAutomaticallyAddsAndPersistsLogitoppDependency(@TempDir Path tempDir) {
+        SynthesisProperties localProperties = new SynthesisProperties();
+        localProperties.setDataDir(tempDir.toString());
+        ScenarioRepository repository = new ScenarioRepository(
+                new ObjectMapper().findAndRegisterModules(), localProperties);
+        ScenarioController realController = new ScenarioController(repository, localProperties);
+        Scenario scenario = validScenario();
+        scenario.targetModels = List.of("sumo");
+
+        Scenario created = realController.create(scenario).getBody();
+
+        assertNotNull(created);
+        assertEquals(List.of("logitopp", "sumo"), created.targetModels);
+        assertEquals(List.of("logitopp", "sumo"),
+                repository.findById(created.id).orElseThrow().targetModels);
+    }
+
     private void assertBadRequest(Scenario scenario, String reason) {
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class, () -> controller.create(scenario));

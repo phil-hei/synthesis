@@ -48,10 +48,10 @@ Achtung: Das Javadoc an `run()` sagt „13 Pipeline-Stufen" — das ist veraltet
 
 | # | Stufe | Gate / SKIPPED-Bedingung | FAILED möglich? |
 |---|---|---|---|
-| 1 | Zonierung | immer; `zoning.mode` `grid` (automatisch fein aufgelöstes Bbox-Raster, Neu- und Feld-Default) \| `inspire` (EPSG:3035-Gitter, nur Europa, bewusst wählbar); Region außerhalb Europas → `Epsg3035.covers`-Guard fällt auf Bbox-Raster zurück. Das Studio fragt bei neuer Region ab 100 m an und übernimmt die feinste 50-m-Stufe innerhalb von `synthesis.max-zones` (600); INSPIRE bleibt auf 100 m/1 km/10 km quantisiert. | Lauf bricht ab |
+| 1 | Zonierung | immer; `zoning.mode`: `grid` (freies Bbox-Raster, Default, 50-m-Schritte) \| `epsg3035` (global ausgerichtetes LAEA-Gitter, flexible 100-m-Schritte) \| `inspire` (amtliche EPSG:3035-Stufen 100 m/1 km/10 km). Beide LAEA-Modi nur Europa, sonst Bbox-Fallback. Das Studio fragt bei neuer Region ab 100 m an; Vorschau und Pipeline verwenden `zoning.maxZones` (Default 600, harte Grenze 1.200). | Lauf bricht ab |
 | 2 | OSM-Daten (POIs) | automatische Quelle: Szenario-Snapshot → Live-Overpass → synthetischer Fallback; das Legacy-Feld `population.useOsmData` wird ignoriert | nein (Fallback) |
 | — | `preparePopulationDistribution` | **kein eigener Schritt**, läuft zwischen 2 und 3 (manuelle Gesamtzahl > alternatives Upload-Raster > hashgeprüfter Zensus 2022 > OSM-Schätzung > Dichte). Zensus-Fehler aktivieren den nächsten Fallback. | nein (Fallback) |
-| 3 | Attraktivitäten | immer; ohne POIs synthetisch; `externalTrips` hängt externe Zielzonen an | Lauf bricht ab |
+| 3 | Attraktivitäten | immer; ohne POIs synthetisch; `externalTrips` hängt externe Zielzonen an und schreibt bei verfügbaren OSM-Siedlungen den noch nicht verhaltenswirksamen Kandidaten `population/external-destination-candidates.json` | Lauf bricht ab |
 | 4 | Bevölkerungssynthese | immer | Lauf bricht ab |
 | 5 | Aktivitätenpläne (Achse A) | immer; Quelle per Fallback-Kette `gta → actitopp → template` | nein (Fallback) |
 | 6 | Matrizen | immer; GraphHopper-Routing wenn `useRealRouting`, sonst/Fallback Luftlinie | Lauf bricht ab |
@@ -155,6 +155,13 @@ zusätzlich trägt `Zone.name` die INSPIRE-Zell-ID (`CRS3035RES<res>mN<north>E<e
 LAEA-Metern statt über die Lat/Lon-Bbox. Den `name` nie als numerische ID interpretieren; er ist
 der europaweit vergleichbare Zell-Code (verlustfreier Join zu Zensus-2022-/GEOSTAT-Rastern).
 
+**Flexible LAEA-Ergänzung (2026-08-27):** `zoning.mode=epsg3035` behält dieselbe numerische
+ID-Mechanik und dasselbe globale ETRS89-LAEA-Origin wie INSPIRE, erlaubt aber Vielfache von 100 m
+(z. B. 700 m). `Zone.name` beginnt hier mit `LAEA3035RES`, niemals mit dem amtlichen
+`CRS3035RES`; diese semantische Trennung nicht aufheben. Das Zonenlimit ist Teil des Szenarios,
+aber durch `synthesis.max-zones-hard-limit` begrenzt. Eine Änderung von Modus, Zellgröße oder
+Limit erfordert die vollständige Neugenerierung aller zonenabhängigen Artefakte.
+
 ### 6. Reproduzierbarkeit: alles hängt am Szenario-Seed
 
 `scenario.population.seed` (Default 42) treibt sämtliche Stochastik:
@@ -191,7 +198,7 @@ siehe docs/06, Abschnitt „Phase 2 – SUMO").
 | Ebene | Ort | Beispiele |
 |---|---|---|
 | Betriebs-Achsen (Deployment) | `SynthesisProperties` (`@ConfigurationProperties("synthesis")`) | Pfade zu Tools, Timeouts, `max-zones`, Overpass-Mirrors, LLM-Endpoint |
-| Nutzer-Szenario-Flags | `Scenario.java` (persistiert als `scenario.json`) | `behaviorSource`, `targetModels`, `sumoFeedback`, `publicTransport`, Seed |
+| Nutzer-Szenario-Flags | `Scenario.java` (persistiert als `scenario.json`) | `behaviorSource`, `targetModels` (SUMO impliziert logiTopp), `sumoFeedback`, Seed; `publicTransport` nur Legacy, ÖV automatisch |
 | Frontend-Spiegel | `frontend/src/app/core/models/scenario.model.ts` | muss bei Scenario-Änderungen mitgezogen werden |
 
 Details und alle Flags → Skill `synthesis-config-and-flags`.
@@ -239,7 +246,7 @@ grep -rn 'seed \* 31\|seed \* 131\|baseSeed \* ' backend/src/main/java/de/synthe
 grep -rln 'ProcessBuilder' backend/src/main/java/de/synthesis/generation/pipeline/
 
 # Gate-Flags im Szenario noch vorhanden?
-grep -n 'sumoFeedback\|llmModeChoice\|publicTransport\|behaviorSource\|targetModels' \
+grep -n 'sumoFeedback\|llmModeChoice\|behaviorSource\|targetModels' \
   backend/src/main/java/de/synthesis/scenario/Scenario.java
 
 # Zonen-ID-Dualität (Befunde A2/A9)

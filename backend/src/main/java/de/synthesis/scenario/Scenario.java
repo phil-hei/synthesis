@@ -26,16 +26,27 @@ public class Scenario {
     public Logistics logistics = new Logistics();
 
     /**
-     * Achse B – Zielmodelle, welche die erzeugte Nachfrage verwerten (Mehrfachauswahl):
-     * {@code logitopp} (Personen+Pakete, Standard), {@code mobilecity} (Takomat-Export),
-     * {@code sumo} (mikroskopischer Verkehr, geplant). Leer/null = logitopp + mobilecity.
+     * Nachfragesimulation und Weiterverarbeitung (Mehrfachauswahl): {@code logitopp}
+     * (Personen+Pakete, Standard), {@code mobilecity} (unabhängiger Takomat-Export) und
+     * {@code sumo} (nachgelagerte Verkehrssimulation; impliziert logiTopp).
+     * Leer/null = logitopp + mobilecity.
      */
     public List<String> targetModels = new ArrayList<>(List.of("logitopp", "mobilecity"));
 
     /** Selected target models with a sensible default when unset (backward compatibility). */
     public List<String> targets() {
-        return targetModels == null || targetModels.isEmpty()
-                ? List.of("logitopp", "mobilecity") : targetModels;
+        List<String> selected = targetModels == null || targetModels.isEmpty()
+                ? new ArrayList<>(List.of("logitopp", "mobilecity"))
+                : new ArrayList<>(targetModels);
+        if (selected.contains("sumo") && !selected.contains("logitopp")) {
+            selected.add(0, "logitopp");
+        }
+        return selected;
+    }
+
+    /** Persistiert harte Pipeline-Abhängigkeiten auch für API-Clients außerhalb des Studios. */
+    public void normalizeTargetDependencies() {
+        targetModels = new ArrayList<>(targets());
     }
 
     public static class Region {
@@ -127,10 +138,11 @@ public class Scenario {
          */
         public boolean sumoFeedback = false;
         /**
-         * ÖV in SUMO (experimentell, Phase C): GTFS → gtfs2pt.py → Bus-Fahrplan; Nachfrage-
-         * Personen fahren intermodal mit. Braucht Ziel SUMO + ein Python-venv; GTFS per
-         * Auto-Fetch (nach Region) mit Upload-Fallback. gtfs2pt-Mapping ist langsam (gecacht).
+         * @deprecated Kompatibilitätsfeld. Bei SUMO wird ÖV automatisch versucht, sobald ein
+         * regionaler GTFS-Feed und die Transit-Werkzeuge verfügbar sind.
          */
+        @Deprecated
+        @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
         public boolean publicTransport = false;
         /** Optionaler hochgeladener GTFS-Feed (Pfad); Fallback, falls kein Auto-Fetch greift. */
         public String gtfsUploadPath;

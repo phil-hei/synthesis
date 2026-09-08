@@ -202,11 +202,11 @@ Aus den Überlegungen ergibt sich ein klares Bild: SyntheSis trennt **Nachfrage-
 Runner** – exakt das Muster, das mit actiTopp/logiTopp heute schon existiert.
 
 ```
-                Achse A: Verhaltensquelle              Achse B: Zielmodell
-   Region  ──►  ( erzeugt die Nachfrage )       ──►   ( verwertet die Nachfrage )
+                Verhaltensquelle                       Nachfrage / Weiterverarbeitung
+   Region  ──►  ( erzeugt Aktivitäten )         ──►   ( simuliert, exportiert, belastet Netze )
                 ┌───────────────────────────┐         ┌───────────────────────────────┐
                 │ actiTopp (kalibriert) ★    │         │ logiTopp (Personen + Pakete) ★ │
-                │ GTA (KI, experimentell)    │         │ SUMO (mikrosk. Verkehr)        │
+                │ LLM-Agenten (experimentell)│         │ SUMO (nachgelagert zu logiTopp)│
                 │ [Template = interner       │         │ MobileCity-Export (Takomat,    │
                 │  Fallback, nicht sichtbar] │         │  strategisch-aggregiert)       │
                 └───────────────────────────┘         └───────────────────────────────┘
@@ -217,19 +217,20 @@ Runner** – exakt das Muster, das mit actiTopp/logiTopp heute schon existiert.
 | Option | Art | Nutzer-sichtbar |
 |---|---|---|
 | **actiTopp** | echtes KIT-Modell, kalibriert, deterministisch | ja (Default) |
-| **GTA** | LLM-Persona-Agenten, Was-wäre-wenn, erklärbar, stochastisch | ja (experimentell) |
+| **LLM-Agenten** (intern `gta`) | LLM-Persona-Agenten, Was-wäre-wenn, erklärbar, stochastisch | ja (experimentell) |
 | Template | einfacher Regelgenerator | nein (nur Fallback, wenn actiTopp-Prozess fehlt) |
 
-**Achse B – Zielmodell** (verwertet die Nachfrage):
+**Nachfragesimulation und Weiterverarbeitung:**
 | Option | Granularität | Rolle |
 |---|---|---|
 | **logiTopp/mobiTopp** | mikroskopisch, Personen **+ Pakete** | heutiger Default; liefert KPIs/Touren |
-| **SUMO** | mikroskopisch, Verkehrsfluss | eigene Detailsimulation; OSM→`netconvert`, Pläne→`.rou.xml`; EPL, lokal, CPU; kommt mit GTAs Action-Modul teilweise „mit"; **unabhängig von Takomat** |
+| **SUMO** | mikroskopisch, Verkehrsfluss | nachgelagerte Detailsimulation der logiTopp-Nachfrage; OSM→`netconvert`, Pläne→`.rou.xml`; EPL, lokal, CPU; **unabhängig von Takomat** |
 | **MobileCity-Export** | strategisch, district-aggregiert, mehrjährig | Takomat-Zielmodell; wir liefern Aggregat-Tabellen |
 
 **Designprinzipien:**
-- Die beiden Achsen sind **unabhängig wählbar** (Verhaltensquelle × Zielmodell). Zielmodell kann
-  Mehrfachauswahl sein (z. B. logiTopp *und* MobileCity-Export gleichzeitig – heute schon der Fall).
+- Die Verhaltensquelle ist unabhängig von den Ausgaben wählbar. MobileCity ist heute ein
+  unabhängiger Aggregat-Export; SUMO besitzt dagegen eine harte logiTopp-Abhängigkeit, die Studio
+  und API automatisch ergänzen.
 - **SUMO ersetzt MobileCity nicht** – andere Granularität: MobileCity = strategisch/mehrjährig/
   Policy; SUMO = ein Szenario, detaillierte Flüsse, **selbst gefahren** (macht uns für „eigene
   Mikrosimulation" unabhängig vom Takomat-Tooling).
@@ -1390,7 +1391,56 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   bleiben rückwärtskompatibel. **Verifiziert:** Backend 149 Tests grün (7 externe Skips),
   Frontend 38/38 Tests und AOT-Produktions-Build grün; der Rastatt-Referenzwert bleibt
   13.723/22.971 = 59,7405 %.
+- **🔬 Fernwege/Außenbeziehungen – nächster belastbarer Ausbau (2026-09-01):** Die BA stellt
+  Gemeinde-Pendlerrelationen kostenlos über ihre interaktive Statistik als CSV bereit, jedoch
+  derzeit nur hinter einer internen MicroStrategy-Sitzung ohne dokumentierten stabilen
+  Datenendpunkt. SyntheSis bindet diese private Web-API deshalb nicht per Screen-Scraping an.
+  Als reproduzierbarer Kandidat wird stattdessen ein OSM-Siedlungsfallback untersucht: Die
+  backendseitig versionierte BA-Außenquote entscheidet weiterhin **ob** ein WORK-Ziel außen
+  liegt; bevölkerungsgewichtete OSM-Siedlungen außerhalb der Region würden nur **wo** schätzen.
+  Vor einer Produktverdrahtung gelten vorab: Vergleich gegen amtliche BA-OD in mindestens drei
+  Regionen und drei Seeds, Richtungsanteils-MAE höchstens 0,15, relative Abweichung der mittleren
+  Außendistanz höchstens 25 %, Abweichung des Anteils `>=20 km` höchstens 10 Prozentpunkte sowie
+  keine Verschlechterung von Wege/Person·Tag außerhalb `[3,0; 3,4]`. Ein Fehlschlag bedeutet:
+  kein Default und kein verstecktes Ersetzen amtlicher Ziele. Bereits umgesetzt ist die
+  Transparenzschicht: Job-Ergebnis und `manifest.json/externalRelations` weisen Zielquelle,
+  amtlichen Sollanteil, Istanteil und Zahl externer Arbeitsziele explizit aus.
+  **✅ Messpfad umgesetzt (2026-09-01):** `OsmExternalDestinationCandidates` gruppiert
+  bevölkerungsgewichtete OSM-Siedlungen außerhalb der Region in acht Richtungssektoren und
+  schreibt den reproduzierbaren, noch nicht verhaltenswirksamen Kandidaten nach
+  `population/external-destination-candidates.json`. Bei vorhandener amtlicher Pendler-OD
+  berechnet die Pipeline die drei Promotionsmaße automatisch und spiegelt sie samt Artefakt-Hash
+  unter `manifest.json/externalRelations/osmDestinationCandidate`. Die Overpass-Place-Abfrage
+  umfasst dafür den vollständigen 80-km-Prüfradius um den Regionsmittelpunkt. **Verifiziert:** 13 fokussierte Tests einschließlich
+  vollständigem Offline-Pipeline-E2E, 0 Fehler/0 Skips; identische synthetische OSM-/OD-Verteilung
+  ergibt Richtungs-MAE, Distanzfehler und `>=20-km`-Abweichung jeweils 0. Der Kandidat bleibt
+  `diagnostic-only`, bis die vorregistrierte Mehrregionenmessung bestanden ist.
+- **✅ Studio-/Modellachsen nachgeschärft (2026-09-01):**
+  - SUMO wird im Studio als nachgelagerte **Verkehrssimulation** statt als gleichartiges
+    Zielmodell dargestellt und aktiviert seine harte logiTopp-Abhängigkeit automatisch; auch
+    Backend/API normalisieren diese Abhängigkeit. MobileCity bleibt bewusst ein unabhängiger
+    district-aggregierter Export: Die heute implementierte Stufe konsumiert keine
+    logiTopp-Simulation, weshalb eine automatische teure Simulation fachlich falsch wäre.
+  - Der sichtbare Schalter „ÖV/Bus in SUMO“ ist entfernt. Bei ausgewähltem SUMO versucht das
+    Backend GTFS immer automatisch über die regionsbezogene Feed-Registry; der lokale
+    reproduzierbare Transit-Interpreter ist als Standardpfad konfiguriert, Upload bleibt Fallback.
+  - Die Verhaltensoption heißt im Studio **„LLM-Agenten (lokales LLM, experimentell)“**. Stand:
+    Persona- und
+    Wochenplanerzeugung über Ollama/Qwen2.5 ist Ende-zu-Ende umgesetzt, reproduzierbar gecacht
+    und unterstützt Was-wäre-wenn-Begründungen. Die zusätzliche LLM-Moduswahl ist technisch
+    umgesetzt, bleibt wegen des dokumentierten Aktivmodus-Bias jedoch eine experimentelle
+    Vergleichslinse und ersetzt die kalibrierte logiTopp-MNL-Wahl nicht.
 
+- **✅ Review der Zonierung und Außenzieldiagnostik (2026-09-08):** Überlaufende oder nicht
+  endliche Rasterauflösungen werden abgewiesen. Abfrage und Kandidatenberechnung teilen den
+  80-km-Horizont; die Bevölkerungsschätzung verwendet weiterhin nur den bisherigen lokalen
+  Place-Ausschnitt, auch beim Einlesen eingefrorener Daten. Punktbezogene Pendlerrelationen
+  mit Ursprung außerhalb der Region werden ausgeschlossen; regionsweite Referenzen bleiben
+  gültig. Wiederholungsläufe entfernen veraltete Kandidatenartefakte. Der Offline-E2E prüft
+  unveränderte Hashes der fünf produktiven Bevölkerungs-/Nachfragedateien beim Entfernen
+  einer nur diagnostisch genutzten Außensiedlung. **Verifiziert:** vollständige Backend-Suite
+  mit 162 Tests, 0 Fehlern und 7 extern bedingten Skips; fokussierte 20 Tests ohne Skips.
+  Core-Preflight und Abgleich beider Skill-Registries grün.
 ### Phase 5 – Externe Klärungen (nicht-technisch, parallel)
 - **Takomat:** MobileCity-Import finalisieren (Netz-/TEC-/MOD-Tabellen, Messagepack,
   vollständiger Study-Area-Import). **Antworten vom 2026-07-03:**

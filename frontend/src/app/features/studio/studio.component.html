@@ -259,43 +259,46 @@
           Verhaltensmodell
           <select [(ngModel)]="scenario.population.behaviorSource">
             <option value="actitopp">actiTopp (KIT, kalibriert)</option>
-            <option value="gta">GTA – KI-Agenten (lokales LLM, experimentell)</option>
+            <option value="gta">LLM-Agenten (lokales LLM, experimentell)</option>
             <option value="template">Vorlagen (einfach, vollständig offline)</option>
           </select>
         </label>
         @if (scenario.population.behaviorSource === 'gta') {
           <p class="hint">
-            GTA erzeugt Tagespläne über ein lokales LLM (Ollama). Personas werden gebündelt, daher
-            wenige LLM-Aufrufe – aber langsamer als actiTopp. Ist das LLM nicht erreichbar, wird
-            automatisch auf actiTopp zurückgefallen.
+            Die LLM-Agenten erzeugen Personas und Tagespläne über Ollama/Qwen. Planung,
+            reproduzierbarer Cache und Was-wäre-wenn-Begründungen funktionieren bereits.
+            Die zusätzliche Verkehrsmittelwahl bleibt experimentell. Ist das lokale LLM nicht
+            erreichbar, wird automatisch auf actiTopp zurückgefallen.
           </p>
         }
         @if (scenario.population.behaviorSource === 'gta') {
           <label
-            title="GTA 3d: Freitext-Szenario (Policy/Technologie), das die KI-Agenten bei der Tagesplanung berücksichtigen – z. B. eine autofreie Innenstadt oder kostenloser ÖPNV. Leer = normales Verhalten.">
+            title="Freitext-Szenario (Policy/Technologie), das die LLM-Agenten bei der Tagesplanung berücksichtigen – z. B. eine autofreie Innenstadt oder kostenloser ÖPNV. Leer = normales Verhalten.">
             Was-wäre-wenn-Kontext (optional)
             <textarea rows="2" [(ngModel)]="scenario.population.gtaWhatIf"
             placeholder="z. B. Die Innenstadt ist komplett autofrei."></textarea>
           </label>
         }
-        <div class="targets" title="Achse B – welche Zielmodelle die erzeugte Nachfrage verwerten (Mehrfachauswahl)">
-          <span class="targets-label">Zielmodell</span>
+        <div class="targets" title="Nachfragesimulation, Export und nachgelagerte Verkehrssimulation können passend kombiniert werden">
+          <span class="targets-label">Modelle und Ausgaben</span>
           <label class="checkbox" title="Simuliert für jede synthetische Person eine Modellwoche mit Ziel- und Verkehrsmittelwahl und ergänzt Paketbestellungen sowie Zustelltouren. Ergebnisse: Rohwege, native Nachfrage, KPIs, Depotstatistik und Tour-/Paket-Karten.">
-            <input type="checkbox" [checked]="hasTarget('logitopp')" (change)="toggleTarget('logitopp')">
-            logiTopp (Personen + Pakete)
+            <input type="checkbox" [checked]="hasTarget('logitopp')" [disabled]="hasTarget('sumo')"
+              (change)="toggleTarget('logitopp')">
+            Nachfragesimulation: logiTopp (Personen + Pakete)
           </label>
           <label class="checkbox" title="Exportiert die Zonen als aggregierte MobileCity-Districts: Bevölkerung nach Altersgruppe, Wegeraten nach Zweck, Attraktivitäten, Pkw-Bestand und Shapefile. Das ist ein Übergabepaket, keine zusätzliche Simulation in SyntheSis.">
             <input type="checkbox" [checked]="hasTarget('mobilecity')" (change)="toggleTarget('mobilecity')">
-            MobileCity-Export (Takomat)
+            Export: MobileCity (Takomat)
           </label>
           <label class="checkbox" title="Übernimmt die von logiTopp erzeugten Pkw-, Rad-, Fuß- und Liefertouren für einen Tag, routet sie auf dem OSM-Straßennetz und simuliert einzelne Fahrzeuge. Ergebnisse: Netzlast/Stau, Fahrzeiten, Routen und CO₂. Benötigt logiTopp und lokale SUMO-Binaries.">
             <input type="checkbox" [checked]="hasTarget('sumo')" (change)="toggleTarget('sumo')">
-            SUMO (mikroskopischer Verkehr)
+            Verkehrssimulation: SUMO
           </label>
         </div>
-        <p class="hint">Mehrfachauswahl: logiTopp erzeugt die agentenbasierte Nachfrage;
-          SUMO kann diese anschließend auf dem Straßennetz simulieren. MobileCity ist ein
-          unabhängiger, district-aggregierter Export.</p>
+        <p class="hint">SUMO ist kein zweites Nachfragemodell: Es simuliert die von logiTopp
+          erzeugten Wege auf dem Straßennetz und aktiviert logiTopp deshalb automatisch.
+          MobileCity ist derzeit ein unabhängiger, district-aggregierter Export und benötigt
+          keinen zusätzlichen logiTopp-Lauf.</p>
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
             title="Passt die Moduswahl-Konstanten iterativ an den Ziel-Modal-Split an (mehrere Simulationsläufe, daher deutlich langsamer).">
@@ -353,9 +356,9 @@
         }
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
-            title="Experimentell (GTA 3c): zusätzliche LLM-gestützte Moduswahl je Distanzband auf den simulierten Trips – liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt das lokale LLM.">
+            title="Experimentell: zusätzliche LLM-gestützte Moduswahl je Distanzband auf den simulierten Trips – liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt das lokale LLM.">
             <input type="checkbox" [(ngModel)]="scenario.population.llmModeChoice">
-            LLM-Moduswahl (experimentell, GTA 3c)
+            LLM-Verkehrsmittelwahl (experimenteller Vergleich)
           </label>
         }
         @if (hasTarget('logitopp') && hasTarget('sumo')) {
@@ -366,15 +369,9 @@
           </label>
         }
         @if (hasTarget('sumo')) {
-          <label class="checkbox"
-            title="ÖV (Bus) in der SUMO-Simulation: GTFS-Fahrplan (Auto-Fetch nach Region, Upload-Fallback) wird via gtfs2pt.py zu Haltestellen und Bus-Fahrten; ÖV-Nachfrage fährt intermodal mit (Fußweg → Bus → Fußweg). Braucht ein Python-venv; gtfs2pt-Mapping ist langsam (Ergebnis wird gecacht).">
-            <input type="checkbox" [(ngModel)]="scenario.population.publicTransport">
-            ÖV/Bus in SUMO (GTFS, experimentell – Phase C)
-          </label>
-        }
-        @if (scenario.population.publicTransport && hasTarget('sumo')) {
-          <div class="hint">
-            GTFS wird automatisch nach Region geladen. Kein Feed verfügbar?
+          <div class="hint" title="Für SUMO wird automatisch ein passender regionaler GTFS-Fahrplan gesucht, zugeschnitten und – sofern die Transit-Werkzeuge verfügbar sind – als Busverkehr eingebunden. Der Upload ist nur ein Fallback.">
+            ÖV wird automatisch eingebunden, wenn die GTFS-Registry einen passenden Feed für
+            die Region findet. Kein automatischer Feed verfügbar?
             <label class="linklike" title="Eigenen GTFS-Fahrplan als ZIP hochladen, wenn für die Region kein automatischer Feed verfügbar ist">GTFS-ZIP hochladen
               <input type="file" accept=".zip" hidden
               [disabled]="!scenario.id" (change)="onGtfsSelected($event)"></label>
@@ -619,6 +616,23 @@
                   </td>
                 </tr>
                 <tr><td>OSM-Daten</td><td>{{ job.summary['osmDataUsed'] ? 'ja' : 'nein (synthetisch)' }}</td></tr>
+                @if (scenario?.population?.externalTrips) {
+                  <tr title="Quelle, mit der externe Arbeitsorte räumlich verteilt wurden">
+                    <td>Außenbeziehungen</td><td>{{ externalRelationSourceLabel() }}</td>
+                  </tr>
+                  <tr title="Anteil aller erzeugten Personen mit einem festen Arbeitsziel außerhalb der Region">
+                    <td>Arbeitsziele außerhalb</td>
+                    <td>
+                      {{ jobPercent('externalWorkShareActual') }}
+                      ({{ job.summary['externalWorkDestinations'] || 0 }} Ziele)
+                    </td>
+                  </tr>
+                  @if (job.summary['externalWorkShareTarget'] !== undefined) {
+                    <tr title="Amtlicher Randwert für den Anteil externer Arbeitsziele">
+                      <td>Amtlicher Zielanteil</td><td>{{ jobPercent('externalWorkShareTarget') }}</td>
+                    </tr>
+                  }
+                }
               </table>
             </div>
           }
@@ -842,7 +856,7 @@
                                             }
                                             @if (gtaPersonas) {
                                               <section class="block">
-                                                <h2>GTA-Agenten (KI-Verhalten)</h2>
+                                                <h2>LLM-Agenten (experimentelles Verhalten)</h2>
                                                 @if (gtaPersonas.whatIf) {
                                                   <p class="hint">
                                                     Was-wäre-wenn-Szenario: „{{ gtaPersonas.whatIf }}"

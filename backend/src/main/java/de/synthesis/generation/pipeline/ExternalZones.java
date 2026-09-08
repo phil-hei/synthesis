@@ -32,6 +32,11 @@ public final class ExternalZones {
         return DISTANCE_KM;
     }
 
+    /** Number of directional anchors generated for an enabled scenario. */
+    public static int count() {
+        return DIRECTIONS.length;
+    }
+
     /**
      * Creates the external zones for the given internal grid. Indices and ids
      * continue after the internal zones; population/households stay zero.

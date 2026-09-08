@@ -56,6 +56,7 @@ public class ScenarioController {
     public ResponseEntity<Scenario> create(@RequestBody Scenario scenario) {
         scenario.id = UUID.randomUUID().toString().substring(0, 8);
         scenario.createdAt = Instant.now();
+        scenario.normalizeTargetDependencies();
         validate(scenario);
         return ResponseEntity.status(HttpStatus.CREATED).body(repository.save(scenario));
     }
@@ -65,6 +66,7 @@ public class ScenarioController {
         Scenario existing = get(id);
         scenario.id = existing.id;
         scenario.createdAt = existing.createdAt;
+        scenario.normalizeTargetDependencies();
         validate(scenario);
         return repository.save(scenario);
     }

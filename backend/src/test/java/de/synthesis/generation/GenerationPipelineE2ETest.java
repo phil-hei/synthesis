@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.generation.pipeline.OverpassClient;
 import de.synthesis.generation.pipeline.OsmDataSnapshot;
+import de.synthesis.generation.pipeline.OsmExternalDestinationCandidates;
 import de.synthesis.generation.pipeline.CensusPopulationSource;
 import de.synthesis.generation.pipeline.Epsg3035;
 import de.synthesis.generation.pipeline.CommuterMatrix;
+import de.synthesis.generation.pipeline.ExternalZones;
 import de.synthesis.generation.pipeline.WorkplaceMargins;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
 import de.synthesis.scenario.Scenario;
@@ -83,7 +85,9 @@ class GenerationPipelineE2ETest {
                 {"elements":[
                   {"type":"node","lat":48.86,"lon":8.20,"tags":{"shop":"supermarket"}},
                   {"type":"node","lat":48.86,"lon":8.20,
-                   "tags":{"place":"town","name":"E2E","population":"250"}}
+                   "tags":{"place":"town","name":"E2E","population":"250"}},
+                  {"type":"node","lat":49.20,"lon":8.20,
+                   "tags":{"place":"town","name":"External E2E","population":"25000"}}
                 ]}
                 """);
         Files.writeString(repo.uploadsDir(scenario.id).resolve(CommuterMatrix.NAME), """
@@ -109,6 +113,7 @@ class GenerationPipelineE2ETest {
                 "zone-repository/zones.csv", "zone-repository/attractivities.csv",
                 "population/person.csv", "population/household.csv", "population/activity.csv",
                 "population/commuters.csv",
+                "population/" + OsmExternalDestinationCandidates.NAME,
                 "matrix/travel_times/CAR_TTC.mtx.bz2", "matrix/other/CAR_DIS.mtx.bz2",
                 "legacy/demand-data/person.csv", "legacy/matrices/matrix-configuration.yaml",
                 "mobilecity/REGdistricts.csv", "mobilecity/TECCarFleet.csv",
@@ -128,6 +133,21 @@ class GenerationPipelineE2ETest {
                 manifest.path("dataQuality").path("commuters").asText());
         assertEquals(WorkplaceMargins.SOURCE,
                 manifest.path("dataQuality").path("workplaceMargins").asText());
+        assertTrue(manifest.path("externalRelations").path("enabled").asBoolean());
+        assertEquals(ExternalZones.count(),
+                manifest.path("externalRelations").path("externalZones").asInt());
+        assertEquals("upload-coordinate-od",
+                manifest.path("externalRelations").path("destinationSource").asText());
+        assertEquals("diagnostic-only", manifest.path("externalRelations")
+                .path("osmDestinationCandidate").path("status").asText());
+        assertEquals(0, manifest.path("externalRelations").path("osmDestinationCandidate")
+                .path("directionShareMae").asDouble(), 1e-9);
+        assertEquals(13_723.0 / 22_971.0,
+                manifest.path("externalRelations").path("externalWorkShareTarget").asDouble(),
+                1e-9);
+        assertEquals(((Number) job.summary.get("externalWorkShareActual")).doubleValue(),
+                manifest.path("externalRelations").path("externalWorkShareActual").asDouble(),
+                1e-12);
         assertEquals("scenario-upload:osm-data.json",
                 manifest.path("inputProvenance").path("osmData").path("source").asText());
         assertEquals(64,
@@ -144,6 +164,33 @@ class GenerationPipelineE2ETest {
         assertEquals("SKIPPED", job.stage("SUMO (Verkehr)").status);
         assertEquals("SKIPPED", job.stage("LLM-Moduswahl").status);
         assertEquals("SKIPPED", job.stage("Simulation (logiTopp)").status);
+
+        // Diagnose entfernen und dasselbe Szenario erneut fahren: keine alte Datei,
+        // und bei identischen lokalen Inputs bleiben die produktiven Ziehungen gleich.
+        var populationFiles = List.of("population/person.csv", "population/household.csv",
+                "population/fixedDestination.csv", "population/activity.csv",
+                "zone-repository/attractivities.csv");
+        var previousHashes = new java.util.HashMap<String, String>();
+        for (String file : populationFiles) {
+            previousHashes.put(file, OsmDataSnapshot.sha256(artifacts.resolve(file)));
+        }
+        Path snapshot = repo.uploadsDir(scenario.id).resolve(OsmDataSnapshot.NAME);
+        var snapshotJson = mapper.readTree(snapshot.toFile());
+        ((com.fasterxml.jackson.databind.node.ArrayNode) snapshotJson.path("elements")).remove(2);
+        mapper.writeValue(snapshot.toFile(), snapshotJson);
+        GenerationJob repeated = service.start(scenario.id);
+        long repeatDeadline = System.currentTimeMillis() + 60_000;
+        while (repeated.state == GenerationJob.State.QUEUED || repeated.state == GenerationJob.State.RUNNING) {
+            assertTrue(System.currentTimeMillis() < repeatDeadline, "Wiederholung läuft nicht durch");
+            Thread.sleep(100);
+        }
+        assertEquals(GenerationJob.State.DONE, repeated.state);
+        assertTrue(Files.notExists(artifacts.resolve("population/" + OsmExternalDestinationCandidates.NAME)));
+        var repeatedManifest = mapper.readTree(artifacts.resolve("manifest.json").toFile());
+        assertTrue(!repeatedManifest.path("externalRelations").has("osmDestinationCandidate"));
+        for (String file : populationFiles) {
+            assertEquals(previousHashes.get(file), OsmDataSnapshot.sha256(artifacts.resolve(file)), file);
+        }
     }
 
     /**
@@ -281,6 +328,29 @@ class GenerationPipelineE2ETest {
         for (var zone : preview.zones()) {
             assertEquals(0, zone.laeaRes, "außerhalb Europas entstehen Bbox-Raster-Zonen (kein LAEA)");
         }
+    }
+
+    @Test
+    void alignedPreviewKeeps700MetersAndScenarioLimit() throws Exception {
+        Path dataDir = tempDirectory("e2e-aligned-preview");
+        SynthesisProperties props = new SynthesisProperties();
+        props.setDataDir(dataDir.toString());
+        ObjectMapper mapper = new ObjectMapper();
+        GenerationService service = new GenerationService(
+                new ScenarioRepository(mapper, props), new OverpassClient(props, mapper), props, mapper);
+        services.add(service);
+
+        Scenario.Region rastatt = new Scenario.Region();
+        rastatt.minLat = 48.80;
+        rastatt.minLon = 8.15;
+        rastatt.maxLat = 48.90;
+        rastatt.maxLon = 8.27;
+        GenerationService.ZonePreview preview = service.previewZones(
+                rastatt, 700, "epsg3035", 1200);
+
+        assertEquals(700, preview.cellSizeMeters());
+        assertTrue(preview.zones().size() <= 1200);
+        assertTrue(preview.zones().stream().allMatch(z -> z.name.startsWith("LAEA3035RES700m")));
     }
 
     private Path tempDirectory(String prefix) throws java.io.IOException {

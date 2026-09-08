@@ -490,6 +490,32 @@ Wege/Person·Tag bleibt 3,18. Die volle MiD-Distanz (12,5 km) ist so nicht errei
 Rastatt-Modell deckelt Fernwege; der eigentliche Hebel bleibt **Wahlmodell-Kalibrierung** (Distanz-
 Sensitivität) bzw. ein realistisch großes Untersuchungsgebiet.
 
+## OSM-Außenzielkandidat (2026-09-01) — Messpfad umgesetzt, Promotion offen
+
+`OsmExternalDestinationCandidates` verdichtet bevölkerte OSM-Siedlungen außerhalb der Region
+bis 80 km in acht Himmelssektoren. Pro Sektor werden Bevölkerungsanteil, gewichteter Schwerpunkt,
+mittlere Entfernung und Anteil ab 20 km in
+`population/external-destination-candidates.json` geschrieben. Die leichte Overpass-Abfrage für
+`place`-Nodes deckt seit dem Review vom 2026-09-08 den vollständigen 80-km-Radius um den
+Regionsmittelpunkt ab; Live-Daten bleiben wie bisher im
+`osm-data.json` mit SHA-256 einfrierbar.
+
+**Befund**: Der technische Vergleichspfad misst bei vorhandener Pendler-OD automatisch den
+Richtungsanteils-MAE, den relativen Fehler der mittleren Außendistanz und die Abweichung des
+Anteils ab 20 km. Ein synthetischer Referenzfall mit identischer 75-%-Nord-/25-%-Ost-Verteilung
+liefert für alle drei Fehlermaße **0**; der Offline-Pipeline-E2E schreibt Artefakt, Hash und
+Messwerte ins `manifest.json/externalRelations`.
+
+Die Bevölkerungsschätzung filtert Live- und Snapshot-Places auf den bisherigen lokalen
+Abfrageausschnitt. Entfernte Siedlungen erweitern damit nur die Diagnose. Der Replay-Test
+vergleicht die Hashes von Personen, Haushalten, festen Zielen, Aktivitäten und Attraktivitäten
+mit und ohne Außensiedlung und prüft, dass kein veraltetes Kandidatenartefakt zurückbleibt.
+
+**Konsequenz**: Der Kandidat ist ausdrücklich `diagnostic-only` und verändert weder die acht
+produktiven Ringzonen noch die Zielwahl. Die Promotion bleibt an mindestens drei Regionen und
+drei Seeds sowie die in docs/06 vorregistrierten Fehler- und Nachfragegates gebunden. Damit ist
+der Messaufbau vorhanden, ohne amtliche Ziele vorzeitig oder unsichtbar durch OSM zu ersetzen.
+
 ## Stichprobengröße bei vielen Zonen (2026-07-28) — korrigiert
 
 Ein präregistrierter Großraum-Spike deckte einen Skalierungsfehler in

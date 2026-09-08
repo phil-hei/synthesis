@@ -10,12 +10,13 @@ logistische Mikrosimulation (mobiTopp/logiTopp), eine Verkehrssimulation (SUMO) 
 MobileCity/Takomat-App fließt.
 
 ## 2. Grundprinzip: Zwei-Achsen-Modell
-Der Kern ist eine **frei kombinierbare Matrix** aus zwei austauschbaren Achsen:
+Der Kern trennt Verhalten, Nachfrage und deren Weiterverarbeitung:
 
 - **Achse A – Verhaltensquelle** (*wie wird Verhalten erzeugt?*): `actiTopp` (kalibriertes
-  KIT-Modell) · `GTA` (KI/LLM-Agenten) · `Template` (interner Fallback)
-- **Achse B – Zielmodell** (*wer verwertet die Nachfrage?*, Mehrfachauswahl): `logiTopp`
-  (Personen + Pakete) · `SUMO` (mikrosk. Verkehr) · `MobileCity-Export`
+  KIT-Modell) · `LLM-Agenten` (interne Kennung `gta`) · `Template` (interner Fallback)
+- **Nachfragesimulation:** `logiTopp` (Personen + Pakete)
+- **Weiterverarbeitung:** `MobileCity-Export` (unabhängiger Aggregat-Export) und `SUMO`
+  (nachgelagerte mikroskopische Verkehrssimulation; setzt logiTopp voraus und aktiviert es automatisch)
 
 Jede Achse ist ein **austauschbarer Runner**. Alle schweren externen Modelle laufen als **lokale
 Prozesse** (JVM/Gradle, SUMO-Binaries, LLM-Server) – nicht eingebettet (u. a. wegen GPL-Trennung
@@ -28,7 +29,7 @@ Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 |---|---|---|---|
 | 1 | Zonierung | Region → freies Bbox-Raster, flexibel EPSG:3035-ausgerichtetes Raster oder amtliches INSPIRE-Raster; Zellgröße wird an das szenariospezifische Zonenlimit angepasst | `zones.csv` |
 | 2 | OSM-Daten (POIs) | Szenario-Snapshot oder Overpass: Shops/Amenities/… und bevölkerte `place`-Nodes (synthetischer Fallback nur beim Live-Pfad) | `uploads/osm-data.json` (optional), Provenienz in `manifest.json` |
-| 3 | Attraktivitäten + Pendleranker | Ziel-Attraktivität je Zelle; optional koordinatenbasierte Pendler-OD, externe Arbeitsortanker auf reale gewichtete Ziele verschoben | `attractivities.csv`, `population/commuters.csv` |
+| 3 | Attraktivitäten + Pendleranker | Ziel-Attraktivität je Zelle; optional koordinatenbasierte Pendler-OD, externe Arbeitsortanker auf reale gewichtete Ziele verschoben; diagnostischer OSM-Außenzielkandidat mit automatischem OD-Gegencheck | `attractivities.csv`, `population/commuters.csv`, `population/external-destination-candidates.json` |
 | 4 | Bevölkerungssynthese | Gesamtzahl/Verteilung: manuell → alternatives Upload-Raster → hashgeprüfter Destatis-Zensus 2022 → OSM → Dichte; danach Personen/Haushalte (KIT-Sample oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv`; Provenienz in `manifest.json` |
 | 5 | **Aktivitätenpläne (Achse A)** | Wochenpläne je Person aus `actiTopp` \| `GTA-LLM` \| `Template` | `activity.csv` |
 | 6 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle; Netzquelle Szenario-OSM-XML → Serverdatei → Overpass, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
@@ -102,11 +103,11 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 [Spring-Boot-Pipeline]
   Zonen → POIs/Attraktivität → Population
         ↓
-  ── Achse A: Verhalten ──  actiTopp | GTA-LLM | Template  → activity.csv
+  ── Verhalten ──  actiTopp | LLM-Agenten | Template  → activity.csv
         ↓
   Routing-Matrizen (GraphHopper) + Logistik
         ↓
-  ── Achse B ──  MobileCity | logiTopp → Native Demand → SUMO (optional)
+  ── Export ── MobileCity        logiTopp → Native Demand → SUMO (optional)
                               ↑            ↓             |
                               |   vollständige Wege,     |
                               |   Legs, 15-min Zonen/OD  |

@@ -20,7 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Zielmodell SUMO (Achse B): baut aus dem OSM-Straßennetz ein SUMO-Netz
+ * Nachgelagerte SUMO-Verkehrssimulation: baut aus dem OSM-Straßennetz ein SUMO-Netz
  * (netconvert) und speist die Auto-Trips der mobiTopp/logiTopp-Nachfrage
  * (demandsimulationResult.csv) in eine mikroskopische Verkehrssimulation.
  *

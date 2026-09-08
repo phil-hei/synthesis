@@ -78,16 +78,12 @@ public class OverpassClient {
      * @throws Exception on any network/parsing failure; callers fall back to a density estimate.
      */
     public List<Place> fetchPlaces(Scenario.Region region) throws Exception {
-        double latPad = (region.maxLat - region.minLat) * 0.5 + 0.03;
-        double lonPad = (region.maxLon - region.minLon) * 0.5 + 0.03;
-        String bbox = (region.minLat - latPad) + "," + (region.minLon - lonPad) + ","
-                + (region.maxLat + latPad) + "," + (region.maxLon + lonPad);
-        String query = """
-                [out:json][timeout:%d];
-                node["place"~"city|town|village|suburb|quarter|neighbourhood"](%s);
-                out body qt;
-                """.formatted(properties.getOverpass().getTimeoutSeconds(), bbox);
-        JsonNode root = execute(query);
+        return fetchPlaces(region, false);
+    }
+
+    /** Adds the full diagnostic horizon only when external relations are requested. */
+    public List<Place> fetchPlaces(Scenario.Region region, boolean includeExternal) throws Exception {
+        JsonNode root = execute(placeQuery(region, includeExternal));
         List<Place> places = new ArrayList<>();
         for (JsonNode element : root.path("elements")) {
             if (!element.has("lat") || !element.has("lon")) {
@@ -102,6 +98,44 @@ public class OverpassClient {
                     element.get("lat").asDouble(), element.get("lon").asDouble(), population));
         }
         return places;
+    }
+
+    /** Population always uses the original local footprint, including on snapshot replay. */
+    public static List<Place> populationPlaces(Scenario.Region region, List<Place> places) {
+        double[] bounds = populationPlaceBounds(region);
+        return places.stream().filter(p -> p.lat() >= bounds[0] && p.lat() <= bounds[2]
+                && p.lon() >= bounds[1] && p.lon() <= bounds[3]).toList();
+    }
+
+    private static double[] populationPlaceBounds(Scenario.Region region) {
+        double latPad = (region.maxLat - region.minLat) * 0.5 + 0.03;
+        double lonPad = (region.maxLon - region.minLon) * 0.5 + 0.03;
+        return new double[]{Math.max(-90, region.minLat - latPad),
+                Math.max(-180, region.minLon - lonPad), Math.min(90, region.maxLat + latPad),
+                Math.min(180, region.maxLon + lonPad)};
+    }
+
+    String placeQuery(Scenario.Region region, boolean includeExternal) {
+        double[] bounds = populationPlaceBounds(region);
+        double centreLat = (region.minLat + region.maxLat) / 2;
+        double centreLon = (region.minLon + region.maxLon) / 2;
+        if (includeExternal) {
+            double angle = OsmExternalDestinationCandidates.MAX_DISTANCE_KM / 6371.0088;
+            double latPad = Math.toDegrees(angle);
+            double lonPad = Math.abs(centreLat) + latPad >= 90 ? 180
+                    : Math.toDegrees(Math.asin(Math.sin(angle) / Math.cos(Math.toRadians(centreLat))));
+            bounds[0] = Math.max(-90, Math.min(bounds[0], centreLat - latPad));
+            bounds[2] = Math.min(90, Math.max(bounds[2], centreLat + latPad));
+            boolean wraps = centreLon - lonPad < -180 || centreLon + lonPad > 180;
+            bounds[1] = wraps ? -180 : Math.min(bounds[1], centreLon - lonPad);
+            bounds[3] = wraps ? 180 : Math.max(bounds[3], centreLon + lonPad);
+        }
+        String bbox = bounds[0] + "," + bounds[1] + "," + bounds[2] + "," + bounds[3];
+        return """
+                [out:json][timeout:%d];
+                node["place"~"city|town|village|suburb|quarter|neighbourhood"](%s);
+                out body qt;
+                """.formatted(properties.getOverpass().getTimeoutSeconds(), bbox);
     }
 
     /**

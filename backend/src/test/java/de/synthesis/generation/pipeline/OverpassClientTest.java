@@ -57,6 +57,35 @@ class OverpassClientTest {
     }
 
     @Test
+    void placeQueryCoversRemoteCandidatesWithoutExpandingPopulationFootprint() {
+        SynthesisProperties props = new SynthesisProperties();
+        OverpassClient client = new OverpassClient(props, new ObjectMapper());
+
+        String query = client.placeQuery(rastatt(), true);
+
+        assertTrue(query.contains("[out:json][timeout:30]"));
+        String bbox = query.substring(query.indexOf("](") + 2, query.indexOf(");"));
+        String[] coordinates = bbox.split(",");
+        double minLat = Double.parseDouble(coordinates[0]);
+        double maxLat = Double.parseDouble(coordinates[2]);
+        assertTrue(minLat < 48.15);
+        assertTrue(maxLat > 49.56);
+        assertTrue(Double.parseDouble(coordinates[1]) < 7.12);
+        assertTrue(Double.parseDouble(coordinates[3]) > 9.28);
+
+        var local = new OverpassClient.Place("Local", "town", 48.85, 8.20, 20_000);
+        var remote = new OverpassClient.Place("Remote", "city", 49.10, 8.20, 5_000_000);
+        var filtered = OverpassClient.populationPlaces(rastatt(), List.of(local, remote));
+        assertEquals(List.of(local), filtered);
+        assertTrue(PopulationEstimator.estimateForRegion(rastatt(), List.of(local, remote))
+                > PopulationEstimator.estimateForRegion(rastatt(), filtered));
+        String localQuery = client.placeQuery(rastatt(), false);
+        double localSouth = Double.parseDouble(localQuery.substring(
+                localQuery.indexOf("](") + 2, localQuery.indexOf(',', localQuery.indexOf("]("))));
+        assertEquals(48.765, localSouth, 1e-9);
+    }
+
+    @Test
     void configuredRoadNetworkFileReplacesOnlyTheNetworkRequest(@TempDir Path tempDir) throws Exception {
         Path fixture = tempDir.resolve("network.osm");
         String osm = "<?xml version=\"1.0\"?><osm version=\"0.6\"></osm>";

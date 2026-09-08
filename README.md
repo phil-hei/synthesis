@@ -78,14 +78,15 @@ kopiert, frieren die Eingabe für einen A/B-Vergleich ein — `manifest.json` �
 `inputProvenance` belegt dann für POI-Daten, Straßennetz und die daraus erzeugten
 `attractivities.csv` denselben Hash in beiden Armen.
 
-**Zwei-Achsen-Modell** (im Studio unter „Modellierung" wählbar): _Achse A – Verhaltensquelle_
-(actiTopp · **GTA/KI** – generative Tagespläne über ein lokales LLM, inkl. Was-wäre-wenn-Szenarien) ×
-_Achse B – Zielmodell_ (logiTopp · MobileCity-Export · **SUMO**, Mehrfachauswahl).
+**Modellierung** (im Studio wählbar): Verhaltensquelle
+(actiTopp · **LLM-Agenten** – generative Tagespläne über ein lokales LLM, inkl.
+Was-wäre-wenn-Szenarien), Nachfragesimulation (logiTopp), unabhängiger MobileCity-Export und
+nachgelagerte Verkehrssimulation (SUMO). SUMO aktiviert logiTopp automatisch.
 
-Mit Zielmodell **SUMO** wird die logiTopp-Nachfrage **multimodal** mikroskopisch simuliert (OSM →
+Mit **SUMO** wird die logiTopp-Nachfrage **multimodal** mikroskopisch simuliert (OSM →
 `netconvert` → `duarouter` → `sumo`) – **PKW-, Rad- und Fuß-Trips** der Personen-Nachfrage
-(Fußgänger als SUMO-Personen) **plus Zustelltouren** (Lkw/Lastenrad aus logiTopp). Optional auch
-**ÖV/Bus** (Phase C): ein GTFS-Fahrplan (Auto-Fetch nach Region via NVBW/MobiData-BW, Upload-Fallback)
+(Fußgänger als SUMO-Personen) **plus Zustelltouren** (Lkw/Lastenrad aus logiTopp). Wenn verfügbar,
+wird **ÖV/Bus** automatisch ergänzt: ein GTFS-Fahrplan (Auto-Fetch nach Region, Upload-Fallback)
 wird per `gtfs2pt.py` zu Haltestellen und fahrplangebundenen Bussen; die ÖV-Nachfrage fährt intermodal
 mit (Fußweg → Bus → Fußweg). Ergebnisse: Verkehrs-KPIs (Fahrzeuge, Ø Reisedauer/Geschwindigkeit),
 **CO₂ je Fahrzeugtyp** (HBEFA-Emissionsklassen), eine **Netzlast-Karte** (Kanten nach relSpeed
@@ -100,7 +101,7 @@ Python-venv (pandas/rtree/pyproj) für `gtfs2pt.py` (gekapselt, sonst wird die �
 einer SUMO-Eigenheit beim Fußgänger-Routing nahe Bahnhöfen (Befund + Lösungsweg im Abschnitt
 „Phase 2 – SUMO" von [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md)).
 
-Die Verhaltensquelle **GTA** erzeugt Persona-Tagespläne über ein lokales LLM (Ollama,
+Die Verhaltensquelle **LLM-Agenten** (interne Kennung `gta`) erzeugt Persona-Tagespläne über ein lokales LLM (Ollama,
 OpenAI-kompatibel, Plan-Cache, seed-reproduzierbar) und fällt auf actiTopp zurück, wenn es nicht
 erreichbar ist – Setup: `brew install ollama && ollama pull qwen2.5:7b-instruct`.
 Details: [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md).

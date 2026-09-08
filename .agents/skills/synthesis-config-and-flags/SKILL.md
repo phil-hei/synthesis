@@ -2,7 +2,7 @@
 name: synthesis-config-and-flags
 description: >
   Vollständiger Katalog aller Konfigurationsachsen des SyntheSis-Repos: Szenario-Flags
-  (Scenario.java, z. B. behaviorSource, targetModels, sumoFeedback, publicTransport,
+  (Scenario.java, z. B. behaviorSource, targetModels, sumoFeedback,
   calibrateModeChoice, llmModeChoice, useRealRouting, samplingFraction sowie das Legacy-Feld useOsmData) und
   Betriebs-Properties (SynthesisProperties, Prefix synthesis.: census, overpass, simulation, actitopp,
   sumo, transit inkl. GTFS-Feed-Registry, llm) samt Defaults, Konsumenten und Gates. Laden, WENN
@@ -62,13 +62,15 @@ driften, daher nur Block + Bedienelement).
 | `name` | String | `"Neues Szenario"` | Anzeigename; Studio-Block „Szenario" | produktiv |
 | `createdAt` | Instant | – | Metadatum | produktiv |
 | `region` | Region (`minLat/minLon/maxLat/maxLon`) | `null` bis Karte gezeichnet | Bounding-Box aller Stufen (Zonierung, OSM, Routing, GTFS-Feed-Auswahl) | produktiv |
-| `zoning.cellSizeMeters` | double | `100` | Tatsächlich verwendete Kantenlänge quadratischer Rasterzellen (m). Bei neuer/neu gezeichneter Region fragt das Studio mit 100 m an; `GridZoning.autoCellSize` ermittelt in 50-m-Schritten die feinste Auflösung innerhalb von `synthesis.max-zones` und die UI schreibt den effektiven Wert zurück. | produktiv |
-| `zoning.mode` | String | `"grid"` (auch über `/defaults`) | Zonierungs-Modus: `grid` = automatisch fein aufgelöstes metrisches Bbox-Raster (global, empfohlener Default) \| `inspire` = INSPIRE-/Zensus-Gitter (EPSG:3035/ETRS89-LAEA, **nur Europa**, flächengleich). Bei `inspire` quantisiert `InspireGridZoning.pickResolution` weiterhin auf die kanonischen Auflösungen 100 m/1 km/10 km; `Zone.name` trägt die INSPIRE-Zell-ID (`CRS3035RES…mN…E…`), Containment läuft in LAEA-Metern (`Zone.laeaE/laeaN/laeaRes`). **Europa-Guard:** außerhalb des EPSG:3035-Bereichs fällt die Pipeline aufs Bbox-Raster zurück. Job-Summary: `zoningMode` (beide Modi). | produktiv |
-| `targetModels` | List\<String\> | `["logitopp", "mobilecity"]` | **Achse B**, Mehrfachauswahl: `logitopp` \| `mobilecity` \| `sumo`. UI: Block „Modellierung", Checkbox-Gruppe „Zielmodell" (`hasTarget(...)`/`toggleTarget(...)`) | produktiv (`sumo` nicht im Default) |
+| `zoning.cellSizeMeters` | double | `100` | Tatsächlich verwendete Kantenlänge quadratischer Rasterzellen (m). Bei neuer/neu gezeichneter Region fragt das Studio mit 100 m an und übernimmt die feinste Auflösung innerhalb von `zoning.maxZones`: `grid` in 50-m-, `epsg3035` in 100-m-, `inspire` in amtlichen Standardstufen. | produktiv |
+| `zoning.maxZones` | int | `600` (über `/defaults` aus `synthesis.max-zones`) | Szenariospezifische Obergrenze für Vorschau und Pipeline. Gültig 100 bis `synthesis.max-zones-hard-limit` (1.200), da OD-Matrizen quadratisch wachsen. | produktiv |
+| `zoning.mode` | String | `"grid"` (auch über `/defaults`) | `grid` = freies metrisches Bbox-Raster (global) \| `epsg3035` = flächengleiches, europaweit fest ausgerichtetes LAEA-Gitter in flexiblen 100-m-Schritten, nicht amtlich; stabile Namen `LAEA3035RES…` \| `inspire` = amtliches INSPIRE-/Zensus-Gitter mit 100 m/1 km/10 km und Zell-ID `CRS3035RES…`. Beide LAEA-Modi verwenden `Zone.laeaE/laeaN/laeaRes`; außerhalb Europas Fallback auf `grid`. Job-Summary: `zoningMode`. | produktiv |
+| `targetModels` | List\<String\> | `["logitopp", "mobilecity"]` | Nachfragesimulation/Weiterverarbeitung: `logitopp` \| unabhängiger Export `mobilecity` \| nachgelagerte Verkehrssimulation `sumo`. SUMO impliziert logiTopp; Studio und API normalisieren die Abhängigkeit. | produktiv (`sumo` nicht im Default) |
 
 **`targets()`-Helper (wichtig!):** Leere oder `null` Liste fällt auf `["logitopp", "mobilecity"]`
 zurück (Rückwärtskompatibilität alter persistierter Szenarien). **Gates immer über
-`scenario.targets()` prüfen, nie über das rohe Feld `targetModels`.** Gate-Stellen in
+`scenario.targets()` prüfen, nie über das rohe Feld `targetModels`.** `targets()` ergänzt bei
+SUMO automatisch logiTopp; `normalizeTargetDependencies()` persistiert diese Abhängigkeit. Gate-Stellen in
 `GenerationService`: `!targets().contains("mobilecity")` → Stufe „MobileCity-Export" SKIPPED;
 `!targets().contains("logitopp")` → „Simulation (logiTopp)" SKIPPED;
 `!targets().contains("sumo")` → „SUMO (Verkehr)" SKIPPED.
@@ -98,8 +100,8 @@ UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellier
 | `calibrationTarget` | Map\<String, Double\> | MiD 2017 bundesweit: `pedestrian 0.22, bike 0.11, car 0.43, passenger 0.14, publicTransport 0.10` | Ziel-Modal-Split der Kalibrierung; leer/null → Fallback `ModeChoiceCalibrator.MID_2017`. Auch von der LLM-Moduswahl als Referenz gelesen. UI: editierbare Zeilen + RegioStaR-Preset-Select, nur sichtbar wenn `calibrateModeChoice` an | Datum produktiv; nur von experimentellen Flags genutzt |
 | `llmModeChoice` | boolean | **`false`** | GTA 3c: zusätzliche LLM-gestützte Moduswahl auf den simulierten Trips (geerdet in Reisezeiten je Modus) – alternativer Modal-Split zum Vergleich mit MNL/MiD. Benötigt logiTopp + LLM. Konsument: Stufe „LLM-Moduswahl" → `LlmModeChoiceRunner`. UI: Checkbox, gated `hasTarget('logitopp')` | **experimentell** |
 | `sumoFeedback` | boolean | **`false`** | Netz-Feedback: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu (Gleichgewichts-Schleife). Benötigt logiTopp + SUMO. Konsument: Stufe „Netz-Feedback" → `FeedbackMath`. UI: Checkbox, gated `hasTarget('logitopp') && hasTarget('sumo')` | **experimentell** |
-| `publicTransport` | boolean | **`false`** | ÖV/Bus in SUMO (Phase C): GTFS (Auto-Fetch nach Region, Upload-Fallback) → `gtfs2pt.py` → Bus-Fahrplan; ÖV-Nachfrage fährt intermodal mit. Braucht Ziel SUMO + Python-venv; gtfs2pt-Mapping langsam (gecacht). Konsument: `GenerationService.buildPtProvider(...)` → `GtfsSource`/`GtfsCropper`/`TransitRunner`. UI: Checkbox, gated `hasTarget('sumo')` | **experimentell** |
-| `gtfsUploadPath` | String | – (unset) | Pfad eines hochgeladenen GTFS-Feeds; Fallback, falls der Auto-Fetch keinen Regionsfeed findet. Gesetzt vom Upload-Endpoint in `ScenarioController`. UI: „GTFS-ZIP hochladen"-Link im ÖV-Hinweis | experimentell (gehört zu `publicTransport`) |
+| `publicTransport` | boolean | **`false`** | **@Deprecated, zur JSON-Kompatibilität behalten und ignoriert.** Bei SUMO wird ÖV automatisch versucht, wenn Registry-Feed und Transit-Werkzeuge verfügbar sind; keine UI-Checkbox mehr. | Legacy |
+| `gtfsUploadPath` | String | – (unset) | Pfad eines hochgeladenen GTFS-Feeds; Fallback, falls der Auto-Fetch keinen Regionsfeed findet. Gesetzt vom Upload-Endpoint in `ScenarioController`. UI: „GTFS-ZIP hochladen"-Link im automatischen ÖV-Hinweis | experimenteller Fallback |
 | `carsPerHousehold` | double | `1.0` | Mittlere Pkw-Ausstattung der Haushalte; `PopulationGenerator.drawCarCount(...)` (stochastische Rundung) | produktiv |
 
 **`behaviorSourceEffective()`-Fallback-Logik (wichtig!):** Explizites `behaviorSource` gewinnt,
@@ -129,7 +131,7 @@ GTA-Lauf eine Exception wirft (Log: „… Fallback actiTopp").
 **Experimentell (alle default `false` bzw. nicht die Default-Option; Beförderung nur über das
 Gate in `synthesis-change-control`):** `calibrateModeChoice`, `calibrateDistance`,
 `correctDistanceDecay`, `calibrateModeDistance`, `llmModeChoice`, `sumoFeedback`,
-`publicTransport`, `behaviorSource = "gta"` (+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
+`behaviorSource = "gta"` (+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
 Ziel `sumo` in `targetModels` ist funktionsfähig, aber **nicht** im Default enthalten.
 
 **Produktiv-Default (an, ohne Zutun):** automatische OSM-Datenquellenwahl,
@@ -152,7 +154,8 @@ Keys mitpflegen.
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
 | `synthesis.data-dir` | `data` | Wurzel für Szenarien (`data/scenarios/<id>`), `llm-cache`, `gtfs-cache`, `census-cache` | `ScenarioRepository`, `GenerationService` |
-| `synthesis.max-zones` | `600` | Zonen-Obergrenze; `GridZoning.autoCellSize` vergröbert die Zellgröße automatisch, `InspireGridZoning.pickResolution` weicht analog auf die nächstgröbere kanonische Auflösung aus | `GenerationService` → `GridZoning`/`InspireGridZoning` |
+| `synthesis.max-zones` | `600` | Default für `zoning.maxZones` neuer Szenarien; alte API-Vorschauen ohne Feld verwenden ihn ebenfalls | `ScenarioController.defaults`, `GenerationService` |
+| `synthesis.max-zones-hard-limit` | `1200` | Harte Schutzgrenze für das Szenariofeld und die Vorschau, weil mehrere OD-Artefakte O(n²) wachsen | `ScenarioController`, `GenerationService` |
 
 ### 2.1 `synthesis.overpass` (OSM-Datenquelle)
 
@@ -194,7 +197,7 @@ Keys mitpflegen.
 | `project-dir` | `../validation/actitoppNG` | actitoppNG-Projekt (`gradlew` + `runSynthesis`) | `ActitoppRunner` |
 | `timeout-minutes` | `20` | Timeout des Gradle-Laufs | `ActitoppRunner` |
 
-### 2.5 `synthesis.sumo` (Zielmodell SUMO, Stufen „SUMO (Verkehr)" + „Netz-Feedback")
+### 2.5 `synthesis.sumo` (nachgelagerte Verkehrssimulation + „Netz-Feedback")
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
@@ -220,12 +223,12 @@ Keys mitpflegen.
 Der Framework-Fallback verwendet den Installer-Symlink `Versions/Current` indirekt und enthält
 keine Versionsnummer. Verifiziert mit SUMO 1.27.1 am 2026-08-11.
 
-### 2.6 `synthesis.transit` (ÖV-Zielmodell, Phase C – Gegenstück zum Szenario-Flag `publicTransport`)
+### 2.6 `synthesis.transit` (automatische ÖV-Ergänzung der SUMO-Simulation)
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
 | `enabled` | `true` | ÖV-Provider abschaltbar (ÖV entfällt im SUMO-Lauf) | `GenerationService.buildPtProvider` |
-| `venv-python` | `""` (leer) | Python-Interpreter eines venv mit pandas/rtree/pyproj; **leer = ÖV-Stage nicht verfügbar** → Log „ÖV übersprungen (Python-venv/gtfs2pt nicht konfiguriert – synthesis.transit.venv-python)" | `TransitRunner.isAvailable()` |
+| `venv-python` | `../validation/transit-venv/bin/python` in `application.yml` | Reproduzierbarer lokaler Python-Interpreter mit pandas/rtree/pyproj; fehlt er, wird ÖV verständlich übersprungen | `TransitRunner.isAvailable()` |
 | `gtfs2pt` | **berechnet**: `$SUMO_HOME/tools/import/gtfs/gtfs2pt.py` (ungesetzt → macOS-Framework-`share/sumo` wie oben) | Pfad zu gtfs2pt.py | `TransitRunner` |
 | `feeds` | `[kvv]` (Registry s. u.) | Auto-Fetch-Feeds: Verbund-GTFS mit Abdeckungs-Bbox | `GtfsSource` |
 | `max-feed-mb` | `200` | Obergrenze Auto-Fetch-Download (MB); größere Feeds → Upload-Empfehlung | `GtfsSource` |
@@ -301,9 +304,8 @@ Reihenfolge einhalten; jeder Schritt hat einen historischen Grund (Vorfälle:
    Env-Gate nach dem Muster `PtIntegrationTest`/`SYNTHESIS_TRANSIT_VENV`.
 8. **Default `false` lassen**, bis Verifikation + Change-Control-Gate durchlaufen sind.
 
-Referenz-Implementierung eines vollständigen Flags: `publicTransport` (Scenario-Feld → Model →
-Checkbox mit `hasTarget('sumo')`-Gate + Upload-Fallback → `buildPtProvider`-Gate →
-`# transit:`-Block → docs/06).
+Die frühere Referenz `publicTransport` ist seit 2026-09-01 bewusst kein neues Flag-Muster mehr:
+ÖV wird für SUMO automatisch versucht, das alte Feld ist nur JSON-Kompatibilität.
 
 ## 5. Checkliste: Neue Betriebs-Property anlegen
 

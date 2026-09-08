@@ -239,13 +239,47 @@ describe('StudioComponent', () => {
     expect(component.scenario.population.samplingFraction).toBe(0.4);
   });
 
+  it('automatically selects and locks logiTopp when SUMO is selected', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('draft');
+    component.scenario.targetModels = [];
+
+    component.toggleTarget('sumo');
+
+    expect(component.scenario.targetModels).toEqual(['logitopp', 'sumo']);
+    expect(component.message).toContain('automatisch aktiviert');
+
+    component.toggleTarget('logitopp');
+    expect(component.scenario.targetModels).toEqual(['logitopp', 'sumo']);
+    expect(component.message).toContain('SUMO benötigt');
+  });
+
+  it('presents MobileCity as an independent export and GTFS as automatic', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('draft');
+    component.scenario.targetModels = [];
+    component.toggleTarget('mobilecity');
+    component.toggleTarget('sumo');
+    fixture.detectChanges();
+
+    expect(component.scenario.targetModels).toEqual(['logitopp', 'mobilecity', 'sumo']);
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Export: MobileCity');
+    expect(text).toContain('Verkehrssimulation: SUMO');
+    expect(text).toContain('ÖV wird automatisch eingebunden');
+    expect(text).not.toContain('ÖV/Bus in SUMO');
+  });
+
   it('provides an explanatory tooltip for every rendered form control', () => {
     fixture = TestBed.createComponent(StudioComponent);
     fixture.detectChanges();
     const draft = scenario('draft');
     draft.targetModels = ['logitopp', 'sumo'];
     draft.population.calibrateModeChoice = true;
-    draft.population.publicTransport = true;
     draft.logistics.returns.enabled = true;
     fixture.componentInstance.scenario = draft;
     fixture.detectChanges();
@@ -347,6 +381,30 @@ describe('StudioComponent', () => {
       'amtliche Auspendlerquote 59,7 % automatisch zugeordnet');
     expect((fixture.nativeElement as HTMLElement).textContent)
       .toContain('Amtliche Auspendlerquote automatisch zugeordnet');
+  });
+
+  it('explains external-work source, actual share and official target in results', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('saved');
+    fixture.componentInstance.scenario.population.externalTrips = true;
+    fixture.componentInstance.job = {
+      ...job('DONE'),
+      summary: {
+        zones: 40, persons: 1000, households: 500, cars: 600, depots: 1,
+        commuterSource: 'upload-ba-pendler-vg250',
+        externalWorkDestinations: 596,
+        externalWorkShareActual: 0.596,
+        externalWorkShareTarget: 0.5974
+      }
+    };
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('amtliche BA-Pendlerziele');
+    expect(text).toContain('59,6 %');
+    expect(text).toContain('596 Ziele');
+    expect(text).toContain('59,7 %');
   });
 
   it('keeps the three delivery sliders at exactly 100 percent', () => {
@@ -543,7 +601,7 @@ function scenario(id: string): Scenario {
       totalPersons: null, personsPerKm2: 1000, samplingFraction: 1, seed: 42,
       useOsmData: false, useRealRouting: false, externalTrips: false,
       behaviorSource: 'template', gtaWhatIf: '', sumoFeedback: false,
-      publicTransport: false, useKitPopulation: false, calibrateModeChoice: false,
+      useKitPopulation: false, calibrateModeChoice: false,
       calibrateDistance: false, correctDistanceDecay: false,
       calibrateModeDistance: false, calibrationTarget: {},
       llmModeChoice: false, carsPerHousehold: 1

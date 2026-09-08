@@ -296,6 +296,28 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  jobPercent(key: string): string {
+    const value = Number(this.job?.summary?.[key]);
+    if (!Number.isFinite(value)) {
+      return '–';
+    }
+    return (value * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' %';
+  }
+
+  externalRelationSourceLabel(): string {
+    const source = String(this.job?.summary?.['commuterSource'] ?? 'gravity-model');
+    if (source === 'upload-ba-pendler-vg250') {
+      return 'amtliche BA-Pendlerziele';
+    }
+    if (source === 'gravity-model') {
+      return 'Schätzung über acht Außenanker';
+    }
+    if (source === 'upload-coordinate-od') {
+      return 'hochgeladene Koordinaten-Pendlermatrix';
+    }
+    return 'hochgeladene Pendlermatrix';
+  }
+
   setLogisticsMetric(key: LogisticsMetricKey, value: number | string, maximum: number): void {
     if (!this.scenario) {
       return;
@@ -392,12 +414,20 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     const targets = this.scenario.targetModels ?? (this.scenario.targetModels = []);
     const i = targets.indexOf(target);
     if (i >= 0) {
+      if (target === 'logitopp' && targets.includes('sumo')) {
+        this.message = 'SUMO benötigt die von logiTopp erzeugte Nachfrage.';
+        return;
+      }
       targets.splice(i, 1);
       if (target === 'logitopp') {
         this.scenario.logistics.returns.enabled = false;
       }
     } else {
       targets.push(target);
+      if (target === 'sumo' && !targets.includes('logitopp')) {
+        targets.unshift('logitopp');
+        this.message = 'logiTopp wurde automatisch aktiviert, weil SUMO dessen Nachfrage simuliert.';
+      }
     }
   }
 

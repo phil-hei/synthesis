@@ -41,12 +41,15 @@ cd frontend && npm install && npm start
 1. **Region:** „+ Neu" → „Region zeichnen" (Rechteck auf der Karte aufziehen) oder
    „Aktuellen Kartenausschnitt übernehmen". Danach laufen Zonen-Vorschau und
    OSM-Einwohnerschätzung automatisch.
-2. **Parameter:** Zellgröße (min. 100 m; wird automatisch angehoben, wenn > 600 Zonen
-   entstünden), Einwohner (leer = Schätzung), Sampling, Seed; optional
+2. **Parameter:** Zellgröße (min. 100 m), maximales Zonenlimit (Default 600, max. 1.200) und
+   Rastermodus (`grid` | flexibel ausgerichtet `epsg3035` | amtlich `inspire`); die Zellgröße
+   wird automatisch angehoben, wenn das gewählte Limit überschritten würde. Einwohner (leer =
+   automatische Quellenwahl), Sampling; optional
    Bevölkerungsraster-Upload (Zensus-CSV).
-3. **Sektion „Modellierung"** (Zwei-Achsen-Modell): Achse A = Verhaltensquelle
-   (actiTopp | GTA/KI | Template), Achse B = Zielmodelle (Mehrfachauswahl: logiTopp,
-   MobileCity, SUMO); dazu Schalter für Kalibrierung, ÖV (GTFS), Netz-Feedback,
+3. **Sektion „Modellierung"**: Verhaltensquelle (actiTopp | LLM-Agenten | Template),
+   Nachfragesimulation logiTopp, unabhängiger MobileCity-Export und nachgelagerte
+   Verkehrssimulation SUMO. SUMO aktiviert logiTopp automatisch; GTFS/ÖV wird ohne
+   Szenario-Checkbox automatisch versucht. Dazu kommen Kalibrierung, Netz-Feedback und
    LLM-Moduswahl. Was die Flags tun: `synthesis-config-and-flags`.
 4. **Depots:** „Depot platzieren"-Modus aktivieren, auf die Karte klicken; je Depot
    Name/Mitarbeiter/Anteil/Fahrzeugtyp (TRUCK | CARGO_BIKE). Keine Depots = Auto-Platzierung.
@@ -74,7 +77,8 @@ Alle Pfade aus dem Controller-Code abgelesen (Stand 2026-07-08). curl-Beispiele 
 | `POST /api/scenarios/{id}/gtfs` | GTFS-Upload, multipart `file`, **ZIP-Pflicht** (sonst 400) |
 
 Validierung bei POST/PUT (sonst 400): `region` gesetzt, `minLat < maxLat` und
-`minLon < maxLon`, `zoning.cellSizeMeters >= 100`.
+`minLon < maxLon`, `zoning.cellSizeMeters >= 100`, `zoning.maxZones` zwischen 100 und der
+Betriebsgrenze (Default 1.200), Modus `grid|epsg3035|inspire`.
 
 ```bash
 # Anlegen – Minimalbeispiel; alle nicht gesetzten Felder bekommen Defaults (UNGETESTET)
@@ -83,7 +87,7 @@ curl -s -X POST http://localhost:8090/api/scenarios \
   -d '{
     "name": "Rastatt klein",
     "region": {"minLat": 48.83, "minLon": 8.15, "maxLat": 48.88, "maxLon": 8.25},
-    "zoning": {"cellSizeMeters": 100, "mode": "grid"},
+    "zoning": {"cellSizeMeters": 700, "maxZones": 600, "mode": "epsg3035"},
     "population": {"totalPersons": 250, "seed": 42, "behaviorSource": "actitopp"},
     "targetModels": ["logitopp", "sumo"]
   }'
@@ -91,11 +95,12 @@ curl -s -X POST http://localhost:8090/api/scenarios \
 ```
 
 Wichtigste Felder des Scenario-JSON (`Scenario.java`): `region` (BBox),
-`zoning.{cellSizeMeters, mode}` (`mode`: `grid` automatisch feinstes Bbox-Raster (Default) \| `inspire`
-EPSG:3035-/Zensus-Standardraster, nur Europa — siehe `synthesis-config-and-flags`),
+`zoning.{cellSizeMeters, maxZones, mode}` (`mode`: `grid` freies Bbox-Raster (Default) \|
+`epsg3035` europaweit ausgerichtet in flexiblen 100-m-Schritten \| `inspire` amtliche
+100-m-/1-km-/10-km-Stufen; beide LAEA-Modi nur Europa — siehe `synthesis-config-and-flags`),
 `population.{totalPersons, samplingFraction, seed, useOsmData,
 useRealRouting, externalTrips, behaviorSource, gtaWhatIf, calibrateModeChoice,
-calibrationTarget, llmModeChoice, sumoFeedback, publicTransport, carsPerHousehold}`,
+calibrationTarget, llmModeChoice, sumoFeedback, carsPerHousehold}`,
 `logistics.{parcelsPerPersonWeek, shareHome/Work/Packstation, depots[], services[]}`,
 `targetModels` (leer/null ⇒ Default `["logitopp","mobilecity"]` — siehe `Scenario.targets()`).
 
@@ -113,7 +118,7 @@ curl -s -X POST http://localhost:8090/api/scenarios/ab12cd34/gtfs \
 | `POST /api/scenarios/{id}/generate` | Startet Job → 202 + `GenerationJob`; 404 unbekannt; **409 wenn schon QUEUED/RUNNING** |
 | `GET /api/scenarios/{id}/generation` | Job-Status (Polling); 404 wenn kein Job seit Backend-Start |
 | `POST /api/region/estimate` | Body = Region-JSON → OSM-Einwohnerschätzung `{estimatedPopulation, source, places[]}` |
-| `POST /api/preview/zones` | Body `{"region": {...}, "cellSizeMeters": 500}` → GeoJSON-Zonenvorschau + `autoAdjusted` |
+| `POST /api/preview/zones` | Body `{"region": {...}, "cellSizeMeters": 700, "mode":"epsg3035", "maxZones":600}` → GeoJSON-Zonenvorschau + effektive `cellSizeMeters` und `autoAdjusted` |
 | `GET /api/scenarios/{id}/artifacts` | Flache Liste aller Artefakte `[{path, sizeBytes}]` |
 | `GET /api/scenarios/{id}/artifacts/{*path}` | Artefakt-Download (Pfad wie in der Liste, z. B. `simulation/kpis.json`) |
 
@@ -247,7 +252,7 @@ SKIPPED = bewusst übersprungen (Gate nicht erfüllt), FAILED = versucht und ges
 
 | # | Stufe (Job-Log-Name) | Gate (läuft nur wenn …) | SKIPPED wenn … | Dauer (überliefert, Größenordnung) |
 |---|---|---|---|---|
-| 1 | Zonierung | immer (`zoning.mode`: `grid` automatisch feinstes Bbox-Raster als Default \| `inspire` EPSG:3035-Standardraster; außerhalb Europas Fallback auf Bbox-Raster; tatsächlicher Provider in `summary.zoningMode`) | – | Sekunden |
+| 1 | Zonierung | immer (`zoning.mode`: `grid` freies Bbox-Raster \| `epsg3035` flexibel ausgerichtetes 100-m-Stufenraster \| `inspire` amtliche 100-m-/1-km-/10-km-Stufen; LAEA-Modi außerhalb Europas mit Bbox-Fallback; Limit aus `zoning.maxZones`; tatsächlicher Provider in `summary.zoningMode`) | – | Sekunden |
 | 2 | OSM-Daten (POIs) | automatisch: Szenario-Snapshot → Live-Overpass → synthetischer Fallback | nie wegen Nutzerabwahl; das Legacy-Feld `population.useOsmData` wird ignoriert | Sekunden–Minute (Overpass) |
 | 3 | Attraktivitäten | immer | – | Sekunden |
 | 4 | Bevölkerungssynthese | immer | – | Sekunden |
@@ -290,7 +295,7 @@ ohne ÖV/Feedback/Kalibrierung.
 
 ## Provenienz & Wartung
 
-- Stand **2026-07-08**; Endpunkte aus `ScenarioController`, `GenerationController`,
+- Stand **2026-08-27**; Endpunkte aus `ScenarioController`, `GenerationController`,
   `ComparisonController`, `UploadController`, `ArtifactService` abgelesen; Stufen/Gates
   aus `GenerationService`; Artefakt-Pfade aus den `resolve(...)`-Aufrufen der
   Pipeline-Klassen und gegen `backend/data/scenarios/<id>/` gegengeprüft (die dort

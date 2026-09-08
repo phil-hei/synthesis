@@ -289,7 +289,7 @@ public class SynthesisProperties {
     }
 
     /**
-     * ÖV-Zielmodell (Achse B, Phase C): GTFS → gtfs2pt.py → SUMO-Fahrplan-Infrastruktur.
+     * Automatische ÖV-Ergänzung für SUMO: GTFS → gtfs2pt.py → Fahrplan-Infrastruktur.
      * Braucht ein Python-venv mit pandas/rtree/pyproj (gekapselt, Stage SKIPPED wenn fehlt).
      * GTFS-Quelle: Auto-Fetch aus der Feed-Registry (nach Region) mit Upload-Fallback.
      */

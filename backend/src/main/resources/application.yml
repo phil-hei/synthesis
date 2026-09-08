@@ -57,9 +57,9 @@ synthesis:
   #   temperature: 0.7
   #   timeout-seconds: 120
   #   max-personas: 60                         # Obergrenze distinkter Personas (LLM-Calls) je Lauf
-  # transit:                                   # ÖV-Zielmodell (Phase C): GTFS → gtfs2pt.py → Bus-Fahrplan
-  #   enabled: true
-  #   venv-python: ../validation/transit-venv/bin/python  # Python-venv mit pandas/rtree/pyproj (Pflicht, sonst SKIPPED)
+  transit:                                     # automatische ÖV-Ergänzung für SUMO: GTFS → gtfs2pt.py → Bus-Fahrplan
+    enabled: true
+    venv-python: ../validation/transit-venv/bin/python  # fehlt das reproduzierbare venv, wird ÖV verständlich übersprungen
   #   # gtfs2pt: $SUMO_HOME/tools/import/gtfs/gtfs2pt.py   # Default aus $SUMO_HOME
   #   window-start-hour: 6                      # Fahrplan-Zuschnitt-Fenster (begrenzt gtfs2pt-Laufzeit)
   #   window-end-hour: 10

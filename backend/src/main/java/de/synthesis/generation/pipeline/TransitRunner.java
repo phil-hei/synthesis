@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * ÖV-Zielmodell (Achse B, Phase C): baut aus einem (zugeschnittenen) GTFS-Feed und dem
+ * Automatische ÖV-Ergänzung der SUMO-Simulation: baut aus einem zugeschnittenen GTFS-Feed und dem
  * SUMO-Netz die Fahrplan-Infrastruktur via {@code gtfs2pt.py} – Haltestellen
  * (pt_stops.add.xml) und fahrplangebundene ÖV-Fahrzeuge (pt_vehicles.add.xml), die als
  * additional-files in die Simulation eingebunden werden.

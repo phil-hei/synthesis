@@ -69,6 +69,7 @@ public class ScenarioRepository {
             // Alte Szenarien hatten nur useActitopp. Nach dem Lesen auf den neuen Vertrag
             // normalisieren, damit API und nächster Save ausschließlich behaviorSource nutzen.
             scenario.population.behaviorSource = scenario.population.behaviorSourceEffective();
+            scenario.normalizeTargetDependencies();
             return Optional.of(scenario);
         } catch (IOException e) {
             throw new UncheckedIOException("Szenario konnte nicht gelesen werden: " + id, e);
