@@ -1,7 +1,7 @@
 ---
 name: synthesis-docs-and-writing
 description: >
-  Hausstil- und Pflege-Guide für die SyntheSis-Doku-of-Record (README.md + docs/01–07).
+  Hausstil- und Pflege-Guide für die SyntheSis-Doku-of-Record (README.md + docs/01–09).
   Laden, WENN du (a) die Doku aktualisieren willst (Feature dokumentieren, Rollback/Blocker
   nachtragen, Befund festhalten), (b) eine Commit-Message schreiben sollst, (c) einen neuen
   docs-Abschnitt oder Phaseneintrag anlegst, (d) wissen musst, WELCHES Dokument für welchen
@@ -47,6 +47,8 @@ Projektpartner) → `synthesis-external-positioning`.
 | `docs/05-validierung.md` | **Befund-Register** | Nummerierte, tabellarische Befunde (Format-Befunde 1–8, `L1…L6`, `A1…A12`) + datierte Validierungs-Abschnitte. Stil: Befund → Evidenz → Konsequenz |
 | `docs/06-gta-integration-konzept.md` | **Lebendes Konzept + Phasen-Chronik** | Zwei-Achsen-Modell, Integrationsstand (Abschnitt A), Konzept (B–E), Roadmap mit Phasen 0–3/C und datierten ✅/❌-Einträgen (Abschnitt F). **Das De-facto-CHANGELOG des Projekts** |
 | `docs/07-ansatz-zusammenfassung.md` | Kompaktes Briefing | 14-Stufen-Pipeline-Tabelle, Datenfluss-ASCII, Kernbefunde-Liste, Tech-Stack — spiegelt nur den GESAMTSTAND |
+| `docs/08-reproduzierbare-laufumgebung.md` | Betriebsvertrag | Gepinnte Laufzeiten, Bootstrap, Preflight, gemeinsamer Start und Self-hosted-CI-Abnahme |
+| `docs/09-verkehrsbedarfsmodellierung-handoff.md` | Wiederverwendungs-Handoff | Übertragbare Teilpipeline für Bevölkerung und Verkehrsbedarf, zentrale Codefragmente, Datenverträge, Grenzen und kopierbarer Arbeitsauftrag für ein anderes LLM |
 
 **Regel „eine Heimat pro Fakt":** Detailhistorie (wer wann was mit welchen Zahlen) wohnt in
 docs/06 (Features/Phasen) bzw. docs/05 (Befunde). README und docs/07 spiegeln nur den
