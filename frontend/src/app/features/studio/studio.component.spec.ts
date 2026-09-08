@@ -270,7 +270,7 @@ describe('StudioComponent', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Export: MobileCity');
     expect(text).toContain('Verkehrssimulation: SUMO');
-    expect(text).toContain('ÖV wird automatisch eingebunden');
+    expect(text).toContain('Busverkehr wird bei verfügbarem Fahrplan automatisch eingebunden');
     expect(text).not.toContain('ÖV/Bus in SUMO');
   });
 
@@ -289,6 +289,47 @@ describe('StudioComponent', () => {
     const withoutTooltip = controls.filter(control => !control.closest('[title]'));
 
     expect(withoutTooltip).toEqual([]);
+  });
+
+  it('saves beside the scenario picker and shows confirmation there', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const draft = scenario('');
+    const component = fixture.componentInstance;
+    component.scenario = draft;
+    fixture.detectChanges();
+    const controls = (fixture.nativeElement as HTMLElement).querySelector('.scenario-controls')!;
+    const save = controls.querySelector<HTMLButtonElement>('.save-scenario')!;
+    expect(controls.querySelector('select')).not.toBeNull();
+    expect(save.disabled).toBe(true);
+
+    draft.region = { minLat: 48.84, minLon: 8.18, maxLat: 48.87, maxLon: 8.23 };
+    api.createScenario.mockReturnValue(of({ ...draft, id: 'created' }));
+    fixture.detectChanges();
+    save.click();
+    fixture.detectChanges();
+
+    expect(api.createScenario).toHaveBeenCalledWith(draft);
+    expect(component.selectedScenarioId).toBe('created');
+    expect(controls.textContent).toContain('Szenario gespeichert');
+  });
+
+  it('opens model help from the keyboard and dismisses it with Escape', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('saved');
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const help = element.querySelector<HTMLButtonElement>(
+      'button[aria-label="Zusammenspiel der Modelle erklären"]')!;
+    help.dispatchEvent(new FocusEvent('focus'));
+    fixture.detectChanges();
+    const tooltip = element.querySelector(`#${help.getAttribute('aria-describedby')}`)!;
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    expect(tooltip.textContent).toContain('keinen logiTopp-Lauf');
+    help.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(tooltip.classList.contains('visible')).toBe(false);
   });
 
   it('shows OSM data as an automatic source without a scenario toggle', () => {

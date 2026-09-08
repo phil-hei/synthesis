@@ -2,27 +2,34 @@
 
   <!-- Linke Spalte: Szenarien + Parameter -->
   <aside class="panel">
-    <section class="block">
+    <section class="block scenario-controls" aria-label="Szenarioverwaltung">
       <div class="block-head">
         <h2>Szenario</h2>
         <button (click)="newScenario()" [disabled]="busy"
           title="Leeres Szenario anlegen – Region anschließend auf der Karte zeichnen">+ Neu</button>
       </div>
-      <label title="Gespeichertes Szenario auswählen und mit allen Parametern und Uploads laden">Vorhandenes Szenario laden
-        <span class="select-row">
-          <select [(ngModel)]="selectedScenarioId" (change)="onScenarioSelected()" [disabled]="busy"
+      <label for="scenario-picker">Gespeichertes Szenario</label>
+        <div class="select-row">
+          <select id="scenario-picker" [(ngModel)]="selectedScenarioId" (change)="onScenarioSelected()" [disabled]="busy"
             title="Gespeichertes Szenario auswählen und laden">
             <option value="">– Neues Szenario –</option>
             @for (s of scenarios; track s) {
               <option [value]="s.id">{{ s.name }}</option>
             }
           </select>
+          <button class="primary save-scenario" (click)="save()" [disabled]="busy || !scenario?.region"
+            [title]="scenario?.region ? 'Aktuelle Einstellungen speichern' : 'Erst Region auf der Karte zeichnen'">
+            Speichern
+          </button>
           @if (selectedScenarioId) {
             <button class="link danger" (click)="deleteSelected()" [disabled]="busy"
             title="Ausgewähltes Szenario löschen">✕</button>
           }
-        </span>
-      </label>
+        </div>
+      @if (scenario && !scenario.region) {
+        <p class="hint">Zum Speichern zuerst eine Region auf der Karte wählen.</p>
+      }
+      <p class="message" aria-live="polite">{{ message }}</p>
       @if (scenarioListError) {
         <p class="message" aria-live="polite">{{ scenarioListError }}</p>
       }
@@ -295,35 +302,35 @@
             Verkehrssimulation: SUMO
           </label>
         </div>
-        <p class="hint">SUMO ist kein zweites Nachfragemodell: Es simuliert die von logiTopp
-          erzeugten Wege auf dem Straßennetz und aktiviert logiTopp deshalb automatisch.
-          MobileCity ist derzeit ein unabhängiger, district-aggregierter Export und benötigt
-          keinen zusätzlichen logiTopp-Lauf.</p>
+        <p class="hint model-note">SUMO aktiviert logiTopp automatisch. MobileCity ist unabhängig.
+          <app-help-tip label="Zusammenspiel der Modelle erklären"
+            text="logiTopp erzeugt die Nachfrage von Personen und Paketen. SUMO simuliert diese Wege auf dem Straßennetz. MobileCity exportiert zusammengefasste Gebietsdaten und braucht keinen logiTopp-Lauf." />
+        </p>
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
             title="Passt die Moduswahl-Konstanten iterativ an den Ziel-Modal-Split an (mehrere Simulationsläufe, daher deutlich langsamer).">
             <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeChoice"
               [disabled]="scenario.population.calibrateModeDistance">
-            Modal-Split kalibrieren (langsam)
+            Verkehrsmittelanteile kalibrieren (langsam)
           </label>
         }
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
-            title="Distanz-Kalibrierung der Zielwahl (experimentell): passt b_intrazonal iterativ an, bis der Anteil der Wege unter 1 km den Zielwert trifft. Mit „ÖV nach Distanz“ kombinierbar; sie läuft dann zuerst. Kann keine Fernwege in einem kleinen Gebiet erzeugen (mehrere Simulationsläufe).">
+            title="Passt den Anteil der Wege unter 1 km an die Referenzwerte an. Benötigt ein ausreichend feines Raster und mehrere Simulationsläufe. Mit der ÖV-Kalibrierung kombinierbar; erzeugt keine zusätzlichen Fernziele.">
             <input type="checkbox" [(ngModel)]="scenario.population.calibrateDistance">
-            Distanz-Verteilung kalibrieren (experimentell, langsam)
+            Kurze Wege kalibrieren (experimentell, langsam)
           </label>
         }
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
-            title="Experimentell: schwächt das Zielwahl-Distanz-Abklingen mit dem über drei Seeds bestätigten festen Term +0,06 auf den fünf b_tt-Reisezeitparametern ab. Erzeugt keine zusätzlichen Simulationsläufe. Für das bestätigte Gesamtprofil mit der Distanz-Verteilung kombinieren.">
+            title="Verringert die Bevorzugung naher Ziele, ohne zusätzliche Simulationsläufe. Mit der Kalibrierung kurzer Wege in Rastatt geprüft; die Übertragbarkeit auf andere Regionen ist noch nicht belegt.">
             <input type="checkbox" [(ngModel)]="scenario.population.correctDistanceDecay">
-            Distanz-Abklingen korrigieren (experimentell)
+            Längere Wege begünstigen (experimentell)
           </label>
         }
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
-            title="Experimentell: kalibriert das globale ÖV-Niveau über asc_put und den ÖV-Anstieg bei Wegen ab 20 km getrennt über b_tt_put gegen MiD 2017. Mit der Distanz-Verteilung kombinierbar und läuft dann auf deren korrigierten Zielwahlparametern. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe.">
+            title="Passt den öffentlichen Verkehrsanteil insgesamt und bei Wegen ab 20 km an MiD 2017 an. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe. Alternative zur allgemeinen Kalibrierung der Verkehrsmittelanteile; mit kurzen Wegen kombinierbar.">
             <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeDistance"
               [disabled]="scenario.population.calibrateModeChoice">
             ÖV nach Distanz kalibrieren (experimentell, langsam)
@@ -332,7 +339,8 @@
         @if (hasTarget('logitopp') && (scenario.population.calibrateModeChoice || scenario.population.calibrateModeDistance)) {
           <div class="calib-target"
             title="Ziel-Modus-Anteile (Default MiD 2017 bundesweit; für die Region anpassbar)">
-            <span class="targets-label">Ziel-Modal-Split (Anteile)</span>
+            <span class="targets-label">Zielanteile der Verkehrsmittel</span>
+            <p class="hint">Werte von 0 bis 1 · 0,25 entspricht 25 %.</p>
             <label class="calib-row"
               title="Regionstyp-Vorlage (RegioStaR) – füllt die Zielwerte; danach frei anpassbar">
               Vorlage
@@ -365,13 +373,14 @@
           <label class="checkbox"
             title="Gleichgewichts-Schleife: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu, SUMO simuliert erneut – iterativ bis Konvergenz (mehrere zusätzliche Simulationsläufe, daher langsamer).">
             <input type="checkbox" [(ngModel)]="scenario.population.sumoFeedback">
-            Netz-Feedback: SUMO-Stau ⇄ Nachfrage (iterativ)
+            Stau auf die Nachfrage zurückwirken lassen (langsam)
           </label>
         }
         @if (hasTarget('sumo')) {
           <div class="hint" title="Für SUMO wird automatisch ein passender regionaler GTFS-Fahrplan gesucht, zugeschnitten und – sofern die Transit-Werkzeuge verfügbar sind – als Busverkehr eingebunden. Der Upload ist nur ein Fallback.">
-            ÖV wird automatisch eingebunden, wenn die GTFS-Registry einen passenden Feed für
-            die Region findet. Kein automatischer Feed verfügbar?
+            Busverkehr wird bei verfügbarem Fahrplan automatisch eingebunden.
+            <app-help-tip label="Automatischen Busverkehr erklären"
+              text="SyntheSis sucht einen passenden regionalen GTFS-Fahrplan. Für die Einbindung müssen die lokalen Transit-Werkzeuge verfügbar sein. Aktuell wird Busverkehr unterstützt; Bahn und Tram sind noch nicht enthalten. Ein eigener GTFS-Upload dient als Ersatz, wenn kein automatischer Fahrplan verfügbar ist." />
             <label class="linklike" title="Eigenen GTFS-Fahrplan als ZIP hochladen, wenn für die Region kein automatischer Feed verfügbar ist">GTFS-ZIP hochladen
               <input type="file" accept=".zip" hidden
               [disabled]="!scenario.id" (change)="onGtfsSelected($event)"></label>
@@ -454,10 +463,9 @@
               <input type="checkbox" [(ngModel)]="scenario.logistics.returns.enabled">
               Kundenretouren als Abholaufträge (experimentell)
             </label>
-            <p class="hint">
-              Eine Kundenretoure ist ein zusätzlicher Pickup beim Empfänger. Sie ist nicht mit
-              einem Ursprungspaket verknüpft und nicht mit dem Status RETURNING nach einem
-              fehlgeschlagenen Zustellversuch gleichzusetzen.
+            <p class="hint">Zusätzliche Abholung beim Kunden; die Quote ist eine Szenarioannahme.
+              <app-help-tip label="Kundenretouren erklären"
+                text="Die Abholaufträge sind nicht mit einem einzelnen zugestellten Paket verknüpft. Rückläufer nach gescheiterten Zustellversuchen werden getrennt gezählt. Die Retourenquote ist noch kein empirisch kalibrierter Branchenwert." />
             </p>
             @if (scenario.logistics.returns.enabled) {
               <label title="Zusätzliche Retouren relativ zur Zahl der privaten Zustellaufträge. Muss bei aktivierten Retouren größer 0 und höchstens 1 sein.">
@@ -468,20 +476,19 @@
               </label>
               <div class="shares"
                 title="Anteile der Abholorte für Kundenretouren; HOME und WORK müssen zusammen 1 ergeben">
-                <label title="Anteil der Kundenretouren, die an der Wohnadresse abgeholt werden">Abholung HOME
+                <label title="Anteil der Kundenretouren, die an der Wohnadresse abgeholt werden; 0,75 entspricht 75 %">Zuhause
                   <input type="number"
                     [(ngModel)]="scenario.logistics.returns.pickupShares.home"
                     min="0" max="1" step="0.05">
                 </label>
-                <label title="Anteil der Kundenretouren, die am Arbeitsplatz abgeholt werden">WORK
+                <label title="Anteil der Kundenretouren, die am Arbeitsplatz abgeholt werden; 0,25 entspricht 25 %">Arbeitsplatz
                   <input type="number"
                     [(ngModel)]="scenario.logistics.returns.pickupShares.work"
                     min="0" max="1" step="0.05">
                 </label>
               </div>
               <p class="hint">
-                HOME + WORK müssen zusammen 1 ergeben. Packstationen sind im MVP noch kein
-                Retourenkanal.
+                Beide Anteile müssen zusammen 1 ergeben. Retouren an Packstationen werden noch nicht unterstützt.
               </p>
             }
           </div>
@@ -494,10 +501,9 @@
           </button>
         </div>
         @if (scenario.logistics.depots.length === 0) {
-          <p class="hint">
-            Ohne eigene Depots nutzt die Pipeline echte OSM-Logistikstandorte (Postdepots, Kurierdienste);
-            falls keine vorhanden sind, werden Depots an gewerblich geeigneten Zonen mit guter
-            Erreichbarkeit der Wohnbevölkerung platziert (Gewerbe-Eignung × Nachfragenähe).
+          <p class="hint">Ohne eigene Depots werden Standorte automatisch gewählt.
+            <app-help-tip label="Automatische Depotwahl erklären"
+              text="Vorhandene Postdepots und Kurierstandorte aus OpenStreetMap werden bevorzugt. Fehlen solche Daten, werden Depots anhand gewerblicher Eignung und Nähe zur Wohnbevölkerung platziert." />
           </p>
         }
         @if (scenario.logistics.depots.length > 0) {
@@ -527,15 +533,13 @@
         }
       </section>
       <section class="block actions">
-        <button class="primary" (click)="save()" [disabled]="busy || !scenario.region"
-          [title]="scenario.region ? 'Szenario speichern' : 'Erst Region auf der Karte zeichnen'">
-          Speichern
-        </button>
-        <button class="primary" (click)="generate()" [disabled]="!scenario.id || running"
+        <button class="primary" (click)="generate()" [disabled]="busy || !scenario.id || running"
           title="Startet die Generierungspipeline: Zonen, Attraktivitäten, Bevölkerung, Aktivitäten, Matrizen, Logistik">
           {{ running ? 'Generierung läuft…' : 'Nachfragemodell generieren' }}
         </button>
-        <p class="message" aria-live="polite">{{ message }}</p>
+        @if (!scenario.id) {
+          <p class="hint">Szenario zuerst oben neben der Auswahl speichern.</p>
+        }
       </section>
     }
   </aside>

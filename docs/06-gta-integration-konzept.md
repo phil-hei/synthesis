@@ -1431,6 +1431,15 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
     umgesetzt, bleibt wegen des dokumentierten Aktivmodus-Bias jedoch eine experimentelle
     Vergleichslinse und ersetzt die kalibrierte logiTopp-MNL-Wahl nicht.
 
+- **✅ Studio-Bedienung verbessert (2026-09-08):** Speichern steht direkt neben der
+  Szenarioauswahl in der beim Scrollen sichtbaren Verwaltung. Rückmeldungen erscheinen dort;
+  ohne Region erklärt ein Hinweis den deaktivierten Button. „Modelle und Ausgaben“ erhält
+  mehr Abstand. Fachliche Optionen nennen ihre Wirkung; ausführliche Zusatzinformationen zu
+  Modellabhängigkeiten, Busverkehr, Retouren und Depots sind über fokussierbare Hilfeschalter
+  erreichbar (Maus, Tastatur und Klick; Escape schließt). Wichtige Voraussetzungen und
+  Einheiten bleiben sichtbar. **Verifiziert:** 44 Frontend-Tests und Produktionsbuild grün;
+  Browserprüfung von Speichern, erneutem Laden, SUMO-Abhängigkeit und Hilfen einschließlich
+  Escape sowie sichtbarer Abstände bestanden.
 - **✅ Review der Zonierung und Außenzieldiagnostik (2026-09-08):** Überlaufende oder nicht
   endliche Rasterauflösungen werden abgewiesen. Abfrage und Kandidatenberechnung teilen den
   80-km-Horizont; die Bevölkerungsschätzung verwendet weiterhin nur den bisherigen lokalen
@@ -1441,6 +1450,12 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   einer nur diagnostisch genutzten Außensiedlung. **Verifiziert:** vollständige Backend-Suite
   mit 162 Tests, 0 Fehlern und 7 extern bedingten Skips; fokussierte 20 Tests ohne Skips.
   Core-Preflight und Abgleich beider Skill-Registries grün.
+- **⬜ Deutsch/Englisch umschaltbar (aufgenommen 2026-09-08):** Künftige Erweiterung: ein
+  sichtbarer Sprachschalter im Anwendungskopf, der die Auswahl für spätere Besuche speichert.
+  Beschriftungen, Hilfen, Fehlermeldungen sowie Zahlen- und Datumsdarstellung übersetzen;
+  Szenario-IDs, gespeicherte Konfigurationsschlüssel und Exportformate bleiben stabil.
+  Die Sprachumschaltung ist vorgemerkt und noch nicht implementiert.
+
 ### Phase 5 – Externe Klärungen (nicht-technisch, parallel)
 - **Takomat:** MobileCity-Import finalisieren (Netz-/TEC-/MOD-Tabellen, Messagepack,
   vollständiger Study-Area-Import). **Antworten vom 2026-07-03:**

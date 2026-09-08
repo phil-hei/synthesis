@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HelpTipComponent } from '../../shared/help-tip.component';
 import * as L from 'leaflet';
 import { ApiService } from '../../core/services/api.service';
 import {
@@ -30,7 +31,7 @@ type LogisticsMetricKey = 'parcelsPerPersonWeek' | 'parcelStdDev';
 
 @Component({
   selector: 'app-studio',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HelpTipComponent],
   templateUrl: './studio.component.html',
   styleUrls: ['./studio.component.css']
 })

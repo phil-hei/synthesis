@@ -37,7 +37,7 @@ cd frontend && npm install && npm start
 ```
 
 Dann http://localhost:4300 öffnen: Kartenausschnitt wählen → Parameter setzen → optional Depots
-auf der Karte platzieren → „Speichern" → „Nachfragemodell generieren". Die Pipeline erzeugt
+auf der Karte platzieren → „Speichern" neben der Szenarioauswahl oben → „Nachfragemodell generieren". Die Pipeline erzeugt
 zonen-, bevölkerungs-, matrix- und logistikbezogene mobiTopp/logiTopp-Artefakte
 (zones.csv, attractivities.csv, person/household/activity/car/fixedDestination.csv,
 Visum-Matrizen `.mtx.bz2` + Matrix-YAMLs, Verteilzentren, Paketnachfrage-Parameter, manifest.json).

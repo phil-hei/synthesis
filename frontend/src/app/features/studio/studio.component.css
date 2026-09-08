@@ -61,6 +61,25 @@
   margin-bottom: 10px;
 }
 
+.scenario-controls {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  box-shadow: 0 3px 12px rgba(16, 30, 54, 0.1);
+}
+
+.scenario-controls > label { margin-bottom: 5px; }
+.select-row select { min-width: 0; padding: 7px 9px; border: 1px solid #d3dbe4;
+  border-radius: 6px; background: #fbfcfe; font-size: 13px; }
+button.primary.save-scenario { width: auto; margin: 0; padding: 7px 10px; flex-shrink: 0; }
+.scenario-controls .message:empty { display: none; }
+
+.targets { margin: 20px 0 10px; }
+.targets-label { display: block; margin-bottom: 14px; font-weight: 600; color: #15314f; }
+.targets .checkbox { align-items: flex-start; line-height: 1.5; margin-bottom: 12px; }
+.targets .checkbox input { margin-top: 3px; flex-shrink: 0; }
+.hint.model-note { margin-bottom: 18px; }
+
 .block-head h2,
 .block-head h3 {
   margin: 0;
@@ -467,7 +486,7 @@ button.link {
 
 .hint {
   font-size: 11px;
-  color: #8795a3;
+  color: #586b7c;
   margin: 6px 0;
   line-height: 1.45;
 }

@@ -53,7 +53,7 @@ cd frontend && npm install && npm start
    LLM-Moduswahl. Was die Flags tun: `synthesis-config-and-flags`.
 4. **Depots:** „Depot platzieren"-Modus aktivieren, auf die Karte klicken; je Depot
    Name/Mitarbeiter/Anteil/Fahrzeugtyp (TRUCK | CARGO_BIKE). Keine Depots = Auto-Platzierung.
-5. **„Speichern"** (erst danach existiert die Szenario-ID) → **„Nachfragemodell generieren"**.
+5. **„Speichern" oben neben der Szenarioauswahl** (erst danach existiert die Szenario-ID) → **„Nachfragemodell generieren"**.
    Stufen-Fortschritt + Log erscheinen live im Studio.
 6. **Vergleich:** http://localhost:4300/vergleich — mehrere Szenarien nebeneinander
    (Nachfrage-, Logistik-, CO₂-Kennzahlen).
