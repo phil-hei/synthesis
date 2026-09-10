@@ -1415,6 +1415,16 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   vollständigem Offline-Pipeline-E2E, 0 Fehler/0 Skips; identische synthetische OSM-/OD-Verteilung
   ergibt Richtungs-MAE, Distanzfehler und `>=20-km`-Abweichung jeweils 0. Der Kandidat bleibt
   `diagnostic-only`, bis die vorregistrierte Mehrregionenmessung bestanden ist.
+  **❌ Räumliche Vorprüfung verfehlt (2026-09-10):** Rastatt, Freiburg und Karlsruhe verfehlen
+  gegen geokodierte BA-Relationen jeweils die Kriterien für mittlere Außendistanz und Anteil
+  `>=20 km`. Die vorab festgelegte Abbruchregel stoppt damit die nachgelagerten Drei-Seed-
+  Wirkungsläufe; keine Promotion, keine Änderung der produktiven Zielwahl. Die Diagnose ist
+  seedfrei. **Verifiziert:** sieben Kennzahlen je Region separat in Python nachgerechnet,
+  native Kandidaten-JSONs beim Replay bytegleich. Grenzen sind insbesondere unterschiedliche
+  Gemeinde-/Boxzuschnitte, unvollständige Referenzgewichte und der 80-km-Radius des Kandidaten.
+  Nächster Forschungsansatz: räumliche Bezugsräume und Fernzielbehandlung klären, Arbeitsplatz-
+  statt reiner Bevölkerungsgewichte begründen und neu präregistrieren. Messwerte, Quellen und
+  Abbruchentscheidung: [räumliche Vorprüfung in docs/05](05-validierung.md#osm-aussenziele-vorpruefung-2026-09-10).
 - **✅ Studio-/Modellachsen nachgeschärft (2026-09-01):**
   - SUMO wird im Studio als nachgelagerte **Verkehrssimulation** statt als gleichartiges
     Zielmodell dargestellt und aktiviert seine harte logiTopp-Abhängigkeit automatisch; auch

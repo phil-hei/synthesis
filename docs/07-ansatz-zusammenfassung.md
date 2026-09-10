@@ -214,6 +214,11 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
   nur das Außenziel verteilen. Im bytegleich gepaarten Drei-Seed-Versuch steigt Ø Weglänge
   4,57→8,10 km, `≥20 km` 3,13→10,86 % und der Distanz-RMSE sinkt 0,1035→0,0829. Die
   Modal-RMSE steigt 0,0747→0,0943; weitere Regionen und eine Langweg-Moduskalibrierung bleiben offen.
+- **OSM-Außenziele bleiben diagnostisch (2026-09-10):** Der bevölkerungsgewichtete Kandidat
+  verfehlt in drei Regionsboxen die räumlichen Distanzkriterien gegen geokodierte BA-Relationen.
+  Die nachgelagerten Mehrseed-Wirkungsläufe wurden gemäß Abbruchregel nicht gestartet;
+  räumlicher Zuschnitt, Fernziele und Arbeitsplatzgewichte brauchen einen neuen Ansatz
+  ([Befund und Grenzen](05-validierung.md#osm-aussenziele-vorpruefung-2026-09-10)).
 - **Modus-Distanz-Mechanik getrennt steuerbar:** Der Großraum-Beleg traf mit
   zwei Hebeln 9,34 % ÖV gesamt und 17,60 % ab 20 km (MiD: 10/17,61 %).
   Der opt-in-Regler setzt diese Trennung ohne fest verdrahtete Versuchswerte um;

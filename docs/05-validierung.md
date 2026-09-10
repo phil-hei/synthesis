@@ -516,6 +516,95 @@ produktiven Ringzonen noch die Zielwahl. Die Promotion bleibt an mindestens drei
 drei Seeds sowie die in docs/06 vorregistrierten Fehler- und Nachfragegates gebunden. Damit ist
 der Messaufbau vorhanden, ohne amtliche Ziele vorzeitig oder unsichtbar durch OSM zu ersetzen.
 
+<a id="osm-aussenziele-vorpruefung-2026-09-10"></a>
+
+### Räumliche Vorprüfung in drei Regionen (2026-09-10) — ❌ Kriterien verfehlt
+
+**Befund:** Der unveränderte OSM-Siedlungskandidat verfehlt in Rastatt, Freiburg und Karlsruhe
+jeweils beide Distanzkriterien. Die Richtungs-MAE besteht jeweils. Das ist ein Negativbefund
+für die festgelegten Regionsboxen und die geokodierbaren BA-Relationen, keine allgemeine
+Widerlegung von OSM als Datenquelle für Arbeitsziele.
+
+Die Hypothese und Abbruchregel wurden am 2026-09-09 vor der ersten Auswertung in
+`backend/data/campaigns/osm-external-2026-09-09/preregistration.md` festgehalten: Alle drei Regionen
+müssen Richtungs-MAE ≤0,15, relativen Fehler der mittleren Außendistanz ≤25 % und absolute
+Abweichung des Anteils `>=20 km` ≤10 Prozentpunkte bestehen. Bei räumlichem Fehlschlag folgen
+keine Nachfrage-Wirkungsläufe. Die Schwellen aus docs/06 wurden nicht nachträglich verändert.
+
+**Referenz und Zuschnitt:** Öffentlicher CSV-Export der
+[BA-Pendlerstatistik](https://statistik.arbeitsagentur.de/DE/Navigation/Statistiken/Interaktive-Statistiken/Pendler/Pendler-Nav.html),
+Berichtsmonat/Gebietsstand Juni 2025, Datenstand Januar 2026; gefiltert auf die drei
+Wohnortschlüssel. `BaCommuterAdapter` verarbeitet die Gemeindeziele mit eingefrorenen
+BKG-VG250-Koordinaten. Die nativen Overpass-Abfragen wurden je Region eingefroren; nach
+HTTP 429/504 gelang Karlsruhe mit gleicher räumlicher Abfrage und erhöhtem Timeout.
+
+| Region / Wohnort-AGS | Breite min…max | Länge min…max | BA-Export gesamt | Geokodiert / Abdeckung | Davon Ziel innerhalb Box | Vergleichsgewicht außen |
+|---|---|---|---:|---:|---:|---:|
+| Rastatt / `08216043` | 48,825…48,885 | 8,155…8,245 | 13.720 | 12.650 / 92,20 % | 0 | 12.650 |
+| Freiburg / `08311000` | 47,85…48,12 | 7,7…8,1 | 27.350 | 25.210 / 92,18 % | 8.370 | 16.840 |
+| Karlsruhe / `08212000` | 48,93…49,09 | 8,27…8,55 | 44.220 | 41.340 / 93,49 % | 9.970 | 31.370 |
+
+Die Boxen sind **keine Gemeindegrenzen**: Insbesondere die großen Boxen schließen Ziele in
+Nachbargemeinden aus dem Außenvergleich aus. Die übrigen rund 6,5–7,8 % der Exportgewichte sind
+nicht als einzeln geokodierbare Gemeindeziele enthalten; sie werden weder als Null noch als
+bekannte räumliche Verteilung behandelt. Unter den eingelesenen Gemeindezielen gibt es keine
+ungelösten AGS. Alle nachfolgenden Referenzanteile sind auf das Vergleichsgewicht außen bedingt.
+
+| Region | Richtungs-MAE (≤0,15) | Ø Außendistanz BA → OSM | Relativer Distanzfehler (≤25 %) | Anteil ≥20 km BA → OSM | Abweichung (≤10 pp) |
+|---|---:|---:|---:|---:|---:|
+| Rastatt | 0,09995 ✅ | 31,55 → 55,95 km | 77,35 % ❌ | 34,62 → 95,26 % | +60,64 pp ❌ |
+| Freiburg | 0,07216 ✅ | 117,34 → 57,62 km | 50,90 % ❌ | 79,81 → 98,62 % | +18,81 pp ❌ |
+| Karlsruhe | 0,03192 ✅ | 81,98 → 54,39 km | 33,65 % ❌ | 76,38 → 96,38 % | +20,00 pp ❌ |
+
+Gemessen wird die Luftlinie vom Boxmittelpunkt zu Gemeinde- bzw. Siedlungspunkten, keine
+simulierte Weglänge. Die BA-Referenz wurde nicht nachträglich auf 80 km gekappt: 6,09 % / 35,81 % /
+22,86 % ihres jeweiligen Außenvergleichsgewichts liegen darüber. Der Kandidat enthält dort
+konstruktionsbedingt keine Ziele. Diese Asymmetrie begrenzt die Interpretation und ist ein
+Hindernis für den geprüften Ersatz der gesamten Außenverteilung.
+Hinzu kommt die Länderabdeckung: OSM enthält auch französische und schweizerische Siedlungen,
+während die eingefrorenen BA-Exporte hier deutsche Gemeindeziele ausweisen. Die Abweichungen
+lassen sich deshalb nicht allein der Bevölkerungsgewichtung zuschreiben.
+
+**Gegenprüfung und Grenzen:** Eine separate Python-Berechnung aus den exportierten
+Gemeinderelationen und geparsten OSM-Siedlungen bestätigt alle sieben Java-Kennzahlen je Region
+(`rel_tol=1e-10`, `abs_tol=1e-12`). Ein erneuter nativer Lauf erzeugt bytegleiche Kandidaten-JSONs.
+Das ist eine Rechen- und Replay-Prüfung, kein Beleg für Nachfragewirkung. Die Richtungs-MAE über
+acht Sektoren ist zudem ein schwaches Kriterium: Total Variation beträgt 0,39979 / 0,28863 /
+0,12770, der größte Sektorfehler 21,40 / 19,16 / 8,75 Prozentpunkte. Alle acht Sektoranteile,
+die größten zehn OSM-Gewichte und die 1.324 / 1.458 / 1.266 verwendeten Siedlungen sind im
+lokalen Bericht nachvollziehbar. Bevölkerungsgewichte messen keine Arbeitsplätze; überlagerte
+OSM-Stadt-/Ortsteilobjekte können dieselbe Bevölkerung mehrfach repräsentieren. Außerdem
+beschreiben die Distanzkennzahlen die Siedlungsverteilung und nicht die späteren Entfernungen
+zu acht verdichteten Sektorschwerpunkten.
+Ein unabhängiger Reviewer (`osm_gate_review`) hat alle sieben Kennzahlen je Region erneut
+nachgerechnet und die unveränderten initialen Quellen-/Präregistrierungshashes geprüft.
+Er bestätigt die eingeschränkte Abbruchentscheidung und hebt die Abdeckungs-, Zuschnitts-,
+Horizont- und Ländergrenzen hervor; das Review ist lokal in `review.md` gesichert.
+
+**Konsequenz:** Keine Promotion und keine Änderung der produktiven Zielwahl. Die räumliche
+Vorprüfung ist abgeschlossen; die geplanten Wirkungsläufe mit Seeds 42/43/44 je Region wurden
+gemäß Abbruchregel **nicht gestartet**. Der Kandidat ist seedfrei und nur diagnostisch;
+dreifaches Wiederholen wäre keine 3×3-Wirkungsvalidierung. Das Nachfragegate
+`[3,0; 3,4] Wege/Person·Tag` bleibt ungeprüft. Ein neuer Ansatz braucht vorab einen passenden
+räumlichen Bezugsraum, explizite Behandlung der Referenzlücken und Fernziele sowie begründete
+Arbeitsplatzgewichte. Erst nach neuer Präregistrierung und bestandenem räumlichem Gate folgt
+eine experimentelle Nachfrageintegration mit echten Mehrseed-Wirkungsläufen.
+
+**Evidenz:** Lokal dauerhaft, aber gitignoriert unter
+`backend/data/campaigns/osm-external-2026-09-09/`: Quellen/URLs in `sources.json`, Rohdaten in
+`inputs/`, native Ergebnisse in `*-candidate.json`, vollständige Vergleichseingaben in
+`*-details.json`, Auswertung in `report.json`, Replay in `replay.json` und SHA-256 in
+`hashes.json`. Codebasis: `0d0517bce5ebe8ec4182f2f70cf8731783174556`.
+SHA-256 der Präregistrierung:
+`c08d1c428580e3f4e491850b12c6456d8e845c50530dd5c4b4bf7b79af75de79`.
+Die Dateien sind nicht Bestandteil eines frischen Git-Checkouts. Mit vorhandenen lokalen
+Eingaben und Backend-Klassen wiederholbar vom Repo-Root:
+
+```bash
+python3 backend/data/campaigns/osm-external-2026-09-09/run_probe.py evaluate
+python3 backend/data/campaigns/osm-external-2026-09-09/analyze.py
+```
+
 ## Stichprobengröße bei vielen Zonen (2026-07-28) — korrigiert
 
 Ein präregistrierter Großraum-Spike deckte einen Skalierungsfehler in
