@@ -19,6 +19,34 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ShapefileWriterTest {
 
+    @Test
+    void writesActualProjectedCornersAndMultipartHoles(@org.junit.jupiter.api.io.TempDir Path dir) throws Exception {
+        Zone projected = zone(0, 48.8, 8.1, 48.9, 8.2);
+        projected.laeaE = 4200000; projected.laeaN = 2900000; projected.laeaRes = 1000;
+        ShapefileWriter.writeRectangles(dir.resolve("grid"), List.of(projected), "districtID", z -> "grid");
+        ByteBuffer grid = ByteBuffer.wrap(Files.readAllBytes(dir.resolve("grid.shp"))).order(ByteOrder.LITTLE_ENDIAN);
+        double[] ll = Epsg3035.toLatLon(projected.laeaE, projected.laeaN);
+        assertEquals(ll[1], grid.getDouble(156), 1e-9);
+        assertEquals(ll[0], grid.getDouble(164), 1e-9);
+        assertTrue(Math.abs(grid.getDouble(156) - projected.minLon) > .001);
+
+        var geometry = new org.locationtech.jts.io.WKTReader().read(
+                "MULTIPOLYGON (((0 0,0 4,4 4,4 0,0 0),(1 1,2 1,2 2,1 2,1 1)),((5 0,5 1,6 1,6 0,5 0)))");
+        ShapefileWriter.writePolygons(dir.resolve("multi"), List.of("A"), List.of(geometry), "districtID");
+        ByteBuffer multi = ByteBuffer.wrap(Files.readAllBytes(dir.resolve("multi.shp"))).order(ByteOrder.LITTLE_ENDIAN);
+        assertEquals(3, multi.getInt(144));
+        assertEquals(15, multi.getInt(148));
+        assertEquals(0, multi.getInt(152)); assertEquals(5, multi.getInt(156)); assertEquals(10, multi.getInt(160));
+        // Hole must be counterclockwise; outer rings clockwise, as required by ESRI.
+        for (int ring=0; ring<3; ring++) {
+            org.locationtech.jts.geom.Coordinate[] points = new org.locationtech.jts.geom.Coordinate[5];
+            for (int p=0;p<5;p++) { int offset=164+(ring*5+p)*16; points[p]=new org.locationtech.jts.geom.Coordinate(multi.getDouble(offset),multi.getDouble(offset+8)); }
+            assertEquals(ring==1,org.locationtech.jts.algorithm.Orientation.isCCW(points));
+        }
+        ByteBuffer shx=ByteBuffer.wrap(Files.readAllBytes(dir.resolve("multi.shx"))).order(ByteOrder.LITTLE_ENDIAN);
+        assertEquals(6,shx.getDouble(52),1e-9);
+    }
+
     private static Zone zone(int index, double minLat, double minLon, double maxLat, double maxLon) {
         Zone z = new Zone();
         z.index = index;

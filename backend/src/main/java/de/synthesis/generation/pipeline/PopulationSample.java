@@ -32,7 +32,7 @@ public final class PopulationSample {
     private final List<List<Member>> households;
 
     private PopulationSample(List<List<Member>> households) {
-        this.households = households;
+        this.households = households.stream().map(List::copyOf).toList();
     }
 
     /** Loads the bundled sample from the classpath; throws if the resource is missing. */
@@ -67,6 +67,21 @@ public final class PopulationSample {
 
     public int householdCount() {
         return households.size();
+    }
+
+    /** Package-local, read-only use by the regional weighting adapter. */
+    List<List<Member>> households() { return households; }
+
+    String fingerprint() {
+        try {
+            var digest = java.security.MessageDigest.getInstance("SHA-256");
+            for (var household : households) {
+                for (var member : household)
+                    digest.update((member.age() + ":" + member.gender() + ";").getBytes(StandardCharsets.UTF_8));
+                digest.update((byte)'\n');
+            }
+            return java.util.HexFormat.of().formatHex(digest.digest());
+        } catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
     }
 
     /** A random household composition from the pool. */

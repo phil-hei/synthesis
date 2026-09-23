@@ -1108,8 +1108,8 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   (`modes="public"` → Fußweg → `<ride>` → Fußweg). Pipeline: **`GtfsCropper`** schneidet einen
   Verbund-Feed streaming auf Region+Zeitfenster zu (verwirft `shapes.txt`, wahrt referenzielle
   Integrität; KVV-Feed 121 MB → 720 KB) → **`GtfsSource`** löst die Quelle auf: **Auto-Fetch** aus
-  einer Feed-Registry (Bbox-Abdeckung, z. B. KVV/NVBW für Rastatt; Größen-Cap) mit
-  **Upload-Fallback** (`POST /api/scenarios/{id}/gtfs`), falls kein Feed passt oder er zu groß ist
+  einer Feed-Registry (Bbox-Abdeckung, z. B. KVV/NVBW für Rastatt; Größen-Cap); ein über
+  `POST /api/scenarios/{id}/gtfs` bewusst ausgewählter Upload hat Vorrang
   → **`TransitRunner`** ruft `gtfs2pt.py` in einem **gekapselten Python-venv** (pandas/rtree/pyproj;
   einzige Python-Abhängigkeit im Projekt, Stage wird SKIPPED wenn das venv fehlt) und **cached** das
   Ergebnis. **Wichtiger Praxis-Befund:** `gtfs2pt.py` findet ohne kompilierte Mapping-Bibliothek
@@ -1432,8 +1432,9 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
     district-aggregierter Export: Die heute implementierte Stufe konsumiert keine
     logiTopp-Simulation, weshalb eine automatische teure Simulation fachlich falsch wäre.
   - Der sichtbare Schalter „ÖV/Bus in SUMO“ ist entfernt. Bei ausgewähltem SUMO versucht das
-    Backend GTFS immer automatisch über die regionsbezogene Feed-Registry; der lokale
-    reproduzierbare Transit-Interpreter ist als Standardpfad konfiguriert, Upload bleibt Fallback.
+    Backend GTFS über einen bewusst ausgewählten Upload oder sonst automatisch über die
+    regionsbezogene Feed-Registry; der lokale reproduzierbare Transit-Interpreter ist als
+    Standardpfad konfiguriert.
   - Die Verhaltensoption heißt im Studio **„LLM-Agenten (lokales LLM, experimentell)“**. Stand:
     Persona- und
     Wochenplanerzeugung über Ollama/Qwen2.5 ist Ende-zu-Ende umgesetzt, reproduzierbar gecacht
@@ -1466,7 +1467,402 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   Szenario-IDs, gespeicherte Konfigurationsschlüssel und Exportformate bleiben stabil.
   Die Sprachumschaltung ist vorgemerkt und noch nicht implementiert.
 
+### MobileCity-Vorlagenexport — ✅ IMPLEMENTIERT (2026-09-17), Referenzfreigabe offen
+
+- **Opt-in:** `mobileCity.useTemplate=false` standardmäßig; `templateId=tramigo-v2`.
+  Im Studio unter MobileCity aktivierbar. Der Server lädt nur vorbereitete Vorlagen
+  unter `${synthesis.data-dir}/mobilecity/<templateId>/` und prüft deren Hashes.
+- **Beitrag:** `referenceYear=2026` gilt für synthetische Haushalte und neue
+  POP-/Pkw-/Wegebeiträge. MobileCitys historischer Simulationsstart bleibt erhalten.
+  Bevölkerung und private Pkw werden auf volle Zonenbestände hochgerechnet.
+  Vollständig abgedeckte Referenz-Districts erhalten nach Polygonverschneidung
+  neue Beiträge; übrige Districts und Modellmodule bleiben in der Vorlage.
+  Für die native Übernahme des Pkw-Bestands wird im Beitragsjahr zusätzlich der
+  Elektroanteil der Referenz für die aktualisierten Districts bereitgestellt.
+  Gebietsweite Wegeraten werden je Altersgruppe nach aktualisierter und erhaltener
+  Bevölkerung gemischt. Attraktivitäten bleiben wegen abweichender Kalibrierung
+  auf dem Referenzstand. Leere Stichprobenzonen und Annahmen stehen in `provenance.json`.
+- **Artefakte:** Teilbeitrag weiterhin 6 CSVs; Vorlagenmodus 25 CSV-Familien,
+  Governance-Dateien, WGS84-Shapefile (auch MultiPolygone/Löcher), `summary.json`,
+  `provenance.json`, `mobilecity-import.zip`. Download im Studio; Schreiben zunächst
+  in ein temporäres Verzeichnis, damit ein fehlgeschlagener Export kein halbes Paket ersetzt.
+- **Verifiziert:** selbstständige Java-Tests für Hochrechnung, Flächenaggregation,
+  historische Jahre, partielle Abdeckung, Hash-/Block-/Netzfehler, CSV-Quoting sowie
+  binäres Polygon-/MultiPolygon-Zurücklesen. Backend: 169 Tests, davon 7 übersprungen,
+  keine Fehler; Frontend: 44 Tests und AOT-Build grün. Echter Konverterimport, binäres
+  Zurücklesen und Simulation 2026/2027 sind nachgewiesen. **Kein grüner fachlicher Gate:**
+  fehlende Transitfahrzeiten und NaN-Ergebnisse in der Referenz bleiben offen;
+  [Befunde in docs/05](05-validierung.md#mobilecity-vorlagenexport-2026-09-17--import-und-simulation-nachgewiesen-referenzprüfung-offen).
+
+**Lokale Vorbereitung und Prüfung** (Projektwurzel; Pfade zur bereitgestellten Quelle einsetzen):
+
+```bash
+validation/transit-venv/bin/python scripts/prepare-mobilecity.py \
+  --tool-dir "$MOBILECITY_SOURCE" \
+  --districts-gpkg "$TRAMIGO_GPKG" \
+  --output backend/data/mobilecity/tramigo-v2
+```
+
+Die Vorbereitung benötigt `pyproj`, verändert keine Quelle und überschreibt keine
+vorhandene Vorlagenversion. Neue Referenzdaten bekommen eine neue Versions-ID.
+Für die Übergabe im Studio mindestens einen vollständigen District mit der Region
+abdecken, MobileCity und Vorlagenmodus wählen, speichern und generieren.
+
+```bash
+python3 scripts/validate-mobilecity.py \
+  --dotnet validation/tools/dotnet-8.0.425/dotnet \
+  --tool-source "$MOBILECITY_SOURCE" \
+  --import-dir "backend/data/scenarios/<id>/artifacts/mobilecity" \
+  --work-dir "validation/mobilecity/<neuer-prueflauf>" \
+  --nuget-cache .runtime/nuget
+```
+
+Das Prüfskript baut eine isolierte Tool-Kopie mit dokumentierten technischen
+Korrekturen, importiert, prüft die Netze und simuliert in einem separaten Prozess
+standardmäßig drei Jahre (mit `--years N` erweiterbar). Es vergleicht außerdem die
+exportierten Einwohner-/Pkw-Bestände und BEV-Anteile aktualisierter Districts im
+Bezugsjahr mit dem nativen Ergebnis. .NET 8 muss lokal vorhanden sein; beim ersten Build werden
+die Paketabhängigkeiten benötigt. Timeout pro Prozess standardmäßig 900 Sekunden.
+Der JSON-Bericht und alle Logs bleiben auch bei Fehlern erhalten. Die .NET-Prüfung
+ist ein expliziter lokaler Prüfschritt und läuft nicht automatisch bei jeder
+SyntheSis-Generierung. Der Default bleibt der einfache Teilbeitrag; der Vorlagenmodus
+ist außerhalb der Referenzgeometrien nicht anwendbar.
+
+<a id="regionale-zensus-struktur"></a>
+
+### Regionale Zensus-Struktur für Bevölkerung und MobileCity — ✅ UMGESETZT (2026-09-21, experimentell)
+
+**Bedienung:** Im Studio unter Bevölkerung zuerst das KIT-Demografie-Sample und dann
+„Regionale Alters- und Haushaltsstruktur“ aktivieren. API-Feld:
+`population.useCensusStructure=true`, standardmäßig `false`; ohne `useKitPopulation=true`
+ist die Kombination ungültig. Abschalten stellt die bisherige Synthese wieder her.
+
+**Datenweg:** `CensusStructureSource` lädt die beiden am 18.09.2026 geprüften amtlichen
+Zensus-2022-Archive mit festem SHA-256. Cache: `data/census-cache/structure/`.
+`synthesis.census.enabled`, `timeoutSeconds` und `maxArchiveMb` gelten auch hier.
+Der vorhandene Syntheseschritt verwendet die Rastermittelpunkte innerhalb des gewählten
+Kartenausschnitts und der internen Zonen. Keine neue Pipeline-Stufe und keine zusätzliche
+Bibliothek. Ein HTTP-, Hash- oder Formatfehler führt mit sichtbarem Grund zum KIT-Fallback.
+
+**Modellierung:** Die fünf Altersklassen werden auf unter 18 / 18–64 / ab 65 Jahre
+aggregiert; Haushaltsgrößen bleiben 1 bis 5 und 6+. Wegen statistischer Geheimhaltung
+werden Gruppen auf ihre eigene Summe normiert. Die veröffentlichten Gesamtzahlen dienen
+als Diagnose, nicht als Nenner der Anteile. Ab 50 gruppierten Personen bzw. 20 Haushalten
+werden Zonenanteile verwendet, darunter Anteile der ausgewählten Region. Diese Schwellen
+sind Modellannahmen, keine amtlichen Genauigkeitsgarantien.
+
+`CensusHouseholdSampler` gewichtet bestehende KIT-Haushaltszusammensetzungen gleichzeitig
+nach Personenalter und Haushaltsgröße. Die maximale Abweichung der erwarteten Anteile darf
+höchstens 2 Prozentpunkte betragen; sonst wird in dieser Zone das Ausgangssample gezogen.
+Es werden keine zusätzlichen Alterswerte oder Haushaltstypen erfunden. Für die exakte
+Personenzahl kann ein letzter Haushalt gekürzt werden; das wird mitgezählt.
+Die erzeugten Personen gehen anschließend in Aktivitäten und MobileCity ein.
+
+**Herkunft und Grenzen:** `population/census-structure.json` enthält Quellen, Archiv-Hashes,
+Datenstand, Seed, Fingerabdruck des Haushaltspools, lokale/regionale Zuordnung, Fit- und
+Stichprobenabweichungen, fehlende Gruppen sowie Kürzungen. Job-Zusammenfassung und Manifest
+verweisen darauf. Bei einem Fit-Fallback sind verworfene Fit-Anteile und tatsächlich
+angewendete Ausgangsanteile getrennt. Die KIT-Stichprobe enthält keine 6+-Haushalte:
+Ein Zielanteil bis 2 % kann deshalb trotz akzeptiertem Fit vollständig fehlen. Kleine
+Stichproben können stärker abweichen als der erwartete Fit. Zensus-Anteile von 2022 werden
+auf die Szenariobevölkerung übertragen; eine demografische Fortschreibung ist nicht enthalten.
+Dies ist keine lokal vollständig kalibrierte Populationssynthese.
+
+**Verifiziert:** Offline-Tests für Hash-/Datenfallback, unterdrückte Gruppen, alte
+ZIP-Dateinamencodierung, nicht erreichbare Ziele, Randfälle mit 100-%-Anteilen,
+Reproduzierbarkeit und Übergabe an `POPinhabitants.csv`. Der vollständige Pipeline-Test
+prüft den sichtbaren Datenfallback. Die Probe mit Originalarchiven für Rastatt und drei
+Seeds erreicht bei jeweils 20.000 Personen höchstens 1,93 Prozentpunkte Stichprobenfehler;
+[Messaufbau und Grenzen](05-validierung.md#zensus-strukturgewichtung-2026-09-21--originaldateien-bis-mobilecity-geprüft).
+Eine neue native MobileCity-Simulation war nicht Teil dieser Strukturprobe.
+
+**Noch offen:** Regionale KBA-Antriebsanteile und deren konsistente Zuordnung zur Pkw-Flotte;
+der eigenständige vollständige MobileCity-Netz-/Modellaufbau bleibt ein weiterer Ausbau.
+
+<a id="mobilecity-regionalexport"></a>
+
+### MobileCity-Regionalexport und private BEV-Anteile — ✅ UMGESETZT (2026-09-22, experimentell)
+
+- **Eigenständiges Gebiet:** `mobileCity.regionalExport=true` erzeugt alle 25 CSV-Familien,
+  eigene Districts, deren Shapefile, einen leeren Maßnahmenzeitplan und ein ZIP. Der Modus
+  ist unabhängig von den TRAMIGO-Gebietsgrenzen und alternativ zu `useTemplate`. Default
+  bleibt der Teilbeitrag. `templateId` bezeichnet im Regionalmodus das lokale, hashgeprüfte
+  Modellprofil; dessen Koeffizienten sind für das neue Gebiet **nicht kalibriert**.
+- **Districts und Netze:** Deterministische Zusammenfassung auf höchstens `maxDistricts=100`
+  bewohnte Districts; leere interne Zonen behalten ihre Flächen über die Zuordnung zu einem
+  Nachbardistrict. Personen und private Pkw bleiben in Summe erhalten. Flächen stammen aus
+  der projizierten Polygonunion. Auto-/Rad-/ÖV-Netze sind vollständige ungerichtete Graphen
+  zwischen repräsentativen Zonen aus vorhandenen OD-Matrizen; Fußmatrizen übernehmen die
+  Zeit und die neu gespeicherte `PED_DIS` in Metern, Export in km. Dies ist kein physisches
+  Straßennetz; native kürzeste Wege können von den Eingabematrizen abweichen.
+- **KBA-Anbindung:** `mobileCity.useRegionalFleet=false` standardmäßig. Opt-in nutzt die
+  gepinnte FZ-27.17-Tabelle vom 01.07.2026 (10.745 Gemeindezeilen), BKG-VG250-Geometrien
+  und eindeutige Kreis-/Gemeindenamen-Zuordnung. Private Bestände werden nach Schnittfläche
+  übertragen; innerhalb jeder Gemeinde wird gleichmäßige Pkw-Dichte angenommen. Quelle,
+  Datenstand, Hashes und Abdeckung stehen in `fleet-provenance.json`. BEV zählt elektrisch;
+  PHEV bleibt im Bericht separat und zählt im binären Zielmodell nicht zu BEV.
+- **Lücken bleiben sichtbar:** `electricShare=null` bedeutet unbekannt, `0` ist eine
+  ausdrückliche Nullannahme. Die manuelle Vorgabe füllt nur fehlende Regionalwerte auf.
+  Außerhalb Deutschlands oder vor dem KBA-Datenjahr ist eine solche Vorgabe erforderlich.
+  Beim Regionalpaket stoppt ein fehlender Anteil für eine Zone mit Pkw den Export; beim
+  Vorlagenmodus bleibt der Referenzanteil erhalten und wird als Fallback ausgewiesen.
+- **Modellannahmen:** `transitVehiclesPer1000=1` ist nur der sichtbar freigegebene Fallback,
+  `settlementAreaShare=0.5`, konstante
+  Bestände/Wegehäufigkeiten einschließlich zweier Initialisierungsjahre. Bezugsjahr
+  2018–2048, Horizont höchstens zehn Folgejahre bis 2050. Bei verfügbarem regionalen oder
+  hochgeladenen GTFS stammen Transitnetz, Frequenzen und Spitzenflotte aus einem expliziten
+  repräsentativen Werktag. Öffentliche Ladepunkte sind ohne gewählte BNetzA-Automatik oder
+  Nutzervorgabe unbekannt. Carsharing-Flotte und -Mitglieder können als konstante
+  Szenarioannahmen eingegeben werden; sonst gilt die ausdrücklich ausgewiesene Nullannahme.
+  Umlandbevölkerung und Altersstruktur können aus einem einstellbaren Zensus-Pufferring
+  stammen oder manuell vorgegeben werden; die zweckspezifischen eingehenden Wegeanteile sind
+  weiterhin ausdrückliche Annahmen. Ohne vollständigen Satz bleiben externe Zonen reine
+  Zielanker. Keine Logistik. Finanz-/Netzlängenansätze werden pro Kopf
+  aus dem Basisjahr und Untersuchungsgebiet des Profils übertragen, nicht aus sparse
+  Zukunftswerten oder Umland. Regional fremde Governance-Maßnahmen werden nicht kopiert.
+  Zu-/Abgangsparameter, Saisonticketrate und weitere Koeffizienten bleiben Profilannahmen.
+- **Paket und Schutz:** Provenienz nennt Profil-/Matrix-Hashes, Aggregation, Quellen und
+  Annahmen; ein vorhandener Zensus-Strukturbericht wird mit verpackt. Fehlende Matrizen,
+  falsche IDs, nicht endliche/negative Impedanzen sowie bekannte native Null-Divisoren
+  verhindern die Veröffentlichung. Ein zuvor erfolgreicher Export bleibt bei Fehlern
+  erhalten. Native Modellgrenzen: positive Pkw-Gesamtzahl, Erwachsene und Wege erforderlich;
+  Districts mit 1 bis unter 2 Pkw je Einwohner werden wegen einer Division durch null im
+  nativen dritten Simulationsjahr abgelehnt, ohne die Daten still zu ändern.
+- **Bedienung:** Für den minimalen Pfad MobileCity wählen → „Rudimentären MobileCity-Export
+  konfigurieren“ → Region und Einwohnerzahl prüfen → „MobileCity-Export erzeugen“ → ZIP und
+  Herkunftsbericht herunterladen. Der Schnellstart beschränkt auf zwölf Districts, verwendet
+  Luftlinienmatrizen, modellierten ÖV, eine explizite Nullannahme für BEV und kein Umland.
+  Beim Generieren wird der sichtbare Szenariostand zuerst gespeichert. Der manuelle Ausbaupfad
+  bleibt Regionalpaket → KBA oder BEV-Annahme → Districtzahl/ÖV/Siedlung → optionale native
+  Prüfung. Fehlendes Modellprofil oder fehlende BEV-Grundlage werden vor dem Queueing mit einer
+  konkreten Meldung abgewiesen. Das lokale Profil muss wie oben vorbereitet sein; ein erfolgreicher
+  Exportstatus allein ist keine Simulationfreigabe.
+- **Verifiziert:** Ein Berliner Ausschnitt außerhalb der Referenzgeografie, neun interne
+  Zonen einschließlich einer leeren Zone, 8.000 Personen und 3.886 Pkw: ein und vier
+  Districts, 0 bzw. 3 % BEV. Beide Pakete im echten ConfigTool importiert, binär neu geladen
+  und **2026–2036** simuliert; keine Fehler/nicht endlichen Zellen. Bestände und BEV-Anteile
+  im Bezugsjahr exakt bzw. innerhalb numerischer Toleranz übernommen. Details und Grenzen
+  im [Validierungsbefund](05-validierung.md#mobilecity-regionalpaket-2026-09-22).
+
+<a id="mobilecity-naechste-schritte"></a>
+
+### Konzept: vom Regional-Basispaket zum belastbaren Gebietsmodell (2026-09-22)
+
+**Ziel:** Für einen Kartenausschnitt ein technisch geprüftes MobileCity-Paket erzeugen,
+bei dem der Nutzer erkennen kann, welche Größen beobachtet, abgeleitet, angenommen oder
+noch unbekannt sind. „Beliebiges Gebiet“ bezeichnet zuerst die unabhängige Geografie;
+amtliche Automatik ist zunächst auf Deutschland begrenzt. Andere Länder benötigen
+regionale Quellenadapter oder ausdrücklich gewählte Profile und Nutzervorgaben.
+
+**Architektur:** Die bestehenden Exportmodi bleiben erhalten. Fachliche
+Quellenadapter liefern gemeinsame, eingefrorene Regionaldaten an den Exporter; sie
+schreiben nicht unmittelbar Ziel-CSV-Dateien. Jeder Wert führt Einheit, Bezugsdatum,
+räumlichen Bezug, Abdeckung, Ableitung und Quellhash. Manuelle Annahmen und Messwerte
+werden getrennt gespeichert. Für wiederholte Läufe werden dieselben Quellsnapshots
+verwendet; Aktualisierung erfolgt bewusst, nicht unbemerkt beim Wiederholen eines Jobs.
+Die weiteren Bausteine werden einzeln hinter standardmäßig deaktivierten Optionen integriert.
+
+| Reihenfolge | Arbeitspaket | Konkretes Ergebnis und Abnahme |
+|---|---|---|
+| **✅ 1 – Datenübersicht und Prüfstatus** | Aufgelöste Werte und Lücken vor dem Export im Studio zeigen; `automatisch`, `manuell überschreiben` und `Fallback bei Lücke` ausdrücklich unterscheiden. Quellstand je Lauf einfrieren. Native Prüfung optional als eigener Job-Nachlauf mit separatem Status anbinden. | Umgesetzt: Nutzer sieht Herkunft und fehlende Pflichtdaten; Änderung von Region/Jahr/Konfiguration markiert das Ergebnis als veraltet. CSV-Erzeugung und native Prüfung besitzen getrennte Status. Quellenausfall, Cache-Wiederholung, manueller Wert und Prozessfehler sind getestet. |
+| **🟡 2 – Reales ÖV-Angebot** | Vorhandene GTFS-Feeds für Haltestellen, Fahrten, Kalender und repräsentativen Werktag auf die MobileCity-Netze abbilden. Frequenz, Umstiege und Zu-/Abgang explizit definieren; Nachfrage- und Angebotsjahr getrennt führen. | Adapter und nativer Netz-/Simulationsnachweis umgesetzt. Ausstehend: systematische Abnahme an Stadt-, Land- und Randlage sowie Relationsvergleich. Fehlender Feed ist sichtbar; synthetischer ÖV ist eine eigene Szenariofreigabe. |
+| **✅ 3 – Ladepunkte und weitere Flotten** | BNetzA-Ladesäulenregister: Standorte, Inbetriebnahmejahr, Ladepunkte und Leistung räumlich zuordnen. Zielvertrag und zeitliche Fortschreibung im nativen Kern nachweisen. Sharing-Angebot nur aus belastbarer Quelle oder UI-Modellierung ergänzen. | Ladepunktadapter, UI, Quellsnapshot, Herkunftsnachweis und native Übernahme sind umgesetzt. `REGchargers` zählt öffentliche Ladepunkte. Unbekannte Versorgung ergibt keinen stillen Nullwert; Folgejahre nutzt MobileCity endogen. Carsharing-Fahrzeugdichte und Mitgliederanteil sind editierbare, im Inventar ausgewiesene Annahmen und nativ geprüft. Eine automatische Sharing-Quelle bleibt eine optionale Verbesserung. |
+| **🟡 4 – Umland und Außenbeziehungen** | Puffergebiet mit eigener Bevölkerung und konsistenten Districts; BA-Pendlerdaten für Arbeitsbeziehungen verwenden. Einkauf/Freizeit separat modellieren. Bestehende externe Zielanker sind ohne explizite Bevölkerung keine Umland-Districts. | Manuelle Modellierung, automatische Zensus-Puffergeometrie/-bevölkerung/-altersstruktur und native Hinwegsemantik sind umgesetzt. Offen: BA-Arbeitsanteile, getrennte Quellen für Bildung/Einkauf/Freizeit sowie Rand-/Größentests. |
+| **5 – Regionale Profile und Jahresverläufe** | Referenzkoeffizienten fachlich isolieren; Kosten, Emissionen, Finanzen, Motorisierung und Verkehrsmittelwahl mit Geltungsbereich dokumentieren. Nutzer kann Trends und Maßnahmen modellieren; Zensus-2022-Struktur und KBA-2026-Bestand nur mit ausgewiesener Annahme fortschreiben. | Basisfall und mindestens eine verständliche Maßnahme zeigen plausible Richtung/Sensitivität. Keine TRAMIGO-District- oder Netz-ID im freien Regionalprofil. Regionale Daten werden nicht als bereits kalibrierte Koeffizienten ausgegeben. |
+| **6 – Abnahme und Übergabe** | Technische Regressionen über drei deutsche Regionstypen, einen Ausschnitt außerhalb Deutschlands mit manuellen Angaben, kleine/angeschnittene Gebiete und Quelldatenlücken. Anschließend Abnahme in tatsächlicher MobileCity-Anwendung mit Takomat. | Gleiche Inputs ergeben gleiches Paket; Summen, Referenzen und Jahre konsistent. Import, binäres Zurücklesen, Bestands-/BEV-Vergleich und endliche native Ergebnisse über den gesamten exportierten Horizont. Fachliche Abnahme bleibt zusätzlich erforderlich. |
+
+**Arbeitspaket 1 umgesetzt (2026-09-22):** Vor dem Lauf zeigt das Studio elf Datenbereiche
+mit Status, Auflösungsweg und konkreter Lücke. Nach dem Lauf ist derselbe Vertrag als
+`mobilecity/data-inventory.json` im Paket fixiert. Er enthält die effektiven Werte,
+Abdeckungen, Bezugsstände und ein kanonisches Eingabeabbild. Die beim KBA-Verschnitt
+tatsächlich verwendete BKG-Antwort wird zusätzlich als `mobilecity/fleet-boundaries.geojson`
+gesichert; Zensus-/KBA-Stände und Hashes werden referenziert. Ein geändertes Gebiet, Jahr,
+Zonierungs- oder MobileCity-Parameter markiert das angezeigte Paket als veraltet.
+
+Die neue, standardmäßig ausgeschaltete Stufe `MobileCity-Validierung` läuft direkt nach dem
+Export. Sie startet `scripts/validate-mobilecity.py` mit der lokalen .NET-Laufzeit und einer
+isolierten ConfigTool-Kopie, bewahrt Bericht und vier native Logs unter
+`mobilecity-validation/` und unterscheidet `passed`, `failed` und `skipped`. Fehlende lokale
+Werkzeuge stoppen andere Exporte nicht; ein gestarteter, aber fehlgeschlagener nativer Lauf
+stoppt den Job. Bei jedem neuen Lauf ersetzt ein expliziter Status einen älteren Bericht.
+
+**Arbeitspaket 2, technischer Adapter umgesetzt (2026-09-22):** `GtfsSource` erzeugt für
+MobileCity einen räumlichen Volltageszuschnitt; ein Upload hat als bewusste Quellenwahl
+Vorrang. `MobileCityGtfsAdapter` berücksichtigt `calendar.txt`, `calendar_dates.txt` und
+`frequencies.txt`, wählt den mittleren Mittwoch mit maximalem aktivem Fahrtenangebot und
+führt dieses Angebotsdatum getrennt vom Nachfrage-Bezugsjahr. Plattformen werden über
+`parent_station` zusammengefasst. Fahrzeit ist die gewichtete planmäßige Zeit, Entfernung
+die Haltestellen-Luftlinie in km. Weil der native Graph eine Kante selbst bidirektional
+macht, wird je Haltestellenpaar die maximale Richtungsfrequenz in Fahrten/Werktag verwendet.
+Die Route-Type-Codes entsprechen der beigefügten Network Pipeline. Transfers und je ein
+District-Zugang an einem inneren Punkt der jeweiligen Geometrie nutzt Fußmodus 9;
+`freq=138` vermeidet dort den sonst fälschlich
+angewendeten Wartezeitaufschlag des 16-Stunden-Modelltags. Der Quellfeed, Hash,
+Gültigkeitszeitraum, Verkehrstag, Ableitungsregeln und Kennzahlen liegen in
+`gtfs-feed.zip` und `transit-provenance.json`.
+
+Der kontrollierte Vier-District-Nachweis wurde im echten ConfigTool importiert, ohne
+NaN/Infinity geroutet und für 2026–2028 simuliert. Der aktuelle KVV-Feed für Rastatt ergab
+am ausgewählten 01.07.2026 722 Fahrten, 544 Knoten der größten Komponente, 673 Servicekanten,
+210 Transfers sowie je 29 Bus- und Schienenfahrzeuge in der Fahrplan-Spitze. Die ausstehende
+fachliche Abnahme über drei Regionstypen bleibt Teil von Arbeitspaket 2.
+
+**Arbeitspaket 3, Ladepunkte und Carsharing umgesetzt (2026-09-22):** Der native Tabellenvertrag
+bezeichnet `numberOfChargingStations` trotz des Feldnamens ausdrücklich als gesamte Zahl
+der Ladepunkte. Ein gepinnter BNetzA-Snapshot vom 01.09.2026 wird hashgeprüft eingelesen;
+116.422 veröffentlichte Einrichtungen enthalten 209.096 öffentliche Ladepunkte. Der Adapter
+ordnet deren Koordinaten den tatsächlichen District-Geometrien zu, summiert `Anzahl Ladepunkte`
+und schreibt den regionalen Ausschnitt mit Herkunftsnachweis ins Paket. Die
+Inbetriebnahmedaten liefern eine kumulative Historie der im aktuellen Snapshot noch
+geführten Anlagen und sind daher als Untergrenze gekennzeichnet. Nach dem letzten
+beobachtbaren Jahr bleiben die Zellen leer, damit der native Ausbaupfad greift. Eine
+Nutzervorgabe je 1.000 Einwohner ist als alleinige Annahme oder Quellenfallback verfügbar.
+Der ConfigTool-Beleg hat die vier exportierten Bezugsjahrswerte exakt übernommen und die
+leeren Folgejahre 2027–2028 endlich simuliert.
+
+Für Carsharing liest der native Kern `carsharing.member` als gebietsweite absolute
+Mitgliederzahl und `carsharing.stock.total` als Fahrzeuge je District. Beide Größen wirken
+direkt auf die Moduswahl. Das Studio bietet deshalb `carsharingMemberShare` und
+`carsharingVehiclesPer1000` als explizite Annahmen an; der Export rechnet sie anhand der
+synthetisierten Bevölkerung um und hält sie über den Horizont konstant. Der native Beleg
+übernahm 100 Mitglieder sowie je 5 Fahrzeuge in vier Districts für 2026–2028 exakt und
+erzeugte 92 Ergebnisdateien ohne Prozessfehler oder nicht endliche Zellen.
+
+Eine automatische Quelle wurde bewusst nicht vorgetäuscht: Das
+[bcs-Städteranking 2024](https://carsharing.de/carsharing-staedteranking) enthält
+Fahrzeugzahlen für deutsche Kommunen ab 50.000 Einwohnern, ist damit aber weder räumlich
+vollständig noch eine Quelle für Mitgliederzahlen. Die
+[ECSS-Schnittstelle](https://carsharing.de/themen/carsharing-schnittstelle) standardisiert
+Stations- und Verfügbarkeitsdaten einzelner Anbieter, stellt jedoch keinen flächendeckenden
+öffentlichen Bestandsdienst dar. Beide bleiben Kandidaten für einen späteren, getrennt
+gekennzeichneten Quellenadapter.
+
+**Arbeitspaket 4, manueller Umlandvertrag umgesetzt (2026-09-23):** Der native
+`tripShareToStudyArea`-Vertrag wurde im Reader und Rechenkern geprüft. Er beschreibt je
+Umland-District und Zweck den Anteil der Wege von dort in das Untersuchungsgebiet. Die
+anschließende Verteilung auf Binnenziele gewichtet deren Bevölkerung und Attraktivität.
+Er ist damit kein Anteil ausgehender Wege der Binnenbevölkerung.
+
+Das Studio nimmt optional eine gesamte `surroundingPopulation` und vier Anteile für Bildung,
+Arbeit, Einkauf und Freizeit in `[0,1]` auf. Sobald eine Umlandbevölkerung gesetzt ist, sind
+alle vier Anteile und aktivierte Außenbeziehungen Pflicht. Der Export verteilt die Personen
+deterministisch auf bis zu acht vorhandene Richtungsanker, kennzeichnet sie als
+`districtType=0` und erhält die Gesamtsumme exakt. Altersstruktur, Pkw-Dichte und BEV-Anteil
+werden als sichtbare Annahme aus dem Untersuchungsgebiet extrapoliert. Study-Area-Zähler,
+Carsharing-Mitglieder, Transitflotte und Finanzskalierung bleiben auf die Binnenbevölkerung
+begrenzt. `data-inventory.json`, `summary.json` und `provenance.json` weisen Umlandzahl,
+Districtzahl, Anteile und Ableitungen aus.
+
+Der native Drei-Jahres-Beleg verwendete vier Binnen- und acht Umland-Districts mit insgesamt
+8.000 Umlandbewohnern. Alle 32 Beiträge aus acht Districts und vier Zwecken wurden im
+Bezugsjahr innerhalb numerischer Toleranz exakt im Rechenkern wiedergefunden; 92 Ergebnis-
+CSV-Dateien entstanden. Dabei wurde ein Zielmodellfehler sichtbar: Hat ein Outer-District in
+zwei Jahren einen Transit-Fahrkartenindex von null, dividiert `CAL6010_SOC` bei der
+Saisonticket-Fortschreibung `0/0`. Die isolierte Prüfung setzt für diesen mathematisch
+unveränderten Fall den Elastizitätsbeitrag auf null; danach bleiben 2026–2028 endlich. Der
+Patch ist im Prüfbericht gehasht und muss mit Takomat geklärt werden. Er verändert weder das
+Exportpaket noch positive Fahrkartenindizes.
+
+**Automatische Zensus-Seite umgesetzt (2026-09-23):** `autoSurrounding` bildet in EPSG:3035
+einen Ring von `surroundingBufferKm` um den Kartenausschnitt und schneidet ihn in acht
+überlappungsfreie Richtungssektoren. Die gepinnten 100-m-Raster liefern Einwohner und
+Altersstruktur je Sektor; eine optionale manuelle Gesamtsumme skaliert die beobachteten
+Gewichte ohne Bilanzverlust. Richtungsanker werden an Ausschnitt und Puffer angepasst, damit
+Netzreferenzpunkt und Outer-Geometrie auch bei großen Gebieten zusammenpassen.
+`surrounding-provenance.json` enthält Quellhashes, Stichtag und Sektorwerte.
+
+Die reale Rastatt-Sonde für 48,82–48,90° N / 8,15–8,25° E ergab bei 10 km Puffer
+**202.412 Einwohner** und **5.797 Altersrasterzellen**. Das daraus erzeugte Paket mit vier
+Binnen- und acht Outer-Districts bestand Import, binäres Zurücklesen und 2026–2028:
+**92 Ergebnis-CSVs, 0 Fehler, 0 nicht endliche Zellen und 81/81 Beitragsprüfungen**, darunter
+32/32 Umland-Zweckbeiträge im Bezugsjahr. Lokale Evidenz:
+`validation/mobilecity/auto-surrounding-spike/native-v1/`.
+
+BA-Pendlerdaten decken weiterhin nur Arbeitswege ab und dürfen nicht als Ersatz für Bildung,
+Einkauf und Freizeit verwendet werden. Die Automatisierung dieser Zweckanteile ist der nächste
+Teil von Arbeitspaket 4.
+
+**Entscheidungen vor fachlicher Freigabe:** Die technische Einheit der Ladeinfrastruktur
+ist durch Referenztabellen, Reader, Rechenkern und nativen Beitragsnachweis geklärt. Takomat
+muss noch den fachlichen Einsatzbereich des öffentlichen Registers, den Umgang mit
+synthetischen Verbindungsnetzen und den Maßnahmenvertrag bestätigen. Die nativen Rechenfehler bleiben separat dokumentiert; Export-Grenzen dürfen
+nicht durch erfundene Einwohner, Pkw oder Wege kaschiert werden. Für Logistik wird später
+ein eigener Vertrag für Mengen, Depots, Fahrzeuge und Touren benötigt; dieses Konzept
+behauptet noch keinen bestehenden MobileCity-Logistikexport.
+
+### MobileCity aus Region, Datenquellen und Nutzervorgaben — Ausbauziel (2026-09-17)
+
+**Nutzervorgabe:** Nach Auswahl eines Kartenausschnitts sollen ableitbare Größen automatisch
+vorliegen. Regionale Statistiken ergänzen die Daten; verbleibende Annahmen lassen sich im
+Studio modellieren. Ziel ist ein eigenständiger Export für die gewählte Region. Die folgende
+Übersicht trennt umgesetzte Bausteine vom weiterhin geplanten Ausbau.
+
+**Quellenrecherche (2026-09-18):** Zensus-Alters- und Haushaltsgrößenraster sowie KBA
+FZ 27.17 wurden erfolgreich heruntergeladen und geprüft. Priorität haben die regionalen
+Alters-/Haushaltsrandwerte und private Pkw-Bestände mit getrennten BEV-/PHEV-Anteilen.
+Weitere Kandidaten: Bevölkerungsfortschreibung, BNetzA-Ladepunkte, BA-Pendler und
+MiD-2023-Vergleichswerte. Konkrete Zugänge, Formatnachweise und Einschränkungen stehen im
+[Quellenbefund](05-validierung.md#mobilecity-datenquellen-2026-09-18--regionale-struktur-und-pkw-antriebe-recherchiert).
+
+| Bereich | Vorgesehene Quelle und Eingriff | Aktueller Stand / nächste Ergänzung |
+|---|---|---|
+| Districts, Flächen, Lage | Kartenausschnitt und Zonierung | Regionalexport erzeugt eigene, durchgängig konsistente Districts; maximal 100 durch Aggregation. |
+| Einwohnerzahl und räumliche Verteilung | Automatisch Zensus; alternatives Raster oder manuelle Gesamtzahl | `CensusPopulationSource` liefert bereits das Zensus-2022-Bevölkerungsraster. Datenjahr und Szenariojahr getrennt halten; Fortschreibung als Annahme ausweisen. |
+| Alters- und Haushaltsstruktur | Zensus-2022-Altersklassen und Haushaltsgrößenraster; zusätzliche Haushaltstypen, gekennzeichnetes Profil als Fallback | Opt-in-Adapter und Gewichtung bestehender KIT-Haushalte umgesetzt; fehlende 6+-Haushalte, kleine Stichproben und zeitliche Fortschreibung bleiben Grenzen (siehe oben). |
+| Pkw-/Radnetze, Fußwege | OSM/Routing anhand der Region | Aggregierte Knoten/Links aus OD-Matrizen und Fußmatrizen umgesetzt; physische Netzabbildung und routingspezifische Abnahme offen. |
+| ÖV-Netz und Fahrzeiten | Regionaler GTFS-Feed mit explizitem Verkehrstag | Java-Adapter für Bus/Tram/Bahn, Frequenzen, Transfers, District-Zugänge, Quellsnapshot und Spitzenflotte umgesetzt; Drei-Regionen-Abnahme, Kapazitäten und regionale Tarife bleiben offen. |
+| Ziele und Attraktivität | OSM-POIs und regionale Strukturdaten; lokale Korrekturen | Bestehende Attraktivitäten fachlich auf MobileCity-Normalisierung abbilden; POI-Zahlen nicht ungeprüft als Arbeitsplätze behandeln. |
+| Umland und einströmende Nachfrage | Einstellbares Umland, Bevölkerung und verfügbare Pendlerdaten | Bis zu acht `Outer`-Districts mit exakter Bilanz; Geometrie, Bevölkerung und Altersstruktur automatisch aus einem metrischen Zensus-Pufferring oder manuell. BA-Arbeitsanteile bleiben offen; Pendler decken die anderen Zwecke nicht ab. |
+| Pkw-Bestand, Elektroanteil, Sharing und Ladeinfrastruktur | KBA FZ 27.17 für private Pkw/BEV/PHEV; BNetzA für öffentliche Ladepunkte; Sharing-Profil und UI-Vorgaben | KBA/BKG-Zuordnung und privater BEV-Anteil angebunden; PHEV separat diagnostiziert. BNetzA-Ladepunkte einschließlich manueller Ersatzannahme angebunden und nativ geprüft. Carsharing-Fahrzeugdichte und Mitgliederanteil sind editierbar, werden konstant exportiert und nativ geprüft; bcs/ECSS sind wegen unvollständiger räumlicher bzw. organisatorischer Abdeckung noch keine automatische Quelle. |
+| Kosten, Emissionen und Verhaltensparameter | Versioniertes MobileCity-Modellprofil; erweiterte Bearbeitung | Regional unabhängige Parameter aus Referenzen isolieren und auf Übertragbarkeit prüfen. Bestehende Referenzfehler bleiben zu beheben. |
+| Entwicklungen und Maßnahmen | Nutzer modelliert Jahreswerte bzw. Verlauf | Historie, Datenjahr, Beitragsjahr und Simulationsstart unterscheiden; keinen heutigen Wert still als historische Beobachtung ausgeben. |
+
+**Bedienung im Studio:**
+
+1. Region wählen; vorhandene Datenquellen und ihre Abdeckung anzeigen. Netzaufbereitung
+   beim Generieren ausführen, nicht bei jeder Bewegung des Kartenausschnitts.
+2. Unter „MobileCity – Daten und Annahmen“ die Bereiche Bevölkerung, Verkehr/Umland,
+   Flotten/Infrastruktur und Entwicklung anbieten. Modellkoeffizienten unter „Erweitert“.
+3. Je Wert effektiven Wert, Einheit, Herkunft, Datenjahr und Status anzeigen:
+   `Quelldaten`, `abgeleitet`, `Modellannahme`, `manuell` oder `fehlt`.
+4. Manuelle Vorgaben haben Vorrang; „Automatisch“ entfernt die Vorgabe. Ein leeres Feld
+   bedeutet fehlend, eine explizite Null bleibt ein gültiger Wert, soweit fachlich zulässig.
+   Für jede Größe gilt eine eigene Quellenkette; es gibt keinen pauschalen Zensus-Fallback.
+5. Bei Regionswechsel automatische Ableitungen erneuern. Gebietsbezogene Überschreibungen
+   als prüfbedürftig markieren, statt sie unbemerkt auf andere Districts zu übertragen.
+   Fehlende Pflichtangaben verhindern einen als vollständig bezeichneten Export und
+   erscheinen mit einer konkreten Handlungsmöglichkeit.
+
+**Umsetzung in überprüfbaren Schritten:**
+
+1. Auflösung von Quelldaten, versionierten Profilen und Nutzervorgaben samt UI und
+   Herkunftsnachweis durchgängig für Bevölkerung und Pkw-/Elektrobestand umsetzen.
+   Vorhandene Populationsfelder und Fahrzeugkonfiguration wiederverwenden, widersprüchliche
+   Parallelkonfigurationen vermeiden. Die Werte müssen bis zur MobileCity-Ausgabe wirken.
+2. Eigenständige Districts, Pkw-/Rad-/Fußnetze und GTFS-ÖV in einem kleinen Testgebiet
+   außerhalb der TRAMIGO-Geometrie nachweisen. Die Integration des ÖV-Datenzugriffs bleibt
+   unabhängig von einer Auswahl des Zielmodells SUMO.
+3. Umland, regionale Strukturquellen, weitere Bestände und Szenarioverläufe ergänzen.
+   Das Logistikformat folgt, sobald der Zielvertrag vorliegt.
+
+**Abnahmeziel:** Eine neue Region lässt sich ohne TRAMIGO-Gebietsdaten vollständig
+exportieren und mit dem MobileCity Config Tool prüfen. Keine fehlenden Pflichtblöcke,
+ungültigen Netzbezüge oder nichtendlichen Pflichtwerte. Änderungen im Studio erscheinen
+im Export und nativen Ergebnis; Rücksetzen auf Automatik sowie Regionswechsel werden
+geprüft. Identische Quellstände, Profile und Seeds reproduzieren die Eingaben. Bestehende
+Szenarien behalten ihren bisherigen Exportmodus bis zur expliziten Auswahl des neuen Pfads.
+
 ### Phase 5 – Externe Klärungen (nicht-technisch, parallel)
+- **MobileCity-Zielformat erneut geprüft (Ausgangsbefund 2026-09-15):** Die TRAMIGO-Beispiele
+  und der mitgelieferte C#-Importer bestätigen den aggregierten Ansatz. Der damalige Export
+  lieferte sechs von 25 gelesenen CSV-Dateitypen; fehlende Dateien/Teilblöcke werden nicht
+  automatisch durch Defaults ersetzt. Der neue Regionalpfad erzeugt inzwischen alle 25
+  vertraglich erfassten CityConfig-Dateien, konsistente Districts/Polygone und Netze und
+  besteht den nativen Import-/Simulationslauf. Regionalisierung und fachliche Kalibrierung
+  der aus dem versionierten Profil übernommenen Modellparameter bleiben Arbeitspaket 5.
+  Der mitgelieferte TRAMIGO-Importsatz ist eine mögliche Basis, enthält aber noch
+  Konsistenzfehler. **Details und Messnachweise:**
+  [Zielformatprüfung in docs/05](05-validierung.md#mobilecity-zielformat-tramigo-2026-09-15--teil-export-bestätigt-vollimport-offen).
 - **Takomat:** MobileCity-Import finalisieren (Netz-/TEC-/MOD-Tabellen, Messagepack,
   vollständiger Study-Area-Import). **Antworten vom 2026-07-03:**
   - **District-IDs:** synthetische IDs (SYN-NNN) sind zulässig – NUTS3-Optik war nur Lesbarkeit,
@@ -1966,3 +2362,22 @@ und Pipeline-E2E-Tests sowie ein vorregistrierter Drei-Seed-Lauf. Die Außenante
 Moduskalibrierung und die Übertragung auf weitere Regionen jedoch noch offen.
 Die abschließenden Repository-Gates bestanden mit 117 Backend-Tests ohne Fehler sowie einem
 erfolgreichen Angular-Produktionsbuild.
+
+## J. Fahrzeugkatalog und externe Konfigurationen — ENTWURF (2026-09-17)
+
+Die externe `vehicle.json` mit Diesel-Lieferwagen und elektrischem Lastenrad wurde syntaktisch
+und gegen den aktuellen Fahrzeugpfad geprüft. Der daraus abgeleitete
+[Fahrzeugtypen- und Schnittstellenentwurf](03-architektur.md#fahrzeugtypen-und-externe-fahrzeugkonfigurationen--entwurf-2026-09-17)
+enthält die Feldbewertung, das Metamodell, Standardvorlagen, den vorgesehenen JSON-/REST-Vertrag
+und den gestuften Wirkungsnachweis für die Zielmodelle.
+
+**Entscheidungsvorschlag:** gemeinsame Fahrzeugtypklasse mit komponierten Profilen;
+Antriebsvarianten getrennt typisieren, Fahrzeugzustand und Flottenzuordnung eigenständig
+führen. Konfigurierbarkeit und tatsächliche Simulationswirkung werden je Adapter ausgewiesen.
+
+**Verifiziert:** JSON-Parsing einschließlich Prüfung auf doppelte Schlüssel und nicht-endliche
+Konstanten; zwei eindeutige IDs; beide angegebenen Beladungen innerhalb ihrer Gewichts- und
+Volumenkapazität. Codeprüfung von `Scenario`, `PopulationGenerator`, `LegacyExportGenerator`,
+`SumoRunner` und `MobileCityExporter`; Abgleich mit offizieller SUMO-Dokumentation.
+**Noch nicht umgesetzt:** Fahrzeugkatalog, Import-API, neue Klassen und Laufzeitanbindung.
+Es wurden weder neue Simulationsparameter aktiviert noch Simulationsversuche durchgeführt.

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "synthesis-vehicle-configuration-v1",
+  "application": "sumoTraffic",
+  "allowBehaviorApproximation": false,
+  "requiredCapabilities": [
+    "traffic"
+  ],
+  "vehicleTypes": [],
+  "catalogRefs": [
+    {
+      "id": "standard.pkw.elektro",
+      "version": "1"
+    },
+    {
+      "id": "standard.lastenrad.elektro",
+      "version": "1"
+    }
+  ],
+  "trafficAssignments": [
+    {
+      "role": "car",
+      "typeRef": {
+        "id": "standard.pkw.elektro",
+        "version": "1"
+      },
+      "share": 1
+    },
+    {
+      "role": "cargoBike",
+      "typeRef": {
+        "id": "standard.lastenrad.elektro",
+        "version": "1"
+      },
+      "share": 1
+    }
+  ],
+  "fleetAssignments": [],
+  "initialVehicles": []
+}

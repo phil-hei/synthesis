@@ -212,6 +212,8 @@ function scenario(id: string, name: string): Scenario {
     region: null,
     zoning: { cellSizeMeters: 500, maxZones: 600, mode: 'grid' },
     targetModels: ['logitopp'],
+    referenceYear: 2026,
+    mobileCity: { useTemplate: false, templateId: 'tramigo-v2' },
     population: {
       totalPersons: null,
       personsPerKm2: 1000,

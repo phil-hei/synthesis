@@ -23,24 +23,25 @@ Prozesse** (JVM/Gradle, SUMO-Binaries, LLM-Server) – nicht eingebettet (u. a. 
 von logiTopp).
 
 ## 3. Die Generierungs-Pipeline (Reihenfolge, Input → Output)
-Eine Generierung durchläuft 14 Stufen. „A/B-gated" = läuft nur, wenn die Achse gewählt ist.
+Eine Generierung durchläuft 15 Stufen. „A/B-gated" = läuft nur, wenn die Achse gewählt ist.
 
 | # | Stufe | Was passiert | Wichtigste Artefakte |
 |---|---|---|---|
 | 1 | Zonierung | Region → freies Bbox-Raster, flexibel EPSG:3035-ausgerichtetes Raster oder amtliches INSPIRE-Raster; Zellgröße wird an das szenariospezifische Zonenlimit angepasst | `zones.csv` |
 | 2 | OSM-Daten (POIs) | Szenario-Snapshot oder Overpass: Shops/Amenities/… und bevölkerte `place`-Nodes (synthetischer Fallback nur beim Live-Pfad) | `uploads/osm-data.json` (optional), Provenienz in `manifest.json` |
 | 3 | Attraktivitäten + Pendleranker | Ziel-Attraktivität je Zelle; optional koordinatenbasierte Pendler-OD, externe Arbeitsortanker auf reale gewichtete Ziele verschoben; diagnostischer OSM-Außenzielkandidat mit automatischem OD-Gegencheck | `attractivities.csv`, `population/commuters.csv`, `population/external-destination-candidates.json` |
-| 4 | Bevölkerungssynthese | Gesamtzahl/Verteilung: manuell → alternatives Upload-Raster → hashgeprüfter Destatis-Zensus 2022 → OSM → Dichte; danach Personen/Haushalte (KIT-Sample oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv`; Provenienz in `manifest.json` |
+| 4 | Bevölkerungssynthese | Gesamtzahl/Verteilung: manuell → alternatives Upload-Raster → hashgeprüfter Destatis-Zensus 2022 → OSM → Dichte; danach Personen/Haushalte (KIT-Sample, optional experimentell nach regionalen Zensus-Anteilen gewichtet, oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv`; optional `population/census-structure.json`, Provenienz in `manifest.json` |
 | 5 | **Aktivitätenpläne (Achse A)** | Wochenpläne je Person aus `actiTopp` \| `GTA-LLM` \| `Template` | `activity.csv` |
 | 6 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle; Netzquelle Szenario-OSM-XML → Serverdatei → Overpass, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
 | 7 | Logistik | Depots, Packstationen, Paketnachfrage sowie optionale Kundenretouren als Pickup-Nachfrage | `distribution-centers.csv`, `cepsp-shares.csv`, `parcel-demand-config.yaml` |
 | 8 | Legacy-Export | Umwandlung in das logiTopp-Legacy-Format | `legacy/…` |
-| 9 | **MobileCity-Export (B)** | District-aggregierte Config-Tabellen inkl. privatem Pkw-Bestand | `mobilecity/` (6 CSV + Shapefile + `summary.json`) |
-| 10 | Manifest | Lauf-Metadaten inklusive SHA-256 der OSM-Kampagneneingabe und erzeugten Attraktivitäten | `manifest.json` |
-| 11 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete, experimentell inkl. Kundenretouren als Abholaufträge (+ optional Kalibrierungsschleife); normalisiert die simulierten Personenwege einmal in den nativen Demand-Vertrag | `demandsimulationResult.csv`, `demand/{metadata.json,person-trips.csv,legs.csv,zone-flows.csv,od-flows.csv}`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
-| 12 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-, Rad- und Fuß-Trips** der Nachfrage + **Zustelltouren** (Lkw/Lastenrad) + optional **ÖV/Bus** (GTFS → `gtfs2pt.py`, intermodal); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp inkl. Bus) | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte) |
-| 13 | **Netz-Feedback (optional)** | Gleichgewichts-Schleife: Stau-Faktoren je Zonenrelation (1–3), **MSA-gedämpft** in die Pkw-Matrix → logiTopp entscheidet neu → SUMO erneut – bis Konvergenz (Δ<0,01, max. 3 Iterationen) | aktualisierte `CAR_TTC`-Matrizen + neue `kpis.json`/SUMO-Artefakte |
-| 14 | **LLM-Moduswahl (A, GTA 3c)** | LLM wählt Modus je Distanzband auf simulierten Trips | `simulation/llm-mode-choice.json` |
+| 9 | **MobileCity-Export (B)** | Teilbeitrag, TRAMIGO-Vorlage oder eigenes Regionalpaket mit OD-Verbindungsnetzen, regionalem GTFS, optionalem KBA-BEV-Anteil, öffentlichen BNetzA-Ladepunkten, expliziten Carsharing-Annahmen und optionalen manuellen oder Zensus-Pufferring-basierten Umland-Districts samt vier eingehenden Zweckanteilen; experimentell, unkalibrierte Profile | `mobilecity/` (6 bzw. 25 CSV-Familien, Shapefile, Dateninventar und Provenienz; vollständige Modi zusätzlich Governance und ZIP). [Grenzen und Ausbau](06-gta-integration-konzept.md#mobilecity-naechste-schritte) |
+| 10 | **MobileCity-Validierung (optional)** | Vollständiges Regional-/Vorlagenpaket im echten lokalen ConfigTool importieren, Binärdateien neu laden, Beiträge für Bevölkerung/Pkw/BEV/Ladepunkte/Carsharing/Umlandnachfrage prüfen und mindestens drei Jahre simulieren; fehlende Laufzeit wird sichtbar übersprungen | `mobilecity-validation/status.json`, optional `validation-report.json` und native Logs |
+| 11 | Manifest | Lauf-Metadaten inklusive SHA-256 der OSM-Kampagneneingabe und erzeugten Attraktivitäten | `manifest.json` |
+| 12 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete, experimentell inkl. Kundenretouren als Abholaufträge (+ optional Kalibrierungsschleife); normalisiert die simulierten Personenwege einmal in den nativen Demand-Vertrag | `demandsimulationResult.csv`, `demand/{metadata.json,person-trips.csv,legs.csv,zone-flows.csv,od-flows.csv}`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
+| 13 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-, Rad- und Fuß-Trips** der Nachfrage + **Zustelltouren** (Lkw/Lastenrad) + optional **ÖV/Bus** (GTFS → `gtfs2pt.py`, intermodal); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp inkl. Bus) | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte) |
+| 14 | **Netz-Feedback (optional)** | Gleichgewichts-Schleife: Stau-Faktoren je Zonenrelation (1–3), **MSA-gedämpft** in die Pkw-Matrix → logiTopp entscheidet neu → SUMO erneut – bis Konvergenz (Δ<0,01, max. 3 Iterationen) | aktualisierte `CAR_TTC`-Matrizen + neue `kpis.json`/SUMO-Artefakte |
+| 15 | **LLM-Moduswahl (A, GTA 3c)** | LLM wählt Modus je Distanzband auf simulierten Trips | `simulation/llm-mode-choice.json` |
 
 ## 4. Die KI-Pipeline (GTA) im Detail
 Das LLM läuft **lokal** über **Ollama** mit **Qwen2.5-7B-Instruct** (OpenAI-kompatible API). Zwei
@@ -61,7 +62,7 @@ person.csv → Persona je Person (Erwerbsstatus × Altersband × Geschlecht)
 - **Effizient:** z. B. 651 Personen → nur 18 LLM-Calls (~140 s). Fallback auf actiTopp, wenn LLM
   nicht erreichbar.
 
-**(b) LLM-Moduswahl (Stufe 14, GTA 3c)** – geerdet in Reisezeiten:
+**(b) LLM-Moduswahl (Stufe 15, GTA 3c)** – geerdet in Reisezeiten:
 
 ```
 demandsimulationResult.csv (distanceInKm) → Trips nach Distanzband bündeln
@@ -93,7 +94,8 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 - **SUMO:** `sumo/statistics.xml`, `summary.json` (Fahrzeuge nach PKW/Rad/Fuß/Lieferverkehr/ÖV,
   CO₂ je Fahrzeugtyp inkl. Bus), `congestion.geojson` (Netzlast)
 - **KI:** `llm-mode-choice.json`, `gta-personas.json` (Begründungen + Was-wäre-wenn)
-- **Export:** `mobilecity/*.csv` + `districts.shp/.shx/.dbf/.prj` (WGS84, districtID) · `manifest.json`
+- **Export:** `mobilecity/*.csv` + `districts.shp/.shx/.dbf/.prj` (WGS84, districtID),
+  `data-inventory.json`, GTFS-/KBA-/BNetzA-Quellsnapshots und Herkunftsberichte · `manifest.json`
 
 ## 6. Datenfluss-Skelett (für eine Grafik)
 

@@ -1,13 +1,12 @@
 package de.synthesis.generation.pipeline;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,17 +21,51 @@ import java.util.Map;
  * <p>Output under {@code artifacts/mobilecity/}: REGdistricts.csv, REGattractivity.csv,
  * POPinhabitants.csv, POPtrips.csv and the evidenced part of TECCarFleet.csv — in the
  * column structure of the MobileCity Config Tool import tables (see Network Pipeline /
- * Includes/StudyAreas). District ids are synthetic ({@code SYN-NNN}); for a real study
- * area they are replaced by NUTS3-coded ids.
+ * Includes/StudyAreas). District ids are synthetic ({@code SYN-NNN}) in contribution mode; template mode
+ * aggregates onto the reference district polygons and retains their identifiers.
  */
 public class MobileCityExporter {
 
-    private static final int BASE_YEAR = 2025;
+    private final int referenceYear;
+    private final de.synthesis.scenario.Scenario scenario;
+    private final Path templateRoot;
+    private final Map<String, Object> runSources;
+    private final MobileCityGtfsAdapter.Feed transitFeed;
+    private final MobileCitySurroundingSource.Result surrounding;
 
     private final List<Zone> zones;
+    private MobileCityFleetSource.Result fleet;
 
     public MobileCityExporter(List<Zone> zones) {
+        this(zones, new de.synthesis.scenario.Scenario(), null);
+    }
+
+    public MobileCityExporter(List<Zone> zones, de.synthesis.scenario.Scenario scenario, Path templateRoot) {
+        this(zones, scenario, templateRoot, Map.of(), null);
+    }
+
+    public MobileCityExporter(List<Zone> zones, de.synthesis.scenario.Scenario scenario,
+                              Path templateRoot, Map<String, Object> runSources) {
+        this(zones, scenario, templateRoot, runSources, null);
+    }
+
+    public MobileCityExporter(List<Zone> zones, de.synthesis.scenario.Scenario scenario,
+                              Path templateRoot, Map<String, Object> runSources,
+                              MobileCityGtfsAdapter.Feed transitFeed) {
+        this(zones, scenario, templateRoot, runSources, transitFeed, null);
+    }
+
+    public MobileCityExporter(List<Zone> zones, de.synthesis.scenario.Scenario scenario,
+                              Path templateRoot, Map<String, Object> runSources,
+                              MobileCityGtfsAdapter.Feed transitFeed,
+                              MobileCitySurroundingSource.Result surrounding) {
         this.zones = zones;
+        this.scenario = scenario;
+        this.referenceYear = scenario.referenceYear;
+        this.templateRoot = templateRoot;
+        this.runSources = Collections.unmodifiableMap(new LinkedHashMap<>(runSources));
+        this.transitFeed = transitFeed;
+        this.surrounding = surrounding;
     }
 
     private static String districtId(Zone zone) {
@@ -41,11 +74,49 @@ public class MobileCityExporter {
 
     /** @return number of exported files */
     public int export(Path artifactsDir) throws IOException {
-        Path dir = artifactsDir.resolve("mobilecity");
-        Files.createDirectories(dir);
-        long[][] ageByZone = countAgeGroups(artifactsDir.resolve("population"));
-        double[][] rates = countTripRates(artifactsDir.resolve("population"));
-        long[] carsByZone = countCarStock(artifactsDir.resolve("population"));
+        Files.createDirectories(artifactsDir);
+        Path dir = Files.createTempDirectory(artifactsDir, ".mobilecity-export-");
+        try {
+            int count = exportTo(artifactsDir, dir);
+            Path output = artifactsDir.resolve("mobilecity");
+            deleteGeneratedDirectory(output);
+            Files.move(dir, output);
+            return count;
+        } finally {
+            deleteGeneratedDirectory(dir);
+        }
+    }
+
+    private static void deleteGeneratedDirectory(Path dir) throws IOException {
+        if (!Files.exists(dir)) return;
+        try (var walk = Files.walk(dir)) {
+            for (Path path : walk.sorted(java.util.Comparator.reverseOrder()).toList()) Files.delete(path);
+        }
+    }
+
+    private int exportTo(Path artifactsDir, Path dir) throws IOException {
+        fleet = null;
+        MobileCityPopulation population = new MobileCityPopulation(zones, artifactsDir.resolve("population"),
+                scenario.population.samplingFraction, referenceYear);
+        if (scenario.mobileCity.useRegionalFleet || scenario.mobileCity.electricShare != null) {
+            Path cache = templateRoot == null ? artifactsDir.resolve(".mobilecity-source-cache") : templateRoot.resolve("fleet-cache");
+            fleet = new MobileCityFleetSource().resolve(scenario, zones, cache, ignored -> {});
+            MobileCityFleetSource.JSON.writerWithDefaultPrettyPrinter().writeValue(dir.resolve("fleet-provenance.json").toFile(),fleet.provenance());
+            if (fleet.boundarySnapshot() != null) {
+                Files.write(dir.resolve("fleet-boundaries.geojson"), fleet.boundarySnapshot());
+            }
+        }
+        if (scenario.mobileCity.regionalExport) {
+            return new MobileCityRegionalExporter(zones,scenario,templateRoot,runSources,transitFeed,surrounding)
+                    .export(artifactsDir,dir,population,fleet);
+        }
+        if (scenario.mobileCity.useTemplate) {
+            return new MobileCityTemplateExporter(zones, scenario, templateRoot).export(dir, population, fleet);
+        }
+        long[][] ageByZone = population.ages;
+        double[] fractions = new double[zones.size()]; java.util.Arrays.fill(fractions, 1);
+        double[][] rates = population.tripRates(fractions);
+        long[] carsByZone = population.cars;
 
         writeStudyAreaConfig(dir.resolve("StudyAreaConfig.csv"));
         writeDistricts(dir.resolve("REGdistricts.csv"));
@@ -58,7 +129,15 @@ public class MobileCityExporter {
         ShapefileWriter.writeRectangles(dir.resolve("districts"), zones, "districtID",
                 MobileCityExporter::districtId);
         writeSummary(dir.resolve("summary.json"), ageByZone, rates, carsByZone);
-        return 10; // 6 Tabellen + districts.shp/.shx/.dbf/.prj
+        new com.fasterxml.jackson.databind.ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(
+                dir.resolve("provenance.json").toFile(), java.util.Map.of(
+                        "mode", "contribution", "referenceYear", referenceYear,
+                        "samplingFraction", scenario.population.samplingFraction,
+                        "stockBasis", "Zone population; sampled age shares and car ownership expanded per zone",
+                        "ageAndCarImputationZoneIds", population.imputedZones,
+                        "attractivityPolicy", "Purpose scores normalized to 0..100 across exported zones; differs from TRAMIGO calibration",
+                        "validation", "Partial contribution; networks and model parameters required for full import"));
+        return 12 + (fleet == null ? 0 : 1); // 6 tables, 4 Shapefile components, summary, provenance
     }
 
     /** Compact summary for the frontend MobileCity panel (counts + KPIs). */
@@ -83,6 +162,7 @@ public class MobileCityExporter {
         StringBuilder json = new StringBuilder();
         json.append("{\n");
         json.append("  \"tables\": 6,\n");
+        json.append("  \"mode\": \"contribution\", \"referenceYear\": ").append(referenceYear).append(",\n");
         json.append("  \"districts\": {\"total\": ").append(zones.size())
                 .append(", \"studyArea\": ").append(studyArea)
                 .append(", \"surrounding\": ").append(zones.size() - studyArea).append("},\n");
@@ -119,8 +199,8 @@ public class MobileCityExporter {
                 .mapToDouble(z -> z.centroidLon).average().orElse(0);
 
         List<String> rows = new ArrayList<>();
-        rows.add("referenceYear," + BASE_YEAR);
-        rows.add("earliestDataYear," + BASE_YEAR);
+        rows.add("referenceYear," + referenceYear);
+        rows.add("earliestDataYear," + referenceYear);
         rows.add("endYear," + END_YEAR);
         rows.add("studyAreaDistrictCount," + internal);
         rows.add("surroundingDistrictCount," + surrounding);
@@ -199,7 +279,7 @@ public class MobileCityExporter {
                 for (Zone zone : zones) {
                     rows.add(districtId(zone) + "," + ageByZone[zone.index][g]);
                 }
-                table(w, "population[AgeGroups." + AGE_GROUPS[g] + "]", "districtID," + BASE_YEAR, rows);
+                table(w, "population[AgeGroups." + AGE_GROUPS[g] + "]", "districtID," + referenceYear, rows);
             }
         }
     }
@@ -214,7 +294,7 @@ public class MobileCityExporter {
                 for (int p = 0; p < PURPOSES.length; p++) {
                     rows.add(PURPOSES[p] + "," + round2(rates[g][p]));
                 }
-                table(w, "averageDailyTrips[AgeGroups." + AGE_GROUPS[g] + "]", "tripPurpose," + BASE_YEAR, rows);
+                table(w, "averageDailyTrips[AgeGroups." + AGE_GROUPS[g] + "]", "tripPurpose," + referenceYear, rows);
             }
         }
     }
@@ -223,9 +303,8 @@ public class MobileCityExporter {
 
     /**
      * Private passenger-car stock by district for the scenario reference year.
-     * Registrations and electric shares are deliberately absent: the population
-     * generator has neither registration events nor a calibrated powertrain mix,
-     * so MobileCity/Takomat defaults remain responsible for those sub-tables.
+     * Registration events remain absent. Optional observed/private BEV shares or
+     * explicit assumptions are accompanied by fleet-provenance.json.
      */
     private void writeCarFleet(Path file, long[] carsByZone) throws IOException {
         List<String> rows = new ArrayList<>();
@@ -234,7 +313,15 @@ public class MobileCityExporter {
         }
         try (Writer w = Files.newBufferedWriter(file)) {
             fileTitle(w, "TECCarFleet");
-            table(w, "stock.total", "districtID," + BASE_YEAR, rows);
+            table(w, "stock.total", "districtID," + referenceYear, rows);
+            if (fleet != null) {
+                List<String> shares = new ArrayList<>();
+                for (Zone zone : zones) {
+                    var share = fleet.shares().get(zone.index);
+                    if (share != null) shares.add(districtId(zone) + "," + MobileCityCsv.number(share.bev()));
+                }
+                if (!shares.isEmpty()) table(w, "stock.shareElectric", "districtID," + referenceYear, shares);
+            }
         }
     }
 
@@ -265,120 +352,6 @@ public class MobileCityExporter {
         }
     }
 
-    /**
-     * Average daily trips per person by age group and purpose. Each activity
-     * transition is one trip: a trip to an out-of-home activity takes that
-     * activity's purpose, a home-end trip keeps the purpose of the activity it
-     * returns from (standard trip-purpose convention) — so the per-purpose totals
-     * add up to the full daily trip count, not just the out-of-home activities.
-     */
-    private double[][] countTripRates(Path populationDir) throws IOException {
-        Map<Long, Integer> groupOf = new HashMap<>();
-        long[] groupSize = new long[3];
-        forEachRow(populationDir.resolve("person.csv"), cells -> {
-            int age = Integer.parseInt(cells[3]);
-            int group = age < 18 ? 0 : age < 65 ? 1 : 2;
-            groupOf.put(Long.parseLong(cells[0]), group);
-            groupSize[group]++;
-        });
-
-        long[][] trips = new long[3][PURPOSES.length];
-        long[] currentPerson = {-1};
-        int[] previousPurpose = {-1}; // purpose of the person's previous activity (-1 = home/none)
-        forEachRow(populationDir.resolve("activity.csv"), cells -> {
-            long person = Long.parseLong(cells[0]);
-            boolean home = "7".equals(cells[1]);
-            int destination = purposeOf(cells[1]);
-            if (person != currentPerson[0]) {
-                currentPerson[0] = person; // first activity of this person: no trip yet
-            } else {
-                Integer group = groupOf.get(person);
-                int tripPurpose = home ? previousPurpose[0] : destination;
-                if (group != null && tripPurpose >= 0) {
-                    trips[group][tripPurpose]++;
-                }
-            }
-            previousPurpose[0] = home ? -1 : destination;
-        });
-
-        double[][] rates = new double[3][PURPOSES.length];
-        for (int g = 0; g < 3; g++) {
-            for (int p = 0; p < PURPOSES.length; p++) {
-                rates[g][p] = groupSize[g] > 0 ? trips[g][p] / (double) groupSize[g] / 7.0 : 0;
-            }
-        }
-        return rates;
-    }
-
-    /** Maps a LegacyActivityType code to a MobileCity trip purpose index, or -1 (home/none). */
-    private static int purposeOf(String activityCode) {
-        return switch (activityCode) {
-            case "31", "32", "33" -> 0; // Education
-            case "1" -> 1;              // Work
-            case "41", "42" -> 2;       // Shopping
-            case "51", "52", "6", "12" -> 3; // Leisure (incl. service, private visit)
-            default -> -1;              // 7=home, parcel codes etc.
-        };
-    }
-
-    private static double round2(double value) {
-        return Math.round(value * 100.0) / 100.0;
-    }
-
-    /** Counts inhabitants per zone and age group (0=children<18, 1=adults 18-64, 2=seniors 65+). */
-    private long[][] countAgeGroups(Path populationDir) throws IOException {
-        long[][] counts = new long[zones.size()][3];
-        Map<Long, Integer> householdToZone = new HashMap<>();
-        forEachRow(populationDir.resolve("household.csv"), cells -> {
-            // householdNumber;householdId;year;homeZone;...  homeZone = zone.id
-            Zone zone = zoneById(Long.parseLong(cells[3]));
-            if (zone != null) {
-                householdToZone.put(Long.parseLong(cells[1]), zone.index);
-            }
-        });
-        forEachRow(populationDir.resolve("person.csv"), cells -> {
-            // personId;personNumber;householdId;age;...
-            Integer zoneIndex = householdToZone.get(Long.parseLong(cells[2]));
-            if (zoneIndex == null) {
-                return;
-            }
-            int age = Integer.parseInt(cells[3]);
-            int group = age < 18 ? 0 : age < 65 ? 1 : 2;
-            counts[zoneIndex][group]++;
-        });
-        return counts;
-    }
-
-    /** Counts generated private cars per household home district. */
-    private long[] countCarStock(Path populationDir) throws IOException {
-        long[] counts = new long[zones.size()];
-        Map<Long, Integer> householdToZone = new HashMap<>();
-        forEachRow(populationDir.resolve("household.csv"), cells -> {
-            Zone zone = zoneById(Long.parseLong(cells[3]));
-            if (zone != null) {
-                householdToZone.put(Long.parseLong(cells[1]), zone.index);
-            }
-        });
-        forEachRow(populationDir.resolve("car.csv"), cells -> {
-            Integer zoneIndex = householdToZone.get(Long.parseLong(cells[0]));
-            if (zoneIndex != null) {
-                counts[zoneIndex]++;
-            }
-        });
-        return counts;
-    }
-
-    // --- helpers ---------------------------------------------------------------
-
-    private Zone zoneById(long id) {
-        for (Zone zone : zones) {
-            if (zone.id == id) {
-                return zone;
-            }
-        }
-        return null;
-    }
-
     private static double sum(Zone zone, String... categories) {
         double total = 0;
         for (String category : categories) {
@@ -387,23 +360,6 @@ public class MobileCityExporter {
         return total;
     }
 
-    private static String csv(String value) {
-        return value != null && value.contains(",") ? "\"" + value + "\"" : value;
-    }
-
-    private interface RowConsumer {
-        void accept(String[] cells);
-    }
-
-    private static void forEachRow(Path file, RowConsumer consumer) throws IOException {
-        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            reader.readLine(); // header
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!line.isBlank()) {
-                    consumer.accept(line.split(";", -1));
-                }
-            }
-        }
-    }
+    private static String csv(String value) { return MobileCityCsv.quote(value); }
+    private static double round2(double value) { return Math.round(value * 100.0) / 100.0; }
 }

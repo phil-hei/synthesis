@@ -308,7 +308,27 @@ Format `HH:MM:SS  Nachricht`). Der SUMO-Prozess-Output landet zusätzlich in
 
 `Zonierung, OSM-Daten (POIs), Attraktivitäten, Bevölkerungssynthese,
 Aktivitätenpläne, Matrizen, Logistik, Legacy-Export, MobileCity-Export,
-Manifest, Simulation (logiTopp), SUMO (Verkehr), Netz-Feedback, LLM-Moduswahl`
+MobileCity-Validierung, Manifest, Simulation (logiTopp), SUMO (Verkehr), Netz-Feedback,
+LLM-Moduswahl`
+
+Beim Regionalexport erklären `mobilecity/data-inventory.json`,
+`mobilecity/charging-provenance.json` und optional `mobilecity/charging-points.csv` Quelle,
+wirksame Ladepunktzahl, Datenjahr, räumliche Zuordnung und Hash. Leere Zukunftszellen in
+`REGchargers.csv` sind beabsichtigt: Der native Kern berechnet dann den Ausbau selbst.
+`mobilecity-validation/validation-report.json` enthält unter `contributionChecks` den
+Vergleich der exportierten Ladepunkte mit dem im ConfigTool verbrauchten Bezugsjahrswert.
+Für Carsharing enthält `TECCarsharing.csv` die gebietsweite Tabelle `carsharing.member` und
+den District-Bestand `carsharing.stock.total`. `data-inventory.json` kennzeichnet deren
+Herkunft als manuelle Annahme oder Null-Baseline. Der native Bericht prüft beide Beiträge
+unter `carsharingMembers` und `carsharingFleet`.
+Bei aktiviertem Umland stehen Zahl, Zweckanteile und Extrapolationsregeln in
+`data-inventory.json`/`provenance.json`; `summary.json.districts.surrounding` und
+`summary.json.surroundingInhabitants` liefern die Bilanz. Der native Bericht aggregiert die
+wirklich berechnete eingehende Nachfrage als `nativeSurroundingDemand` und prüft je
+Outer-District/Zweck den Bezugsjahrbeitrag. Im Automatikmodus enthält
+`surrounding-provenance.json` zusätzlich Pufferbreite, Sektorreihenfolge, Einwohner- und
+Alterswerte, Zensus-Stichtag sowie beide Archivhashes. Eine manuelle Gesamtsumme ist im
+Inventar als Fallback erkennbar; die Sektorproportionen bleiben Zensus-basiert.
 
 Grep-Strings (wörtlich aus `GenerationService` u. a., Zeilennummern Stand 2026-07-08):
 
@@ -321,7 +341,7 @@ Grep-Strings (wörtlich aus `GenerationService` u. a., Zeilennummern Stand 2026-
 - `"– Fallback auf Luftlinie"` (Routing nicht verfügbar → Matrizen sind Luftlinien-Schätzungen; Erfolgszeile der Matrizen-Stufe endet auf `(GraphHopper-Routing)` oder `(Luftlinie)`).
 - `"– Fallback auf synthetische Daten"` (Overpass-POIs fehlgeschlagen).
 - `"– Fallback actiTopp"` / `"– Fallback Template-Generator"` (Verhaltensquellen-Kette GTA → actiTopp → Template).
-- `"Upload-Fallback prüfen"` / `"Kein GTFS-Feed verfügbar (weder Auto-Fetch noch Upload) – ÖV übersprungen"` / `"– Auto-Fetch übersprungen (Upload empfohlen)"` (Feed zu groß).
+- `"GTFS-Upload prüfen"` / `"Kein GTFS-Feed verfügbar (weder Auto-Fetch noch Upload) – ÖV übersprungen"` / `"– Auto-Fetch übersprungen (Upload empfohlen)"` (Feed zu groß). Ein ausgewählter Upload hat Vorrang.
 - Overpass-Mirrors: der Failover primär→Mirror ist **still** (`OverpassClient.post`); nur der letzte Fehler erscheint, z. B. `"Overpass-Antwort: HTTP 504 (https://…)"`.
 
 **SKIPPED-Gründe** (Status je Stufe; FAILED ≠ SKIPPED — FAILED heißt Fehler, SKIPPED heißt bewusst/mangels Voraussetzung übersprungen):

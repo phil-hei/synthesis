@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,10 +44,12 @@ class MobileCityExporterTest {
                 4;4;4;conventional;car-outside
                 """);
 
-        int files = new MobileCityExporter(List.of(zone(0, 100001), zone(1, 100002)))
+        de.synthesis.scenario.Scenario scenario = new de.synthesis.scenario.Scenario();
+        scenario.referenceYear = 2025;
+        int files = new MobileCityExporter(List.of(zone(0, 100001), zone(1, 100002)), scenario, null)
                 .export(artifacts);
 
-        assertThat(files).isEqualTo(10);
+        assertThat(files).isEqualTo(12);
         Map<String, ParsedTable> tables = parseEpigeneTables(
                 artifacts.resolve("mobilecity/TECCarFleet.csv"));
         assertThat(tables).containsOnlyKeys("stock.total");
@@ -58,6 +61,31 @@ class MobileCityExporterTest {
                 artifacts.resolve("mobilecity/summary.json").toFile());
         assertThat(summary.path("tables").asInt()).isEqualTo(6);
         assertThat(summary.path("privateCars").asLong()).isEqualTo(4);
+    }
+
+    @Test
+    void preservesGlobalPopulationAndCarTotalsAcrossFractionalZoneWeights(@TempDir Path artifacts)
+            throws Exception {
+        List<Zone> zones = new ArrayList<>();
+        for (int i = 0; i < 9; i++) {
+            Zone zone = zone(i, 100001 + i);
+            zone.population = 250d / 9;
+            zones.add(zone);
+        }
+        de.synthesis.scenario.Scenario scenario = new de.synthesis.scenario.Scenario();
+        scenario.referenceYear = 2026;
+        scenario.population.samplingFraction = 1;
+        var generated = new PopulationGenerator(zones, new Random(42))
+                .generate(Files.createDirectories(artifacts.resolve("population")), scenario);
+        new ActivityGenerator(new Random(42)).generate(
+                artifacts.resolve("population/activity.csv"), generated.persons());
+
+        MobileCityPopulation mobile = new MobileCityPopulation(
+                zones, artifacts.resolve("population"), 1, 2026);
+
+        assertThat(java.util.Arrays.stream(mobile.ages)
+                .flatMapToLong(java.util.Arrays::stream).sum()).isEqualTo(generated.persons().size());
+        assertThat(java.util.Arrays.stream(mobile.cars).sum()).isEqualTo(generated.carCount());
     }
 
     /** Independent emulation of the Config Tool's padded separator/table-block logic. */

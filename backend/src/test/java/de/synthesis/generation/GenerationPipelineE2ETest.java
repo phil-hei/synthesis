@@ -27,6 +27,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -51,6 +53,42 @@ class GenerationPipelineE2ETest {
 
     @Test
     void fullPipelineProducesArtifactsOffline() throws Exception {
+        fullPipelineProducesArtifactsOffline(false);
+    }
+
+    @Test
+    void completeMobileCityExportRejectsAMissingProfileBeforeQueueing() throws Exception {
+        Path dataDir = tempDirectory("e2e-missing-mobilecity-profile");
+        SynthesisProperties props = new SynthesisProperties();
+        props.setDataDir(dataDir.toString());
+        ObjectMapper mapper = new ObjectMapper();
+        ScenarioRepository repo = new ScenarioRepository(mapper, props);
+        GenerationService service = new GenerationService(
+                repo, new OverpassClient(props, mapper), props, mapper);
+        services.add(service);
+
+        Scenario scenario = new Scenario();
+        scenario.id = "missing-mobilecity-profile";
+        scenario.mobileCity.regionalExport = true;
+        scenario.mobileCity.electricShare = 0.0;
+        scenario.targetModels = new ArrayList<>(List.of("mobilecity"));
+        repo.save(scenario);
+
+        var error = assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.start(scenario.id));
+
+        assertEquals(org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY,
+                error.getStatusCode());
+        assertTrue(error.getReason().contains("Modellprofil 'tramigo-v2' fehlt"));
+        assertFalse(service.status(scenario.id).isPresent(), "Unstartbarer Export darf nicht in der Queue landen");
+    }
+
+    @Test
+    void censusStructureSourceFailureRemainsVisibleThroughPipeline() throws Exception {
+        fullPipelineProducesArtifactsOffline(true);
+    }
+
+    private void fullPipelineProducesArtifactsOffline(boolean censusStructure) throws Exception {
         Path dataDir = tempDirectory("e2e-data");
         SynthesisProperties props = new SynthesisProperties();
         props.setDataDir(dataDir.toString());
@@ -63,6 +101,7 @@ class GenerationPipelineE2ETest {
         services.add(service);
 
         Scenario scenario = new Scenario();
+        scenario.population.useCensusStructure = censusStructure;
         scenario.id = "e2e-smoke"; // die ID vergibt sonst der Controller
         scenario.name = "E2E-Smoke";
         scenario.region = new Scenario.Region();
@@ -127,8 +166,13 @@ class GenerationPipelineE2ETest {
         var manifest = mapper.readTree(artifacts.resolve("manifest.json").toFile());
         assertEquals("beeline-estimate",
                 manifest.path("dataQuality").path("matrices").asText());
-        assertEquals("kit-population-sample",
+        assertEquals(censusStructure ? "census-regional-weighting-fallback" : "kit-population-sample",
                 manifest.path("dataQuality").path("populationStructure").asText());
+        if (censusStructure) {
+            assertEquals("fallback", job.summary.get("censusStructureStatus"));
+            var structure = mapper.readTree(artifacts.resolve("population/census-structure.json").toFile());
+            assertTrue(structure.path("unavailableReason").asText().contains("deaktiviert"));
+        }
         assertEquals("upload-coordinate-od",
                 manifest.path("dataQuality").path("commuters").asText());
         assertEquals(WorkplaceMargins.SOURCE,
@@ -164,6 +208,7 @@ class GenerationPipelineE2ETest {
         assertEquals("SKIPPED", job.stage("SUMO (Verkehr)").status);
         assertEquals("SKIPPED", job.stage("LLM-Moduswahl").status);
         assertEquals("SKIPPED", job.stage("Simulation (logiTopp)").status);
+        assertEquals("SKIPPED", job.stage("MobileCity-Validierung").status);
 
         // Diagnose entfernen und dasselbe Szenario erneut fahren: keine alte Datei,
         // und bei identischen lokalen Inputs bleiben die produktiven Ziehungen gleich.
@@ -277,6 +322,10 @@ class GenerationPipelineE2ETest {
         scenario.region.minLon = 8.19;
         scenario.region.maxLat = 48.87;
         scenario.region.maxLon = 8.22;
+        // Ein echter GraphHopper-Durchlauf genügt hier als Smoke-Test. Das Produktlimit von
+        // 600 Zonen würde 360.000 Relationen je Modus routen und den sechsminütigen Test-Gate
+        // abhängig von der Hostlast machen.
+        scenario.zoning.maxZones = 100;
         scenario.population.totalPersons = 50;
         scenario.population.useRealRouting = true;
         scenario.population.externalTrips = false;

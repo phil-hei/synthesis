@@ -78,9 +78,9 @@ public class ScenarioController {
     }
 
     /**
-     * GTFS-Upload (Phase-C-Fallback): speichert einen Feed für das Szenario und verankert den
-     * Pfad in {@code population.gtfsUploadPath}. Greift, wenn der Auto-Fetch keinen Regionsfeed
-     * findet oder der Feed zu groß ist.
+     * Speichert einen bewusst ausgewählten GTFS-Feed für das Szenario und verankert den Pfad in
+     * {@code population.gtfsUploadPath}. Ein solcher Upload hat bei SUMO und MobileCity Vorrang
+     * vor dem automatischen Regionsfeed.
      */
     @PostMapping("/{id}/gtfs")
     public Scenario uploadGtfs(@PathVariable String id,
@@ -104,11 +104,97 @@ public class ScenarioController {
     }
 
     private void validate(Scenario scenario) {
+        de.synthesis.vehicle.VehicleCatalog.Report vehicles = de.synthesis.vehicle.VehicleCatalog.validate(scenario.vehicleConfiguration);
+        if (!vehicles.valid()) {
+            var error = vehicles.errors().getFirst();
+            throw badRequest("Fahrzeugkonfiguration: " + error.path() + ": " + error.message());
+        }
+        if (scenario.vehicleConfiguration.appliesToSumo() && !scenario.targets().contains("sumo")) {
+            throw badRequest("Fahrzeugkonfiguration sumoTraffic benötigt das Zielmodell SUMO");
+        }
+        if (scenario.referenceYear < 2000 || scenario.referenceYear > 2050) {
+            throw badRequest("Bezugsjahr muss zwischen 2000 und 2050 liegen");
+        }
+        if (scenario.mobileCity == null || scenario.mobileCity.templateId == null
+                || !scenario.mobileCity.templateId.matches("[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}")) {
+            throw badRequest("Ungültige MobileCity-Vorlage");
+        }
+        if (scenario.mobileCity.validateNative
+                && (!scenario.targets().contains("mobilecity")
+                || (!scenario.mobileCity.regionalExport && !scenario.mobileCity.useTemplate))) {
+            throw badRequest("Native MobileCity-Prüfung benötigt MobileCity und ein vollständiges Regional- oder Vorlagenpaket");
+        }
         if (scenario.zoning == null) {
             throw badRequest("Zonierungsparameter fehlen");
         }
         if (scenario.population == null) {
             throw badRequest("Bevölkerungsparameter fehlen");
+        }
+        if (scenario.mobileCity != null && scenario.mobileCity.regionalExport) {
+            if (scenario.referenceYear < 2018 || scenario.referenceYear > 2048) throw badRequest("MobileCity-Regionalpaket unterstützt Bezugsjahre 2018 bis 2048");
+            if (scenario.mobileCity.useTemplate) throw badRequest("Regionalpaket und Vorlagen-Ergänzung sind alternative Exportmodi");
+            if (!scenario.mobileCity.useRegionalFleet && scenario.mobileCity.electricShare == null)
+                throw badRequest("MobileCity-Regionalpaket benötigt regionale KBA-Daten oder eine explizite BEV-Annahme; für einen rudimentären Export ist 0 zulässig");
+            if (scenario.mobileCity.maxDistricts < 1 || scenario.mobileCity.maxDistricts > 100)
+                throw badRequest("Regionalpaket unterstützt 1 bis 100 Districts");
+            if (scenario.mobileCity.allowSyntheticTransitFallback
+                    && (!Double.isFinite(scenario.mobileCity.transitVehiclesPer1000)
+                    || scenario.mobileCity.transitVehiclesPer1000 <= 0
+                    || scenario.mobileCity.transitVehiclesPer1000 > 100))
+                throw badRequest("Modellierte ÖV-Flotte muss größer als 0 und höchstens 100 Fahrzeuge je 1000 Einwohner sein");
+            if (!Double.isFinite(scenario.mobileCity.settlementAreaShare) || scenario.mobileCity.settlementAreaShare <= 0 || scenario.mobileCity.settlementAreaShare > 1)
+                throw badRequest("Siedlungsflächenanteil muss größer als 0 und höchstens 1 sein");
+        }
+        if (scenario.mobileCity != null && scenario.mobileCity.electricShare != null
+                && (!Double.isFinite(scenario.mobileCity.electricShare) || scenario.mobileCity.electricShare < 0 || scenario.mobileCity.electricShare > 1))
+            throw badRequest("MobileCity-BEV-Anteil muss zwischen 0 und 1 liegen");
+        if (scenario.mobileCity != null && scenario.mobileCity.chargingPointsPer1000 != null
+                && (!Double.isFinite(scenario.mobileCity.chargingPointsPer1000)
+                || scenario.mobileCity.chargingPointsPer1000 < 0
+                || scenario.mobileCity.chargingPointsPer1000 > 100))
+            throw badRequest("MobileCity-Ladepunkte müssen zwischen 0 und 100 je 1000 Einwohner liegen");
+        if (scenario.mobileCity != null && scenario.mobileCity.carsharingVehiclesPer1000 != null
+                && (!Double.isFinite(scenario.mobileCity.carsharingVehiclesPer1000)
+                || scenario.mobileCity.carsharingVehiclesPer1000 < 0
+                || scenario.mobileCity.carsharingVehiclesPer1000 > 100))
+            throw badRequest("MobileCity-Carsharing-Flotte muss zwischen 0 und 100 Fahrzeugen je 1000 Einwohner liegen");
+        if (scenario.mobileCity != null && scenario.mobileCity.carsharingMemberShare != null
+                && (!Double.isFinite(scenario.mobileCity.carsharingMemberShare)
+                || scenario.mobileCity.carsharingMemberShare < 0
+                || scenario.mobileCity.carsharingMemberShare > 0.4))
+            throw badRequest("MobileCity-Carsharing-Mitgliederanteil muss zwischen 0 und 0,4 liegen");
+        if (scenario.mobileCity != null) {
+            Integer surroundingPopulation = scenario.mobileCity.surroundingPopulation;
+            boolean surroundingRequested = scenario.mobileCity.autoSurrounding
+                    || (surroundingPopulation != null && surroundingPopulation > 0);
+            boolean hasSurroundingShares = scenario.mobileCity.surroundingEducationTripShare != null
+                    || scenario.mobileCity.surroundingWorkTripShare != null
+                    || scenario.mobileCity.surroundingShoppingTripShare != null
+                    || scenario.mobileCity.surroundingLeisureTripShare != null;
+            if (scenario.mobileCity.autoSurrounding
+                    && (!Double.isFinite(scenario.mobileCity.surroundingBufferKm)
+                    || scenario.mobileCity.surroundingBufferKm < 1
+                    || scenario.mobileCity.surroundingBufferKm > 100))
+                throw badRequest("MobileCity-Umlandpuffer muss zwischen 1 und 100 km liegen");
+            if (surroundingPopulation != null && (surroundingPopulation < 0
+                    || surroundingPopulation > 100_000_000))
+                throw badRequest("MobileCity-Umlandbevölkerung muss zwischen 0 und 100 Millionen liegen");
+            if (scenario.mobileCity.autoSurrounding && surroundingPopulation != null
+                    && surroundingPopulation == 0)
+                throw badRequest("MobileCity-Umlandüberschreibung muss positiv sein oder leer bleiben");
+            if (hasSurroundingShares && !surroundingRequested)
+                throw badRequest("MobileCity-Umlandanteile benötigen eine positive Umlandbevölkerung");
+            if (surroundingRequested) {
+                if (!scenario.population.externalTrips)
+                    throw badRequest("MobileCity-Umlandbevölkerung benötigt aktivierte Außenbeziehungen");
+                validateShare(scenario.mobileCity.surroundingEducationTripShare, "Bildungswege");
+                validateShare(scenario.mobileCity.surroundingWorkTripShare, "Arbeitswege");
+                validateShare(scenario.mobileCity.surroundingShoppingTripShare, "Einkaufswege");
+                validateShare(scenario.mobileCity.surroundingLeisureTripShare, "Freizeitwege");
+            }
+        }
+        if (scenario.population.useCensusStructure && !scenario.population.useKitPopulation) {
+            throw badRequest("Zensus-Struktur benötigt das KIT-Demografie-Sample");
         }
         if (scenario.logistics == null) {
             throw badRequest("Logistikparameter fehlen");
@@ -152,6 +238,11 @@ public class ScenarioController {
         if (!Double.isFinite(samplingFraction) || samplingFraction <= 0 || samplingFraction > 1) {
             throw badRequest("Stichprobenanteil muss größer 0 und höchstens 1 sein");
         }
+    }
+
+    private static void validateShare(Double value, String label) {
+        if (value == null || !Double.isFinite(value) || value < 0 || value > 1)
+            throw badRequest("MobileCity-Umlandanteil für " + label + " muss zwischen 0 und 1 liegen");
     }
 
     private void validateReturns(Scenario scenario) {

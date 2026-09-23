@@ -10,6 +10,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -83,6 +84,26 @@ class GtfsSourceTest {
                     "Ohne abdeckenden Feed und ohne Upload → null (ÖV übersprungen)");
         } finally {
             Files.deleteIfExists(cropped);
+            deleteRecursively(rawCache);
+        }
+    }
+
+    @Test
+    void selectedButMissingUploadIsAnErrorInsteadOfFallingBackToAutoFetch() throws Exception {
+        Path rawCache = Files.createTempDirectory("gtfs-raw-upload-error");
+        Path cropped = rawCache.resolve("cropped.zip");
+        Path missingUpload = rawCache.resolve("selected-upload.zip");
+        Scenario.Region region = new Scenario.Region();
+        region.minLat = 48.825;
+        region.minLon = 8.155;
+        region.maxLat = 48.885;
+        region.maxLon = 8.245;
+        try {
+            var error = assertThrows(java.io.IOException.class, () -> new GtfsSource(
+                    new SynthesisProperties.Transit()).resolveFullDay(region, missingUpload,
+                    rawCache, cropped, msg -> { }));
+            assertTrue(error.getMessage().contains("GTFS-Upload"));
+        } finally {
             deleteRecursively(rawCache);
         }
     }

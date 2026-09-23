@@ -83,10 +83,48 @@ kopiert, frieren die Eingabe für einen A/B-Vergleich ein — `manifest.json` �
 Was-wäre-wenn-Szenarien), Nachfragesimulation (logiTopp), unabhängiger MobileCity-Export und
 nachgelagerte Verkehrssimulation (SUMO). SUMO aktiviert logiTopp automatisch.
 
+**MobileCity:** Experimenteller Regionalexport mit eigenen Districts für frei gewählte
+Gebiete, 25 CSV-Familien, Shapefile, Herkunftsbericht und ZIP. Regionale private BEV-Anteile
+kommen optional aus KBA-Daten; fehlende Anteile benötigen eine ausdrückliche Annahme.
+Das Studio zeigt die geplanten und nach dem Lauf tatsächlich verwendeten Quellen, Annahmen,
+Lücken und Abdeckungen; gebietsbezogene Quellantworten werden im Paket eingefroren. Eine
+optionale eigene Pipeline-Stufe prüft vollständige Pakete im echten lokalen ConfigTool und
+meldet `bestanden`, `fehlgeschlagen` oder `übersprungen` getrennt vom Export. Der Export nutzt
+für Regionalpakete einen regionalen oder hochgeladenen GTFS-Fahrplan: Bus, Tram und Bahn,
+Werktagsfrequenzen, Transfers und District-Zugänge werden in das abstrakte MobileCity-Netz
+überführt. Ohne Feed greift nur bei sichtbarer Freigabe der modellierte ÖV-Fallback. Angebotsdatum
+und Nachfragejahr bleiben getrennt. Optional ordnet der Export die öffentlich zugänglichen
+Ladepunkte des gepinnten BNetzA-Registers räumlich den Districts zu. Er zählt Ladepunkte statt
+Standorte, weist den Quellenstand aus und lässt spätere Jahre für das MobileCity-Ausbaumodell
+leer; eine Nutzervorgabe je 1.000 Einwohner dient als bewusste Annahme oder Quellenfallback.
+Für Carsharing können Nutzer Fahrzeugdichte und Mitgliederanteil modellieren; der Export
+verteilt die Flotte nach District-Bevölkerung und weist die konstant gehaltene Annahme aus.
+Optional erzeugt ein einstellbarer metrischer Pufferring bis zu acht echte `Outer`-Districts.
+Bevölkerung und Altersstruktur werden darin automatisch aus den gepinnten Zensus-2022-
+Rastern aggregiert; eine manuelle Gesamtsumme skaliert bei Bedarf die beobachtete räumliche
+Verteilung. Die vier eingehenden Wegeanteile bleiben explizite Fachvorgaben. Ihre automatische
+Ableitung, zunächst für Arbeit aus BA-Pendlerdaten, ist noch offen.
+Der Export nutzt noch unkalibrierte Modellparameter und
+vereinfachte Auto-/Radnetze. Zwei regionale Testpakete laufen im
+nativen Kern über den gesamten exportierten Horizont fehlerfrei; das belegt keine regionale
+Kalibrierung. Der separate TRAMIGO-Vorlagenmodus behält seine bekannten Referenzfehler.
+Für einen ersten lauffähigen Importsatz setzt „Rudimentären MobileCity-Export konfigurieren“
+einen dokumentierten Offline-Basissatz; „Szenario erzeugen“ speichert die sichtbare
+Konfiguration vor dem Lauf und bietet danach `mobilecity-import.zip` zum Download an.
+[Bedienung und Grenzen](docs/06-gta-integration-konzept.md#mobilecity-regionalexport),
+[Konzept der nächsten Schritte](docs/06-gta-integration-konzept.md#mobilecity-naechste-schritte).
+
+**Regionale Demografie:** Optional gewichtet SyntheSis KIT-Haushalte anhand der amtlichen
+Zensus-2022-Alters- und Haushaltsgrößenraster für den Kartenausschnitt. Die erzeugte
+Bevölkerung wird auch nach MobileCity exportiert. Experimentell: fehlende 6+-Haushalte,
+Stichprobenabweichungen und Fallbacks stehen im Prüfbericht; keine Fortschreibung auf das
+Szenariojahr. [Anbindung und Grenzen](docs/06-gta-integration-konzept.md#regionale-zensus-struktur).
+
 Mit **SUMO** wird die logiTopp-Nachfrage **multimodal** mikroskopisch simuliert (OSM →
 `netconvert` → `duarouter` → `sumo`) – **PKW-, Rad- und Fuß-Trips** der Personen-Nachfrage
 (Fußgänger als SUMO-Personen) **plus Zustelltouren** (Lkw/Lastenrad aus logiTopp). Wenn verfügbar,
-wird **ÖV/Bus** automatisch ergänzt: ein GTFS-Fahrplan (Auto-Fetch nach Region, Upload-Fallback)
+wird **ÖV/Bus** automatisch ergänzt: ein bewusst hochgeladener GTFS-Fahrplan hat Vorrang,
+sonst greift der Auto-Fetch nach Region. Der Fahrplan
 wird per `gtfs2pt.py` zu Haltestellen und fahrplangebundenen Bussen; die ÖV-Nachfrage fährt intermodal
 mit (Fußweg → Bus → Fußweg). Ergebnisse: Verkehrs-KPIs (Fahrzeuge, Ø Reisedauer/Geschwindigkeit),
 **CO₂ je Fahrzeugtyp** (HBEFA-Emissionsklassen), eine **Netzlast-Karte** (Kanten nach relSpeed
@@ -220,7 +258,7 @@ Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
 | [docs/04-roadmap.md](docs/04-roadmap.md) | MVP-Schnitt, Phasenplan, offene Punkte & Risiken |
 | [docs/05-validierung.md](docs/05-validierung.md) | Phase-0-Validierung: Artefakte erfolgreich durch echten mobiTopp-Lauf, 8 Format-Befunde, Legacy-Stack-Build |
 | [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md) | Zwei-Achsen-Modell, GTA-Integrationskonzept, On-demand- und Modus-Distanz-Kalibrierung, SUMO-Zielmodell (inkl. Rad/Fuß/ÖV-GTFS, Rail/Tram-Befund), experimentelle Retourenlogistik, Roadmap |
-| [docs/07-ansatz-zusammenfassung.md](docs/07-ansatz-zusammenfassung.md) | Kompaktes Briefing: Ansatz, 14-stufige Pipeline, KI-Pipeline (GTA), Artefakte, Datenfluss, Tech-Stack |
+| [docs/07-ansatz-zusammenfassung.md](docs/07-ansatz-zusammenfassung.md) | Kompaktes Briefing: Ansatz, 15-stufige Pipeline, KI-Pipeline (GTA), Artefakte, Datenfluss, Tech-Stack |
 | [docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md) | Gepinnte Laufzeiten und KIT-Commits, Bootstrap, Preflight, gemeinsamer Start und vollständige Self-hosted-CI-Abnahme |
 | [docs/09-verkehrsbedarfsmodellierung-handoff.md](docs/09-verkehrsbedarfsmodellierung-handoff.md) | Technisches Handoff zur Wiederverwendung der Bevölkerungs- und Verkehrsbedarfsmodellierung, einschließlich Codefragmenten und LLM-Arbeitsauftrag |
 
@@ -237,5 +275,6 @@ Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
 3. **Generik über drei Achsen:** austauschbare Daten-Provider je Datenebene (echt → öffentlich → synthetisch),
    ein deklaratives Szenario-Schema, und Export-Adapter (MobileCity, CSV/GeoJSON, später MATSim).
 4. **MobileCity-Integration über definierte Artefakte:** unsere Zonierung liefert District-Geometrien
-   als WGS84-Shapefile und aggregierte EpigeneCSV-Tabellen für Bevölkerung, Wege, Attraktivitäten und
-   privaten Pkw-Bestand; Netz-/TEC-/MOD-Defaults und Messagepack-Import bleiben mit Takomat abzustimmen.
+   als WGS84-Shapefile und aggregierte EpigeneCSV-Tabellen für Bevölkerung, Wege, Attraktivitäten,
+   privaten Pkw-Bestand, öffentliche Ladepunkte, Carsharing-Annahmen und GTFS-ÖV. Vollständige Regionalpakete bestehen den nativen ConfigTool-
+   Import; Profilparameter, weitere Regionalquellen und die fachliche Abnahme mit Takomat bleiben offen.

@@ -69,7 +69,7 @@ Herkunfts- und Integrationsdetails: `docs/06-gta-integration-konzept.md` (Abschn
 | **GraphHopper 8.0** | Open Source | Eingebettete Routing-Bibliothek (Matrizen, Routenoptionen) |
 | **Ollama + Qwen2.5-7B-Instruct** | Open Source | Lokales LLM für die GTA-Verhaltensquelle |
 | **MobileCity / Takomat** | Projektpartner | **District-aggregiertes Strategiemodell.** Importiert ausschließlich aggregierte District-Tabellen, **keine Einzeltrips/-touren** – per E-Mail bestätigt am 2026-07-03 (`docs/06`, Phase 5) |
-| **NVBW / MobiData-BW** | Land BW | GTFS-Feed-Quelle für den ÖV/Bus-Pfad (Auto-Fetch nach Region, Upload-Fallback) |
+| **NVBW / MobiData-BW** | Land BW | GTFS-Feed-Quelle für den ÖV/Bus-Pfad (Auto-Fetch nach Region; bewusst ausgewählter Upload hat Vorrang) |
 | **OSM / Overpass** | OpenStreetMap | Netz, POIs; einzige (optionale) Remote-Abhängigkeit zur Laufzeit |
 
 **Was bewusst eigen ist (docs/06 A.3):** Zonierung, Attraktivitäten, Matrizen/Visum-Export,

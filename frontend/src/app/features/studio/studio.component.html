@@ -223,9 +223,20 @@
           </div>
         }
         <label class="checkbox" title="Haushalte aus einem KIT-synthetisierten Demografie-Sample ziehen (realistische Alters-/Geschlechts-/Haushaltsgrößen-Verteilung) statt aus Ad-hoc-Annahmen.">
-          <input type="checkbox" [(ngModel)]="scenario.population.useKitPopulation">
+          <input type="checkbox" [(ngModel)]="scenario.population.useKitPopulation"
+            (ngModelChange)="!$event && (scenario.population.useCensusStructure = false)">
           KIT-Demografie-Sample (Haushalte)
         </label>
+        <label class="checkbox" title="Gewichtet vorhandene KIT-Haushalte nach regionalen Alters- und Haushaltsgrößenanteilen des Zensus 2022. Kleine Zonen nutzen Anteile der ausgewählten Region. Abweichungen und fehlende Haushaltstypen stehen im Prüfbericht.">
+          <input type="checkbox" [(ngModel)]="scenario.population.useCensusStructure"
+            [disabled]="!scenario.population.useKitPopulation">
+          Regionale Alters- und Haushaltsstruktur (Zensus 2022, experimentell)
+        </label>
+        @if (scenario.population.useCensusStructure) {
+          <p class="hint">Datenstand 15.05.2022; Anteile werden auf die Szenariobevölkerung übertragen.
+            Keine automatische Fortschreibung. Die KIT-Stichprobe enthält keine Haushalte ab sechs Personen.
+            Nicht ausreichend anpassbare Zonen verwenden das KIT-Ausgangssample.</p>
+        }
         <div class="automatic-source"
           title="Ein Bevölkerungsraster teilt die Einwohner räumlich auf kleine Zellen auf. Für Deutschland verwendet SyntheSis automatisch das amtliche Zensus-2022-Raster mit 100-Meter-Zellen; dadurch wohnen nicht in jeder Verkehrszone gleich viele Menschen.">
           <strong>Räumliche Einwohnerverteilung automatisch aus Zensus 2022 ⓘ</strong>
@@ -306,6 +317,146 @@
           <app-help-tip label="Zusammenspiel der Modelle erklären"
             text="logiTopp erzeugt die Nachfrage von Personen und Paketen. SUMO simuliert diese Wege auf dem Straßennetz. MobileCity exportiert zusammengefasste Gebietsdaten und braucht keinen logiTopp-Lauf." />
         </p>
+        @if (hasTarget('mobilecity')) {
+          <button type="button" (click)="configureMobileCityQuickStart()"
+            title="Stellt einen einfachen, offline lauffähigen MobileCity-Export ein: nur MobileCity, höchstens zwölf Districts, Luftlinienmatrizen, modellierter ÖV, explizit 0 % BEV und kein Umland. Alle Annahmen werden im Dateninventar ausgewiesen.">
+            Rudimentären MobileCity-Export konfigurieren
+          </button>
+          <p class="hint">Der Schnellstart erzeugt einen vollständigen Importsatz mit bewusst einfachen
+            Annahmen. Regionale Daten, Umland und native Prüfung können danach einzeln aktiviert werden.</p>
+          <label>Bezugsjahr
+            <input type="number" min="2000" max="2050" step="1" [(ngModel)]="scenario.referenceYear">
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" [(ngModel)]="scenario.mobileCity.regionalExport"
+              (ngModelChange)="setMobileCityMode('regional', $event)">
+            Vollständiges Regionalpaket mit Modellannahmen (experimentell)
+          </label>
+          @if (scenario.mobileCity.regionalExport) {
+            <p class="hint">Erzeugt eigene Districts und alle Pflichtdateien. Verwendet ein unkalibriertes
+              Modellprofil und vereinfachte Auto-/Radnetze zwischen Zonen. Das ÖV-Netz wird aus einem regionalen
+              oder hochgeladenen GTFS-Fahrplan abgeleitet; fehlt er, kann der unten ausdrücklich freigegebene Modellfallback greifen.
+              Umlandbevölkerung kann als ausdrückliche Annahme ergänzt werden; Logistik ist noch nicht enthalten.
+              Öffentliche Ladepunkte können aus dem BNetzA-Register kommen, Sharing startet mit null als Modellannahme.</p>
+            <label>Höchstens MobileCity-Districts im Untersuchungsgebiet
+              <input type="number" min="1" max="100" [(ngModel)]="scenario.mobileCity.maxDistricts">
+            </label>
+            <label class="checkbox" title="Wenn kein regionaler oder hochgeladener GTFS-Fahrplan aufgelöst werden kann, darf der Export ein vereinfachtes Transitnetz aus den District-Reisezeiten und der angegebenen Flottendichte erzeugen. Ohne Freigabe stoppt der Export.">
+              <input type="checkbox" [(ngModel)]="scenario.mobileCity.allowSyntheticTransitFallback">
+              Modellierten ÖV verwenden, wenn kein GTFS verfügbar ist
+            </label>
+            @if (scenario.mobileCity.allowSyntheticTransitFallback) {
+              <label title="Flottendichte des vereinfachten Transitnetzes. Dieser Wert wird nur verwendet, wenn kein GTFS-Fahrplan verfügbar ist.">ÖV-Fallback: Fahrzeuge je 1.000 Einwohner
+                <input type="number" min="0.001" max="100" step="0.1" [(ngModel)]="scenario.mobileCity.transitVehiclesPer1000">
+              </label>
+            }
+            <label>Angenommener Siedlungsflächenanteil (0–1)
+              <input type="number" min="0.001" max="1" step="0.05" [(ngModel)]="scenario.mobileCity.settlementAreaShare">
+            </label>
+          }
+          <label class="checkbox">
+            <input type="checkbox" [(ngModel)]="scenario.mobileCity.useTemplate"
+              (ngModelChange)="setMobileCityMode('template', $event)">
+            MobileCity-Vorlage ergänzen (experimentell)
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" [(ngModel)]="scenario.mobileCity.useRegionalFleet">
+            Privaten Elektroanteil aus regionalen KBA-Daten ableiten
+          </label>
+          <label>BEV-Anteil bei fehlenden Regionaldaten (0–1, optional)
+            <input type="number" min="0" max="1" step="0.001" [(ngModel)]="scenario.mobileCity.electricShare" placeholder="Keine Vorgabe">
+          </label>
+          @if (scenario.mobileCity.useRegionalFleet) {
+            <p class="hint">Private Pkw, Stand 01.07.2026. Gemeindewerte werden flächengewichtet übertragen.
+              Plug-in-Hybride zählen im binären MobileCity-Modell nicht als BEV. Fehlende Werte bleiben im Herkunftsbericht sichtbar.</p>
+          }
+          @if (scenario.mobileCity.regionalExport) {
+            <label class="checkbox" title="Ordnet die öffentlichen Ladepunkte des gepinnten BNetzA-Ladesäulenregisters vom 1. September 2026 anhand ihrer Koordinaten den erzeugten Districts zu.">
+              <input type="checkbox" [(ngModel)]="scenario.mobileCity.useRegionalCharging">
+              Öffentliche Ladepunkte aus BNetzA-Register ableiten
+            </label>
+            <label [title]="scenario.mobileCity.useRegionalCharging ? 'Wird nur verwendet, wenn die automatische BNetzA-Quelle nicht nutzbar ist.' : 'Verteilt die angegebene Kapazität anhand der Einwohnerzahl auf die Districts.'">
+              {{ scenario.mobileCity.useRegionalCharging ? 'Ladepunkt-Fallback je 1.000 Einwohner (optional)' : 'Ladepunkte je 1.000 Einwohner (optional)' }}
+              <input type="number" min="0" max="100" step="0.1" [(ngModel)]="scenario.mobileCity.chargingPointsPer1000" placeholder="Unbekannt">
+            </label>
+            <p class="hint">Gezählt werden öffentlich zugängliche Ladepunkte, nicht Standorte oder Stecker.
+              Künftige Jahre bleiben für das MobileCity-Ausbaumodell offen.</p>
+            <label>Carsharing-Fahrzeuge je 1.000 Einwohner (optional)
+              <input type="number" min="0" max="100" step="0.1" [(ngModel)]="scenario.mobileCity.carsharingVehiclesPer1000" placeholder="0">
+            </label>
+            <label>Carsharing-Mitgliederanteil (0–0,4, optional)
+              <input type="number" min="0" max="0.4" step="0.01" [(ngModel)]="scenario.mobileCity.carsharingMemberShare" placeholder="0">
+            </label>
+            <p class="hint">MobileCity verwendet die Mitgliederzahl gebietsweit und die Fahrzeugzahl je District.
+              Ohne Eingabe gilt die ausgewiesene Nullannahme; eingegebene Werte bleiben über den Exporthorizont konstant.</p>
+            <label class="checkbox" title="Bildet außerhalb des Kartenausschnitts einen Pufferring, teilt ihn nach Himmelsrichtungen und aggregiert darin das Zensus-2022-Bevölkerungs- und Altersraster.">
+              <input type="checkbox" [(ngModel)]="scenario.mobileCity.autoSurrounding">
+              Umland automatisch aus Zensus-Pufferring ableiten
+            </label>
+            @if (scenario.mobileCity.autoSurrounding) {
+              <label title="Entfernung außerhalb des gewählten Kartenausschnitts, deren Bevölkerung als MobileCity-Umland berücksichtigt wird.">Breite des Umlandpuffers (km)
+                <input type="number" min="1" max="100" step="1" [(ngModel)]="scenario.mobileCity.surroundingBufferKm">
+              </label>
+            }
+            <label [title]="scenario.mobileCity.autoSurrounding ? 'Optionaler manueller Ersatz für die automatisch ermittelte Gesamtsumme; die räumliche Zensusverteilung und Altersstruktur bleiben erhalten.' : 'Gesamte Wohnbevölkerung außerhalb des Kartenausschnitts, die durch acht Richtungsanker dargestellt wird.'">
+              {{ scenario.mobileCity.autoSurrounding ? 'Umlandbevölkerung überschreiben (optional)' : 'Umlandbevölkerung (optional)' }}
+              <input type="number" [min]="scenario.mobileCity.autoSurrounding ? 1 : 0" max="100000000" step="1" [(ngModel)]="scenario.mobileCity.surroundingPopulation" [placeholder]="scenario.mobileCity.autoSurrounding ? 'Automatisch' : 'Nicht modelliert'">
+            </label>
+            @if (scenario.mobileCity.autoSurrounding || (scenario.mobileCity.surroundingPopulation ?? 0) > 0) {
+              <label title="Anteil aller Bildungswege der Umlandbewohner, deren Ziel im Untersuchungsgebiet liegt.">Eingehender Anteil Bildungswege (0–1)
+                <input type="number" min="0" max="1" step="0.01" [(ngModel)]="scenario.mobileCity.surroundingEducationTripShare">
+              </label>
+              <label title="Anteil aller Arbeitswege der Umlandbewohner, deren Ziel im Untersuchungsgebiet liegt.">Eingehender Anteil Arbeitswege (0–1)
+                <input type="number" min="0" max="1" step="0.01" [(ngModel)]="scenario.mobileCity.surroundingWorkTripShare">
+              </label>
+              <label title="Anteil aller Einkaufswege der Umlandbewohner, deren Ziel im Untersuchungsgebiet liegt.">Eingehender Anteil Einkaufswege (0–1)
+                <input type="number" min="0" max="1" step="0.01" [(ngModel)]="scenario.mobileCity.surroundingShoppingTripShare">
+              </label>
+              <label title="Anteil aller Freizeitwege der Umlandbewohner, deren Ziel im Untersuchungsgebiet liegt.">Eingehender Anteil Freizeitwege (0–1)
+                <input type="number" min="0" max="1" step="0.01" [(ngModel)]="scenario.mobileCity.surroundingLeisureTripShare">
+              </label>
+              <p class="hint">Im Automatikmodus stammen Geometrie, räumliche Bevölkerung und Altersstruktur aus dem Zensus-Pufferring.
+                Pkw-Besitz und BEV-Anteil werden transparent aus dem Untersuchungsgebiet extrapoliert. Die vier Anteile
+                bleiben fachliche Vorgaben und steuern nur eingehende Wege der Umlandbewohner.</p>
+            }
+          }
+          @if (scenario.mobileCity.useTemplate || scenario.mobileCity.regionalExport) {
+            <label class="checkbox" title="Startet nach dem Export das echte lokale MobileCity ConfigTool, liest die erzeugten Binärdateien erneut ein und simuliert den vollständigen Prüfhorizont. Fehlen .NET oder ConfigTool, wird die Stufe sichtbar übersprungen.">
+              <input type="checkbox" [(ngModel)]="scenario.mobileCity.validateNative">
+              Exportpaket nativ im MobileCity ConfigTool prüfen
+            </label>
+            <label>Lokale Vorlage / Modellprofil
+              <input type="text" [(ngModel)]="scenario.mobileCity.templateId" placeholder="tramigo-v2">
+            </label>
+            @if (scenario.mobileCity.useTemplate) {
+              <p class="hint">Übernimmt vollständig abgedeckte Districts in die vorbereitete Vorlage.
+                Netze und Modellparameter bleiben erhalten. Wähle eine Region, die mindestens einen ganzen District umfasst.</p>
+            } @else {
+              <p class="hint">Verwendet nur Modellparameter als Ausgangsprofil; gebietsbezogene Tabellen werden neu erzeugt.
+                Wähle die KBA-Quelle oder gib einen BEV-Anteil vor. Für jedes konkrete Regionalpaket ist die native Prüfung erforderlich.</p>
+            }
+          }
+          @if (scenario.mobileCity.regionalExport) {
+            <details class="data-inventory" open>
+              <summary>Datenstatus vor dem Export</summary>
+              <p class="inventory-readiness" [attr.data-ready]="mobileCityPlanReady()">
+                {{ mobileCityPlanReady() ? 'Konfiguration vollständig – der Lauf löst Quellen und Abdeckung auf.'
+                  : 'Pflichtangaben fehlen – die roten Einträge blockieren das Regionalpaket.' }}
+              </p>
+              <ul>
+                @for (item of mobileCityPlanItems(); track item.id) {
+                  <li [attr.data-status]="item.status">
+                    <span class="inventory-dot"></span>
+                    <span><strong>{{ item.label }}</strong>
+                      <small>{{ mobileCityStatusLabel(item.status) }} · {{ mobileCityResolutionLabel(item.resolution) }} · {{ item.source }}</small>
+                      <small>{{ item.note }}</small>
+                    </span>
+                  </li>
+                }
+              </ul>
+            </details>
+          }
+        }
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
             title="Passt die Moduswahl-Konstanten iterativ an den Ziel-Modal-Split an (mehrere Simulationsläufe, daher deutlich langsamer).">
@@ -376,12 +527,12 @@
             Stau auf die Nachfrage zurückwirken lassen (langsam)
           </label>
         }
-        @if (hasTarget('sumo')) {
-          <div class="hint" title="Für SUMO wird automatisch ein passender regionaler GTFS-Fahrplan gesucht, zugeschnitten und – sofern die Transit-Werkzeuge verfügbar sind – als Busverkehr eingebunden. Der Upload ist nur ein Fallback.">
-            Busverkehr wird bei verfügbarem Fahrplan automatisch eingebunden.
-            <app-help-tip label="Automatischen Busverkehr erklären"
-              text="SyntheSis sucht einen passenden regionalen GTFS-Fahrplan. Für die Einbindung müssen die lokalen Transit-Werkzeuge verfügbar sein. Aktuell wird Busverkehr unterstützt; Bahn und Tram sind noch nicht enthalten. Ein eigener GTFS-Upload dient als Ersatz, wenn kein automatischer Fahrplan verfügbar ist." />
-            <label class="linklike" title="Eigenen GTFS-Fahrplan als ZIP hochladen, wenn für die Region kein automatischer Feed verfügbar ist">GTFS-ZIP hochladen
+        @if (hasTarget('sumo') || (hasTarget('mobilecity') && scenario.mobileCity.regionalExport)) {
+          <div class="hint" title="SyntheSis sucht automatisch einen regionalen GTFS-Fahrplan. MobileCity übernimmt Bus, Tram und Bahn als abstraktes Haltestellennetz; SUMO nutzt derzeit Busverkehr.">
+            GTFS wird bei verfügbarem Fahrplan automatisch eingebunden.
+            <app-help-tip label="Automatischen öffentlichen Verkehr erklären"
+              text="MobileCity erhält einen vollständigen Betriebstag mit Bus, Tram und Bahn, täglichen Frequenzen, Transfers und District-Zugängen. SUMO nutzt wegen seiner Straßennetz-Kopplung weiterhin nur Busverkehr. Ein eigener Upload hat Vorrang vor dem automatischen Regionsfeed." />
+            <label class="linklike" title="Eigenen GTFS-Fahrplan als ZIP hochladen; dieser hat Vorrang vor dem automatischen Regionsfeed">GTFS-ZIP hochladen
               <input type="file" accept=".zip" hidden
               [disabled]="!scenario.id" (change)="onGtfsSelected($event)"></label>
               @if (!scenario.id) {
@@ -534,8 +685,8 @@
       </section>
       <section class="block actions">
         <button class="primary" (click)="generate()" [disabled]="busy || !scenario.id || running"
-          title="Startet die Generierungspipeline: Zonen, Attraktivitäten, Bevölkerung, Aktivitäten, Matrizen, Logistik">
-          {{ running ? 'Generierung läuft…' : 'Nachfragemodell generieren' }}
+          title="Speichert den aktuellen Szenariostand und startet anschließend die gewählten Ausgaben">
+          {{ running ? 'Generierung läuft…' : (hasTarget('mobilecity') && scenario.targetModels.length === 1 ? 'MobileCity-Export erzeugen' : 'Szenario erzeugen') }}
         </button>
         @if (!scenario.id) {
           <p class="hint">Szenario zuerst oben neben der Auswahl speichern.</p>
@@ -880,10 +1031,88 @@
                                                 Tagesgestaltung – bei aktivem Was-wäre-wenn-Szenario dessen Einfluss.</p>
                                               </section>
                                             }
+                                            @if (job?.summary?.['censusStructureStatus']) {
+                                              <div class="card">
+                                                <h2>Regionale Bevölkerungsstruktur</h2>
+                                                <p>Zensus 2022: {{ job?.summary?.['censusStructureWeightedZones'] }} Zonen angepasst,
+                                                  {{ job?.summary?.['censusStructureFallbackZones'] }} Zonen mit Anpassungs-Fallback.</p>
+                                                @if (job?.summary?.['censusStructureStatus'] === 'fallback') {
+                                                  <p>Regionale Anpassung nicht angewendet. Gründe stehen im Prüfbericht.</p>
+                                                }
+                                                <a [href]="artifactUrl('population/census-structure.json')" target="_blank">Zielanteile, Stichprobenabweichungen und Quellen</a>
+                                              </div>
+                                            }
                                             @if (mobileCity) {
                                               <section class="block">
                                                 <h2>MobileCity-Export</h2>
-                                                <p class="hint">District-aggregierte Config-Tabellen für die MobileCity/Takomat-App.</p>
+                                                @if (scenario?.mobileCity?.useRegionalFleet || scenario?.mobileCity?.electricShare != null) {
+                                                  <a [href]="mobileCityUrl('fleet-provenance.json')" target="_blank">Pkw-Antriebe: Quellen und Gebietsabdeckung</a>
+                                                }
+                                                @if (mobileCity.mode === 'regional') {
+                                                  <p class="hint">Regionalpaket mit vereinfachten Netzen und unkalibriertem Modellprofil.</p>
+                                                  @if (mobileCityResultStale()) {
+                                                    <p class="inventory-stale">Region, Jahr oder MobileCity-Einstellungen wurden seit diesem Lauf geändert. Paket neu erzeugen.</p>
+                                                  }
+                                                  <a [href]="mobileCityUrl('mobilecity-import.zip')" download>Regionalpaket herunterladen</a>
+                                                  <a [href]="mobileCityUrl('provenance.json')" target="_blank">Gebietszuordnung, Quellen und Modellannahmen</a>
+                                                  @if (mobileCity.dataInventory) {
+                                                    <details class="data-inventory result" open>
+                                                      <summary>Datenstatus dieses Pakets</summary>
+                                                      <ul>
+                                                        @for (item of mobileCity.dataInventory.items; track item.id) {
+                                                          <li [attr.data-status]="item.status">
+                                                            <span class="inventory-dot"></span>
+                                                            <span><strong>{{ item.label }}</strong>
+                                                              <small>{{ mobileCityStatusLabel(item.status) }} · {{ mobileCityResolutionLabel(item.resolution) }} · {{ item.source }}</small>
+                                                              @if (mobileCityDisplayValue(item)) {
+                                                                <small>Wirksamer Wert: {{ mobileCityDisplayValue(item) }}</small>
+                                                              }
+                                                              @if (item.referenceDate) {
+                                                                <small>Datenstand: {{ item.referenceDate }}</small>
+                                                              }
+                                                              @if (item.coverage < 1 && item.status !== 'missing') {
+                                                                <small>Amtliche Abdeckung: {{ item.coverage | percent:'1.0-1' }}</small>
+                                                              }
+                                                              <small>{{ item.note }}</small>
+                                                            </span>
+                                                          </li>
+                                                        }
+                                                      </ul>
+                                                      <a [href]="mobileCityUrl('data-inventory.json')" target="_blank">Maschinenlesbarer Datenstatus</a>
+                                                      @for (snapshot of mobileCity.dataInventory.sourceSnapshots; track snapshot.id) {
+                                                        @if (snapshot.path !== 'bundled-resource') {
+                                                          <a [href]="mobileCityUrl(snapshot.path)" target="_blank">Quellsnapshot: {{ snapshot.id }}</a>
+                                                        }
+                                                      }
+                                                    </details>
+                                                  }
+                                                }
+                                                @if (mobileCity.mode === 'template') {
+                                                  <p class="hint">Vorlage {{ mobileCity.templateId }} · Bezugsjahr {{ mobileCity.referenceYear }} · {{ mobileCity.updatedDistricts?.length }} Districts aktualisiert.</p>
+                                                  <a [href]="mobileCityUrl('mobilecity-import.zip')" download>Vollständigen Importsatz herunterladen</a>
+                                                  <a [href]="mobileCityUrl('provenance.json')" target="_blank">Herkunft und Änderungen</a>
+                                                } @else if (mobileCity.mode !== 'regional') {
+                                                  <p class="hint">Teilbeitrag für {{ mobileCity.referenceYear }}. Für einen vollständigen Import fehlen Netze und Modellparameter.</p>
+                                                }
+                                                @if (mobileCity.mode === 'regional' || mobileCity.mode === 'template') {
+                                                  @if (mobileCityValidation; as validation) {
+                                                    @if (validation.status === 'passed') {
+                                                      <p class="mobilecity-validation passed">Native ConfigTool-Prüfung bestanden
+                                                        @if (validation.years.length) {
+                                                          ({{ validation.years[0] }}–{{ validation.years[validation.years.length - 1] }})
+                                                        }
+                                                        · {{ validation.nonFiniteCells }} nicht endliche Zellen.</p>
+                                                      <a [href]="artifactUrl('mobilecity-validation/validation-report.json')" target="_blank">Nativer Prüfbericht</a>
+                                                    } @else if (validation.status === 'failed') {
+                                                      <p class="mobilecity-validation failed">Native ConfigTool-Prüfung fehlgeschlagen: {{ validation.reason }}</p>
+                                                      <a [href]="artifactUrl('mobilecity-validation/validation-report.json')" target="_blank">Fehlerbericht</a>
+                                                    } @else {
+                                                      <p class="mobilecity-validation skipped">Native ConfigTool-Prüfung übersprungen: {{ validation.reason }}</p>
+                                                    }
+                                                  } @else {
+                                                    <p class="mobilecity-validation skipped">Für dieses Paket liegt noch kein nativer Prüfstatus vor.</p>
+                                                  }
+                                                }
                                                 <table class="kpis">
                                                   <tr title="Verkehrszellen als MobileCity-Districts (Untersuchungsgebiet + Umland)">
                                                     <td>Districts</td>
@@ -898,7 +1127,7 @@
                                                             <td>K {{ mobileCity.tripsPerDay.children }} · E {{ mobileCity.tripsPerDay.adults }} · S {{ mobileCity.tripsPerDay.seniors }}</td></tr>
                                                           </table>
                                                           <ul class="artifacts">
-                                                            @for (t of ['StudyAreaConfig.csv','REGdistricts.csv','REGattractivity.csv','POPinhabitants.csv','POPtrips.csv','districts.shp','districts.dbf','districts.shx','districts.prj']; track t) {
+                                                            @for (t of ['StudyAreaConfig.csv','REGdistricts.csv','REGattractivity.csv','POPinhabitants.csv','POPtrips.csv','TECCarFleet.csv','districts.shp','districts.dbf','districts.shx','districts.prj']; track t) {
                                                               <li>
                                                                 <a [href]="mobileCityUrl(t)" target="_blank">{{ t }}</a>
                                                               </li>

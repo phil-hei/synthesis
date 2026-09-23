@@ -252,6 +252,109 @@ label.range-field input[type="range"] {
   margin-top: 9px;
 }
 
+.data-inventory {
+  margin: 10px 0 12px;
+  padding: 9px 10px;
+  border: 1px solid #dbe4ed;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.data-inventory summary {
+  cursor: pointer;
+  color: #15314f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.data-inventory ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.data-inventory li {
+  display: grid;
+  grid-template-columns: 9px 1fr;
+  gap: 7px;
+  padding: 6px 0;
+  border-top: 1px solid #edf1f5;
+  color: #34495e;
+  font-size: 11px;
+}
+
+.data-inventory li > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.data-inventory small {
+  color: #66778a;
+  line-height: 1.35;
+}
+
+.inventory-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 3px;
+  border-radius: 50%;
+  background: #6d7f91;
+}
+
+.data-inventory li[data-status="observed"] .inventory-dot { background: #238552; }
+.data-inventory li[data-status="derived"] .inventory-dot { background: #2f6fb1; }
+.data-inventory li[data-status="assumption"] .inventory-dot,
+.data-inventory li[data-status="mixed"] .inventory-dot { background: #d27a2c; }
+.data-inventory li[data-status="missing"] .inventory-dot { background: #b23c32; }
+
+.inventory-readiness,
+.inventory-stale {
+  margin: 8px 0;
+  padding: 7px 8px;
+  border-left: 3px solid #b23c32;
+  border-radius: 3px;
+  background: #fff2f0;
+  color: #7d3029;
+  font-size: 11px;
+}
+
+.mobilecity-validation {
+  border-left: 4px solid #94a3b8;
+  border-radius: 4px;
+  margin: 0.65rem 0;
+  padding: 0.55rem 0.75rem;
+}
+
+.mobilecity-validation.passed {
+  background: #ecfdf5;
+  border-color: #16a34a;
+  color: #166534;
+}
+
+.mobilecity-validation.failed {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
+.mobilecity-validation.skipped {
+  background: #f8fafc;
+  color: #475569;
+}
+
+.inventory-readiness[data-ready="true"] {
+  border-left-color: #238552;
+  background: #eff8f3;
+  color: #276044;
+}
+
+.data-inventory.result a {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+}
+
 .fallback-upload {
   padding: 9px;
   border: 1px solid #e7c49f;

@@ -31,7 +31,7 @@ public class PopulationGenerator {
     }
 
     private static final double[] HOUSEHOLD_SIZE_SHARES = {0.42, 0.33, 0.12, 0.09, 0.04};
-    private static final int YEAR = 2026;
+    private final int referenceYear;
 
     private final List<Zone> zones;
     private final Random random;
@@ -39,15 +39,25 @@ public class PopulationGenerator {
     private final Map<String, double[]> gravityCache = new HashMap<>();
     private CommuterMatrix.Mapping commuterMapping;
     private Double externalWorkShare;
+    private CensusStructureSource.Resolved censusStructure;
+    private final Map<String, Object> censusReport = new java.util.LinkedHashMap<>();
+
+    public void useCensusStructure(CensusStructureSource.Resolved structure) { this.censusStructure = structure; }
+    public Map<String, Object> censusStructureReport() { return censusReport; }
 
     public PopulationGenerator(List<Zone> zones, Random random) {
         this(zones, random, 0L);
     }
 
     public PopulationGenerator(List<Zone> zones, Random random, long destinationSeed) {
+        this(zones, random, destinationSeed, 2026);
+    }
+
+    public PopulationGenerator(List<Zone> zones, Random random, long destinationSeed, int referenceYear) {
         this.zones = zones;
         this.random = random;
         this.destinationSeed = destinationSeed;
+        this.referenceYear = referenceYear;
     }
 
     /** Uses observed commuter relations for WORK; uncovered home zones keep the gravity fallback. */
@@ -107,6 +117,11 @@ public class PopulationGenerator {
 
     public Result generate(Path populationDir, Scenario scenario) throws IOException {
         Files.createDirectories(populationDir);
+        censusReport.clear();
+        Files.deleteIfExists(populationDir.resolve("census-structure.json"));
+        if (scenario.population.useCensusStructure && !scenario.population.useKitPopulation)
+            throw new IllegalArgumentException("Zensus-Struktur benötigt das KIT-Demografie-Sample");
+        List<Map<String, Object>> structureZones = new ArrayList<>();
         List<PersonRef> persons = new ArrayList<>();
         long householdId = 1;
         long personId = 1;
@@ -132,13 +147,23 @@ public class PopulationGenerator {
             // KIT-Demografie-Sample (echte Haushaltskompositionen) optional zuschalten
             PopulationSample kitSample = scenario.population.useKitPopulation
                     ? PopulationSample.fromResource("/kit-population-sample.csv") : null;
+            if (scenario.population.useCensusStructure) {
+                censusReport.put("seedPool", "kit-population-sample.csv");
+                censusReport.put("seedPoolCompositionSha256", kitSample.fingerprint());
+                censusReport.put("seedPoolHouseholds", kitSample.householdCount());
+            }
             int[] sampledPersonsByZone = sampledPersonsByZone(scenario.population.samplingFraction);
 
             for (int zonePosition = 0; zonePosition < zones.size(); zonePosition++) {
                 Zone zone = zones.get(zonePosition);
                 int remaining = sampledPersonsByZone[zonePosition];
+                CensusHouseholdSampler regional = null;
+                if (scenario.population.useCensusStructure && censusStructure != null
+                        && censusStructure.zones().containsKey(zone.index) && remaining > 0 && !zone.external)
+                    regional = new CensusHouseholdSampler(kitSample, censusStructure.zones().get(zone.index));
                 while (remaining > 0) {
-                    List<PopulationSample.Member> composition = drawHousehold(kitSample, remaining);
+                    List<PopulationSample.Member> composition = regional != null
+                            ? regional.draw(random, remaining) : drawHousehold(kitSample, remaining);
                     int size = composition.size();
                     int economicalStatus = 1 + random.nextInt(5);
                     int income = 900 + economicalStatus * 800 + random.nextInt(600);
@@ -146,7 +171,7 @@ public class PopulationGenerator {
                     double lon = zone.minLon + random.nextDouble() * (zone.maxLon - zone.minLon);
                     String homeLocation = CsvArtifacts.location(lon, lat);
 
-                    households.write(householdId + ";" + householdId + ";" + YEAR + ";" + zone.id + ";"
+                    households.write(householdId + ";" + householdId + ";" + referenceYear + ";" + zone.id + ";"
                             + homeLocation + ";0;" + size + ";" + income + ";" + economicalStatus + "\n");
 
                     List<PersonRef> members = new ArrayList<>(size);
@@ -189,7 +214,35 @@ public class PopulationGenerator {
                     remaining -= size;
                     householdId++;
                 }
+                if (regional != null) {
+                    Map<String, Object> report = regional.report(); report.put("zoneId", zone.id);
+                    structureZones.add(report);
+                }
             }
+        }
+        if (scenario.population.useCensusStructure) {
+            long weighted = structureZones.stream().filter(r -> "weighted".equals(r.get("status"))).count();
+            censusReport.put("schemaVersion", 1);
+            censusReport.put("source", "destatis-zensus-2022");
+            censusReport.put("referenceDate", "2022-05-15");
+            censusReport.put("scenarioYear", scenario.referenceYear);
+            censusReport.put("seed", scenario.population.seed);
+            censusReport.put("samplingFraction", scenario.population.samplingFraction);
+            censusReport.put("method", "whole-household-exponential-weighting-v1");
+            censusReport.put("temporalPolicy", "2022 shares applied to scenario totals; no demographic projection");
+            censusReport.put("status", weighted == 0 ? "fallback" : "weighted-with-diagnostics");
+            censusReport.put("weightedZones", weighted);
+            censusReport.put("fitFallbackZones", structureZones.size() - weighted);
+            censusReport.put("maxFitShareError", CensusHouseholdSampler.MAX_FIT_ERROR);
+            censusReport.put("license", CensusPopulationSource.LICENSE);
+            censusReport.put("attribution", CensusPopulationSource.ATTRIBUTION);
+            censusReport.put("unavailableReason", censusStructure == null ? "Strukturdaten nicht aufgelöst" : censusStructure.unavailableReason());
+            censusReport.put("datasets", censusStructure == null ? List.of() : censusStructure.datasets());
+            censusReport.put("ageGrid", censusStructure == null ? null : censusStructure.ages());
+            censusReport.put("householdGrid", censusStructure == null ? null : censusStructure.households());
+            censusReport.put("zones", structureZones);
+            new com.fasterxml.jackson.databind.ObjectMapper().writerWithDefaultPrettyPrinter()
+                    .writeValue(populationDir.resolve("census-structure.json").toFile(), censusReport);
         }
         return new Result(persons, (int) (householdId - 1), carCount,
                 externalWorkDestinations);

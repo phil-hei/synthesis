@@ -74,6 +74,7 @@ public class MatrixGenerator {
         float[][] ptCost = new float[n][n];
 
         float[][] bikeDistance = new float[n][n];
+        float[][] walkDistance = new float[n][n];
         float[][] airDistance = new float[n][n];
         for (Zone from : zones) {
             for (Zone to : zones) {
@@ -109,6 +110,7 @@ public class MatrixGenerator {
                 // Distanzmatrizen in METERN (validiert gegen demandsimulation.csv des Tutorials)
                 distance[i][j] = (float) (carKm * 1000);
                 bikeDistance[i][j] = (float) (bikeKm * 1000);
+                walkDistance[i][j] = (float) (walkKm * 1000);
                 airDistance[i][j] = (float) (beelineKm * 1000);
                 carTime[i][j] = (float) carMin;
                 bikeTime[i][j] = (float) bikeMin;
@@ -135,6 +137,7 @@ public class MatrixGenerator {
         // Tutorial-Layout: Distanzmatrizen liegen unter other/
         files.put("other/CAR_DIS.mtx.bz2", distance);
         files.put("other/BIKE_DIS.mtx.bz2", bikeDistance);
+        files.put("other/PED_DIS.mtx.bz2", walkDistance);
         files.put("other/AIR_DIS.mtx.bz2", airDistance);
         files.put("DIS_Car.mtx.bz2", distance);
 

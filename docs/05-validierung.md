@@ -2863,6 +2863,186 @@ EpigeneCSV-Blocklogik unabhängig vom Writer, findet exakt `stock.total` mit Hea
 `districtID,2025` und weist Mehrfach-Pkw sowie das Ignorieren unbekannter Haushaltszonen nach.
 `GenerationPipelineE2ETest` fordert das Artefakt in der vollständigen Offline-Pipeline.
 
+## MobileCity-Zielformat TRAMIGO (2026-09-15) — Teil-Export bestätigt, Vollimport offen
+
+> **Historischer Ausgangsstand:** Die folgende Bestandsaufnahme beschreibt den Export am
+> 15. September 2026. Die danach umgesetzten Regional-, Quellen-, Netz-, Validierungs- und
+> Umlandbausteine sind in den nachfolgenden MobileCity-Abschnitten fortgeschrieben.
+
+Geprüft wurden der aktuelle `MobileCityExporter`, die fünf XLSX-Dateien, zwei Transit-CSVs
+und `TRAMIGO_GIS.gpkg` aus dem bereitgestellten Ordner `22 TRAMIGO Mittlerer Oberrhein`
+sowie Quellcode und mitgelieferter TRAMIGO-Importsatz des `MobileCityConfigTool` aus
+`Network Pipeline`. Kommentare und Arbeitsaufträge innerhalb der Beispielmappen wurden
+als Referenzinhalt behandelt. Es wurde keine Umsetzung dieser Arbeitsaufträge vorgenommen.
+
+**Befund:** Das aggregierte Zielformat lässt sich aus SyntheSis bedienen. Der bestehende
+Export ist jedoch ein Beitrag zu einer vollständigen CityConfig und kein eigenständig
+importierbares MobileCity-Paket. Der aktuelle C#-CityConfig-Import liest **25 CSV-Dateitypen**;
+Davon sind 24 zwingend; `TECRidepooling` ist im Reader optional.
+SyntheSis lieferte zum Prüfzeitpunkt **6**, mit teilweise unvollständigen Tabellenblöcken. Die Aussage
+aus dem früheren TECCarFleet-Befund, fehlende Teilbestände blieben einfach Takomat-Defaults,
+ist als automatische Importfunktion nicht belegt und muss eingeschränkt werden.
+
+### Zielformat und vorhandene Abdeckung
+
+Die Hauptmappe `2026.01.07_MC_CityConfig_TRAMIGO.xlsx` enthält 24 Blätter einschließlich
+`Contents` und `TEMPLATE`. Rad- und Transit-Nodes/Links liegen separat. XLSX ist hier das
+Bearbeitungsformat; der mitgelieferte Importer liest benannte CSV-Dateien mit Epigene-
+Tabellenblöcken und erzeugt anschließend `CityConfig.bin` per MessagePack. Die komplette
+App-Konfiguration umfasst zusätzlich Governance- und Szenario-Binärdateien. Ein direktes
+XLSX-Importverfahren ist im geprüften CityConfig-Reader nicht vorhanden.
+
+| Bereich | SyntheSis heute | Abweichung / erforderlicher Beitrag |
+|---|---|---|
+| `StudyAreaConfig` | Jahresparameter, District-Anzahlen, Kartenzentrum | Basisjahr fest 2025; frühestes Jahr ebenfalls 2025, Ende 2050. Hauptreferenz: 2021 / 2025 / 2050. Jahresvertrag vereinheitlichen. |
+| `REGdistricts` | `districtID,name,districtType`; intern 1, extern 0 | Referenz enthält zusätzlich `totalArea,settlementArea,urbanization` und Typ 2 für das Kerngebiet. Die drei Zusatzspalten werden vom geprüften District-Reader nicht gelesen; für das vollständige Referenzschema dennoch berücksichtigen. |
+| `REGattractivity` | Vier Zwecke, je Zweck auf maximal 100 normalisiert | Format passend; Methode weicht von der Referenz ab: dort 25 % besuchergewichtete POIs und 75 % POIs/km². Gleiche Skala bedeutet keine gleiche Kalibrierung. |
+| `POPinhabitants` | Drei Altersgruppen je District für 2025 | Liefert Stichprobenzahlen; Referenz enthält absolute Bevölkerungszeitreihen 2015–2045. Hochrechnung und Umgang mit Jahresverläufen fehlen. |
+| `POPtrips` | Drei Altersgruppen × vier Zwecke, Wege pro Person und Tag aus Wochenplänen | Kernstruktur passend; nur 2025 statt Referenz 2016–2025. Raten nicht mit dem Bevölkerungshochrechnungsfaktor multiplizieren. |
+| `TECCarFleet` | Nur `stock.total` je District für 2025 | Stichproben-Pkw; `registrations.total`, `registrations.shareElectric`, `stock.shareElectric` und `TECCarFleetParameters` fehlen. Bestands-/Antriebsdaten und Parameter gezielt aus einer abgestimmten Basis übernehmen. |
+| District-Geometrie | Vier WGS84-Shapefile-Dateien mit `districtID` | Aktuell nur Lat/Lon-Begrenzungsrechtecke; weder TRAMIGO-Multipolygone noch echte projizierte Rasterpolygone. |
+| `POPtripsSurrounding` | fehlt | Zweckabhängige Anteile der Umlandwege ins Untersuchungsgebiet; benötigt reale Umland-Districts mit Bevölkerung. |
+| `INFcarNodes/Links`, `INFbikeNodes/Links`, `INFtransitNodes/Links` | fehlen | Netzaufbereitung über die mitgelieferten Pipelines oder einen eigenen Adapter. Nodes und Links müssen dieselben Districts wie Bevölkerung/Geometrie verwenden. |
+| `INFpedestrian`, `INFdistricts`, `TECTravelDistance` | fehlen | Fuß-OD-Zeiten/-Distanzen, Zu-/Abgang und Tarifparameter sowie Streckenanteile innerhalb des Gebiets. Vorhandene Matrizen helfen, decken aber nicht alle Inhalte ab; MobileCity erwartet km und Minuten. |
+| `REGchargers`, `TECTransit`, `TECCarsharing`, `TECRidepooling`, `TECEmissions`, `MODparameters`, `ENV`, `FIN`, `LAQ` | fehlen | Regionale Bestandsdaten, Modell-/Kosten-/Wirkungsparameter benötigen explizite Quellen oder abgestimmte Vorlagen. Nicht vollständig aus synthetischen Aktivitäten ableitbar. |
+| Governance / Logistik | kein MobileCity-Export | Die Shuttle-Beispiele beschreiben Maßnahmen und ihren Zeitplan. Ein Vertrag für Paketmengen, Depots und Liefertouren ist darin nicht enthalten. `TECcargobikeSharing` bezeichnet Sharing und ersetzt keinen Logistikvertrag. |
+
+`TECcargobikeSharing` ist in der Hauptmappe und im mitgelieferten Importordner vorhanden,
+wird aber vom geprüften `ST2100_CityConfigTransformer` nicht als eigener CSV-Reader aufgerufen.
+Es ist deshalb nicht in den 25 gezählten CityConfig-Dateitypen enthalten. Die sechs
+SyntheSis-CSVs werden ergänzt durch vier Shapefile-Komponenten und `summary.json`.
+
+### Nachgewiesene Hindernisse
+
+1. **Vollimport scheitert bereits an fehlenden Dateien bzw. Tabellen.**
+   `ST2122_CityConfigREGDistrictsReader` lädt unter anderem `REGchargers`, `TECCarsharing`
+   und `INFdistricts`. `EpigeneCSVFileReader.GetCSV` wirft bei fehlender Datei.
+   Auch `EpigeneCSVFile.TryGetValue` ruft zuerst `FindTable` auf; ein fehlender Tabellenblock
+   wirft eine Exception. Ein `stock.total`-Export darf deshalb eine vollständige
+   `TECCarFleet`-Vorlage nicht schlicht ersetzen. Zusätzlich fordert
+   `ST2128_CityConfigTECCarFleetReader` acht Einträge aus `TECCarFleetParameters`.
+   Benötigt wird eine Zusammenführung auf Tabellen-/District-/Jahresebene.
+
+2. **Stichprobenumfang wird als Gesamtbestand ausgegeben.** Isolierte Sonde mit dem
+   aktuellen `PopulationGenerator` und `MobileCityExporter`: eine Zone mit 1.000 Einwohnern,
+   `samplingFraction=0.1`, Seed 42, `useKitPopulation=false`, `carsPerHousehold=1.0`.
+   Erzeugt und exportiert wurden **100 Personen und 50 Pkw**. Eine Hochrechnung erfolgt
+   nicht. `POPinhabitants` darf für einen vollständigen Gebietsexport nicht 100 Einwohner
+   behaupten. Pkw benötigen eine explizite Gewichtung; kleine/leere Stichprobenzellen
+   benötigen eine definierte Behandlung statt blindem Teilen durch den Stichprobenanteil.
+
+3. **Jahre sind widersprüchlich.** Dieselbe Sonde schreibt in `household.csv` 2026
+   (`PopulationGenerator.YEAR`), in `POPinhabitants` und `StudyAreaConfig` dagegen 2025
+   (`MobileCityExporter.BASE_YEAR`). Das gewünschte Referenzjahr muss Bestandteil eines
+   gemeinsamen Exportvertrags werden. Historie und Projektionen dürfen nicht erfunden werden;
+   ein einzelnes Basisjahr beweist keine lauffähige Simulation bis 2050.
+
+4. **Districts und Umland brauchen eine gemeinsame räumliche Definition.** Synthetische
+   `SYN-NNN`-IDs sind laut dokumentierter Takomat-Rückmeldung vom 2026-07-03 zulässig.
+   Sie passen aber nicht unmittelbar zu vorhandenen TRAMIGO-Netzen mit anderen District-IDs.
+   Zum Weiterverwenden dieser Netze müssen unsere Daten auf deren Gebietspolygone aggregiert
+   werden. Alternativ müssen alle zonenabhängigen Tabellen und Netze für unsere Districts
+   neu entstehen. Die acht SyntheSis-Außenzonen haben absichtlich keine Einwohner und bilden
+   damit keine vollständige Bevölkerung des MobileCity-Umlands ab.
+
+5. **Shapefile-Format korrekt, Geometrie für LAEA-Zonen unvollständig.** Die binäre
+   Struktur besteht den bestehenden Test. Eine zusätzliche Sonde mit einem aktuellen
+   1-km-INSPIRE-Raster bei 8,40–8,41° E / 49,00–49,01° N zeigt unterschiedliche Eckpunkte
+   zwischen `ShapefileWriter.writeRectangles` und `GeoJson.zonesToFeatureCollection`:
+   Shapefile = WGS84-Bounding-Box, GeoJSON = tatsächliche projizierte Zelle.
+   Für TRAMIGO sind Polygon-/Multipolygon-Geometrien und die Transformation aus
+   EPSG:25832 (`TRAMIGO_GIS.gpkg`) nach WGS84 erforderlich.
+
+### Referenzdateien sind unterschiedliche Bearbeitungsstände
+
+- Die Hauptmappe enthält **99 Districts** (27 Typ 2, 56 Typ 1, 16 Typ 0), das GeoPackage
+  und die Bevölkerungs-/Attraktivitätstabellen jeweils **98**. `DEB3H` steht zusätzlich
+  in `REGdistricts`, fehlt aber in diesen anderen Quellen. Die in `StudyAreaConfig!B25:B26`
+  stehenden Anzahlen 145/15 sind als nicht mehr verwendet kommentiert.
+- Die vier TECCarFleet-Bestandstabellen enthalten für `FRF11` insgesamt **38 gespeicherte
+  `#N/A`-Zellen** (`B136:K136`, `B237:K237`, `B338:J338`, `B439:J439`). Diese sind keine
+  fachlich gültigen Nullwerte.
+- Die separate Netzreferenz enthält **1.276 Rad-Nodes / 3.812 Rad-Links** und
+  **7.615 Transit-Nodes / 10.106 Transit-Links**. Alle dort referenzierten Link-Endpunkte
+  existieren. Das belegt noch keine Erreichbarkeit zwischen allen Districts.
+- Im Pkw-Netz der Hauptmappe stehen **6.156 Nodes / 9.696 Links**, darunter vier zusätzliche
+  Einträge mit bereits vorhandenem gerichtetem `(fromNodeID,toNodeID)`-Paar. Der aktuelle
+  C#-Reader verwendet diesen Paar-Schlüssel in `Dictionary.Add`, sodass diese Duplikate
+  beim direkten Übernehmen einen Konflikt erzeugen. Außerdem gehören Referenzknoten teils
+  nicht zur District-Liste.
+- Der mitgelieferte Ordner `MobileCityConfigTool/Includes/StudyAreas/Tramigo/Import` ist
+  weiterverarbeitet: **alle 25 benötigten CSV-Dateitypen vorhanden**, 98 Districts,
+  Pkw-Netz **4.075 Nodes / 4.893 Links** ohne doppelte gerichtete Paar-Schlüssel. Pkw,
+  Rad und Transit enthalten für jeden dieser 98 Districts einen aktiven Referenzknoten,
+  und alle Link-Endpunkte existieren. Im Radnetz liegen jedoch **21 Referenzknoten mit
+  nicht in der District-Liste enthaltenen Zuordnungen**. Auch dieser Satz ist damit ein
+  zu validierender Ausgangspunkt, kein bereits abgenommener Golden-Datensatz.
+
+### Verifikation und nächste Umsetzung
+
+**Verifiziert:** `cd backend && mvn -o test -Dtest=MobileCityExporterTest,ShapefileWriterTest`
+bestand mit **2 Tests, 0 Fehlern, 0 Skips**. Isolierte Java-Sonden führten den aktuellen
+Bestands- und Geometriecode aus. Eine separate Python-Auswertung emulierte die
+Epigene-Blocktrennung, fand alle zehn fachlichen Tabellenblöcke der sechs erzeugten CSVs
+und prüfte Datei-/Tabellenanforderungen sowie Referenz-IDs. XLSX-Zahlen stammen aus den
+gespeicherten Werten; die Mappen wurden weder neu berechnet noch verändert.
+
+**Nicht nachgewiesen:** erfolgreicher C#-Vollimport, MessagePack-Roundtrip oder
+MobileCity-Simulationslauf. `dotnet` ist im geprüften PATH und den üblichen lokalen
+Installationspfaden nicht verfügbar. Die Befunde zum Exception-Verhalten beruhen auf
+dem mitgelieferten C#-Quellcode, nicht auf einer ausgeführten .NET-Konvertierung.
+
+**Konsequenz / empfohlene Reihenfolge:**
+
+1. Einen versionierten TRAMIGO-Importsatz mit konsistenten Districts als Basis festlegen
+   und seine bekannten Referenzfehler bereinigen; Pflichtblöcke und Schlüssel validieren.
+2. Die vorhandenen POP-/REG-/Pkw-Beiträge absichern: gemeinsame Jahre, absolute Bestände,
+   Definition der Attraktivität, echtes District-Mapping und korrekte Polygongeometrien.
+3. Beiträge gezielt in die Basis einfügen. Netz- und Modellparameter übernehmen oder
+   über die mitgelieferten Pipelines erzeugen; Fußmatrizen und Umlandbeziehungen ergänzen.
+4. In einer isolierten Kopie den echten Config-Tool-Import, Netzvalidierung, binäres
+   Zurücklesen und einen MobileCity-Lauf im Basis- und Folgejahr durchführen.
+5. Die spätere Logistik-Erweiterung an einen separat abgestimmten Tabellenvertrag anbinden.
+   Für den hier geprüften Personenverkehrsexport ist dessen Fertigstellung keine Voraussetzung.
+
+## MobileCity-Vorlagenexport (2026-09-17) — Import und Simulation nachgewiesen, Referenzprüfung offen
+
+**Befund:** Der experimentelle Vorlagenmodus ergänzt einen vollständigen Importsatz.
+Die Format- und Exportlücken aus der Prüfung vom 15. September sind für diesen Pfad
+behoben. Eine fachlich fehlerfreie MobileCity-Konfiguration ist damit noch nicht belegt.
+
+| Prüfung | Ergebnis / Konsequenz |
+|---|---|
+| Versionierte Basis | `tramigo-v2`: 25 CSV-Familien, Governance-Dateien und 98 District-Geometrien. SHA-256 je Quelldatei und vorbereiteter Datei; lokale Daten werden nicht eingecheckt. `mobilecity-contract.json` beschreibt die für diese Vorlage geforderten Blöcke, einschließlich des im nativen Reader optionalen Ridepoolings. |
+| Referenzkorrekturen | District-Zähler 145→83 Untersuchungsgebiet, weiterhin 15 Umland. 21 Fahrradknoten mit Referenz auf nicht vorhandene Districts behalten ihren Netzknoten, verlieren aber `refNodeTrue`. |
+| Hochrechnung | Bestände beruhen auf zugeteilter Gesamtbevölkerung je Zone und Alters-/Pkw-Anteilen ihrer Stichprobe. Leere Stichprobenzonen verwenden ausdrücklich protokollierte Ersatzanteile. Wege bleiben Raten pro Person und Tag. |
+| District-Mapping | Flächenanteile in EPSG:3035 nach Polygonverschneidung; nur vollständig durch Region und Zonen abgedeckte Districts werden aktualisiert. Eine gleichmäßige Verteilung innerhalb der Rasterzelle ist eine Modellannahme. |
+| Erhalt der Vorlage | Unbetroffene Districts und vorhandene andere Jahresstützpunkte bleiben erhalten. Für ein fehlendes Beitragsjahr werden Werte linear interpoliert bzw. Randwerte konstant fortgeführt; Personen/Pkw ganzzahlig gerundet. Attraktivitäten, Netze, Umlandbeziehungen und andere Modellparameter werden übernommen. Neue Daten sind keine neue Kalibrierung dieser Parameter. |
+| Jahresvertrag | SyntheSis-Beitragsjahr und Haushaltsjahr standardmäßig 2026. `StudyAreaConfig.referenceYear` bedeutet im Fremdmodell **Simulationsstart** und bleibt hier 2018: direkt auf 2026 verschoben fehlt beim ersten Berechnungsschritt die Transitkapazität von 2025 (`GetCapacityUtilization`). Kein erfundener Ersatzwert; die historische Anlaufphase bleibt erhalten. |
+| Tatsächlicher Export | Testbeitrag für `DE122-01` (Karlsruhe Innenstadt-Ost), 97 weitere Districts behalten ihre Bestände. Testdaten dienen dem technischen Nachweis, nicht einer fachlichen Karlsruher Prognose. 25 CSV-Familien und echte MultiPolygon-Shapefiles einschließlich Löchern, ZIP sowie Herkunftsnachweis. |
+| Pkw-Übernahme im Modell | `CAL5020_TECCarFleet` übernimmt `stock.total` nur bei vorhandenem `stock.shareElectric` desselben Jahres. Der Export ergänzt deshalb ausschließlich für aktualisierte Districts den interpolierten/fortgeführten Referenzanteil. Ohne diese Ergänzung wurden im Test 1.293 statt exportierter 1.872 Pkw verwendet. Mit Ergänzung: **1.872→1.872**, Bevölkerung **5.617→5.617**; das Prüfskript prüft beide Zahlen im nativen Simulationsergebnis. |
+| Echter Import / Zurücklesen | Der lokale .NET-8-Konverter erzeugt `CityConfig.bin`, `GovernanceConfig.bin`, `StartScenario.bin`. Ein separater Prozess lädt die Dateien und simuliert bis einschließlich 2026 und 2027. |
+| Konverter-Korrekturen | Nur isolierte Arbeitskopie: fehlende Binärdateien beim Erstimport zulassen; Routingprüfung bis zur initialisierten Config verschieben; vor Prüfung beider Pkw-Matrizen auch beide berechnen. Das Prüfskript protokolliert Quell- und Patch-Hashes. Originale bleiben unverändert. |
+| Verbleibende Datenfehler | Sieben aktive Transitkanten besitzen positive Distanz, aber weder Fahrzeit noch Geschwindigkeit. Dafür existiert auch keine direkte Gegenkante als belegter Ersatz. Die Simulation liefert außerdem zwölf nicht endliche Zellen in zwei Ergebnisdateien (`LAQ`, `seasonTicketRate`) für 2026/2027. Entsprechende NaN-Werte traten bereits im Baseline-Lauf ohne SyntheSis-Beitrag auf. |
+
+**Evidenz:** Lokal liegen der erzeugte Importsatz unter
+`validation/mobilecity/export-probe-v5/mobilecity/` und die isolierte Konverterprüfung
+unter `validation/mobilecity/validation-probe-v5/`. Der maschinenlesbare
+`validation-report.json` verknüpft Eingabe-/Tool-Hashes, Binärdateien, Fehler und
+nicht endliche Ergebniszellen. Er bleibt bei solchen Befunden `failed`, auch wenn
+Import und Simulation mit Exit-Code 0 enden. Ein erfolgreicher CSV-Export meldet
+im Studio daher keine erfolgreiche Modellvalidierung.
+
+**Software-Gates (2026-09-17):** `mvn -o test`: 169 Tests, 0 Fehler,
+7 übersprungen (162 ausgeführt). Darunter neun MobileCity-/Shapefile-Tests ohne Skip.
+Frontend: 44 Tests grün, `npm run build` erfolgreich; `git diff --check` sauber.
+Diese Software-Gates ersetzen nicht die oben ausgewiesene Referenzvalidierung.
+
+**Konsequenz:** Der Export kann für Formatabstimmung und technische Übergabe verwendet
+werden. Für die Freigabe der mitgelieferten Referenz müssen die sieben Fahrzeiten und
+die Ursachen der NaN-Ergebnisse mit belastbaren Daten bzw. Modellkorrekturen geklärt
+werden. Die Logistik-Erweiterung bleibt ein separater Tabellenvertrag.
+
 ## Distanz-Kalibrierung über drei Seeds (2026-07-27) — teilweise wirksam
 
 Präregistrierter A/B-Vergleich mit Seeds 42/43/44, je ca. 2.000 exportierten Personen, actiTopp,
@@ -2935,6 +3115,118 @@ keine Fernwege: In B liegen nur 0,29–0,43 % der Wege bei mindestens 20 km stat
 und/oder gravitationskonsistente externe Ziele adressieren; erst danach ist eine Multi-Band-
 Kalibrierung mit getrennten Hebeln sinnvoll.
 
+## MobileCity-Datenquellen (2026-09-18) — regionale Struktur und Pkw-Antriebe recherchiert
+
+**Befund:** Zusätzliche amtliche Quellen können wesentliche Eingaben für einen eigenständigen
+MobileCity-Export liefern. Zensus-Alters- und Haushaltsraster sowie KBA-Gemeindebestände wurden
+heruntergeladen und inhaltlich geprüft. Die folgenden Anbindungen sind noch nicht im
+Produktivcode umgesetzt. Recherche und Abrufprobe sind von einer vollständigen
+Regionszuordnung und einem Exportnachweis zu unterscheiden.
+
+### Priorisierte Quellen
+
+| Priorität | Quelle | Auflösung / Stand | Einsatz und Abruf |
+|---|---|---|---|
+| 1 | [Zensus: Alter in fünf Altersklassen](https://www.destatis.de/static/DE/zensus/gitterdaten/Alter_in_5_Altersklassen.zip) | 100 m, 1 km, 10 km; Stichtag 15.05.2022 | Altersrandwerte je Zone; ZIP mit CSVs und Beschreibung. Download und 100-m-Header geprüft. |
+| 1 | [Zensus: Größe des privaten Haushalts](https://www.destatis.de/static/DE/zensus/gitterdaten/Zensus2022_Groesse_des_privaten_Haushalts_in_Gitterzellen.zip) | 100 m, 1 km, 10 km; Stichtag 15.05.2022 | Haushaltsgrößenverteilung für die Synthese; Download und Header geprüft. |
+| 1 | [KBA FZ 27, Juli 2026](https://www.kba.de/SharedDocs/Downloads/DE/Statistik/Fahrzeuge/FZ27/fz27_202607.xlsx?__blob=publicationFile&v=3), Blatt FZ 27.17 | Gemeinden; 01.07.2026 | Pkw-Gesamtbestand, BEV und Plug-in-Hybride, jeweils private/gewerbliche Halter; XLSX geprüft. |
+| 2 | [Regionaldatenbank 12411-02-03-5-B](https://www.regionalstatistik.de/genesisws/downloader/00/tables/12411-02-03-5-B_00.csv) | Gemeinden; Abrufprobe beginnt mit 31.12.2024 | 17 Altersgruppen und Geschlecht zur Fortschreibung; öffentliches CSV, erster Dateiausschnitt geprüft. Kein Vollständigkeitsnachweis für alle Gemeinden/Jahre. |
+| 2 | [BNetzA-Ladesäulenregister](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html) | Einzelstandorte; Liste 01.09.2026 | Koordinatenbezogene Zuordnung zu Districts; CSV/XLSX. Zusätzlich dokumentierte tägliche öffentliche Schnittstelle. |
+| 2 | [BA-Pendlerdaten](https://statistik.arbeitsagentur.de/DE/Navigation/Statistiken/Interaktive-Statistiken/Pendler/Pendler-Nav.html) | Gemeinden und Kreise; Jahresdaten | Umlandverflechtungen für Arbeit; interaktive Auswahl mit CSV-Download. Automatischer Abruf in dieser Recherche nicht getestet. |
+| 3 | [MiD 2023, regionalisierte Ergebnisse](https://www.mobilitaet-in-deutschland.de/publikationen2023.html) | Kreise und Gemeinden ab 10.000 Einwohnern | Wegezahl, Tageskilometer, Mobilitätsquote und Modal-Split als Vergleichswerte; Gemeinde-XLSX geprüft. Modellschätzungen, keine amtlichen Bestandszahlen. |
+| Grundlage | [BKG-Verwaltungsgebiete](https://gdz.bkg.bund.de/index.php/default/webdienste/verwaltungsgebiete.html) | Gemeindegrenzen und statistische Schlüssel; versionierter Gebietsstand | Räumlicher Join des Kartenausschnitts auf amtliche Schlüssel. Für feinere Zuordnung VG25 prüfen; VG250 ist generalisiert. |
+
+### Zensus: direkte Alterszuordnung, Haushalte als eigene Grundgesamtheit
+
+Die fünf CSV-Altersspalten lassen sich ohne Aufteilung von Altersintervallen zuordnen:
+`Unter18` → Children, `a18bis29 + a30bis49 + a50bis64` → Adults,
+`a65undaelter` → Seniors. Diese Grenzen entsprechen dem aktuellen
+`MobileCityPopulation`-Code. Schlüssel ist `GITTER_ID_100m`; Zellmittelpunkte liegen in
+EPSG:3035 vor. CSV-Trenner ist Semikolon.
+
+Die Haushaltsdatei enthält `Insgesamt_Haushalte`, `1_Person` bis `5_Personen` sowie
+`6_Personen_und_mehr`. Die offene obere Klasse darf nicht pauschal als sechs Personen
+behandelt werden. Private Haushalte schließen Gemeinschaftsunterkünfte aus und verwenden
+das gemeinsame Wohnen einschließlich Nebenwohnungen. Deshalb dürfen ihre Personensummen
+nicht ungeprüft mit der Wohnbevölkerung gleichgesetzt werden.
+
+Die heruntergeladenen Beschreibungen dokumentieren statistisch veränderte Zellwerte und
+abweichende Summen. Im CSV-Test kommen positive Gesamtzahlen bei ausschließlich als „–“
+ausgewiesenen Altersgruppen vor. **Adapterfolge:** Originalwerte erhalten, fehlende tragfähige
+Struktur markieren und gegebenenfalls gröbere Raster-/Gemeindeanteile verwenden. Eine
+anschließende Anpassung auf das Szenario-Gesamttotal ist eine dokumentierte Modellierung.
+
+Weitere angebotene Merkmale sind Haushaltstyp, Familien mit Kindern und Seniorenstatus;
+deren Dateien wurden noch nicht praktisch geprüft. Einstieg und zusätzliche Regionaltabellen:
+[Destatis-Zensusangebot](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_inhalt.html).
+
+### Pkw: FZ 27.17 bevorzugen, Portalquoten fachlich unterscheiden
+
+Im geprüften KBA-Blatt `FZ 27.17`, Zeile 407, stehen für Rastatt am 01.07.2026:
+
+| Haltergruppe | Pkw insgesamt | BEV | Plug-in-Hybrid |
+|---|---:|---:|---:|
+| privat | 27.035 | 598 | 381 |
+| gewerblich | 3.467 | 907 | 352 |
+
+Eigene Rechnung: privater BEV-Anteil `598 / 27035 = 2,2119 %`, privater PHEV-Anteil
+`381 / 27035 = 1,4093 %`. Für die private Flotte ist diese Abgrenzung geeigneter als die
+allgemeine Elektroquote. Firmenwagen, die privat genutzt werden, bleiben damit allerdings
+außerhalb des privaten Zulassungsbestands.
+
+**Offener Join:** Das XLSX liefert Gemeindenamen unter einem Zulassungsbezirksschlüssel,
+keinen AGS pro Gemeindezeile. Zuordnung über Bezirkskontext und amtliches Gemeindeverzeichnis
+aufbauen; Mehrdeutigkeiten ablehnen. Gebietsstände abgleichen. Nach kartografischem Zuschnitt
+einer Teilgemeinde ist die Verteilung des Bestands auf Districts eine Schätzung.
+
+Das [KBA-Statistikportal](https://das-kba-statistikportal.hub.arcgis.com/datasets/statistikportal::fz-pkw-mit-elektro-antrieb-regionen/about)
+ist zusätzlich ohne Anmeldung per ArcGIS-REST abfragbar. Getestet: Tabellen-Metadaten,
+Stichtage 2023.01 bis 2026.07, Rastatt Stadt (`08216043`) und Zulassungsbezirk (`08216`).
+Die Stadt liefert zuletzt 7,3 % gemeinsame Elektroquote, aber keine getrennte BEV-Quote;
+der Bezirk liefert 4,7 % BEV und 2,4 % PHEV. Die Portaldefinition umfasst auch Brennstoffzellen.
+**Nicht direkt als `stock.shareElectric` übernehmen.**
+
+Technischer Endpunkt: Item `42111224b0934144ae7187cf1a391737`, `FeatureServer/0`,
+Service `FZ Pkw mit Elektro Antrieb Regionen` unter `services-eu1.arcgis.com/U09msXRZoxesNntH`.
+Metadaten nennen maximal 2.000 Datensätze pro Antwort; Pagination berücksichtigen.
+Numerische Felder haben separate `ZS_*`-Kennzeichen. `0` mit Kennzeichen `.` ist kein
+Nullbestand; laut [KBA-Zeichenerklärung](https://www.kba.de/DE/Statistik/zeichenerklaerung_ab_201801.html)
+ist der Wert unbekannt oder geheim. Prozentwerte sind etwa `7.3`, keine Anteile `0.073`.
+Das Portal meldet DL-DE BY 2.0; Quelle, Stichtag und eigene Berechnung mitführen.
+
+### Weitere Quellen und Integrationsregeln
+
+- **Fortschreibung:** Regionalstatistik kann neuere Gemeinde-Altersränder liefern. Das
+  Zensus-Raster bleibt die räumliche Ausgangsverteilung; die Übertragung neuer Ränder ist
+  eine modellierte Fortschreibung. Datenjahr nicht durch das Szenariojahr ersetzen.
+  GENESIS-Instanzen getrennt behandeln: Für die Bundes-API gelten seit Juli 2025 POST-
+  Requests; das aktuelle [API-Handbuch](https://genesis.destatis.de/datenbank/online/docs/GENESIS-Webservices_Introduction.pdf)
+  verlangt Authentifizierung. Der getestete Regionalstatistik-CSV-Download benötigt sie nicht.
+- **Laden:** Die [BNetzA-Schnittstellenbeschreibung](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Schnittstellen/start.html)
+  bestätigt einen täglich aktualisierten öffentlichen Datensatz. Für den ersten Adapter
+  ist ein versionierter CSV-Snapshot ausreichend. Ladeeinrichtung, Ladepunkt und Stecker
+  getrennt zählen; private Wallboxen und Vollständigkeit werden dadurch nicht belegt.
+  Die veröffentlichte Liste verwendet CC BY 4.0.
+- **Pendeln:** Die BA-Daten betreffen sozialversicherungspflichtige Beschäftigung.
+  Erwerbspendelbeziehungen sind keine beobachteten täglichen Fahrten; Homeoffice und
+  Wegehäufigkeit benötigen ein Verhaltensmodell. Einkauf/Freizeit benötigen eigene Ansätze.
+- **Mobilität:** MiD-Small-Area-Werte liefern regionale Vergleichsgrößen, keine vollständige
+  Altersgruppe-×-Wegezweck-Tabelle für `POPtrips`. Nach dem
+  [Methodenbericht](https://www.mobilitaet-in-deutschland.de/pdf/MiD2023_SAE-Bericht.pdf)
+  beziehen sie sich auf Wohnbevölkerung und modellierte Kennzahlen. Veröffentlichte
+  regionale Vertiefungsergebnisse sind laut Datei vorzuziehen, wenn vorhanden.
+- **Konsistenz:** Bestandsanteil und Neuzulassungsanteil sind verschiedene Größen.
+  Die Übertragung von BEV/PHEV auf MobileCitys Antriebsklassen muss vor Integration am
+  Zielmodell festgelegt werden. Ein Pkw-Elektroanteil darf nicht auf Lieferflotten übertragen
+  werden. Quellenwahl, Abdeckung, Null-/Fehlwertstatus und manuelle Vorgaben persistieren.
+
+**Nachweise:** Originaldateien, Download-URLs, SHA-256-Werte, REST-Antworten und
+`research-check.json` liegen im lokalen, gitignorierten Verzeichnis
+`validation/mobilecity/source-research-2026-09-18/`. Zensus-Archive wurden geladen und
+stichprobenartig gelesen, kein deutschlandweiter fachlicher Abgleich durchgeführt.
+Der Regionalstatistik-Test umfasst nur die ersten 8.000 Bytes. BNetzA/BA/BKG wurden anhand
+der Primärdokumentation bewertet. Keine neuen produktiven Datenabrufe oder Modelländerungen.
+
 ## Offene Punkte (nächste Schritte)
 
 1. **MobileCity finalisieren** (Takomat): Parser-Anforderungen klären (Jahresspalten, NUTS3-IDs),
@@ -2973,3 +3265,427 @@ sh gradlew runShortTerm     # Referenz: Original-Simulation
 # (fixedDestination.csv zusätzlich als fixeddestination.csv ablegen), Cache löschen:
 rm -rf results/short-term/cache && sh gradlew runShortTerm
 ```
+
+
+## Zensus-Strukturgewichtung (2026-09-21) — Originaldateien bis MobileCity geprüft
+
+**Hypothese und Vorabkriterien:** Durch Gewichtung ganzer KIT-Haushalte lassen sich
+regionale Alters- und Haushaltsgrößenanteile gemeinsam annähern: maximal 2 Prozentpunkte
+Abweichung der erwarteten Anteile und maximal 4 Prozentpunkte in einer Stichprobe von
+20.000 Personen bei Seeds 42/43/44. Diese Kriterien galten vor dem Java-Lauf; sie sind
+keine Garantie für kleine Zonenstichproben.
+
+**Aufbau (Messung 18.09.2026):** Beide Originalarchive aus dem Quellenbefund, festgelegte
+SHA-256-Prüfung, eine aggregierte Testzone für BBox 48,82–48,90° N / 8,15–8,25° E.
+`CensusStructureSource` ordnete 1.224 Alterszellen und 1.130 Haushaltszellen zu.
+Die Zielanteile unter 18 / 18–64 / ab 65 betrugen 17,5666 / 61,4209 / 21,0125 %;
+Haushalte 1 / 2 / 3 / 4 / 5 / 6+ Personen: 39,3034 / 31,6383 / 13,7163 / 10,4492 /
+3,1336 / 1,7592 %. Je Seed wurden 20.000 Personen erzeugt und die Alterszahlen im
+MobileCity-Beitrag gegen die tatsächlich erzeugten Personen geprüft. Aktivitätsdatei
+nur mit Header: Diese Probe belegt Bestandsübertragung, keine plausiblen Wegehäufigkeiten.
+
+| Seed | Kinder / Erwachsene / Senioren im Export | Maximaler Stichprobenfehler über Alter und Haushaltsgrößen |
+|---|---|---|
+| 42 | 3.434 / 12.240 / 4.326 | 1,9258 Prozentpunkte |
+| 43 | 3.535 / 12.311 / 4.154 | 1,7592 Prozentpunkte |
+| 44 | 3.525 / 12.202 / 4.273 | 1,7592 Prozentpunkte |
+
+**Befund:** Der maximale erwartete Fehler sank von 5,7114 auf 1,7592 Prozentpunkte;
+die erwarteten Altersanteile trafen ihre Ziele auf unter 0,001 Prozentpunkte.
+Der Restfehler kommt von den fehlenden 6+-Haushalten im KIT-Pool, nicht von einer
+numerischen Ungenauigkeit. Gleicher Seed reproduziert die Personen-, Haushalts-,
+Diagnose- und MobileCity-Bevölkerungsdateien in den Offline-Tests bytegleich.
+
+**Beim Gegencheck gefunden und behoben:**
+
+- Das Haushalts-ZIP enthält einen CP437-kodierten Beschreibungsdateinamen mit „ß“;
+  ein UTF-8-ZIP-Leser bricht schon am Inhaltsverzeichnis ab. Der Adapter unterstützt
+  nun die ZIP-Standardcodierung CP437 und explizit UTF-8-markierte Einträge.
+- Eine nicht darstellbare Gruppe kann den maximalen Fitfehler konstant halten.
+  Spätere Fits mit gleichem Maximalfehler werden weiter übernommen, damit sich die
+  darstellbaren Altersanteile verbessern können.
+- Unabhängiger Review: Bei Fallback waren zunächst verworfene Fit-Erwartungen als
+  angewendete Erwartungen beschriftet, und Restkürzungen fehlten im Zähler. Beide Fälle
+  sind korrigiert und durch einen gezielten Regressionstest abgesichert.
+
+**Evidenz:** `CensusStructureTest`, zusätzlicher Fallback-Lauf in
+`GenerationPipelineE2ETest`, UI-Test zum Abschalten der erforderlichen KIT-Quelle.
+Lokale Originaldateiprobe und Ergebnisse unter
+`validation/mobilecity/census-structure-spike/{CensusProbe.java,java/result.json}`
+(ignorierter Arbeitsbereich; keine Voraussetzung für die regulären Offline-Tests).
+
+**Abschlussprüfung (21.09.2026):** `mvn -o test`: 178 Testfälle, davon 171 erfolgreich
+und 7 übersprungen, keine Fehler. `npm test`: 45 erfolgreich.
+`npm run build`: Produktionsbuild erfolgreich. Abschließender unabhängiger Review:
+beide Diagnosefehler behoben, keine weiteren bestätigten Fehler.
+
+**Konsequenz:** Anbindung als abschaltbare experimentelle Option nutzbar. Sie erhält
+vorhandene Haushaltszusammensetzungen, ersetzt jedoch keine vollständige regionale
+Populationssynthese. Altersstruktur der Gesamtbevölkerung und Größen privater Haushalte
+haben unterschiedliche statistische Grundgesamtheiten. 2022-Anteile werden ohne
+Fortschreibung verwendet. Die anschließend ergänzte KBA-Anbindung ist im folgenden
+Befund vom 22.09.2026 beschrieben.
+
+
+<a id="mobilecity-regionalpaket-2026-09-22"></a>
+
+## MobileCity-Regionalpaket (2026-09-22) — native Baseline technisch erfolgreich
+
+**Befund:** Der neue Regionalmodus erzeugt ein vollständiges technisches Basispaket
+außerhalb der TRAMIGO-Geografie. Das ersetzt keine Kalibrierung oder fachliche Abnahme.
+Für die nachfolgenden Berliner Testgebiete wurden echte Java-Populations-, Aktivitäts-,
+Matrix- und Exportstufen verwendet. Die Bevölkerung war synthetisch vorgegeben;
+diese Proben behaupten keine beobachtete Berliner Bevölkerungs- oder Verkehrslage.
+
+| Nachweis | Ergebnis |
+|---|---|
+| Eingabe | Berlin, 52,50–52,52° N / 13,40–13,43° E; neun Rasterzonen, eine unbewohnt; Seed 42, KIT-Haushalte, 8.000 Personen, 3.886 private Pkw. |
+| Vier Districts | 25 CSV-Familien, eigene Geometrien und Verbindungsnetze, 3 % BEV als explizite Annahme. Native Übernahme aller 8.000 Personen und 3.886 Pkw; BEV-Anteile innerhalb 0,00001 absoluter Toleranz. |
+| Ein District | Gleiche Bestände, manuell 0 % BEV; keine Inter-District-Kanten notwendig. Native Übernahme ebenfalls erfolgreich. |
+| Gesamter exportierter Horizont | Beide Pakete: echter Import, binäres Zurücklesen und Simulation 2026–2036; jeweils 0 Fehler und 0 nicht endliche Zellen. Bestands-/BEV-Vergleich bezieht sich auf 2026; die Endlichkeitsprüfung umfasst alle ausgegebenen Jahre. |
+| Governance | Nur leerer, neu erzeugter Zeitplan. Keine TRAMIGO-Maßnahmen oder fremden Node-/Link-IDs; native Baseline funktioniert ohne diese Definitionen. |
+| Regionaldatenquelle | Offline-Test mit tatsächlicher BKG-Gemeindeantwort für Rastatt und gepinnter KBA-Tabelle: privater BEV-Anteil 598/27.035; PHEV 381/27.035 separat. Fehlende/mehrdeutige Zuordnung, unvollständige WFS-Antwort und frühere Bezugsjahre erzeugen keine erfundene Null. |
+| Reproduzierbarkeit/Fehlerfall | Gleiches Szenario und gleiche Eingaben ergeben bytegleiches ZIP. Fehlender BEV-Anteil lässt einen bestehenden Export unverändert. Matrix-IDs, Einheiten und nicht endliche Werte werden geprüft. |
+
+**Im Review gefunden und behoben:** Flächen angeschnittener Grid-Zellen kommen aus
+projizierten Polygonen statt aus der nominellen Zellgröße. Finanzskalierung verwendet
+nur StudyArea-Districts im Basisjahr des hashgeprüften Profils; sparse Zukunftswerte und
+Umland sind ausgeschlossen. Attraktivitäten verwenden die tatsächlichen Unterkategorien
+für Bildung/Einkauf/Freizeit. Native Integer-Geschwindigkeitsgrenzen werden aufgerundet.
+Wiederverwendete Exporter behalten keinen ausgeschalteten BEV-Fallback aus einem Vorlauf.
+
+**Native Modellgrenzen:** Fehlende Erwachsene, null Wege oder kein Pkw-Gesamtbestand
+können Null-Divisoren erzeugen und werden für Regionalpakete abgelehnt. Zusätzlich enthält
+`CAL6010_SOC` eine Ganzzahldivision, die bei konstant 1 bis unter 2 Pkw je Einwohner eines
+Districts ab dem dritten Jahr NaN erzeugt. Der Export blockiert diesen Bereich und nennt
+den Grund; er verändert keine Bestandsdaten. Das Prüfskript verlangt deshalb mindestens
+drei Jahre (`--years`, Default 3). Die hier geprüften Pakete liegen außerhalb dieses Bereichs.
+
+**Evidenz:** Lokale, ignorierte Arbeitsdateien unter
+`validation/mobilecity/regional-spike/`: `RegionalProbe.java`, `SingleDistrictProbe.java`,
+`java-export/`, `single-export/`, `native-java-v3/validation-report.json` und
+`native-single-v2/validation-report.json`. Berichte enthalten Eingabe-/Tool-/Binärhashes,
+Konverter-Anpassungen und native Bestands-/BEV-Prüfungen. Keine Simulationsgleichungen
+wurden angepasst; technische Bootstrap-/Routingprüfungs-Anpassungen sind protokolliert.
+
+**Software-Prüfungen:** `MobileCityRegionalExporterTest` deckt Summenerhalt, alle internen
+Zonen einschließlich leerer Randzonen, Polygonflächen, Profilbasisjahr ohne Umland,
+Governance-Ausschluss, korrekte Attraktivitäten, Integer-Geschwindigkeit, native
+Null-Divisoren, Matrixfehler und wiederholte Ausgabe ab. `MobileCityFleetSourceTest`
+prüft Quelle, Geometriezuordnung, Missing-vs.-Zero und Fallback. Frontend-Test prüft
+gegenseitigen Ausschluss von Regional- und Vorlagenmodus samt passender Anleitung.
+Gesamtsuite: 185 Backend-Testfälle, davon 178 erfolgreich und 7 übersprungen;
+46 Frontend-Tests und Produktionsbuild erfolgreich.
+
+**Konsequenz:** Das Regionalpaket ist für technische Übergabe und weitere Modellierung
+nutzbar. ÖV bleibt eine synthetische Angebotsannahme; Netze sind aggregierte Verbindungen,
+Ladepunkte/Sharing null als Annahme, keine Umlandbevölkerung/Logistik. Koeffizienten,
+Finanzen und zeitliche Verläufe sind keine beobachtete regionale Prognose. Jedes neue
+Gebiet benötigt seine eigene native Prüfung. Der separate TRAMIGO-Vorlagenmodus behält
+die am 17.09.2026 dokumentierten Referenzfehler. Priorisierter Ausbau und fachliche
+Abnahme stehen im [Konzept](06-gta-integration-konzept.md#mobilecity-naechste-schritte).
+
+## MobileCity-Datenstatus und optionale ConfigTool-Stufe (2026-09-22) — umgesetzt
+
+**Prüffrage:** Kann ein Nutzer vor dem Export erkennen, welche Regionaldaten automatisch
+aufgelöst, manuell gesetzt, als Fallback verwendet oder noch nicht modelliert sind, und kann
+ein vollständiges Paket anschließend ohne Verwechslung von Export- und Simulationsstatus im
+echten ConfigTool geprüft werden?
+
+**Ergebnis:** Der Regionalexport schreibt `mobilecity/data-inventory.json` und bettet denselben
+Inhalt in `summary.json` ein. Elf Bereiche führen Status, Auflösungsweg, Quelle, Bezugsstand,
+Abdeckung, Wert, Einheit und Erläuterung. Ein kanonisches Eingabeabbild deckt Gebiet, Jahr,
+Zonierung, Bevölkerung, Flotte und Profilannahmen ab; das Studio markiert ein dazu nicht mehr
+passendes Ergebnis als veraltet. Die tatsächlich verwendete BKG-Grenzantwort wird neben dem
+gepinnten KBA-Stand und einem vorhandenen Zensus-Strukturbericht im Paket gesichert bzw.
+gehasht. Der deterministische ZIP-Test umfasst auch diese Dateien.
+
+Stufe 10 `MobileCity-Validierung` ist pro Szenario standardmäßig aus. Bei Aktivierung führt
+`MobileCityValidationRunner` das bestehende native Prüfskript in einem neuen temporären
+Arbeitsverzeichnis aus. `status.json` unterscheidet `passed`, `failed` und `skipped`; ein
+neuer Lauf ersetzt einen älteren Status atomar. Fehlende lokale Werkzeuge werden übersprungen.
+Timeout, Prozessfehler oder ein negativer nativer Bericht lassen den Job fehlschlagen und
+bewahren `validation-report.json`, `run.log` sowie vorhandene Build-, Import-, Netz- und
+Simulationslogs. Damit kann ein erzeugtes CSV-Paket allein keinen grünen Prüfstatus erzeugen.
+
+**Evidenz:** `MobileCityRegionalExporterTest` prüft Dateninventar, wirksame manuelle Werte,
+offene Logistik, Summary-Identität und ZIP-Inhalt. `MobileCityFleetSourceTest` prüft den exakten
+BKG-Snapshot sowie Offline-/Manuellpfade. `MobileCityValidationRunnerTest` verwendet einen
+kontrollierten Prozessersatz und prüft Erfolgsbericht, Fehlerbeweissicherung und das Entfernen
+eines alten grünen Berichts beim Überspringen. `ScenarioControllerTest` erzwingt Zielmodell und
+vollständigen Exportmodus. Der Studio-Test prüft Vorschau, Veraltet-Markierung, Checkbox und
+separaten Erfolgsstatus. Die reale ConfigTool-Kette bleibt durch die direkt zuvor dokumentierten
+2026–2036-Läufe für Ein- und Vier-District-Pakete belegt.
+
+**Abschlussprüfung:** `mvn -o test`: 188 Testfälle, davon 181 erfolgreich und 7 wegen nicht
+gesetzter optionaler Integrationsumgebungen übersprungen, keine Fehler. `npm test`: 48/48
+erfolgreich. `npm run build`: Produktionsbuild erfolgreich. Python-Skripte kompiliert;
+`git diff --check` ohne Befund.
+
+**Konsequenz zum Abschluss von Arbeitspaket 1:** Die Anzeige nennt weiterhin Umland,
+Logistik, reales ÖV-Angebot sowie Lade-/Sharingdaten als offen bzw. angenommen. Der damals
+nächste Adapter war das reale GTFS-Angebot; dessen technische Umsetzung dokumentiert der
+folgende Befund. Eine regionale Kalibrierung oder fachliche Abnahme durch Takomat ist damit
+weiterhin nicht behauptet.
+
+## MobileCity-GTFS-Netzadapter (2026-09-22) — technisch umgesetzt, regionale Abnahme offen
+
+**Prüffrage:** Lässt sich ein regionaler GTFS-Fahrplan ohne SUMO- oder Python-Abhängigkeit in
+die Transit-Nodes/-Links eines beliebigen MobileCity-Regionalpakets überführen, sodass der
+native Reader alle Districts erreicht und die Mehrjahressimulation endlich bleibt?
+
+**Formatbefund:** Der native Graph ergänzt zu jeder importierten Kante selbst die Rückrichtung.
+`freq` ist laut Referenztabelle die Zahl der Abfahrten pro Werktag; der Dijkstra-Handler
+rechnet daraus über einen 16-Stunden-Betriebstag die Wartezeit. Richtungsduplikate würden
+deshalb Kanten verlieren oder das Angebot doppelt zählen. Der Adapter aggregiert zunächst
+gerichtet und exportiert je ungerichtetem Haltestellenpaar die größere Richtungsfrequenz.
+Für Fußtransfers und District-Zugänge wird `freq=138` verwendet: Damit liegt der rechnerische
+Takt unter der nativen Mindestschwelle von sieben Minuten und es entsteht kein künstlicher
+Wartezeitaufschlag auf den Fußweg.
+
+**Umsetzung:** `GtfsSource.resolveFullDay` nutzt Upload vor Registry/Cache und behält nun auch
+`frequencies.txt`. `MobileCityGtfsAdapter` wertet Kalenderausnahmen und Zeiten über 24 Uhr aus,
+wählt deterministisch einen repräsentativen Mittwoch, fasst Plattformen über
+`parent_station` zusammen, berechnet Haltestellenfolgen, GTFS-Transfers und die Fahrplan-
+Spitzenflotte und übernimmt die Route-Type-Kodierung aus der beigefügten Network Pipeline.
+Nur die größte Servicekomponente wird exportiert; jeder District erhält einen eigenen
+Referenzknoten mit Fußanschluss an die nächste Haltestelle dieser Komponente. Der genaue
+Feed und `transit-provenance.json` werden in das Import-ZIP aufgenommen. Ein fehlender
+Auto-Feed darf nur bei `allowSyntheticTransitFallback=true` auf das offengelegte Matrixnetz
+zurückfallen. Ein ausgewählter, aber defekter Upload ist ein Fehler.
+
+| Nachweis | Ergebnis |
+|---|---|
+| Kontrollierter Java-Adaptertest | Kalenderausnahme, Frequenzfahrt, Gegenrichtung, Bus-/Bahn-Mapping, Transfer, zwei District-Zugänge, Spitzenflotte und Quellbericht bestanden. |
+| Vollständiger Exporttest | GTFS ersetzt die synthetischen Transitdateien, `TECTransit` übernimmt Peak-Bus/-Bahn, Feed und Bericht liegen im deterministischen ZIP, Dateninventar nennt GTFS als Quelldatum. |
+| Echter ConfigTool-Lauf | Vier Districts, eine Bus-Ringlinie plus Bahnrelation: Import und Netzprüfung melden für Transit keine NaN/Infinity; Simulation 2026–2028 erzeugt 92 CSV-Ausgaben, 0 Fehler und 0 nicht endliche Zellen. Alle vorhandenen Bestandsprüfungen bleiben grün. Bericht und Logs: `validation/mobilecity/gtfs-spike/native-v1/` (lokale, gitignorierte Evidenz). |
+| Reales KVV-GTFS Rastatt | Feedstand 01.07.2026, Gültigkeit 11.01.–12.12.2026; ausgewählter Verkehrstag 01.07.2026. 722 tägliche Fahrten, 544 Knoten, 673 Angebotskanten und 210 Transfers wurden verarbeitet, einschließlich GTFS-Typen Tram, Bahn und Bus. Die Spitzenbelegung beträgt je 29 Bus- und Schienenfahrzeuge. |
+
+**Abschlussprüfung WP2:** `mvn -o test`: 193 Testfälle, davon 186 erfolgreich und 7 wegen
+nicht gesetzter optionaler Integrationsumgebungen übersprungen, keine Fehler. Die fokussierte
+GTFS-/Regionalexport-/Quellen-/Szenarioprüfung umfasst 23 grüne Tests. `npm test`: 48/48
+erfolgreich; `npm run build`: Produktionsbuild erfolgreich. `git diff --check` ohne Befund.
+
+**Grenzen:** Der reale KVV-Lauf belegt Parser und Größenordnung, ersetzt aber noch keinen
+Relationsvergleich mit Fahrplanauskunft. Stadt-, Land- und Randlage müssen separat abgenommen
+werden. Luftlinienentfernung zwischen Haltestellen ersetzt vorerst Shape-Länge; Fahrzeit und
+Frequenz stammen aus dem Fahrplan. Kapazitäten, Tarifzonen und regionale Preisparameter sind
+nicht in GTFS enthalten. Die Bahn-/Tram-Sperre des SUMO-Pfads gilt hier nicht, weil MobileCity
+auf dem abstrakten Transitgraphen routet. Eine fachliche Abnahme durch Takomat steht aus.
+
+**Konsequenz:** Der technische Kern von Arbeitspaket 2 ist integriert. Als nächstes folgen
+die drei Regionstypen samt Relationsprüfung. Die anschließende Klärung und Anbindung von
+`REGchargers` dokumentiert der folgende Befund.
+
+## MobileCity-BNetzA-Ladepunktadapter (2026-09-22) — technisch umgesetzt
+
+**Prüffrage:** Welche Einheit erwartet `REGchargers`, lässt sie sich für ein frei gewähltes
+deutsches Gebiet aus dem öffentlichen BNetzA-Register bilden, und übernimmt der native Kern
+die Werte, ohne die weitere Entwicklung versehentlich festzuschreiben?
+
+**Zielvertrag:** Die beigefügte Network Pipeline bezeichnet
+`numberOfChargingStations` als gesamte Zahl der Ladepunkte bzw. Kapazität aller AC- und
+DC-Typen je District und Jahr. `ST2122_CityConfigREGDistrictsReader` liest die Zelle als
+nullable Ganzzahl. `CAL5020_TECCarFleet` verwendet einen vorhandenen Wert direkt; bei einer
+leeren Zelle berechnet es den Folgejahresbestand aus E-Pkw-Bestand, Sättigungsparametern und
+Vorjahresbestand. Der irreführende Feldname bedeutet daher weder Standorte noch Stecker.
+
+**Quelle und Normalisierung:** Verwendet wird die offizielle
+[BNetzA-Liste vom 01.09.2026](https://data.bundesnetzagentur.de/Bundesnetzagentur/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenregister_BNetzA_2026-09-01.csv).
+Laut [Schnittstellenbeschreibung](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Schnittstellen/start.html)
+ist die öffentliche Liste monatlich, die API täglich aktualisiert. Eine CSV-Zeile steht für
+eine Ladeeinrichtung; exportiert wird die Summe aus `Anzahl Ladepunkte`. Das Register umfasst
+nur öffentlich zugängliche, abgeschlossene Meldungen und ist kein Vollständigkeitsnachweis
+für sämtliche Ladeinfrastruktur. Lizenz: CC BY 4.0, Namensnennung `bundesnetzagentur.de`.
+
+`scripts/prepare-bnetza-charging.py` prüft den Originalhash
+`cdd8e38f1fa7e8512bd97caa8cf77e9f875436be1f8fe3fe1f2bd9789a504c5b`, entfernt
+Betreiber-/Kontaktdaten und erzeugt einen deterministischen, komprimierten Snapshot. Er
+enthält 116.422 Einrichtungen und 209.096 öffentliche Ladepunkte, davon 150.278 an Normal-
+und 58.818 an Schnellladeeinrichtungen. Eine Zeile mit Koordinaten außerhalb des
+Deutschland-Guards wird ausgewiesen und verworfen. Der normalisierte Inhalt hat SHA-256
+`24d386acdb239607b9b707b294b537d54d7e8e444c441a5448e9ff170d667fe5`.
+
+**Umsetzung:** `MobileCityChargingSource` lädt und prüft den Snapshot, ordnet jeden Punkt
+per räumlichem Index und tatsächlicher District-Geometrie zu und löst Grenztreffer
+deterministisch über die sortierte District-ID. `REGchargers` erhält kumulative Werte nach
+Inbetriebnahmejahr bis zum beobachtbaren Bezugsjahr. Diese Historie ist eine
+Surviving-Stock-Untergrenze, weil ein aktueller Snapshot außer Betrieb genommene frühere
+Anlagen nicht vollständig rekonstruiert. Beginnt ein Szenario nach dem Snapshot, wird der
+Snapshotbestand nur bis zum ersten Modelljahr getragen. Alle späteren Zellen bleiben leer
+und aktivieren den endogenen MobileCity-Ausbau. Optional verteilt
+`chargingPointsPer1000` eine explizite Annahme nach District-Bevölkerung; bei aktivierter
+Automatik dient sie nur als Quellenfallback. Ohne Quelle oder Annahme bleibt der Wert
+unbekannt und wird nicht als Null ausgegeben.
+
+Das Paket enthält `charging-provenance.json` und bei automatischer Auflösung den exakt
+verwendeten regionalen Ausschnitt `charging-points.csv`, jeweils mit Hash. Das
+`data-inventory.json` führt Ladepunkte und Sharing getrennt. Das Studio zeigt Quelle,
+Fallback und Einheit; ein Regions- oder Parameterwechsel markiert das Ergebnis als veraltet.
+
+| Nachweis | Ergebnis |
+|---|---|
+| Adaptertests | Räumliche Zuordnung, deterministischer Grenzfall, kumulative Historie, leere Zukunft, später Modellstart, manueller Quellenfallback sowie Snapshot-Gesamtsummen bestanden. |
+| Vollständiger Exporttest | BNetzA-Ausschnitt, Herkunftsbericht und ZIP-Einträge vorhanden; für das Berliner Testgebiet ist die wirksame Ladepunktzahl größer null. |
+| Echter ConfigTool-Lauf | Vier Districts mit 11, 9, 14 und 6 Ladepunkten im Bezugsjahr 2026 wurden im isolierten Kern exakt wiedergefunden. Leere Zellen 2027–2028 aktivierten den nativen Folgepfad. 92 Ergebnis-CSV-Dateien, 0 Prozessfehler und 0 nicht endliche Zellen. Bericht und Logs: `validation/mobilecity/charging-spike/native-v1/` (lokale, gitignorierte Evidenz). |
+
+**Abschlussprüfung Ladepunktadapter:** `mvn -o test`: 198 Testfälle, davon 191
+erfolgreich und 7 wegen nicht gesetzter optionaler Integrationsumgebungen übersprungen,
+keine Fehler. Die fokussierte Ladepunkt-/Regionalexport-/Quellen-/Szenarioprüfung umfasst
+23 grüne Tests. `npm test`: 48/48 erfolgreich; `npm run build`: Produktionsbuild
+erfolgreich. Der reale native Lauf belegt zusätzlich die exakte Übernahme der vier
+Bezugsjahreswerte und den endogenen Folgepfad.
+
+**Grenzen:** Die Automatik ist auf Deutschland beschränkt. Das Register bildet öffentliche
+Ladepunkte ab, nicht private Wallboxen; sein Veröffentlichungsstand belegt keine vollständige
+Marktabdeckung. Leistung und Normal-/Schnellladetyp bleiben im Quellsnapshot erhalten, das
+aktuelle MobileCity-Zielfeld konsumiert jedoch nur die Anzahl. Eine fachliche Abnahme über
+Stadt-, Land- und Grenzräume steht aus.
+
+## MobileCity-Carsharing-Annahmen (2026-09-22) — technisch umgesetzt
+
+**Prüffrage:** Welche Sharing-Größen konsumiert MobileCity tatsächlich, können sie für ein
+beliebiges Gebiet belastbar automatisch bezogen werden, und wie lässt sich die bestehende
+Nullannahme fachlich transparent durch den Nutzer ersetzen?
+
+**Zielvertrag:** `ST2127_CityConfigTECCarsharingReader` liest `carsharing.member` als
+gebietsweite absolute Mitgliederzahl je Jahr. `ST2122_CityConfigREGDistrictsReader` liest
+`carsharing.stock.total` als Fahrzeugbestand je District und Jahr. `CAL4010_MODTrips`
+verwendet daraus den Mitgliederanteil an der Gesamtbevölkerung und die Fahrzeugzahl je
+1.000 Einwohner im Ursprungs-District für die Moduswahl. Fehlende Jahreswerte lösen
+Regression bzw. Fortschreibung aus; deshalb exportiert SyntheSis die gewählte Annahme
+bewusst konstant statt aus einem einzigen Punkt einen Trend zu erfinden. Der native Kern
+begrenzt den Mitgliederanteil auf 40 Prozent.
+
+**Quellenentscheidung:** Das
+[bcs-Städteranking 2024](https://carsharing.de/carsharing-staedteranking) veröffentlicht
+Fahrzeugzahlen und Fahrzeugdichten für deutsche Kommunen ab 50.000 Einwohnern. Es deckt
+damit beliebige Kartenausschnitte und kleinere Gemeinden nicht vollständig ab und enthält
+keine regional konsistente Mitgliederzahl. Die
+[ECSS-Schnittstelle](https://carsharing.de/themen/carsharing-schnittstelle) standardisiert
+Stationen, Fahrzeugklassen und Verfügbarkeit teilnehmender Anbieter, ist aber kein
+flächendeckender öffentlicher Bestandsdienst. Eine automatische Null für nicht gelistete
+Gebiete wäre fachlich falsch. Für den generischen Export ist daher die UI-Modellierung der
+belastbare aktuelle Pfad.
+
+**Umsetzung:** `carsharingVehiclesPer1000` verteilt die Flotte proportional zur erzeugten
+District-Bevölkerung; `carsharingMemberShare` erzeugt die absolute gebietsweite Zahl. Beide
+Felder sind optional, separat editierbar und werden in API und Studio validiert. Ein nicht
+gesetztes Gegenfeld wird als null angenommen. Ohne beide Eingaben bleibt die bisherige, im
+Dateninventar ausdrücklich bezeichnete Nullannahme bestehen. Eingaben, effektive Werte und
+zeitliche Konstanz stehen in `data-inventory.json`, `provenance.json` und im
+Eingangssnapshot für die Veraltet-Erkennung.
+
+| Nachweis | Ergebnis |
+|---|---|
+| Exporttest | Mitgliederzahl wird aus Bevölkerung × Anteil gebildet; Fahrzeugdichte wird je District gerundet und bleibt über alle Jahre konstant. Dateninventar und Herkunftsnachweis weisen die Nutzervorgabe aus. |
+| API-/UI-Test | Werte außerhalb 0–100 Fahrzeuge je 1.000 Einwohner bzw. 0–0,4 Mitgliederanteil werden abgelehnt. Das Studio zeigt beide Größen und markiert geänderte Ergebnisse als veraltet. |
+| Echter ConfigTool-Lauf | 100 Mitglieder sowie je 5 Fahrzeuge in vier Districts wurden 2026–2028 exakt im isolierten Rechenkern wiedergefunden. 92 Ergebnis-CSV-Dateien, 0 Prozessfehler und 0 nicht endliche Zellen. Bericht und Logs: `validation/mobilecity/sharing-spike/native-v1/` (lokale, gitignorierte Evidenz). |
+
+**Abschlussprüfung WP3:** `mvn -o test`: 199 Testfälle, davon 192 erfolgreich und 7 wegen
+nicht gesetzter optionaler Integrationsumgebungen übersprungen, keine Fehler. Die fokussierte
+Regionalexport-/Szenarioprüfung umfasst 20 grüne Tests. `npm test`: 48/48 erfolgreich;
+`npm run build`: Produktionsbuild erfolgreich. `git diff --check` ohne Befund.
+
+**Grenzen:** Die Werte sind Szenarioannahmen, keine beobachteten Regionaldaten. Stations-
+und free-floating-Angebote werden im aktuellen MobileCity-Zielfeld gemeinsam gezählt;
+Servicegebiete und einzelne Stationen werden nicht exportiert. Ein späterer bcs-/ECSS-
+Adapter benötigt einen reproduzierbaren, rechtlich nutzbaren und räumlich vollständigen
+Snapshot sowie eine eigene Abdeckungsdiagnose.
+
+## MobileCity-Umland und eingehende Nachfrage (2026-09-23) — manuell und Zensus-automatisch
+
+**Prüffrage:** Beschreibt `POPtripsSurrounding` ausgehende Wege der Binnenbevölkerung oder
+eingehende Wege von Umlandbewohnern, und kann SyntheSis dafür konsistente `Outer`-Districts
+erzeugen, ohne die bisherigen externen Zielanker still als Wohnbevölkerung umzudeuten?
+
+**Zielvertrag:** `DistrictType.Outer=0`; `D7000_CityConfig` bildet daraus die
+`SurroundingDistrictIdList`. `ST2126_CityConfigPopTripsSurroundingReader` liest je Zweck und
+Umland-District `tripShareToStudyArea`. `CAL4010_MODTrips` multipliziert diesen Anteil mit
+den alters- und zweckspezifischen Tageswegen der Bevölkerung des Umland-Districts und
+verteilt das Ergebnis anhand von Bevölkerung mal Attraktivität auf Binnenziele. Der Vertrag
+ist damit gerichtet: Umland → Untersuchungsgebiet.
+
+**Umsetzung:** `surroundingPopulation` aktiviert bis zu acht vorhandene Richtungsanker als
+echte `Outer`-Districts. Die Personensumme wird deterministisch und ohne Rundungsverlust
+verteilt. Alle vier Anteile `surroundingEducationTripShare`,
+`surroundingWorkTripShare`, `surroundingShoppingTripShare` und
+`surroundingLeisureTripShare` sind dann erforderlich und liegen in `[0,1]`.
+Altersstruktur, Pkw-Dichte und privater BEV-Anteil werden aus dem Untersuchungsgebiet
+extrapoliert und im Herkunftsbericht als Annahme ausgewiesen. Bei fehlender Umlandvorgabe
+bleiben die externen Zonen Zielanker und werden vom Regionalpaket ausgeschlossen. Die
+Study-Area-Bevölkerung bleibt die Basis für Finanzen, Transitflotte und gebietsweite
+Carsharing-Mitglieder.
+
+`autoSurrounding=true` ersetzt die gleichmäßige Verteilung durch einen echten metrischen
+Pufferring. Der Kartenausschnitt wird in EPSG:3035 um `surroundingBufferKm` erweitert, der
+Ring in N/NE/E/SE/S/SW/W/NW geschnitten und anschließend nach WGS84 zurücktransformiert.
+Das gepinnte Zensus-2022-Bevölkerungsraster und das Fünf-Altersklassen-Raster werden direkt
+in diese Polygone aggregiert. Die drei MobileCity-Altersgruppen bleiben je Sektor exakt auf
+seine Einwohnerzahl bilanziert. Eine optionale `surroundingPopulation` skaliert nur die
+beobachteten Sektorgewichte; leer bedeutet automatische Gesamtsumme. Pkw-Dichte und BEV-
+Anteil bleiben ausgewiesene Extrapolationen aus dem Untersuchungsgebiet. Die acht externen
+Matrixanker werden bei dieser Betriebsart an Gebietsrand und halbe Pufferbreite gesetzt,
+damit ihr Referenzpunkt innerhalb des zugehörigen Outer-Sektors liegt.
+
+| Nachweis | Ergebnis |
+|---|---|
+| Exporttest | Zwei Binnen- und acht Umland-Districts; 803 Umlandbewohner bleiben in den drei Altersblöcken exakt erhalten. `StudyAreaConfig`, `REGdistricts`, `POPinhabitants`, `POPtripsSurrounding`, Zusammenfassung, Inventar und Provenienz stimmen überein. |
+| API-/UI-Test | Teilweise Umlandangaben, deaktivierte Außenbeziehungen, nicht endliche Werte und Anteile außerhalb `[0,1]` blockieren den Export. Vollständige Eingaben erscheinen im Datenstatus und im Veraltet-Abbild. |
+| Echter ConfigTool-Lauf | Vier Binnen- und acht Umland-Districts mit 8.000 Umlandbewohnern: alle 32 Kombinationen aus acht Ursprüngen und vier Zwecken stimmen im Bezugsjahr innerhalb numerischer Toleranz mit dem Export überein. 92 Ergebnis-CSV-Dateien, 0 Prozessfehler und nach dem unten beschriebenen Zielmodell-Guard 0 nicht endliche Zellen. Bericht und Logs: `validation/mobilecity/surrounding-spike/native-v1/` (lokale, gitignorierte Evidenz). |
+| Automatische Geometrie | Acht gültige und überlappungsfreie Ringsektoren ohne Flächenüberschneidung mit dem Kartenausschnitt; adaptive Richtungsanker liegen auch beim großen Testgebiet außerhalb des Ausschnitts und innerhalb ihres Sektors. Proportionale Ganzzahlverteilung erhält jede vorgegebene Gesamtsumme exakt. |
+| Reale Zensus-Sonde | Ausschnitt 48,82–48,90° N / 8,15–8,25° E, 10 km Puffer: 202.412 Einwohner und 5.797 Altersrasterzellen. Sektoren N/NE/E/SE/S/SW/W/NW: 12.533 / 42.736 / 22.294 / 47.699 / 60.327 / 14.973 / 1.822 / 28 Einwohner. Beide Originalarchive wurden über ihre gepinnten SHA-256-Werte gelesen. |
+| Nativer Automatiklauf | Vier Binnen- und acht automatisch erzeugte Outer-Districts, 71.000 Binnen- und 202.412 Umlandbewohner. Import, binäres Zurücklesen und Simulation 2026–2028 bestanden: 92 Ergebnis-CSVs, 0 Fehler, 0 nicht endliche Zellen, 81/81 Beitragsprüfungen einschließlich 32/32 Umland-Zweckbeiträgen im Bezugsjahr. Evidenz: `validation/mobilecity/auto-surrounding-spike/native-v1/`. |
+
+**Zielmodellbefund:** Ohne Transitfahrten eines Outer-Districts sind aktueller und vorheriger
+`singleTicketPriceIndex` beide null. `CAL6010_SOC` dividiert beim dritten Simulationsjahr
+ungeprüft `0/0`; im Kontrolllauf entstanden acht `NaN`-Saisonticketraten und vier davon
+abhängige `LAQ`-Werte. Die isolierte Validierung setzt nur für diesen Fall den
+Single-Ticket-Elastizitätsbeitrag auf null. Positive Nenner verwenden unverändert die native
+Formel. Quell- und Patchhash stehen im Prüfbericht. Das ist ein klar abgegrenzter Fehler des
+mitgelieferten Rechenkerns und muss mit Takomat behoben werden; er ist keine Rechtfertigung,
+Umlandwerte im Export zu unterdrücken.
+
+**Noch offen:** BA-Pendlerrelationen nur für den Arbeitszweck auf die eingehenden Anteile
+übertragen; Bildung, Einkauf und Freizeit separat belegen. Anschließend folgen Randgebiet,
+vergrößerter Ausschnitt, Stadt/Land und ein Gebiet außerhalb Deutschlands. Das Zensus-Raster
+deckt nur Deutschland ab; außerhalb davon bleibt eine manuelle Umlandvorgabe erforderlich.
+
+**Abschlussprüfung:** Die vollständige Offline-Backend-Suite besteht mit **201 Tests,
+0 Fehlern und 7 umgebungsabhängigen Skips**. Das Frontend besteht **49/49** Tests und den
+Angular-Produktionsbuild. Beide MobileCity-Hilfsskripte kompilieren mit Python; der
+Gesamtdiff enthält keine Whitespace-Fehler. Der native Umlandlauf besteht mit **92
+Ergebnis-CSVs, 0 nicht endlichen Zellen und 32/32 exakt geprüften Umlandbeiträgen**.
+
+**Abschlussprüfung nach der Zensus-Automatik:** Die vollständige Offline-Backend-Suite
+besteht mit **207 Tests, 0 Fehlern und 7 umgebungsabhängigen Skips**. Das Frontend besteht
+**50/50** Tests und den Angular-Produktionsbuild. Der native Automatiklauf besteht mit
+**92 Ergebnis-CSVs, 0 nicht endlichen Zellen und 81/81 Beitragsprüfungen**; darin sind alle
+32 Kombinationen aus acht Umlandsektoren und vier Wegezwecken im Bezugsjahr enthalten.
+
+
+## MobileCity-Rudimentärpfad (2026-09-23) — UI bis Import-ZIP nachgewiesen
+
+**Prüffrage:** Kann ein Nutzer aus einem gespeicherten Kartenausschnitt ohne Routingdienst,
+GTFS, KBA-Abdeckung, Umland oder logiTopp-Lauf einen vollständigen MobileCity-Importsatz
+erzeugen, und bleiben Personen- und Pkw-Summen dabei exakt erhalten?
+
+**Umsetzung:** Der Studio-Schnellstart wählt ausschließlich MobileCity, Template-Verhalten,
+Luftlinienmatrizen, höchstens zwölf Districts, den sichtbaren modellierten ÖV-Fallback,
+0 % BEV als explizite Annahme und kein Umland. „MobileCity-Export erzeugen“ speichert die
+sichtbare Konfiguration vor dem Start. Das Backend prüft Modellprofil und BEV-Grundlage vor
+dem Queueing. Personen und Pkw werden über alle Districts gemeinsam mit dem deterministischen
+Größter-Rest-Verfahren gerundet; dadurch kann unabhängiges Runden je Zone die Gebietssumme
+nicht mehr verändern.
+
+**REST-Smoke-Test:** Isolierter Offline-Dienst, Ausschnitt 48,85–48,87° N / 8,19–8,22° E,
+250 Personen, neun Zonen. Alle Exportstufen bestanden; `mobilecity-import.zip` enthielt die
+25 Tabellenfamilien, Shapefile, Dateninventar, Provenienz und Zusammenfassung und bestand
+`unzip -t` ohne Fehler. Nach der Bilanzkorrektur meldeten Pipeline und MobileCity-Paket
+identisch **250 Personen und 121 Pkw**. Der Regressionstest reproduziert die zuvor sichtbare
+Rundungsstelle und verlangt beide Gebietssummen exakt.
+
+**Abschlussprüfung nach dem Rudimentärpfad:** Die vollständige Offline-Backend-Suite besteht
+mit **210 Tests, 0 Fehlern und 7 umgebungsabhängigen Skips**. Das Frontend besteht **52/52**
+Tests und den Angular-Produktionsbuild. Die vier MobileCity-Hilfsskripte kompilieren mit
+Python; `git diff --check` bleibt ohne Befund.

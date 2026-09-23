@@ -46,8 +46,52 @@ export interface CongestionFeatureProperties {
 
 export type CongestionGeoJson = FeatureCollection<LineString, CongestionFeatureProperties>;
 
+export type MobileCityDataStatus = 'observed' | 'derived' | 'assumption' | 'mixed' | 'missing';
+export type MobileCityDataResolution = 'automatic' | 'manual' | 'fallback' | 'profile' | 'missing';
+
+export interface MobileCityDataItem {
+  id: string;
+  label: string;
+  status: MobileCityDataStatus;
+  resolution: MobileCityDataResolution;
+  source: string;
+  required: boolean;
+  referenceDate?: string | null;
+  coverage: number;
+  value?: string | number | null;
+  unit?: string | null;
+  note: string;
+}
+
+export interface MobileCityDataInventory {
+  schemaVersion: number;
+  mode: 'regional';
+  referenceYear: number;
+  inputSnapshot: Record<string, unknown>;
+  ready: boolean;
+  blockingIssues: string[];
+  items: MobileCityDataItem[];
+  sourceSnapshots: Array<{ id: string; path: string; sha256: unknown }>;
+}
+
+/** mobilecity-validation/status.json – Status der optionalen echten ConfigTool-Prüfung. */
+export interface MobileCityValidationStatus {
+  status: 'passed' | 'failed' | 'skipped';
+  reason?: string;
+  years: number[];
+  errors: string[];
+  nonFiniteCells: number;
+  report?: string;
+}
+
 /** mobilecity/summary.json – aggregierte Übersicht des Takomat-Exports. */
 export interface MobileCitySummary {
+  mode?: 'contribution' | 'template' | 'regional';
+  referenceYear?: number;
+  templateId?: string;
+  updatedDistricts?: string[];
+  validationStatus?: string;
+  dataInventory?: MobileCityDataInventory;
   tables: number;
   districts: { total: number; studyArea: number; surrounding: number };
   inhabitants: { children: number; adults: number; seniors: number; total: number };

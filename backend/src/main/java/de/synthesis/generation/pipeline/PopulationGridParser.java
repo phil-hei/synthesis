@@ -136,7 +136,7 @@ public final class PopulationGridParser {
         }
     }
 
-    private static double[] laeaBounds(Scenario.Region region) {
+    static double[] laeaBounds(Scenario.Region region) {
         double[][] samples = {
                 Epsg3035.fromLatLon(region.minLat, region.minLon),
                 Epsg3035.fromLatLon(region.minLat, region.maxLon),
@@ -162,7 +162,7 @@ public final class PopulationGridParser {
         return new double[]{minE - 50_000, maxE + 50_000, minN - 50_000, maxN + 50_000};
     }
 
-    private static boolean withinLaeaBounds(double easting, double northing, double[] bounds) {
+    static boolean withinLaeaBounds(double easting, double northing, double[] bounds) {
         return bounds == null || (easting >= bounds[0] && easting <= bounds[1]
                 && northing >= bounds[2] && northing <= bounds[3]);
     }

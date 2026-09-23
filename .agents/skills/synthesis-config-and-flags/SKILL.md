@@ -5,7 +5,7 @@ description: >
   (Scenario.java, z. B. behaviorSource, targetModels, sumoFeedback,
   calibrateModeChoice, llmModeChoice, useRealRouting, samplingFraction sowie das Legacy-Feld useOsmData) und
   Betriebs-Properties (SynthesisProperties, Prefix synthesis.: census, overpass, simulation, actitopp,
-  sumo, transit inkl. GTFS-Feed-Registry, llm) samt Defaults, Konsumenten und Gates. Laden, WENN
+  sumo, transit inkl. GTFS-Feed-Registry, MobileCity-Validierung, llm) samt Defaults, Konsumenten und Gates. Laden, WENN
   du wissen musst (a) welches Flag/Property Verhalten X steuert, (b) was der Default von Y ist
   (inkl. berechneter Defaults aus $SUMO_HOME), (c) ob ein Feature produktiv oder experimentell
   ist, (d) wie man ein neues Szenario-Flag oder eine neue Betriebs-Property anlegt (Checkliste
@@ -19,7 +19,7 @@ description: >
 # SyntheSis – Konfigurationsachsen & Flags
 
 Dieses Dokument ist der **Ground-Truth-Katalog** aller Konfiguration im SyntheSis-Repo
-(Angular-Studio `frontend/` + Spring-Boot-Backend `backend/`, 14-stufige Pipeline in
+(Angular-Studio `frontend/` + Spring-Boot-Backend `backend/`, 15-stufige Pipeline in
 `backend/src/main/java/de/synthesis/generation/GenerationService.java`). Es gibt **drei Ebenen**:
 
 1. **Szenario-Flags** – pro Szenario, vom Nutzer im Studio gesetzt, als JSON persistiert
@@ -75,6 +75,57 @@ SUMO automatisch logiTopp; `normalizeTargetDependencies()` persistiert diese Abh
 `!targets().contains("logitopp")` → „Simulation (logiTopp)" SKIPPED;
 `!targets().contains("sumo")` → „SUMO (Verkehr)" SKIPPED.
 
+### 1.2a `MobileCity`
+
+| Feld | Typ | Default | Wirkung / Konsument | Status |
+|---|---|---|---|---|
+| `useTemplate` | boolean | `false` | Ergänzt ein lokal hashgeprüftes vollständiges Vorlagenpaket | experimentell |
+| `templateId` | String | `"tramigo-v2"` | ID des Vorlagen- bzw. Modellprofils unter `synthesis.data-dir/mobilecity/` | experimentell |
+| `useRegionalFleet` | boolean | `false` | Ordnet gepinnte private KBA-Bestände über BKG-Gemeindegrenzen zu | experimentell |
+| `useRegionalCharging` | boolean | `false` | Ordnet die öffentlichen Ladepunkte des gepinnten BNetzA-Registers anhand ihrer Koordinaten den erzeugten Districts zu; nur Regionalexport | experimentell |
+| `chargingPointsPer1000` | Double | `null` | Explizite Ladepunktannahme je 1.000 Einwohner; ohne Automatik manuell, mit aktivierter Automatik nur Quellenfallback. `null` = unbekannt, `0` = gültige Nullannahme | experimentell |
+| `carsharingVehiclesPer1000` | Double | `null` | Explizite Carsharing-Flotte je 1.000 Einwohner; wird nach District-Bevölkerung verteilt und über alle Exportjahre konstant gehalten. `null` wirkt als ausgewiesene Nullannahme | experimentell |
+| `carsharingMemberShare` | Double | `null` | Gebietsweiter Anteil der Carsharing-Fahrberechtigten in `[0,0.4]`; wird in eine absolute Mitgliederzahl umgerechnet und konstant gehalten. `null` wirkt als ausgewiesene Nullannahme | experimentell |
+| `autoSurrounding` | boolean | `false` | Bildet acht Outer-Sektoren aus einem metrischen Puffer und aggregiert Zensus-2022-Bevölkerung/-Altersstruktur; benötigt `population.externalTrips=true` und alle vier Umlandanteile | experimentell |
+| `surroundingBufferKm` | double | `10.0` | Pufferbreite des automatischen Umlands in km; bei aktivierter Automatik `[1,100]` | experimentell |
+| `surroundingPopulation` | Integer | `null` | Ohne Automatik: manuelle Gesamtbevölkerung. Mit Automatik: optionaler positiver Override, der die beobachteten Sektorgewichte exakt skaliert | experimentell |
+| `surroundingEducationTripShare` | Double | `null` | Anteil der Bildungswege der Umlandbewohner mit Ziel im Untersuchungsgebiet `[0,1]` | experimentell |
+| `surroundingWorkTripShare` | Double | `null` | Anteil der Arbeitswege der Umlandbewohner mit Ziel im Untersuchungsgebiet `[0,1]` | experimentell |
+| `surroundingShoppingTripShare` | Double | `null` | Anteil der Einkaufswege der Umlandbewohner mit Ziel im Untersuchungsgebiet `[0,1]` | experimentell |
+| `surroundingLeisureTripShare` | Double | `null` | Anteil der Freizeitwege der Umlandbewohner mit Ziel im Untersuchungsgebiet `[0,1]` | experimentell |
+| `regionalExport` | boolean | `false` | Erzeugt ein vollständiges gebietseigenes Basispaket mit unkalibriertem Profil | experimentell |
+| `validateNative` | boolean | `false` | Startet nach einem vollständigen Export Stufe „MobileCity-Validierung"; benötigt Ziel `mobilecity` und `regionalExport` oder `useTemplate` | experimentell |
+| `electricShare` | Double | `null` | Expliziter BEV-Anteil bzw. Lücken-Fallback; `null` = unbekannt, `0` = gültige Nullannahme | experimentell |
+| `maxDistricts` | int | `100` | Maximale Aggregation auf 1–100 MobileCity-Districts im Untersuchungsgebiet; optionale Outer-Districts kommen zusätzlich hinzu | experimentell |
+| `allowSyntheticTransitFallback` | boolean | `true` | Erlaubt bei fehlendem GTFS ausdrücklich das synthetische Transitnetz; `false` lässt den Regionalexport ohne Feed fehlschlagen | experimentell |
+| `transitVehiclesPer1000` | double | `1.0` | Flottenannahme je 1.000 Einwohner ausschließlich für den freigegebenen synthetischen ÖV-Fallback | experimentell |
+| `settlementAreaShare` | double | `0.5` | Modellierter Siedlungsflächenanteil `(0,1]` | experimentell |
+
+`useTemplate` und `regionalExport` schließen sich gegenseitig aus. `validateNative` ist ein
+harter Prüflauf, wenn er startet; fehlende lokale Werkzeuge ergeben dagegen `SKIPPED` mit
+`mobilecity-validation/status.json`.
+
+Bei `useRegionalCharging=true` schreibt der Regionalexport kumulative BNetzA-Bestände bis
+zum letzten beobachtbaren Jahr in `REGchargers`. Spätere Zellen bleiben leer und aktivieren
+den endogenen MobileCity-Ausbau. Die Einheit ist die Summe öffentlicher Ladepunkte, nicht
+Standorte oder Stecker. Automatische Quellen sind derzeit auf Deutschland beschränkt.
+
+Carsharing bleibt eine explizite Modellannahme. Sobald mindestens eines der beiden
+Carsharing-Felder gesetzt ist, weist das Dateninventar die Auflösung als `manual` aus. Ein
+nicht gesetztes Gegenfeld wird als null angenommen. Die Obergrenze 0,4 des
+Mitgliederanteils entspricht der harten Begrenzung im nativen MobileCity-Rechenkern.
+
+Umland ist nur als vollständiger Vertrag aktiv. Entweder aktiviert eine positive
+`surroundingPopulation` den manuellen Pfad, oder `autoSurrounding=true` erzeugt aus
+`surroundingBufferKm` acht Zensus-basierte Richtungssektoren. Ein gleichzeitig gesetzter
+positiver Bevölkerungswert überschreibt nur die automatische Gesamtsumme. In beiden Fällen
+sind alle vier Anteile Pflicht; sie füllen
+`POPtripsSurrounding.tripShareToStudyArea` und beschreiben Umland → Untersuchungsgebiet.
+Im Automatikpfad stammt die Altersstruktur aus Zensus 2022, soweit das Raster verwertbare
+Gruppen liefert; Pkw- und BEV-Struktur bleiben sichtbare Extrapolationen aus dem
+Untersuchungsgebiet. Ohne positive manuelle Bevölkerung und ohne Automatik bleiben externe
+Zonen reine Zielanker und werden nicht als MobileCity-Districts exportiert.
+
 ### 1.2 `Population`
 
 UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellierungs-Flags
@@ -101,7 +152,7 @@ UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellier
 | `llmModeChoice` | boolean | **`false`** | GTA 3c: zusätzliche LLM-gestützte Moduswahl auf den simulierten Trips (geerdet in Reisezeiten je Modus) – alternativer Modal-Split zum Vergleich mit MNL/MiD. Benötigt logiTopp + LLM. Konsument: Stufe „LLM-Moduswahl" → `LlmModeChoiceRunner`. UI: Checkbox, gated `hasTarget('logitopp')` | **experimentell** |
 | `sumoFeedback` | boolean | **`false`** | Netz-Feedback: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu (Gleichgewichts-Schleife). Benötigt logiTopp + SUMO. Konsument: Stufe „Netz-Feedback" → `FeedbackMath`. UI: Checkbox, gated `hasTarget('logitopp') && hasTarget('sumo')` | **experimentell** |
 | `publicTransport` | boolean | **`false`** | **@Deprecated, zur JSON-Kompatibilität behalten und ignoriert.** Bei SUMO wird ÖV automatisch versucht, wenn Registry-Feed und Transit-Werkzeuge verfügbar sind; keine UI-Checkbox mehr. | Legacy |
-| `gtfsUploadPath` | String | – (unset) | Pfad eines hochgeladenen GTFS-Feeds; Fallback, falls der Auto-Fetch keinen Regionsfeed findet. Gesetzt vom Upload-Endpoint in `ScenarioController`. UI: „GTFS-ZIP hochladen"-Link im automatischen ÖV-Hinweis | experimenteller Fallback |
+| `gtfsUploadPath` | String | – (unset) | Pfad eines bewusst ausgewählten GTFS-Feeds; hat Vorrang vor dem Auto-Fetch. Gesetzt vom Upload-Endpoint in `ScenarioController`. UI: „GTFS-ZIP hochladen"-Link im automatischen ÖV-Hinweis | experimentell |
 | `carsPerHousehold` | double | `1.0` | Mittlere Pkw-Ausstattung der Haushalte; `PopulationGenerator.drawCarCount(...)` (stochastische Rundung) | produktiv |
 
 **`behaviorSourceEffective()`-Fallback-Logik (wichtig!):** Explizites `behaviorSource` gewinnt,
@@ -131,7 +182,9 @@ GTA-Lauf eine Exception wirft (Log: „… Fallback actiTopp").
 **Experimentell (alle default `false` bzw. nicht die Default-Option; Beförderung nur über das
 Gate in `synthesis-change-control`):** `calibrateModeChoice`, `calibrateDistance`,
 `correctDistanceDecay`, `calibrateModeDistance`, `llmModeChoice`, `sumoFeedback`,
-`behaviorSource = "gta"` (+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
+`behaviorSource = "gta"`, `mobileCity.useTemplate`, `mobileCity.regionalExport`,
+`mobileCity.validateNative`, `mobileCity.useRegionalFleet`
+(+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
 Ziel `sumo` in `targetModels` ist funktionsfähig, aber **nicht** im Default enthalten.
 
 **Produktiv-Default (an, ohne Zutun):** automatische OSM-Datenquellenwahl,
@@ -223,16 +276,16 @@ Keys mitpflegen.
 Der Framework-Fallback verwendet den Installer-Symlink `Versions/Current` indirekt und enthält
 keine Versionsnummer. Verifiziert mit SUMO 1.27.1 am 2026-08-11.
 
-### 2.6 `synthesis.transit` (automatische ÖV-Ergänzung der SUMO-Simulation)
+### 2.6 `synthesis.transit` (GTFS für SUMO und MobileCity)
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
-| `enabled` | `true` | ÖV-Provider abschaltbar (ÖV entfällt im SUMO-Lauf) | `GenerationService.buildPtProvider` |
+| `enabled` | `true` | GTFS-Auflösung abschaltbar; SUMO-ÖV entfällt, MobileCity benötigt dann den ausdrücklich erlaubten synthetischen Fallback | `GenerationService.buildPtProvider`, `stageMobileCityExport` |
 | `venv-python` | `../validation/transit-venv/bin/python` in `application.yml` | Reproduzierbarer lokaler Python-Interpreter mit pandas/rtree/pyproj; fehlt er, wird ÖV verständlich übersprungen | `TransitRunner.isAvailable()` |
 | `gtfs2pt` | **berechnet**: `$SUMO_HOME/tools/import/gtfs/gtfs2pt.py` (ungesetzt → macOS-Framework-`share/sumo` wie oben) | Pfad zu gtfs2pt.py | `TransitRunner` |
 | `feeds` | `[kvv]` (Registry s. u.) | Auto-Fetch-Feeds: Verbund-GTFS mit Abdeckungs-Bbox | `GtfsSource` |
 | `max-feed-mb` | `200` | Obergrenze Auto-Fetch-Download (MB); größere Feeds → Upload-Empfehlung | `GtfsSource` |
-| `window-start-hour` / `window-end-hour` | `6` / `10` | Zeitfenster (Stunden) für den Fahrplan-Zuschnitt – begrenzt die gtfs2pt-Laufzeit | `GtfsCropper`/`TransitRunner` |
+| `window-start-hour` / `window-end-hour` | `6` / `10` | Zeitfenster nur für SUMO/gtfs2pt; MobileCity verwendet einen Volltageszuschnitt, weil `freq` Fahrten pro Werktag bezeichnet | `GtfsCropper`/`TransitRunner`; `MobileCityGtfsAdapter` |
 | `timeout-minutes` | `25` | gtfs2pt-Map-Matching (tracemapper) ist langsam → großzügiger Timeout; Ergebnis wird gecacht | `TransitRunner` |
 | `modes` | `bus` | gtfs2pt-Modi (OSM-Namen). Aktuell nur Bus – Netz ist road-only; Rail/Tram-Befund in `docs/06-gta-integration-konzept.md` („Phase 2 – SUMO") | `TransitRunner` |
 
@@ -262,6 +315,23 @@ Region + kein Upload → ÖV entfällt mit Log-Hinweis.
 Beachte: `synthesis.llm.enabled` ist default `true`, **wirkt aber nur**, wenn ein Szenario
 `behaviorSource = "gta"` oder `llmModeChoice = true` setzt – beides experimentell. Ist kein
 Ollama erreichbar, greift der Fallback; es gibt keinen harten Fehler.
+
+### 2.8 `synthesis.mobile-city-validation` (native ConfigTool-Prüfung)
+
+| Key | Default | Zweck | Konsument |
+|---|---|---|---|
+| `enabled` | `true` | Laufzeit betriebsweit verfügbar machen; Szenario-Opt-in bleibt erforderlich | `GenerationService`-Gate |
+| `python` | `python3` | Interpreter für `validate-mobilecity.py` | `MobileCityValidationRunner` |
+| `script` | `../scripts/validate-mobilecity.py` | Isolierter Build-/Import-/Simulations-Adapter | dito |
+| `dotnet` | `../validation/tools/dotnet-8.0.425/dotnet` | Gepinnte lokale .NET-8-Laufzeit | dito |
+| `tool-source` | `../validation/mobilecity/ConfigTool` | Lokaler MobileCity-ConfigTool-Quellstand; wird nur in ein temporäres Verzeichnis kopiert | dito |
+| `nuget-cache` | `../.runtime/nuget` | Optionaler lokaler Paketcache für Offline-Builds | dito |
+| `timeout-minutes` | `20` | Gesamtbudget des Prüflaufs und Timeout je nativem Teilprozess | dito |
+| `years` | `11` | Aufeinanderfolgende Prüfsimulationsjahre; mindestens 3 | dito |
+
+Gate-Reihenfolge: Ziel `mobilecity` → vollständiger Regional-/Vorlagenmodus →
+`mobileCity.validateNative` → Betriebs-Property/Werkzeuge. Nicht angefordert oder nicht
+verfügbar = `SKIPPED`; gestarteter Prozess mit Fehler/Timeout = `FAILED`.
 
 ---
 
@@ -295,7 +365,7 @@ Reihenfolge einhalten; jeder Schritt hat einen historischen Grund (Vorfälle:
    `job.stage("<Stufenname>").status = "SKIPPED"` + `job.log("... übersprungen (<Grund>)")`.
    Konvention: **SKIPPED = bewusste Abwahl/fehlende Voraussetzung, FAILED = echter Fehler** (der
    Nutzer muss beides unterscheiden können). Bei neuer Stufe: `STAGES`-Liste ergänzen (aktuell
-   14 Stufen: Zonierung … LLM-Moduswahl).
+   15 Stufen: Zonierung … LLM-Moduswahl).
 5. **`application.yml`**: Falls das Flag eine begleitende Betriebs-Property bekommt →
    auskommentierten Doku-Block ergänzen (Muster `# sumo:` / `# transit:`).
 6. **`docs/06-gta-integration-konzept.md`**: Eintrag im passenden Phasen-Abschnitt (was, warum,
@@ -371,7 +441,8 @@ aktualisieren und den Stand-Vermerk unten anpassen.
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-25.** Ground Truth vollständig gelesen und übertragen aus:
+- **Stand: 2026-09-22.** MobileCity-Flags, native Prüfeigenschaften und 15. Stufe gegen die
+  Ground Truth aktualisiert. Vollständiger Grundkatalog gelesen und übertragen aus:
   `backend/src/main/java/de/synthesis/scenario/Scenario.java`,
   `backend/src/main/java/de/synthesis/SynthesisProperties.java`,
   `backend/src/main/resources/application.yml`,
@@ -384,7 +455,7 @@ aktualisieren und den Stand-Vermerk unten anpassen.
 - **Volatil** (bei jeder Berührung der Quelldateien neu prüfen, Greps in Abschnitt 6):
   Default-Werte, Experimentell-Status (Flags werden befördert!), Feed-Registry (weitere Verbünde
   geplant), `transit.modes` (Rail/Tram-Befund offen, docs/06), hart codierte
-  SUMO-Framework-Version 1.26.0, UI-Positionen im Studio-Template, Stufenliste (aktuell 14).
+  SUMO-Framework-Version 1.26.0, UI-Positionen im Studio-Template, Stufenliste (aktuell 15).
 - **Wartungsregel:** Jede Änderung an `Scenario.java` oder `SynthesisProperties.java` zieht ein
   Update dieses Skills nach sich (Teil der Doku-Pflicht aus `synthesis-change-control`).
 - Geschwister-Skills (nicht duplizieren): `synthesis-change-control` (Beförderungs-Gate für

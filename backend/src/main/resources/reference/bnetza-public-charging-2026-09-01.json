@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "source": "Bundesnetzagentur Ladesäulenregister",
+  "sourceUrl": "https://data.bundesnetzagentur.de/Bundesnetzagentur/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenregister_BNetzA_2026-09-01.csv",
+  "referenceDate": "2026-09-01",
+  "sourceSha256": "cdd8e38f1fa7e8512bd97caa8cf77e9f875436be1f8fe3fe1f2bd9789a504c5b",
+  "normalizedContentSha256": "24d386acdb239607b9b707b294b537d54d7e8e444c441a5448e9ff170d667fe5",
+  "compressedSha256": "f8e3e2bf8eb5205b399ed5418400a31168183028734485c048105b73b88defc4",
+  "license": "CC BY 4.0",
+  "attribution": "bundesnetzagentur.de",
+  "unit": "public charging points (sum of Anzahl Ladepunkte), not facilities or plugs",
+  "rows": 116422,
+  "chargingPoints": 209096,
+  "chargingPointsByFacilityType": {
+    "Normalladeeinrichtung": 150278,
+    "Schnellladeeinrichtung": 58818
+  },
+  "invalidRows": 1,
+  "invalidRowsByReason": {
+    "coordinates outside Germany guard": 1
+  },
+  "invalidExamples": [
+    {
+      "facilityId": "1156967",
+      "reason": "coordinates outside Germany guard"
+    }
+  ],
+  "duplicateFacilityIds": 0,
+  "columns": [
+    "facilityId",
+    "commissionedOn",
+    "latitude",
+    "longitude",
+    "chargingPoints",
+    "nominalPowerKw",
+    "facilityType"
+  ]
+}

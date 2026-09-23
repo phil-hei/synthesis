@@ -82,6 +82,8 @@ class ScenarioControllerTest {
         assertEquals(600, defaults.zoning.maxZones);
         assertFalse(defaults.population.correctDistanceDecay,
                 "Experimenteller Distanz-Abkling-Hebel muss standardmäßig aus sein");
+        assertFalse(defaults.mobileCity.validateNative,
+                "Native MobileCity-Prüfung muss ausdrücklich angefordert werden");
         assertNotNull(defaults.logistics.returns);
         assertFalse(defaults.logistics.returns.enabled);
         assertEquals("exogenous-share", defaults.logistics.returns.model);
@@ -119,6 +121,113 @@ class ScenarioControllerTest {
         scenario = validScenario();
         scenario.zoning.maxZones = 1201;
         assertBadRequest(scenario, "Maximale Zonenanzahl muss zwischen 100 und 1200 liegen");
+
+        scenario = validScenario();
+        scenario.targetModels = List.of("mobilecity");
+        scenario.mobileCity.regionalExport = true;
+        scenario.mobileCity.electricShare = 0.0;
+        scenario.mobileCity.allowSyntheticTransitFallback = false;
+        scenario.mobileCity.transitVehiclesPer1000 = 0;
+        assertEquals(HttpStatus.CREATED, realController.create(scenario).getStatusCode());
+    }
+
+    @Test
+    void validatesSyntheticTransitFleetOnlyWhenFallbackIsEnabled() {
+        Scenario scenario = validScenario();
+        scenario.mobileCity.regionalExport = true;
+        scenario.mobileCity.electricShare = 0.0;
+        scenario.mobileCity.transitVehiclesPer1000 = 0;
+
+        assertBadRequest(scenario,
+                "Modellierte ÖV-Flotte muss größer als 0 und höchstens 100 Fahrzeuge je 1000 Einwohner sein");
+    }
+
+    @Test
+    void rejectsInvalidManualChargingCapacity() {
+        Scenario scenario = validScenario();
+        scenario.mobileCity.chargingPointsPer1000 = Double.NaN;
+
+        assertBadRequest(scenario,
+                "MobileCity-Ladepunkte müssen zwischen 0 und 100 je 1000 Einwohner liegen");
+    }
+
+    @Test
+    void completeMobileCityPackageRequiresAnExplicitBevSource(@TempDir Path tempDir) {
+        Scenario scenario = validScenario();
+        scenario.mobileCity.regionalExport = true;
+
+        assertBadRequest(scenario,
+                "MobileCity-Regionalpaket benötigt regionale KBA-Daten oder eine explizite BEV-Annahme; für einen rudimentären Export ist 0 zulässig");
+
+        scenario.mobileCity.electricShare = 0.0;
+        scenario.mobileCity.allowSyntheticTransitFallback = true;
+        SynthesisProperties localProperties = new SynthesisProperties();
+        localProperties.setDataDir(tempDir.toString());
+        ScenarioRepository repository = new ScenarioRepository(
+                new ObjectMapper().findAndRegisterModules(), localProperties);
+        assertEquals(HttpStatus.CREATED,
+                new ScenarioController(repository, localProperties).create(scenario).getStatusCode());
+    }
+
+    @Test
+    void rejectsInvalidManualCarsharingAssumptions() {
+        Scenario scenario = validScenario();
+        scenario.mobileCity.carsharingVehiclesPer1000 = -0.1;
+
+        assertBadRequest(scenario,
+                "MobileCity-Carsharing-Flotte muss zwischen 0 und 100 Fahrzeugen je 1000 Einwohner liegen");
+
+        scenario = validScenario();
+        scenario.mobileCity.carsharingMemberShare = 0.4001;
+
+        assertBadRequest(scenario,
+                "MobileCity-Carsharing-Mitgliederanteil muss zwischen 0 und 0,4 liegen");
+    }
+
+    @Test
+    void validatesMobileCitySurroundingAssumptionsAsACompleteSet() {
+        Scenario scenario = validScenario();
+        scenario.mobileCity.surroundingPopulation = 10_000;
+
+        assertBadRequest(scenario,
+                "MobileCity-Umlandanteil für Bildungswege muss zwischen 0 und 1 liegen");
+
+        scenario.mobileCity.surroundingEducationTripShare = 0.2;
+        scenario.mobileCity.surroundingWorkTripShare = 1.1;
+        scenario.mobileCity.surroundingShoppingTripShare = 0.1;
+        scenario.mobileCity.surroundingLeisureTripShare = 0.05;
+        assertBadRequest(scenario,
+                "MobileCity-Umlandanteil für Arbeitswege muss zwischen 0 und 1 liegen");
+
+        scenario.mobileCity.surroundingWorkTripShare = 0.4;
+        scenario.population.externalTrips = false;
+        assertBadRequest(scenario,
+                "MobileCity-Umlandbevölkerung benötigt aktivierte Außenbeziehungen");
+
+        scenario = validScenario();
+        scenario.mobileCity.surroundingWorkTripShare = 0.2;
+        assertBadRequest(scenario,
+                "MobileCity-Umlandanteile benötigen eine positive Umlandbevölkerung");
+    }
+
+    @Test
+    void validatesAutomaticMobileCitySurroundingBufferAndShares() {
+        Scenario scenario = validScenario();
+        scenario.mobileCity.autoSurrounding = true;
+        scenario.mobileCity.surroundingBufferKm = 0.5;
+        assertBadRequest(scenario, "MobileCity-Umlandpuffer muss zwischen 1 und 100 km liegen");
+
+        scenario.mobileCity.surroundingBufferKm = 10;
+        assertBadRequest(scenario,
+                "MobileCity-Umlandanteil für Bildungswege muss zwischen 0 und 1 liegen");
+
+        scenario.mobileCity.surroundingEducationTripShare = 0.1;
+        scenario.mobileCity.surroundingWorkTripShare = 0.4;
+        scenario.mobileCity.surroundingShoppingTripShare = 0.15;
+        scenario.mobileCity.surroundingLeisureTripShare = 0.08;
+        scenario.population.externalTrips = false;
+        assertBadRequest(scenario,
+                "MobileCity-Umlandbevölkerung benötigt aktivierte Außenbeziehungen");
     }
 
     @Test
@@ -172,6 +281,22 @@ class ScenarioControllerTest {
         scenario.targetModels = List.of("mobilecity");
 
         assertBadRequest(scenario, "Aktivierte Retouren benötigen das Zielmodell logiTopp");
+    }
+
+    @Test
+    void nativeMobileCityValidationRequiresCompleteSelectedPackage() {
+        Scenario scenario = validScenario();
+        scenario.mobileCity.validateNative = true;
+        assertBadRequest(scenario,
+                "Native MobileCity-Prüfung benötigt MobileCity und ein vollständiges Regional- oder Vorlagenpaket");
+
+        scenario = validScenario();
+        scenario.mobileCity.regionalExport = true;
+        scenario.mobileCity.electricShare = 0.0;
+        scenario.mobileCity.validateNative = true;
+        scenario.targetModels = List.of("logitopp");
+        assertBadRequest(scenario,
+                "Native MobileCity-Prüfung benötigt MobileCity und ein vollständiges Regional- oder Vorlagenpaket");
     }
 
     @Test

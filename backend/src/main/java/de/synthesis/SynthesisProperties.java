@@ -17,7 +17,38 @@ public class SynthesisProperties {
     private Actitopp actitopp = new Actitopp();
     private Sumo sumo = new Sumo();
     private Transit transit = new Transit();
+    private MobileCityValidation mobileCityValidation = new MobileCityValidation();
     private Llm llm = new Llm();
+
+    /** Optional native validation of a complete MobileCity import package. */
+    public static class MobileCityValidation {
+        private boolean enabled = true;
+        private String python = "python3";
+        private String script = "../scripts/validate-mobilecity.py";
+        private String dotnet = "../validation/tools/dotnet-8.0.425/dotnet";
+        private String toolSource = "../validation/mobilecity/ConfigTool";
+        private String nugetCache = "../.runtime/nuget";
+        private int timeoutMinutes = 20;
+        /** Entire eleven-year horizon emitted by the regional baseline. */
+        private int years = 11;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public String getPython() { return python; }
+        public void setPython(String python) { this.python = python; }
+        public String getScript() { return script; }
+        public void setScript(String script) { this.script = script; }
+        public String getDotnet() { return dotnet; }
+        public void setDotnet(String dotnet) { this.dotnet = dotnet; }
+        public String getToolSource() { return toolSource; }
+        public void setToolSource(String toolSource) { this.toolSource = toolSource; }
+        public String getNugetCache() { return nugetCache; }
+        public void setNugetCache(String nugetCache) { this.nugetCache = nugetCache; }
+        public int getTimeoutMinutes() { return timeoutMinutes; }
+        public void setTimeoutMinutes(int timeoutMinutes) { this.timeoutMinutes = timeoutMinutes; }
+        public int getYears() { return years; }
+        public void setYears(int years) { this.years = years; }
+    }
 
     /**
      * Local LLM behaviour source (Achse A, GTA-Stil): generative activity agents via an
@@ -172,7 +203,7 @@ public class SynthesisProperties {
         public void setTimeoutMinutes(int timeoutMinutes) { this.timeoutMinutes = timeoutMinutes; }
     }
 
-    /** logiTopp-Lauf (Pipeline-Stufe 10) im Legacy-Projekt mobitopp-rastatt. */
+    /** logiTopp-Lauf (Pipeline-Stufe 12) im Legacy-Projekt mobitopp-rastatt. */
     public static class Simulation {
         private boolean enabled = true;
         /** Pfad zum mobitopp-rastatt-Projekt (gradlew + runDeliverySynthesis). */
@@ -420,6 +451,10 @@ public class SynthesisProperties {
     public void setSumo(Sumo sumo) { this.sumo = sumo; }
     public Transit getTransit() { return transit; }
     public void setTransit(Transit transit) { this.transit = transit; }
+    public MobileCityValidation getMobileCityValidation() { return mobileCityValidation; }
+    public void setMobileCityValidation(MobileCityValidation mobileCityValidation) {
+        this.mobileCityValidation = mobileCityValidation;
+    }
     public Llm getLlm() { return llm; }
     public void setLlm(Llm llm) { this.llm = llm; }
 }

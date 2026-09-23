@@ -54,6 +54,8 @@ export interface Scenario {
   };
   /** Nachfragesimulation/Weiterverarbeitung: logitopp | sumo | mobilecity; SUMO impliziert logiTopp. */
   targetModels: string[];
+  referenceYear: number;
+  mobileCity: { useTemplate: boolean; templateId: string; useRegionalFleet?: boolean; electricShare?: number | null; useRegionalCharging?: boolean; chargingPointsPer1000?: number | null; carsharingVehiclesPer1000?: number | null; carsharingMemberShare?: number | null; autoSurrounding?: boolean; surroundingBufferKm?: number; surroundingPopulation?: number | null; surroundingEducationTripShare?: number | null; surroundingWorkTripShare?: number | null; surroundingShoppingTripShare?: number | null; surroundingLeisureTripShare?: number | null; regionalExport?: boolean; validateNative?: boolean; maxDistricts?: number; allowSyntheticTransitFallback?: boolean; transitVehiclesPer1000?: number; settlementAreaShare?: number };
   population: {
     totalPersons: number | null;
     personsPerKm2: number;
@@ -72,6 +74,8 @@ export interface Scenario {
     /** Optional hochgeladener GTFS-Feed (Pfad); Fallback zum Auto-Fetch. */
     gtfsUploadPath?: string;
     useKitPopulation: boolean;
+    /** Regionale Alters-/Haushaltsanteile aus Zensus 2022; experimentell. */
+    useCensusStructure?: boolean;
     calibrateModeChoice: boolean;
     /** Distanz-Kalibrierung der Zielwahl (b_intrazonal → Ziel-<1km-Anteil), experimentell. */
     calibrateDistance: boolean;

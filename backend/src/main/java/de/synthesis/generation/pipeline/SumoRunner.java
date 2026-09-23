@@ -3,6 +3,9 @@ package de.synthesis.generation.pipeline;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.generation.demand.LogitoppDemandAdapter;
 import de.synthesis.generation.demand.TravelDemand;
+import de.synthesis.vehicle.SumoVehicleTypes;
+import de.synthesis.vehicle.VehicleConfiguration;
+import de.synthesis.vehicle.VehicleArtifacts;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -56,13 +59,19 @@ public class SumoRunner {
     private final int day;
     private final int maxTrips;
     private final int timeoutMinutes;
+    private final SumoVehicleTypes vehicleTypes;
 
     public SumoRunner(SynthesisProperties.Sumo config) {
+        this(config, VehicleConfiguration.empty(), 42);
+    }
+
+    public SumoRunner(SynthesisProperties.Sumo config, VehicleConfiguration resolvedVehicles, long seed) {
         this.binDir = Path.of(config.getBinDir());
         this.sumoHome = config.getSumoHome();
         this.day = config.getDay();
         this.maxTrips = config.getMaxTrips();
         this.timeoutMinutes = config.getTimeoutMinutes();
+        this.vehicleTypes = new SumoVehicleTypes(resolvedVehicles, seed);
     }
 
     public boolean isAvailable() {
@@ -106,6 +115,8 @@ public class SumoRunner {
             throws IOException, InterruptedException {
         Path dir = artifacts.resolve("sumo");
         Files.createDirectories(dir);
+        if (vehicleTypes.active()) VehicleArtifacts.write(artifacts.resolve("vehicles/sumo-execution.json"),
+                Map.of("status", "started", "fleetStateSimulated", false));
 
         Files.writeString(dir.resolve("network.osm"), osmXml, StandardCharsets.UTF_8);
 
@@ -217,8 +228,12 @@ public class SumoRunner {
 
         long duration = (System.currentTimeMillis() - start) / 1000;
         Map<String, Double> co2 = parseEmissions(dir.resolve("tripinfo.xml"));
-        return parseStatistics(dir.resolve("statistics.xml"), duration, carTrips, bikeTrips,
+        Result result = parseStatistics(dir.resolve("statistics.xml"), duration, carTrips, bikeTrips,
                 walkTrips, deliveryTrips, ptRiders, ptVehicles, co2);
+        if (vehicleTypes.active()) VehicleArtifacts.write(artifacts.resolve("vehicles/sumo-execution.json"),
+                Map.of("status", "completed", "simulatedTrips", result.vehicles(), "co2KgByType", co2,
+                        "fleetStateSimulated", false));
+        return result;
     }
 
     // --- Netz-Feedback: OD-Stau-Faktoren -------------------------------------------
@@ -430,22 +445,29 @@ public class SumoRunner {
         if (!Files.exists(tripinfo)) {
             return co2;
         }
-        Pattern typePattern = Pattern.compile("vType=\"(\\w+)\"");
-        Pattern co2Pattern = Pattern.compile("CO2_abs=\"([\\d.eE+-]+)\"");
-        String currentType = null;
-        try (BufferedReader reader = Files.newBufferedReader(tripinfo, StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("<tripinfo ")) {
-                    Matcher m = typePattern.matcher(line);
-                    currentType = m.find() ? m.group(1) : null;
-                } else if (currentType != null && line.contains("<emissions ")) {
-                    Matcher m = co2Pattern.matcher(line);
-                    if (m.find()) {
-                        co2.merge(currentType, Double.parseDouble(m.group(1)) / 1_000_000, Double::sum);
-                    }
+        javax.xml.stream.XMLInputFactory factory = javax.xml.stream.XMLInputFactory.newFactory();
+        factory.setProperty(javax.xml.stream.XMLInputFactory.SUPPORT_DTD, false);
+        factory.setProperty("javax.xml.stream.isSupportingExternalEntities", false);
+        try (var input = Files.newInputStream(tripinfo)) {
+            var xml = factory.createXMLStreamReader(input);
+            try {
+                String currentType = null;
+                while (xml.hasNext()) {
+                    int event = xml.next();
+                    if (event == javax.xml.stream.XMLStreamConstants.START_ELEMENT) {
+                        if ("tripinfo".equals(xml.getLocalName())) {
+                            currentType = xml.getAttributeValue(null, "vType");
+                        } else if ("emissions".equals(xml.getLocalName()) && currentType != null) {
+                            String value = xml.getAttributeValue(null, "CO2_abs");
+                            if (value != null) co2.merge(vehicleTypes.resultName(currentType),
+                                    Double.parseDouble(value) / 1_000_000, Double::sum);
+                        }
+                    } else if (event == javax.xml.stream.XMLStreamConstants.END_ELEMENT
+                            && "tripinfo".equals(xml.getLocalName())) currentType = null;
                 }
-            }
+            } finally { xml.close(); }
+        } catch (javax.xml.stream.XMLStreamException e) {
+            throw new IOException("SUMO-Emissionsergebnis ist ungültig", e);
         }
         co2.replaceAll((k, v) -> Math.round(v * 100) / 100.0);
         return co2;
@@ -717,6 +739,7 @@ public class SumoRunner {
     /** Alle Trips (nach Abfahrt sortiert) mit Fahrzeugtypen als trips.xml schreiben. */
     private void writeTripsXml(List<Trip> trips, Path out) throws IOException {
         trips.sort(Comparator.comparingInt(Trip::departSec));
+        vehicleTypes.beginExport();
         try (Writer writer = Files.newBufferedWriter(out)) {
             writer.write("<routes>\n");
             // HBEFA3-Emissionsklassen: Benzin-Pkw EU4, Diesel-Lieferwagen EU4, Rad/Lastenrad emissionsfrei
@@ -724,14 +747,18 @@ public class SumoRunner {
             writer.write("  <vType id=\"fahrrad\" vClass=\"bicycle\" emissionClass=\"Zero\"/>\n");
             writer.write("  <vType id=\"lkw\" vClass=\"delivery\" emissionClass=\"HBEFA3/LDV_D_EU4\"/>\n");
             writer.write("  <vType id=\"lastenrad\" vClass=\"bicycle\" emissionClass=\"Zero\"/>\n");
+            vehicleTypes.writeDefinitions(writer);
             int id = 0;
             for (Trip t : trips) {
+                String type = vehicleTypes.select(t.type(), t.departSec() + "|" + t.fromLon() + "|"
+                        + t.fromLat() + "|" + t.toLon() + "|" + t.toLat());
                 writer.write(String.format(
                         "  <trip id=\"v%d\" type=\"%s\" depart=\"%d\" fromLonLat=\"%s,%s\" toLonLat=\"%s,%s\"/>%n",
-                        id++, t.type(), t.departSec(), t.fromLon(), t.fromLat(), t.toLon(), t.toLat()));
+                        id++, type, t.departSec(), t.fromLon(), t.fromLat(), t.toLon(), t.toLat()));
             }
             writer.write("</routes>\n");
         }
+        vehicleTypes.writeUsage(out.getParent().getParent().resolve("vehicles/sumo-types.json"));
     }
 
     private static final Pattern STAT_TAG = Pattern.compile("<vehicleTripStatistics\\b[^>]*/>");

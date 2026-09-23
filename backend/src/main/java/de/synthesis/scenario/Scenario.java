@@ -24,6 +24,53 @@ public class Scenario {
     public Zoning zoning = new Zoning();
     public Population population = new Population();
     public Logistics logistics = new Logistics();
+    /** Versioned vehicle catalogue; only explicit sumoTraffic allocations affect traffic. */
+    @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = de.synthesis.vehicle.VehicleJson.Deserializer.class)
+    public de.synthesis.vehicle.VehicleConfiguration vehicleConfiguration = de.synthesis.vehicle.VehicleConfiguration.empty();
+    /** Common year for population and MobileCity contributions. */
+    public int referenceYear = 2026;
+    public MobileCity mobileCity = new MobileCity();
+
+    public static class MobileCity {
+        /** Experimental merge into a locally prepared, hash-pinned study-area template. */
+        public boolean useTemplate = false;
+        public String templateId = "tramigo-v2";
+        /** Regional private BEV shares from the pinned KBA reference and BKG boundaries. */
+        public boolean useRegionalFleet = false;
+        /** Public charging points from the pinned BNetzA register snapshot. */
+        public boolean useRegionalCharging = false;
+        /** Explicit charging-capacity fallback; null means unknown, zero is valid. */
+        public Double chargingPointsPer1000;
+        /** Explicit carsharing fleet assumption distributed by district population. */
+        public Double carsharingVehiclesPer1000;
+        /** Explicit study-area share of people eligible to use carsharing. */
+        public Double carsharingMemberShare;
+        /** Resolve surrounding districts and their resident population from a census buffer. */
+        public boolean autoSurrounding = false;
+        /** Width of the census buffer outside the selected study-area rectangle, in kilometres. */
+        public double surroundingBufferKm = 10.0;
+        /** Optional resident population represented by the eight surrounding destination anchors. */
+        public Integer surroundingPopulation;
+        /** Share of education trips made by surrounding residents into the study area. */
+        public Double surroundingEducationTripShare;
+        /** Share of work trips made by surrounding residents into the study area. */
+        public Double surroundingWorkTripShare;
+        /** Share of shopping trips made by surrounding residents into the study area. */
+        public Double surroundingShoppingTripShare;
+        /** Share of leisure trips made by surrounding residents into the study area. */
+        public Double surroundingLeisureTripShare;
+        /** Complete regional baseline using an explicitly identified, uncalibrated model profile. */
+        public boolean regionalExport = false;
+        /** Run the exported complete package through the native MobileCity ConfigTool. */
+        public boolean validateNative = false;
+        public int maxDistricts = 100;
+        /** Permit the disclosed matrix-based transit assumption when no GTFS feed resolves. */
+        public boolean allowSyntheticTransitFallback = true;
+        public double transitVehiclesPer1000 = 1.0;
+        public double settlementAreaShare = 0.5;
+        /** Explicit BEV fallback for uncovered zones; null means unknown, zero is valid. */
+        public Double electricShare;
+    }
 
     /**
      * Nachfragesimulation und Weiterverarbeitung (Mehrfachauswahl): {@code logitopp}
@@ -106,6 +153,8 @@ public class Scenario {
         public boolean useActitopp = true;
         /** Draw households from a KIT-synthesized demographic sample (realistic compositions) instead of ad-hoc draws. */
         public boolean useKitPopulation = true;
+        /** Experimental regional weighting of KIT households using census-2022 age/size margins. */
+        public boolean useCensusStructure = false;
         /** Iterative ASC-Kalibrierung der Moduswahl gegen MiD-Modal-Split (teuer: mehrere Sim-Läufe). */
         public boolean calibrateModeChoice = false;
         /**

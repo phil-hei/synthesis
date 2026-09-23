@@ -15,7 +15,11 @@ import {
   DISTANCE_BAND_ROWS,
   GtaPersonas,
   LlmModeChoiceResult,
+  MobileCityDataItem,
+  MobileCityDataResolution,
+  MobileCityDataStatus,
   MobileCitySummary,
+  MobileCityValidationStatus,
   ModalSplit,
   ParcelDensityGeoJson,
   SimKpis,
@@ -68,6 +72,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   llmModeChoice: LlmModeChoiceResult | null = null;
   gtaPersonas: GtaPersonas | null = null;
   mobileCity: MobileCitySummary | null = null;
+  mobileCityValidation: MobileCityValidationStatus | null = null;
   simDepots: DepotStats[] = [];
   showParcelLayer = false;
   showTourLayer = false;
@@ -133,6 +138,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       next: defaults => {
         if (defaults) {
           defaults.population.useRealRouting = true;
+          this.withMobileCityDefaults(defaults);
         }
         this.scenario = defaults;          // region ist hier null: noch kein Rechteck
         this.selectedScenarioId = '';
@@ -163,7 +169,10 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       this.newScenario();
       return;
     }
-    this.scenario = JSON.parse(JSON.stringify(selected));
+    this.scenario = this.withMobileCityDefaults(JSON.parse(JSON.stringify({
+      ...selected, referenceYear: selected.referenceYear ?? 2026,
+      mobileCity: selected.mobileCity ?? { useTemplate: false, templateId: 'tramigo-v2' },
+    })));
     this.scenario!.population.useRealRouting = true;
     this.job = null;
     this.artifacts = [];
@@ -210,7 +219,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       : this.api.createScenario(this.scenario);
     request.subscribe({
       next: saved => {
-        this.scenario = saved;
+        this.scenario = this.withMobileCityDefaults(saved);
         this.selectedScenarioId = saved.id ?? '';
         this.busy = false;
         this.message = 'Szenario gespeichert';
@@ -234,7 +243,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     this.busy = true;
     this.api.uploadGtfs(id, file).subscribe({
       next: saved => {
-        this.scenario = saved;
+        this.scenario = this.withMobileCityDefaults(saved);
         this.busy = false;
         this.message = 'GTFS-Feed hochgeladen';
       },
@@ -402,6 +411,225 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     if (preset && this.scenario) {
       this.scenario.population.calibrationTarget = { ...preset.split };
     }
+  }
+
+  private withMobileCityDefaults(scenario: Scenario): Scenario {
+    scenario.referenceYear ??= 2026;
+    scenario.mobileCity ??= { useTemplate: false, templateId: 'tramigo-v2' };
+    scenario.population.useCensusStructure ??= false;
+    scenario.mobileCity.useRegionalFleet ??= false;
+    scenario.mobileCity.electricShare ??= null;
+    scenario.mobileCity.useRegionalCharging ??= false;
+    scenario.mobileCity.chargingPointsPer1000 ??= null;
+    scenario.mobileCity.carsharingVehiclesPer1000 ??= null;
+    scenario.mobileCity.carsharingMemberShare ??= null;
+    scenario.mobileCity.autoSurrounding ??= false;
+    scenario.mobileCity.surroundingBufferKm ??= 10;
+    scenario.mobileCity.surroundingPopulation ??= null;
+    scenario.mobileCity.surroundingEducationTripShare ??= null;
+    scenario.mobileCity.surroundingWorkTripShare ??= null;
+    scenario.mobileCity.surroundingShoppingTripShare ??= null;
+    scenario.mobileCity.surroundingLeisureTripShare ??= null;
+    scenario.mobileCity.regionalExport ??= false;
+    scenario.mobileCity.validateNative ??= false;
+    scenario.mobileCity.maxDistricts ??= 100;
+    scenario.mobileCity.allowSyntheticTransitFallback ??= true;
+    scenario.mobileCity.transitVehiclesPer1000 ??= 1;
+    scenario.mobileCity.settlementAreaShare ??= 0.5;
+    return scenario;
+  }
+
+  setMobileCityMode(mode: 'regional' | 'template', enabled: boolean): void {
+    if (!this.scenario) return;
+    if (enabled) {
+      if (mode === 'regional') this.scenario.mobileCity.useTemplate = false;
+      else this.scenario.mobileCity.regionalExport = false;
+    } else {
+      this.scenario.mobileCity.validateNative = false;
+    }
+  }
+
+  /**
+   * Produces the smallest self-contained MobileCity configuration that can be exported
+   * without optional regional services. Every fallback remains visible in the data inventory.
+   */
+  configureMobileCityQuickStart(): void {
+    if (!this.scenario) return;
+    this.scenario.targetModels = ['mobilecity'];
+    this.scenario.population.behaviorSource = 'template';
+    this.scenario.population.useRealRouting = false;
+    this.scenario.population.externalTrips = false;
+    this.scenario.mobileCity.regionalExport = true;
+    this.scenario.mobileCity.useTemplate = false;
+    this.scenario.mobileCity.templateId ||= 'tramigo-v2';
+    this.scenario.mobileCity.useRegionalFleet = false;
+    this.scenario.mobileCity.electricShare ??= 0;
+    this.scenario.mobileCity.useRegionalCharging = false;
+    this.scenario.mobileCity.allowSyntheticTransitFallback = true;
+    this.scenario.mobileCity.transitVehiclesPer1000 = 1;
+    this.scenario.mobileCity.settlementAreaShare = 0.5;
+    this.scenario.mobileCity.maxDistricts = Math.min(this.scenario.mobileCity.maxDistricts ?? 12, 12);
+    this.scenario.mobileCity.autoSurrounding = false;
+    this.scenario.mobileCity.surroundingPopulation = null;
+    this.scenario.mobileCity.surroundingEducationTripShare = null;
+    this.scenario.mobileCity.surroundingWorkTripShare = null;
+    this.scenario.mobileCity.surroundingShoppingTripShare = null;
+    this.scenario.mobileCity.surroundingLeisureTripShare = null;
+    this.scenario.mobileCity.validateNative = false;
+    this.message = 'MobileCity-Schnellstart gesetzt: bis zu 12 Districts, Luftlinienmatrizen, modellierter ÖV, 0 % BEV und kein Umland. Beim Generieren wird diese Konfiguration automatisch gespeichert.';
+  }
+
+  mobileCityPlanItems(): MobileCityDataItem[] {
+    const scenario = this.scenario;
+    if (!scenario) return [];
+    const populationManual = scenario.population.totalPersons != null;
+    const censusStructure = scenario.population.useCensusStructure === true;
+    const regionalFleet = scenario.mobileCity.useRegionalFleet === true;
+    const manualBev = scenario.mobileCity.electricShare != null;
+    const regionalCharging = scenario.mobileCity.useRegionalCharging === true;
+    const manualCharging = scenario.mobileCity.chargingPointsPer1000 != null;
+    const manualSharing = scenario.mobileCity.carsharingVehiclesPer1000 != null
+      || scenario.mobileCity.carsharingMemberShare != null;
+    const automaticSurrounding = scenario.mobileCity.autoSurrounding === true;
+    const surroundingRequested = automaticSurrounding
+      || (scenario.mobileCity.surroundingPopulation ?? 0) > 0;
+    const surroundingComplete = surroundingRequested
+      && scenario.mobileCity.surroundingEducationTripShare != null
+      && scenario.mobileCity.surroundingWorkTripShare != null
+      && scenario.mobileCity.surroundingShoppingTripShare != null
+      && scenario.mobileCity.surroundingLeisureTripShare != null
+      && scenario.population.externalTrips;
+    const bevResolution: MobileCityDataResolution = regionalFleet && manualBev
+      ? 'fallback' : regionalFleet ? 'automatic' : manualBev ? 'manual' : 'missing';
+    const bevStatus: MobileCityDataStatus = regionalFleet && manualBev
+      ? 'mixed' : regionalFleet ? 'observed' : manualBev ? 'assumption' : 'missing';
+    const item = (id: string, label: string, status: MobileCityDataStatus,
+                  resolution: MobileCityDataResolution, source: string,
+                  required: boolean, note: string): MobileCityDataItem => ({
+      id, label, status, resolution, source, required, note, coverage: status === 'missing' ? 0 : 1
+    });
+    return [
+      item('geography', 'Gebiet und Districts', scenario.region ? 'derived' : 'missing',
+        scenario.region ? 'automatic' : 'missing', scenario.region ? 'Kartenausschnitt und Zonierung' : 'Region fehlt', true,
+        'Districts werden beim Lauf aus allen internen Zonen gebildet.'),
+      item('population-total', 'Einwohnerzahl', populationManual ? 'assumption' : 'derived',
+        populationManual ? 'manual' : 'automatic', populationManual ? 'Manuelle Gesamtzahl' : 'Upload → Zensus → OSM → Dichte', true,
+        'Die tatsächlich verwendete Quelle und ihr Hash werden erst im Lauf aufgelöst.'),
+      item('population-structure', 'Alters- und Haushaltsstruktur', censusStructure ? 'derived' : 'assumption',
+        censusStructure ? 'automatic' : 'profile', censusStructure ? 'Zensus 2022 + KIT-Haushalte' : 'Haushaltspool ohne Regionalgewichtung', true,
+        censusStructure ? 'Nicht abdeckbare Haushaltsgruppen bleiben als Fallback sichtbar.' : 'Keine regionale Strukturgewichtung gewählt.'),
+      item('private-cars', 'Private Pkw', 'derived', 'automatic', 'Synthetische Haushalte', true,
+        `${scenario.population.carsPerHousehold} Pkw je Haushalt als Modellparameter.`),
+      item('private-bev', 'Privater BEV-Anteil', bevStatus, bevResolution,
+        regionalFleet && manualBev ? 'KBA automatisch, manuelle Vorgabe bei Lücken' : regionalFleet ? 'KBA/BKG automatisch' : manualBev ? 'Manuelle Annahme' : 'Quelle oder Annahme fehlt', true,
+        regionalFleet ? 'KBA-Stand 01.07.2026; PHEV bleibt separat.' : manualBev ? 'Explizite Annahme für alle Zonen.' : 'Blockiert das Regionalpaket.'),
+      item('networks', 'Auto-, Rad- und Fußverbindungen', 'derived', 'automatic',
+        scenario.population.useRealRouting ? 'OSM-Routing mit Luftlinien-Fallback' : 'Luftlinienmatrizen', true,
+        'MobileCity erhält daraus aggregierte District-Verbindungen.'),
+      item('transit', 'ÖV-Angebot', scenario.population.gtfsUploadPath ? 'observed' : 'derived',
+        scenario.population.gtfsUploadPath ? 'manual' : scenario.mobileCity.allowSyntheticTransitFallback ? 'fallback' : 'automatic',
+        scenario.population.gtfsUploadPath ? 'Hochgeladener GTFS-Feed' : scenario.mobileCity.allowSyntheticTransitFallback ? 'Regionaler GTFS-Abruf + freigegebener Modellfallback' : 'Nur regionaler GTFS-Abruf', true,
+        scenario.mobileCity.allowSyntheticTransitFallback
+          ? `Der Lauf wählt einen repräsentativen Werktag. Falls kein Regionsfeed verfügbar ist: ${scenario.mobileCity.transitVehiclesPer1000 ?? 1} Fahrzeuge je 1.000 Einwohner.`
+          : 'Ohne auflösbaren Regionsfeed oder Upload stoppt der Export.'),
+      item('chargers', 'Öffentliche Ladepunkte', regionalCharging && manualCharging ? 'mixed' : regionalCharging ? 'observed' : manualCharging ? 'assumption' : 'missing',
+        regionalCharging && manualCharging ? 'fallback' : regionalCharging ? 'automatic' : manualCharging ? 'manual' : 'missing',
+        regionalCharging && manualCharging ? 'BNetzA automatisch, Nutzervorgabe bei Quellenfehler' : regionalCharging ? 'BNetzA Ladesäulenregister' : manualCharging ? 'Manuelle Annahme' : 'Quelle oder Annahme fehlt', false,
+        regionalCharging ? 'Öffentliche Ladepunkte werden nach Koordinaten den Districts zugeordnet; Datenjahr und Szenariojahr bleiben getrennt.'
+          : manualCharging ? `${scenario.mobileCity.chargingPointsPer1000} Ladepunkte je 1.000 Einwohner.` : 'Bleibt im Export unbekannt; MobileCity modelliert die weitere Entwicklung endogen.'),
+      item('sharing', 'Carsharing-Angebot', 'assumption', manualSharing ? 'manual' : 'profile',
+        manualSharing ? 'Nutzervorgabe' : 'Regionalexport-Baseline', false,
+        manualSharing
+          ? `${scenario.mobileCity.carsharingVehiclesPer1000 ?? 0} Fahrzeuge je 1.000 Einwohner; ${((scenario.mobileCity.carsharingMemberShare ?? 0) * 100).toLocaleString('de-DE')} % Mitgliederanteil. Konstante Szenarioannahme.`
+          : 'Explizite Nullannahme; keine kleinräumig vollständige Regionalquelle aufgelöst.'),
+      item('model-profile', 'Modellparameter', 'assumption', 'profile', scenario.mobileCity.templateId, true,
+        'Hashgeprüftes, für das Gebiet noch unkalibriertes Profil.'),
+      item('surrounding', 'Umlandbevölkerung', surroundingComplete ? (automaticSurrounding ? 'derived' : 'assumption') : 'missing',
+        surroundingComplete ? (automaticSurrounding ? (scenario.mobileCity.surroundingPopulation != null ? 'fallback' : 'automatic') : 'manual') : 'missing',
+        surroundingComplete ? (automaticSurrounding ? 'Zensus-2022-Pufferring' : 'Nutzervorgabe') : surroundingRequested ? 'Unvollständige Umlandkonfiguration' : 'Noch nicht modelliert', surroundingRequested,
+        surroundingComplete
+          ? automaticSurrounding
+            ? `${scenario.mobileCity.surroundingBufferKm ?? 10} km Pufferring;${scenario.mobileCity.surroundingPopulation != null ? ` manuelle Gesamtsumme ${scenario.mobileCity.surroundingPopulation};` : ''} zweckspezifische eingehende Wegeanteile werden exportiert.`
+            : `${scenario.mobileCity.surroundingPopulation} Personen; zweckspezifische eingehende Wegeanteile werden exportiert.`
+          : surroundingRequested
+            ? 'Alle vier Wegeanteile und aktivierte Außenbeziehungen sind erforderlich.'
+          : 'Externe Zielanker ersetzen ohne explizite Eingabe keine Umlandbevölkerung.'),
+      item('logistics', 'Logistik', 'missing', 'missing', 'Kein bestätigter MobileCity-Vertrag', false,
+        'Bleibt außerhalb dieses Exportpakets.')
+    ];
+  }
+
+  mobileCityPlanReady(): boolean {
+    return !this.mobileCityPlanItems().some(item => item.required && item.status === 'missing');
+  }
+
+  mobileCityResolutionLabel(resolution: MobileCityDataResolution): string {
+    return ({ automatic: 'automatisch', manual: 'manuell', fallback: 'Automatik + Fallback',
+      profile: 'Modellprofil', missing: 'fehlt' })[resolution];
+  }
+
+  mobileCityStatusLabel(status: MobileCityDataStatus): string {
+    return ({ observed: 'Quelldaten', derived: 'abgeleitet', assumption: 'Annahme',
+      mixed: 'gemischt', missing: 'offen' })[status];
+  }
+
+  mobileCityDisplayValue(item: MobileCityDataItem): string {
+    if (item.value == null) return '';
+    if (item.unit === 'Anteil' && typeof item.value === 'number') {
+      return `${(item.value * 100).toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`;
+    }
+    return `${item.value}${item.unit ? ` ${item.unit}` : ''}`;
+  }
+
+  mobileCityResultStale(): boolean {
+    if (!this.scenario?.targetModels?.includes('mobilecity') || !this.scenario.mobileCity.regionalExport) {
+      return true;
+    }
+    const previous = this.mobileCity?.dataInventory?.inputSnapshot;
+    return previous != null && JSON.stringify(previous) !== JSON.stringify(this.mobileCityInputSnapshot());
+  }
+
+  private mobileCityInputSnapshot(): Record<string, unknown> {
+    const scenario = this.scenario;
+    if (!scenario) return {};
+    const region = scenario.region ? {
+      maxLat: scenario.region.maxLat, maxLon: scenario.region.maxLon,
+      minLat: scenario.region.minLat, minLon: scenario.region.minLon
+    } : {};
+    return {
+      allowSyntheticTransitFallback: scenario.mobileCity.allowSyntheticTransitFallback ?? true,
+      carsPerHousehold: scenario.population.carsPerHousehold,
+      carsharingMemberShare: scenario.mobileCity.carsharingMemberShare ?? null,
+      carsharingVehiclesPer1000: scenario.mobileCity.carsharingVehiclesPer1000 ?? null,
+      chargingPointsPer1000: scenario.mobileCity.chargingPointsPer1000 ?? null,
+      electricShare: scenario.mobileCity.electricShare ?? null,
+      externalTrips: scenario.population.externalTrips,
+      gtfsUploadPath: scenario.population.gtfsUploadPath ?? null,
+      maxDistricts: scenario.mobileCity.maxDistricts ?? 100,
+      populationTotal: scenario.population.totalPersons,
+      referenceYear: scenario.referenceYear,
+      region,
+      samplingFraction: scenario.population.samplingFraction,
+      settlementAreaShare: scenario.mobileCity.settlementAreaShare ?? 0.5,
+      autoSurrounding: scenario.mobileCity.autoSurrounding ?? false,
+      surroundingBufferKm: scenario.mobileCity.surroundingBufferKm ?? 10,
+      surroundingEducationTripShare: scenario.mobileCity.surroundingEducationTripShare ?? null,
+      surroundingLeisureTripShare: scenario.mobileCity.surroundingLeisureTripShare ?? null,
+      surroundingPopulation: scenario.mobileCity.surroundingPopulation ?? null,
+      surroundingShoppingTripShare: scenario.mobileCity.surroundingShoppingTripShare ?? null,
+      surroundingWorkTripShare: scenario.mobileCity.surroundingWorkTripShare ?? null,
+      templateId: scenario.mobileCity.templateId,
+      transitVehiclesPer1000: scenario.mobileCity.transitVehiclesPer1000 ?? 1,
+      useCensusStructure: scenario.population.useCensusStructure ?? false,
+      useKitPopulation: scenario.population.useKitPopulation,
+      useRegionalCharging: scenario.mobileCity.useRegionalCharging ?? false,
+      useRegionalFleet: scenario.mobileCity.useRegionalFleet ?? false,
+      zoning: {
+        cellSizeMeters: scenario.zoning.cellSizeMeters,
+        maxZones: scenario.zoning.maxZones,
+        mode: scenario.zoning.mode
+      }
+    };
   }
 
   hasTarget(target: string): boolean {
@@ -951,17 +1179,21 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.randomizeEachRun) {
       this.scenario.population.seed = this.createRandomSeed();
-      this.api.updateScenario(this.scenario).subscribe({
-        next: saved => {
-          this.scenario = saved;
-          this.startGeneration(saved.id ?? this.selectedScenarioId);
-        },
-        error: err => this.message = 'Zufallsvariante konnte nicht gespeichert werden: '
-          + (err.error?.message ?? err.message)
-      });
-      return;
     }
-    this.startGeneration(this.scenario.id);
+    this.busy = true;
+    this.api.updateScenario(this.scenario).subscribe({
+      next: saved => {
+        this.scenario = this.withMobileCityDefaults(saved);
+        this.selectedScenarioId = saved.id ?? this.selectedScenarioId;
+        this.busy = false;
+        this.startGeneration(saved.id ?? this.selectedScenarioId);
+      },
+      error: err => {
+        this.busy = false;
+        this.message = 'Konfiguration konnte vor der Generierung nicht gespeichert werden: '
+          + (err.error?.message ?? err.message);
+      }
+    });
   }
 
   private startGeneration(scenarioId: string): void {
@@ -1026,6 +1258,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
       this.loadSimulation();
       this.api.artifactJson<MobileCitySummary>(this.scenario.id, 'mobilecity/summary.json')
         .subscribe({ next: s => this.mobileCity = s, error: () => this.mobileCity = null });
+      this.api.artifactJson<MobileCityValidationStatus>(this.scenario.id, 'mobilecity-validation/status.json')
+        .subscribe({ next: s => this.mobileCityValidation = s, error: () => this.mobileCityValidation = null });
     }
   }
 
@@ -1034,7 +1268,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.artifactUrl('mobilecity/' + table);
   }
 
-  // --- Simulationsergebnisse (Stufe 10) ----------------------------------------
+  // --- Simulationsergebnisse (Stufe 12) ----------------------------------------
 
   /** Lädt KPIs, Depot-Statistiken und Kartenlayer; 404 = Simulation übersprungen. */
   private loadSimulation(): void {
@@ -1067,6 +1301,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     this.llmModeChoice = null;
     this.gtaPersonas = null;
     this.mobileCity = null;
+    this.mobileCityValidation = null;
     this.simDepots = [];
     this.parcelDensity = null;
     this.tourData = null;

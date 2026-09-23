@@ -1,0 +1,100 @@
+{
+  "StudyAreaConfig": [
+    "studyAreaParametersList"
+  ],
+  "REGdistricts": [
+    "districts"
+  ],
+  "REGattractivity": [
+    "attractivity"
+  ],
+  "REGchargers": [
+    "numberOfChargingStations"
+  ],
+  "POPinhabitants": [
+    "population[AgeGroups.Children]",
+    "population[AgeGroups.Adults]",
+    "population[AgeGroups.Seniors]"
+  ],
+  "POPtrips": [
+    "averageDailyTrips[AgeGroups.Children]",
+    "averageDailyTrips[AgeGroups.Adults]",
+    "averageDailyTrips[AgeGroups.Seniors]"
+  ],
+  "POPtripsSurrounding": [
+    "tripShareToStudyArea"
+  ],
+  "TECCarFleet": [
+    "TECCarFleetParameters",
+    "registrations.total",
+    "registrations.shareElectric",
+    "stock.total",
+    "stock.shareElectric"
+  ],
+  "TECTransit": [
+    "TECTransitYearlyParameters",
+    "seasonTicketRate"
+  ],
+  "TECCarsharing": [
+    "carsharing.member",
+    "carsharing.stock.total"
+  ],
+  "TECRidepooling": [
+    "TECRidepoolingGeneralParameters",
+    "fullServiceWeekdayHourDemandVariation",
+    "monthlyDemandVariation",
+    "operatingPatternDefinition",
+    "tariffPatternDefinition",
+    "serviceUpdates",
+    "specialEffectDemandGrowthImpact",
+    "serviceAreaDefinition"
+  ],
+  "TECEmissions": [
+    "emissionFactor"
+  ],
+  "TECTravelDistance": [
+    "ratioDistanceWithinCity"
+  ],
+  "INFdistricts": [
+    "districtVariables",
+    "transitSingleTicketPrice"
+  ],
+  "INFpedestrian": [
+    "pedestrianTimeTotalOD",
+    "pedestrianDistanceTotalOD"
+  ],
+  "MODparameters": [
+    "MODParameterByTripPurpose",
+    "MODParameterList",
+    "MODParameterByMode",
+    "d_share_age",
+    "d_share_tripPurpose"
+  ],
+  "ENV": [
+    "ENVVariables"
+  ],
+  "FIN": [
+    "FINVariables"
+  ],
+  "LAQ": [
+    "LAQVariables"
+  ],
+  "INFcarNodes": [
+    "carNodes"
+  ],
+  "INFcarLinks": [
+    "carLinks"
+  ],
+  "INFbikeNodes": [
+    "bikeNodes"
+  ],
+  "INFbikeLinks": [
+    "bikeLinks"
+  ],
+  "INFtransitNodes": [
+    "transitNodes"
+  ],
+  "INFtransitLinks": [
+    "transitLinks"
+  ]
+}

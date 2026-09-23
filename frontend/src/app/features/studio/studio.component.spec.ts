@@ -22,6 +22,7 @@ describe('StudioComponent', () => {
     uploadCommuters: ReturnType<typeof vi.fn>;
     generate: ReturnType<typeof vi.fn>;
     generationStatus: ReturnType<typeof vi.fn>;
+    artifactUrl: ReturnType<typeof vi.fn>;
     previewZones: ReturnType<typeof vi.fn>;
     estimateRegion: ReturnType<typeof vi.fn>;
   };
@@ -32,7 +33,7 @@ describe('StudioComponent', () => {
       listScenarios: vi.fn(() => of([])),
       scenarioDefaults: vi.fn(() => of(null)),
       createScenario: vi.fn(),
-      updateScenario: vi.fn(),
+      updateScenario: vi.fn((value: Scenario) => of(value)),
       deleteScenario: vi.fn(() => of(undefined)),
       listUploads: vi.fn(() => of([])),
       deletePopulationGrid: vi.fn(() => of(undefined)),
@@ -43,6 +44,7 @@ describe('StudioComponent', () => {
       uploadCommuters: vi.fn(),
       generate: vi.fn(() => of(job('QUEUED'))),
       generationStatus: vi.fn(() => of(job('RUNNING'))),
+      artifactUrl: vi.fn((_id: string, path: string) => `/artifacts/${path}`),
       previewZones: vi.fn(() => of({
         type: 'FeatureCollection', features: [], cellSizeMeters: 500, autoAdjusted: false
       })),
@@ -62,6 +64,25 @@ describe('StudioComponent', () => {
     fixture?.destroy();
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it('disables census weighting when its KIT household source is switched off', async () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('saved');
+    fixture.componentInstance.scenario.population.useKitPopulation = true;
+    fixture.componentInstance.scenario.population.useCensusStructure = true;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const labels = Array.from(fixture.nativeElement.querySelectorAll('label')) as HTMLLabelElement[];
+    const kit = labels.find(label => label.textContent?.includes('KIT-Demografie-Sample (Haushalte)'))!.querySelector('input')!;
+    const census = labels.find(label => label.textContent?.includes('Regionale Alters- und Haushaltsstruktur'))!.querySelector('input')!;
+    expect(census.disabled).toBe(false);
+    kit.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(fixture.componentInstance.scenario.population.useCensusStructure).toBe(false);
+    expect(census.disabled).toBe(true);
   });
 
   it('renders the migrated studio shell and initializes its map', () => {
@@ -270,8 +291,199 @@ describe('StudioComponent', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Export: MobileCity');
     expect(text).toContain('Verkehrssimulation: SUMO');
-    expect(text).toContain('Busverkehr wird bei verfügbarem Fahrplan automatisch eingebunden');
+    expect(text).toContain('GTFS wird bei verfügbarem Fahrplan automatisch eingebunden');
     expect(text).not.toContain('ÖV/Bus in SUMO');
+  });
+
+  it('keeps regional export and template merge mutually exclusive with matching guidance', async () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('draft');
+    fixture.componentInstance.scenario.targetModels = ['mobilecity'];
+    fixture.componentInstance.scenario.mobileCity.useTemplate = true;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const regional = Array.from(element.querySelectorAll('label')).find(l => l.textContent?.includes('Regionalpaket'))!.querySelector('input')!;
+    regional.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(fixture.componentInstance.scenario.mobileCity.regionalExport).toBe(true);
+    expect(fixture.componentInstance.scenario.mobileCity.useTemplate).toBe(false);
+    expect(element.textContent).toContain('Wähle die KBA-Quelle');
+    expect(element.textContent).not.toContain('mindestens einen ganzen District');
+    const template = Array.from(element.querySelectorAll('label')).find(l => l.textContent?.includes('Vorlage ergänzen'))!.querySelector('input')!;
+    template.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(fixture.componentInstance.scenario.mobileCity.regionalExport).toBe(false);
+    expect(fixture.componentInstance.scenario.mobileCity.useTemplate).toBe(true);
+  });
+
+  it('configures a complete rudimentary MobileCity export with disclosed fallbacks', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('saved');
+    component.scenario.region = { minLat: 48.8, minLon: 8.1, maxLat: 48.9, maxLon: 8.2 };
+    component.scenario.targetModels = ['logitopp', 'sumo'];
+    component.scenario.population.useRealRouting = true;
+    component.scenario.population.externalTrips = true;
+
+    component.configureMobileCityQuickStart();
+    fixture.detectChanges();
+
+    expect(component.scenario.targetModels).toEqual(['mobilecity']);
+    expect(component.scenario.population.behaviorSource).toBe('template');
+    expect(component.scenario.population.useRealRouting).toBe(false);
+    expect(component.scenario.population.externalTrips).toBe(false);
+    expect(component.scenario.mobileCity).toMatchObject({
+      regionalExport: true,
+      useTemplate: false,
+      useRegionalFleet: false,
+      electricShare: 0,
+      allowSyntheticTransitFallback: true,
+      transitVehiclesPer1000: 1,
+      settlementAreaShare: 0.5,
+      maxDistricts: 12,
+      autoSurrounding: false,
+      surroundingPopulation: null,
+      validateNative: false
+    });
+    expect(component.mobileCityPlanReady()).toBe(true);
+    expect(component.message).toContain('0 % BEV');
+    expect((fixture.nativeElement as HTMLElement).textContent)
+      .toContain('MobileCity-Export erzeugen');
+  });
+
+  it('shows planned MobileCity sources and marks an old regional result stale', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('draft');
+    component.scenario.region = { minLat: 48.8, minLon: 8.1, maxLat: 48.9, maxLon: 8.2 };
+    component.scenario.targetModels = ['mobilecity'];
+    component.scenario.mobileCity.regionalExport = true;
+    component.scenario.mobileCity.useRegionalFleet = true;
+    component.scenario.mobileCity.useRegionalCharging = true;
+    component.scenario.mobileCity.carsharingVehiclesPer1000 = 2.5;
+    component.scenario.mobileCity.carsharingMemberShare = 0.08;
+    component.scenario.mobileCity.surroundingPopulation = 25_000;
+    component.scenario.mobileCity.surroundingEducationTripShare = 0.1;
+    component.scenario.mobileCity.surroundingWorkTripShare = 0.4;
+    component.scenario.mobileCity.surroundingShoppingTripShare = 0.15;
+    component.scenario.mobileCity.surroundingLeisureTripShare = 0.08;
+    component.scenario.population.externalTrips = true;
+    fixture.detectChanges();
+
+    expect(component.mobileCityPlanReady()).toBe(true);
+    expect(component.mobileCityPlanItems().find(item => item.id === 'private-bev')).toMatchObject({
+      status: 'observed', resolution: 'automatic', source: 'KBA/BKG automatisch'
+    });
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Datenstatus vor dem Export');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Umlandbevölkerung');
+    expect(component.mobileCityPlanItems().find(item => item.id === 'transit')).toMatchObject({
+      status: 'derived', resolution: 'fallback'
+    });
+    expect(component.mobileCityPlanItems().find(item => item.id === 'chargers')).toMatchObject({
+      status: 'observed', resolution: 'automatic', source: 'BNetzA Ladesäulenregister'
+    });
+    expect(component.mobileCityPlanItems().find(item => item.id === 'sharing')).toMatchObject({
+      status: 'assumption', resolution: 'manual', source: 'Nutzervorgabe'
+    });
+    expect(component.mobileCityPlanItems().find(item => item.id === 'surrounding')).toMatchObject({
+      status: 'assumption', resolution: 'manual', source: 'Nutzervorgabe'
+    });
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Carsharing-Mitgliederanteil');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Eingehender Anteil Arbeitswege');
+
+    const inputSnapshot = (component as any).mobileCityInputSnapshot();
+    component.mobileCity = {
+      mode: 'regional', tables: 25,
+      districts: { total: 1, studyArea: 1, surrounding: 0 },
+      inhabitants: { children: 1, adults: 1, seniors: 1, total: 3 },
+      privateCars: 1, tripsPerDay: { children: 1, adults: 1, seniors: 1 },
+      dataInventory: {
+        schemaVersion: 1, mode: 'regional', referenceYear: 2026, inputSnapshot,
+        ready: true, blockingIssues: [], items: [], sourceSnapshots: []
+      }
+    };
+    expect(component.mobileCityResultStale()).toBe(false);
+    component.scenario.referenceYear = 2027;
+    expect(component.mobileCityResultStale()).toBe(true);
+  });
+
+  it('blocks the MobileCity plan when requested surrounding inputs are incomplete', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('draft');
+    component.scenario.region = { minLat: 48.8, minLon: 8.1, maxLat: 48.9, maxLon: 8.2 };
+    component.scenario.targetModels = ['mobilecity'];
+    component.scenario.mobileCity.regionalExport = true;
+    component.scenario.mobileCity.electricShare = 0.1;
+    component.scenario.mobileCity.surroundingPopulation = 10_000;
+
+    expect(component.mobileCityPlanReady()).toBe(false);
+    expect(component.mobileCityPlanItems().find(item => item.id === 'surrounding')).toMatchObject({
+      status: 'missing', required: true, source: 'Unvollständige Umlandkonfiguration'
+    });
+  });
+
+  it('offers automatic census surroundings without a manual population total', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('draft');
+    component.scenario.region = { minLat: 48.8, minLon: 8.1, maxLat: 48.9, maxLon: 8.2 };
+    component.scenario.targetModels = ['mobilecity'];
+    component.scenario.mobileCity.regionalExport = true;
+    component.scenario.mobileCity.electricShare = 0.1;
+    component.scenario.mobileCity.autoSurrounding = true;
+    component.scenario.mobileCity.surroundingBufferKm = 15;
+    component.scenario.mobileCity.surroundingEducationTripShare = 0.1;
+    component.scenario.mobileCity.surroundingWorkTripShare = 0.4;
+    component.scenario.mobileCity.surroundingShoppingTripShare = 0.15;
+    component.scenario.mobileCity.surroundingLeisureTripShare = 0.08;
+    component.scenario.population.externalTrips = true;
+    fixture.detectChanges();
+
+    expect(component.mobileCityPlanReady()).toBe(true);
+    expect(component.mobileCityPlanItems().find(item => item.id === 'surrounding')).toMatchObject({
+      status: 'derived', resolution: 'automatic', source: 'Zensus-2022-Pufferring'
+    });
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Breite des Umlandpuffers');
+    expect((component as any).mobileCityInputSnapshot()).toMatchObject({
+      autoSurrounding: true, surroundingBufferKm: 15, surroundingPopulation: null
+    });
+  });
+
+  it('offers optional native validation and renders its separate result', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('draft');
+    component.scenario.targetModels = ['mobilecity'];
+    component.scenario.mobileCity.regionalExport = true;
+    component.mobileCity = {
+      mode: 'regional', tables: 25,
+      districts: { total: 1, studyArea: 1, surrounding: 0 },
+      inhabitants: { children: 1, adults: 1, seniors: 1, total: 3 },
+      privateCars: 1, tripsPerDay: { children: 1, adults: 1, seniors: 1 }
+    };
+    component.mobileCityValidation = {
+      status: 'passed', years: [2026, 2027, 2028], errors: [], nonFiniteCells: 0,
+      report: 'validation-report.json'
+    };
+    component.artifacts = [{ path: 'mobilecity/summary.json', sizeBytes: 1 }];
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const validation = Array.from(element.querySelectorAll('label'))
+      .find(label => label.textContent?.includes('nativ im MobileCity ConfigTool prüfen'))!;
+    expect(validation.getAttribute('title')).toContain('erzeugten Binärdateien');
+    expect(element.textContent).toContain('Native ConfigTool-Prüfung bestanden');
+    expect(element.textContent).toContain('2026–2028');
   });
 
   it('provides an explanatory tooltip for every rendered form control', () => {
@@ -510,6 +722,23 @@ describe('StudioComponent', () => {
     expect(api.generate).toHaveBeenCalledWith('saved');
   });
 
+  it('persists current settings before every generation', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const saved = scenario('saved');
+    saved.mobileCity.regionalExport = true;
+    saved.mobileCity.electricShare = 0;
+    component.scenario = saved;
+
+    component.generate();
+
+    expect(api.updateScenario).toHaveBeenCalledWith(saved);
+    expect(api.updateScenario.mock.invocationCallOrder[0])
+      .toBeLessThan(api.generate.mock.invocationCallOrder[0]);
+    expect(api.generate).toHaveBeenCalledWith('saved');
+  });
+
   it('shows the census estimate in the total field without persisting it as manual', () => {
     api.estimateRegion.mockReturnValue(of({
       estimatedPopulation: 52341,
@@ -638,6 +867,8 @@ function scenario(id: string): Scenario {
     region: null,
     zoning: { cellSizeMeters: 500, maxZones: 600, mode: 'grid' },
     targetModels: ['logitopp'],
+    referenceYear: 2026,
+    mobileCity: { useTemplate: false, templateId: 'tramigo-v2', allowSyntheticTransitFallback: true },
     population: {
       totalPersons: null, personsPerKm2: 1000, samplingFraction: 1, seed: 42,
       useOsmData: false, useRealRouting: false, externalTrips: false,

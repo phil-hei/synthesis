@@ -16,10 +16,9 @@ import java.util.function.Consumer;
 /**
  * Beschafft den GTFS-Feed eines Szenarios und schneidet ihn auf Region + Zeitfenster zu.
  *
- * <p>Reihenfolge nach Nutzer-Vorgabe: <b>Auto-Fetch</b> aus der Feed-Registry (Verbund-GTFS,
- * dessen Abdeckungs-Bbox das Regions-Zentrum enthält) – bei fehlendem Regionsfeed oder zu
- * großem Download ({@code maxFeedMb}) greift der <b>Upload-Fallback</b>. Steht schon ein
- * hochgeladener Feed bereit, wird dieser bevorzugt. Ohne verwertbare Quelle: {@code null}
+ * <p>Reihenfolge nach Nutzer-Vorgabe: Ein explizit hochgeladener Feed hat Vorrang. Sonst folgt
+ * der <b>Auto-Fetch</b> aus der Feed-Registry (Verbund-GTFS, dessen Abdeckungs-Bbox das
+ * Regions-Zentrum enthält). Ohne verwertbare Quelle: {@code null}
  * (die ÖV-Stage wird dann übersprungen).
  */
 public class GtfsSource {
@@ -46,10 +45,37 @@ public class GtfsSource {
     public Resolved resolve(Scenario.Region region, Path uploadedFeed, Path rawCacheDir,
                             Path croppedOut, Consumer<String> log)
             throws IOException, InterruptedException {
-        GtfsCropper cropper = new GtfsCropper(region.minLat, region.minLon, region.maxLat,
-                region.maxLon, config.getWindowStartHour() * 3600, config.getWindowEndHour() * 3600);
+        return resolve(region, uploadedFeed, rawCacheDir, croppedOut, log,
+                config.getWindowStartHour() * 3600, config.getWindowEndHour() * 3600);
+    }
 
-        // Auto-Fetch primär
+    /** Full-day crop used by MobileCity, whose {@code freq} is departures per work day. */
+    public Resolved resolveFullDay(Scenario.Region region, Path uploadedFeed, Path rawCacheDir,
+                                   Path croppedOut, Consumer<String> log)
+            throws IOException, InterruptedException {
+        return resolve(region, uploadedFeed, rawCacheDir, croppedOut, log, 0, 0);
+    }
+
+    private Resolved resolve(Scenario.Region region, Path uploadedFeed, Path rawCacheDir,
+                             Path croppedOut, Consumer<String> log,
+                             int windowStartSec, int windowEndSec)
+            throws IOException, InterruptedException {
+        GtfsCropper cropper = new GtfsCropper(region.minLat, region.minLon, region.maxLat,
+                region.maxLon, windowStartSec, windowEndSec);
+
+        // A scenario upload is an explicit source selection and therefore takes precedence.
+        if (uploadedFeed != null && !Files.isRegularFile(uploadedFeed)) {
+            throw new IOException("Ausgewählter GTFS-Upload fehlt oder ist keine Datei: " + uploadedFeed);
+        }
+        if (uploadedFeed != null) {
+            GtfsCropper.Result result = cropper.crop(uploadedFeed, croppedOut);
+            log.accept("Hochgeladener GTFS-Feed auf Region"
+                    + (windowEndSec > 0 ? "+Fenster" : "+ganzen Betriebstag")
+                    + " zugeschnitten (" + result.trips() + " Fahrten, " + result.stops() + " Halte)");
+            return new Resolved(croppedOut, "upload", "upload", result);
+        }
+
+        // Ohne Upload: Auto-Fetch aus der Regionsregistry.
         double lat = (region.minLat + region.maxLat) / 2;
         double lon = (region.minLon + region.maxLon) / 2;
         SynthesisProperties.Transit.Feed feed = config.getFeeds().stream()
@@ -58,21 +84,14 @@ public class GtfsSource {
             Path raw = fetch(feed, rawCacheDir, log);
             if (raw != null) {
                 GtfsCropper.Result result = cropper.crop(raw, croppedOut);
-                log.accept("Auto-Fetch " + feed.getName() + ": Feed auf Region+Fenster zugeschnitten ("
+                log.accept("Auto-Fetch " + feed.getName() + ": Feed auf Region"
+                        + (windowEndSec > 0 ? "+Fenster" : "+ganzen Betriebstag") + " zugeschnitten ("
                         + result.trips() + " Fahrten, " + result.stops() + " Halte)");
                 return new Resolved(croppedOut, feed.getName(), "fetch", result);
             }
-            log.accept("Auto-Fetch für " + feed.getName() + " nicht möglich – Upload-Fallback prüfen");
+            log.accept("Auto-Fetch für " + feed.getName() + " nicht möglich – GTFS-Upload prüfen");
         } else {
-            log.accept("Kein Auto-Fetch-Feed deckt die Region ab – Upload-Fallback prüfen");
-        }
-
-        // Upload-Fallback
-        if (uploadedFeed != null && Files.exists(uploadedFeed)) {
-            GtfsCropper.Result result = cropper.crop(uploadedFeed, croppedOut);
-            log.accept("Hochgeladener GTFS-Feed auf Region+Fenster zugeschnitten ("
-                    + result.trips() + " Fahrten, " + result.stops() + " Halte)");
-            return new Resolved(croppedOut, "upload", "upload", result);
+            log.accept("Kein Auto-Fetch-Feed deckt die Region ab – GTFS-Upload prüfen");
         }
 
         log.accept("Kein GTFS-Feed verfügbar (weder Auto-Fetch noch Upload) – ÖV übersprungen");

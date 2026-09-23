@@ -1,0 +1,374 @@
+[
+  {
+    "id": "standard.pkw.benzin",
+    "version": "1",
+    "name": "Pkw Benzin",
+    "category": "passengerCar",
+    "provenance": {
+      "source": "SyntheSis Referenzkatalog v1; SUMO HBEFA3 Euro-4 für Verbrenner",
+      "quality": "assumed",
+      "notes": "Generische Beispielparameter, nicht regional kalibriert oder herstellerspezifisch. Ladung und Insassen nicht in Leermasse enthalten. Emissionsklasse ist eine ausdrückliche Modellannahme."
+    },
+    "physical": {
+      "curbMassKg": 1500,
+      "lengthM": 4.5,
+      "widthM": 1.8,
+      "heightM": 1.5,
+      "maxSpeedKmh": 130
+    },
+    "capacity": {
+      "passengerSeats": 4,
+      "operatorSeats": 1,
+      "payloadKg": 400,
+      "cargoVolumeM3": 0.45
+    },
+    "powertrain": {
+      "kind": "combustion",
+      "fuel": "gasoline",
+      "tankCapacityL": 50
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 2.6,
+      "decelerationMps2": 4.5,
+      "emergencyDecelerationMps2": 9,
+      "minGapM": 2.5,
+      "timeHeadwayS": 1
+    },
+    "routing": {
+      "sumoVehicleClass": "passenger",
+      "sumoEmissionClass": "HBEFA3/PC_G_EU4",
+      "allowedNetworks": [
+        "road"
+      ]
+    }
+  },
+  {
+    "id": "standard.pkw.diesel",
+    "version": "1",
+    "name": "Pkw Diesel",
+    "category": "passengerCar",
+    "provenance": {
+      "source": "SyntheSis Referenzkatalog v1; SUMO HBEFA3 Euro-4 für Verbrenner",
+      "quality": "assumed",
+      "notes": "Generische Beispielparameter, nicht regional kalibriert oder herstellerspezifisch. Ladung und Insassen nicht in Leermasse enthalten. Emissionsklasse ist eine ausdrückliche Modellannahme."
+    },
+    "physical": {
+      "curbMassKg": 1600,
+      "lengthM": 4.5,
+      "widthM": 1.8,
+      "heightM": 1.5,
+      "maxSpeedKmh": 130
+    },
+    "capacity": {
+      "passengerSeats": 4,
+      "operatorSeats": 1,
+      "payloadKg": 400,
+      "cargoVolumeM3": 0.45
+    },
+    "powertrain": {
+      "kind": "combustion",
+      "fuel": "diesel",
+      "tankCapacityL": 50
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 2.6,
+      "decelerationMps2": 4.5,
+      "emergencyDecelerationMps2": 9,
+      "minGapM": 2.5,
+      "timeHeadwayS": 1
+    },
+    "routing": {
+      "sumoVehicleClass": "passenger",
+      "sumoEmissionClass": "HBEFA3/PC_D_EU4",
+      "allowedNetworks": [
+        "road"
+      ]
+    }
+  },
+  {
+    "id": "standard.pkw.elektro",
+    "version": "1",
+    "name": "Pkw Elektro",
+    "category": "passengerCar",
+    "provenance": {
+      "source": "SyntheSis Referenzkatalog v1; SUMO HBEFA3 Euro-4 für Verbrenner",
+      "quality": "assumed",
+      "notes": "Generische Beispielparameter, nicht regional kalibriert oder herstellerspezifisch. Ladung und Insassen nicht in Leermasse enthalten. Emissionsklasse ist eine ausdrückliche Modellannahme."
+    },
+    "physical": {
+      "curbMassKg": 1850,
+      "lengthM": 4.5,
+      "widthM": 1.8,
+      "heightM": 1.5,
+      "maxSpeedKmh": 130
+    },
+    "capacity": {
+      "passengerSeats": 4,
+      "operatorSeats": 1,
+      "payloadKg": 400,
+      "cargoVolumeM3": 0.45
+    },
+    "powertrain": {
+      "kind": "electric",
+      "usableBatteryCapacityKwh": 60,
+      "maxChargePowerKw": 11,
+      "assistanceMode": "full",
+      "connectors": [
+        "Type2"
+      ]
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 2.6,
+      "decelerationMps2": 4.5,
+      "emergencyDecelerationMps2": 9,
+      "minGapM": 2.5,
+      "timeHeadwayS": 1
+    },
+    "routing": {
+      "sumoVehicleClass": "passenger",
+      "sumoEmissionClass": "Zero",
+      "allowedNetworks": [
+        "road"
+      ]
+    }
+  },
+  {
+    "id": "standard.lieferwagen.diesel",
+    "version": "1",
+    "name": "Lieferwagen diesel",
+    "category": "deliveryVan",
+    "provenance": {
+      "source": "SyntheSis Referenzkatalog v1; SUMO HBEFA3 Euro-4 für Verbrenner",
+      "quality": "assumed",
+      "notes": "Generische Beispielparameter, nicht regional kalibriert oder herstellerspezifisch. Ladung und Insassen nicht in Leermasse enthalten. Emissionsklasse ist eine ausdrückliche Modellannahme."
+    },
+    "physical": {
+      "curbMassKg": 2500,
+      "lengthM": 5.5,
+      "widthM": 2,
+      "heightM": 2.5,
+      "maxSpeedKmh": 130
+    },
+    "capacity": {
+      "passengerSeats": 1,
+      "operatorSeats": 1,
+      "payloadKg": 1200,
+      "cargoVolumeM3": 8
+    },
+    "powertrain": {
+      "kind": "combustion",
+      "fuel": "diesel",
+      "tankCapacityL": 70
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 2.6,
+      "decelerationMps2": 4.5,
+      "emergencyDecelerationMps2": 9,
+      "minGapM": 2.5,
+      "timeHeadwayS": 1
+    },
+    "routing": {
+      "sumoVehicleClass": "delivery",
+      "sumoEmissionClass": "HBEFA3/LDV_D_EU4",
+      "allowedNetworks": [
+        "road"
+      ]
+    }
+  },
+  {
+    "id": "standard.lieferwagen.elektro",
+    "version": "1",
+    "name": "Lieferwagen elektro",
+    "category": "deliveryVan",
+    "provenance": {
+      "source": "SyntheSis Referenzkatalog v1; SUMO HBEFA3 Euro-4 für Verbrenner",
+      "quality": "assumed",
+      "notes": "Generische Beispielparameter, nicht regional kalibriert oder herstellerspezifisch. Ladung und Insassen nicht in Leermasse enthalten. Emissionsklasse ist eine ausdrückliche Modellannahme."
+    },
+    "physical": {
+      "curbMassKg": 2800,
+      "lengthM": 5.5,
+      "widthM": 2,
+      "heightM": 2.5,
+      "maxSpeedKmh": 130
+    },
+    "capacity": {
+      "passengerSeats": 1,
+      "operatorSeats": 1,
+      "payloadKg": 1200,
+      "cargoVolumeM3": 8
+    },
+    "powertrain": {
+      "kind": "electric",
+      "usableBatteryCapacityKwh": 75,
+      "maxChargePowerKw": 11,
+      "assistanceMode": "full",
+      "connectors": [
+        "Type2"
+      ]
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 2.6,
+      "decelerationMps2": 4.5,
+      "emergencyDecelerationMps2": 9,
+      "minGapM": 2.5,
+      "timeHeadwayS": 1
+    },
+    "routing": {
+      "sumoVehicleClass": "delivery",
+      "sumoEmissionClass": "Zero",
+      "allowedNetworks": [
+        "road"
+      ]
+    }
+  },
+  {
+    "id": "standard.fahrrad",
+    "version": "1",
+    "name": "Fahrrad",
+    "category": "bicycle",
+    "provenance": {
+      "source": "SyntheSis Referenzkatalog v1; SUMO HBEFA3 Euro-4 für Verbrenner",
+      "quality": "assumed",
+      "notes": "Generische Beispielparameter, nicht regional kalibriert oder herstellerspezifisch. Ladung und Insassen nicht in Leermasse enthalten. Emissionsklasse ist eine ausdrückliche Modellannahme."
+    },
+    "physical": {
+      "curbMassKg": 18,
+      "lengthM": 1.8,
+      "widthM": 0.65,
+      "heightM": 1.1,
+      "maxSpeedKmh": 25
+    },
+    "capacity": {
+      "passengerSeats": 0,
+      "operatorSeats": 1,
+      "payloadKg": 20,
+      "cargoVolumeM3": 0
+    },
+    "powertrain": {
+      "kind": "human"
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 1.5,
+      "decelerationMps2": 3,
+      "emergencyDecelerationMps2": 6,
+      "minGapM": 0.5,
+      "timeHeadwayS": 1
+    },
+    "routing": {
+      "sumoVehicleClass": "bicycle",
+      "sumoEmissionClass": "Zero",
+      "allowedNetworks": [
+        "road",
+        "bike"
+      ]
+    }
+  },
+  {
+    "id": "standard.lastenrad",
+    "version": "1",
+    "name": "Lastenrad",
+    "category": "cargoBike",
+    "provenance": {
+      "source": "SyntheSis Referenzkatalog v1; SUMO HBEFA3 Euro-4 für Verbrenner",
+      "quality": "assumed",
+      "notes": "Generische Beispielparameter, nicht regional kalibriert oder herstellerspezifisch. Ladung und Insassen nicht in Leermasse enthalten. Emissionsklasse ist eine ausdrückliche Modellannahme."
+    },
+    "physical": {
+      "curbMassKg": 45,
+      "lengthM": 2.5,
+      "widthM": 1,
+      "heightM": 1.5,
+      "maxSpeedKmh": 25
+    },
+    "capacity": {
+      "passengerSeats": 0,
+      "operatorSeats": 1,
+      "payloadKg": 150,
+      "cargoVolumeM3": 1
+    },
+    "powertrain": {
+      "kind": "human"
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 1.5,
+      "decelerationMps2": 3,
+      "emergencyDecelerationMps2": 6,
+      "minGapM": 0.5,
+      "timeHeadwayS": 1
+    },
+    "routing": {
+      "sumoVehicleClass": "bicycle",
+      "sumoEmissionClass": "Zero",
+      "allowedNetworks": [
+        "road",
+        "bike"
+      ]
+    }
+  },
+  {
+    "id": "standard.lastenrad.elektro",
+    "version": "1",
+    "name": "Elektro-Lastenrad",
+    "category": "cargoBike",
+    "provenance": {
+      "source": "SyntheSis Referenzkatalog v1; SUMO HBEFA3 Euro-4 für Verbrenner",
+      "quality": "assumed",
+      "notes": "Generische Beispielparameter, nicht regional kalibriert oder herstellerspezifisch. Ladung und Insassen nicht in Leermasse enthalten. Emissionsklasse ist eine ausdrückliche Modellannahme."
+    },
+    "physical": {
+      "curbMassKg": 65,
+      "lengthM": 2.5,
+      "widthM": 1,
+      "heightM": 1.5,
+      "maxSpeedKmh": 25
+    },
+    "capacity": {
+      "passengerSeats": 0,
+      "operatorSeats": 1,
+      "payloadKg": 150,
+      "cargoVolumeM3": 1
+    },
+    "powertrain": {
+      "kind": "electric",
+      "usableBatteryCapacityKwh": 1,
+      "maxChargePowerKw": 0.5,
+      "assistanceMode": "pedalAssist",
+      "connectors": [
+        "manufacturer-specific"
+      ],
+      "assistanceCutoffKmh": 25
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 1.5,
+      "decelerationMps2": 3,
+      "emergencyDecelerationMps2": 6,
+      "minGapM": 0.5,
+      "timeHeadwayS": 1
+    },
+    "routing": {
+      "sumoVehicleClass": "bicycle",
+      "sumoEmissionClass": "Zero",
+      "allowedNetworks": [
+        "road",
+        "bike"
+      ]
+    }
+  }
+]

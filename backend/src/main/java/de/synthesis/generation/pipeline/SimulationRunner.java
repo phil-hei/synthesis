@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Pipeline-Stufe 10: orchestriert die logiTopp-Wochensimulation im Legacy-Projekt
+ * Pipeline-Stufe 12: orchestriert die logiTopp-Wochensimulation im Legacy-Projekt
  * (validation/mobitopp-rastatt). Schreibt eine per-Szenario-Run-Config mit absoluten
  * Pfaden auf den Legacy-Export, ruft `sh gradlew runDeliverySynthesis -PconfigFile=…`
  * auf und legt Log + Ergebnisse unter artifacts/simulation/ ab.

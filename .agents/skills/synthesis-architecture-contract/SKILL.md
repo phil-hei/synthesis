@@ -35,16 +35,15 @@ austauschbare Runner. Der Nutzer kombiniert frei.
 KPI-Differenz messen (E2E bewiesen 2026-06-26). Plus Risikostreuung: fällt eine Achse aus
 (LLM down, SUMO fehlt), bleiben die anderen Kombinationen lauffähig.
 
-## Die 14 Pipeline-Stufen und ihre Gates
+## Die 15 Pipeline-Stufen und ihre Gates
 
 Orchestrator: `backend/src/main/java/de/synthesis/generation/GenerationService.java`,
-Methode `run()` — ein ~50-Zeilen-Ablauf über private `stage*`-Methoden. Stufennamen aus
+Methode `run()` — ein linearer Ablauf über private `stage*`-Methoden. Stufennamen aus
 `GenerationService.STAGES` (Zeile 55). Geteilter Zustand liegt explizit im inneren
 `PipelineContext` (Szenario, Job, artifacts-Pfad, `Random`, memoisiertes OSM-Netz,
 Cross-Stage-Felder wie `carTravelTimeMin`) — bewusst statt Lambda-Captures.
 
-Achtung: Das Javadoc an `run()` sagt „13 Pipeline-Stufen" — das ist veraltet, es sind 14
-(Stand 2026-07-08, `STAGES.size() == 14`).
+Das Javadoc und `STAGES` nennen übereinstimmend 15 Stufen (Stand 2026-09-22).
 
 | # | Stufe | Gate / SKIPPED-Bedingung | FAILED möglich? |
 |---|---|---|---|
@@ -57,18 +56,19 @@ Achtung: Das Javadoc an `run()` sagt „13 Pipeline-Stufen" — das ist veraltet
 | 6 | Matrizen | immer; GraphHopper-Routing wenn `useRealRouting`, sonst/Fallback Luftlinie | Lauf bricht ab |
 | 7 | Logistik | immer | Lauf bricht ab |
 | 8 | Legacy-Export | immer (mobiTopp-0.3.x-/logiTopp-Layout unter `legacy/`) | Lauf bricht ab |
-| 9 | MobileCity-Export (B) | SKIPPED wenn `mobilecity` nicht in `targets()` | Lauf bricht ab |
-| 10 | Manifest | immer (`manifest.json` inkl. `dataQuality`-Block) | Lauf bricht ab |
-| 11 | Simulation (logiTopp) (B) | SKIPPED wenn `logitopp` nicht in `targets()`, Simulation disabled oder `mobitopp-rastatt` nicht gefunden; optional Kalibrierschleife (`calibrateModeChoice`) | Lauf bricht ab |
-| 12 | SUMO (Verkehr) (B) | SKIPPED wenn `sumo` nicht in `targets()`, SUMO nicht verfügbar, oder `simulation/results/demandsimulationResult.csv` fehlt (braucht Stufe 11) | ja: FAILED + message |
-| 13 | Netz-Feedback | SKIPPED wenn `population.sumoFeedback=false`, SUMO-Stage nicht DONE / `sumo/edgedata.xml` fehlt, `logitopp` nicht gewählt / `carTravelTimeMin` fehlt, oder Zonen > `synthesis.sumo.feedback-max-zones` (150) | ja: FAILED + message |
-| 14 | LLM-Moduswahl | SKIPPED wenn `population.llmModeChoice=false`, LLM nicht erreichbar, oder logiTopp-Trips fehlen | ja: FAILED + message |
+| 9 | MobileCity-Export (B) | SKIPPED wenn `mobilecity` nicht in `targets()`; Regionalmodus löst Volltages-GTFS auf und verwendet den synthetischen Transit-Fallback nur bei Szenariofreigabe. Optionaler BNetzA-Adapter aggregiert öffentliche Ladepunkte räumlich; ein expliziter Wert je 1.000 Einwohner ist alleinige Annahme oder Quellenfallback. Unbekannt bleibt leer, spätere Jahre gehören dem nativen Ausbaupfad. Carsharing-Flotte und Mitglieder sind explizite, konstante UI-Annahmen; ohne Eingabe gilt null. Umland-Districts entstehen manuell aus positiver Gesamtbevölkerung oder automatisch aus einem metrischen Zensus-Pufferring; beide Pfade benötigen vier vollständige eingehende Zweckanteile. Ohne Aktivierung bleiben externe Zonen reine Zielanker. | Lauf bricht ab; nicht erreichbarer Auto-Feed darf bei freigegebenem Fallback degradieren, ein defekter Upload nicht. BNetzA-Ausfall degradiert nur mit explizitem Ladepunktfallback. Zensus-Umland ohne Bevölkerung benötigt einen manuellen positiven Fallback. Unvollständige Umlandangaben oder Umland ohne aktivierte Außenbeziehungen sind Fehler. |
+| 10 | MobileCity-Validierung | SKIPPED bei abgewähltem Ziel, Teilbeitrag, `mobileCity.validateNative=false` oder fehlender lokaler Python/.NET/ConfigTool-Laufzeit. Nur vollständige Regional-/Vorlagenpakete. | gestarteter Prozessfehler bricht Lauf ab; Bericht/Logs bleiben erhalten |
+| 11 | Manifest | immer (`manifest.json` inkl. `dataQuality`-Block) | Lauf bricht ab |
+| 12 | Simulation (logiTopp) (B) | SKIPPED wenn `logitopp` nicht in `targets()`, Simulation disabled oder `mobitopp-rastatt` nicht gefunden; optional Kalibrierschleife (`calibrateModeChoice`) | Lauf bricht ab |
+| 13 | SUMO (Verkehr) (B) | SKIPPED wenn `sumo` nicht in `targets()`, SUMO nicht verfügbar, oder `simulation/results/demandsimulationResult.csv` fehlt (braucht Stufe 12) | ja: FAILED + message |
+| 14 | Netz-Feedback | SKIPPED wenn `population.sumoFeedback=false`, SUMO-Stage nicht DONE / `sumo/edgedata.xml` fehlt, `logitopp` nicht gewählt / `carTravelTimeMin` fehlt, oder Zonen > `synthesis.sumo.feedback-max-zones` (150) | ja: FAILED + message |
+| 15 | LLM-Moduswahl | SKIPPED wenn `population.llmModeChoice=false`, LLM nicht erreichbar, oder logiTopp-Trips fehlen | ja: FAILED + message |
 
 **Invariante (Status-Semantik):** Der Nutzer muss *bewusste Abwahl* (SKIPPED) von *Fehler*
 (FAILED + `message`) unterscheiden können. Neue optionale Stufen implementieren beide Pfade —
 siehe Kommentar in `stageSumo` („FAILED statt SKIPPED: der Nutzer soll Fehler von bewusster
-Abwahl unterscheiden können"). Stufen 1–11 werfen bei Fehlern durch und beenden den Lauf als
-FAILED; die nachgelagerten 12–14 fangen selbst und markieren nur die eigene Stage FAILED.
+Abwahl unterscheiden können"). Die optionale native MobileCity-Prüfung folgt ebenfalls diesem
+Vertrag: fehlende Laufzeit = SKIPPED, gestarteter Prozessfehler = FAILED und Job-Abbruch.
 
 ## Tragende Entscheidungen mit WARUM
 
@@ -77,7 +77,8 @@ FAILED; die nachgelagerten 12–14 fangen selbst und markieren nur die eigene St
 logiTopp läuft via `sh gradlew runDeliverySynthesis` im Projekt `validation/mobitopp-rastatt`
 (`SimulationRunner`), actiTopp via gradlew in `validation/actitoppNG` (`ActitoppRunner`),
 SUMO als native Binaries (`SumoRunner`), das LLM per HTTP (Ollama, OpenAI-kompatibel),
-gtfs2pt in einem gekapselten Python-venv (`TransitRunner`).
+gtfs2pt in einem gekapselten Python-venv (`TransitRunner`) und MobileCity über
+`MobileCityValidationRunner` → Python-Adapter → lokale .NET-ConfigTool-Kopie.
 
 **WARUM (drei Gründe, alle gelten):**
 
@@ -214,18 +215,17 @@ Studio + Szenario-Vergleich als Feature-Komponenten, Dev-Proxy `/api` → `http:
 | Schwachstelle | Status / Verweis |
 |---|---|
 | Öffentlicher Overpass rate-limitet; Mirrors mildern nur | Produktions-Fix (self-hosted Overpass oder PBF-Import) offen |
-| `GenerationService` ist ~1050 Zeilen (nicht ~900 — nachgezählt) | Klasse-pro-Stufe wäre der mechanische Folgeschritt; Orchestrator-Kern ist bereits schlank |
+| `GenerationService` ist ~1.900 Zeilen | Klasse-pro-Stufe wäre der mechanische Folgeschritt; fachliche Runner sind bereits ausgelagert |
 | Distanz-Sensitivität der Zielwahl: Ø-Weg geroutet ~2,9 km (Achtung: Luftlinien-kontaminierte Läufe zeigen ~2,0 km — Fallback-Signatur, docs/05) vs. MiD 12,5 km | größte Plausibilitätslücke → `synthesis-distanz-kampagne` (dort auch der Kontaminations-Check) |
 | Rail/Tram in SUMO blockiert (duarouter-Fußgänger-Snapping nahe Bahnhöfen) | Befund + Lösungsweg in docs/06, „Phase 2 – SUMO"; ÖV bleibt Bus-only |
 | gtfs2pt-Erstlauf ~20–25 min (tracemapper) | gecacht; Timeout 25 min (`synthesis.transit.timeout-minutes`) |
 | `run-config.yaml` wird mit absoluten Pfaden geschrieben | `SimulationRunner.writeRunConfig` — Artefakt-Ordner sind dadurch nicht portabel |
 | Keine CI; Push nur via GitHub Desktop | manuelle Disziplin nötig |
-| Stale Javadoc: `run()` sagt „13 Stufen", es sind 14 | kosmetisch, aber verwirrend beim Zählen |
 
 ## Provenienz & Wartung
 
-**Stand: 2026-08-25**, verifiziert gegen den aktuellen Workspace einschließlich der
-automatischen, SHA-256-gepinnten Zensus-2022-Quelle. Alle
+**Stand: 2026-09-22**, verifiziert gegen den aktuellen Workspace einschließlich der
+MobileCity-Datenübersicht, nativen Prüfstufe und GTFS-Netzabbildung. Alle
 Klassen-, Pfad- und Flag-Aussagen wurden direkt im Repo nachgelesen (GenerationService,
 Scenario, SynthesisProperties, SimulationRunner, SumoRunner, docs/05, docs/06, docs/07).
 Zeilennummern sind Zirka-Angaben und driften; Namen und Muster sind das Verlässliche.
@@ -233,7 +233,7 @@ Zeilennummern sind Zirka-Angaben und driften; Namen und Muster sind das Verläss
 Re-Verifikations-Greps (im Repo-Root ausführen, bevor du dich auf Details stützt):
 
 ```bash
-# Stufenliste + Anzahl (Erwartung: 14 Namen)
+# Stufenliste + Anzahl (Erwartung: 15 Namen)
 grep -n -A4 'STAGES = List.of' backend/src/main/java/de/synthesis/generation/GenerationService.java
 
 # Executor-Pool weiterhin 1?

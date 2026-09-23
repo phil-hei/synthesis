@@ -39,6 +39,17 @@ flowchart LR
     EXP --- T4
 ```
 
+### Regionale Strukturgewichtung (implementiert, experimentell, 2026-09-21)
+
+Die bestehende Bevölkerungssynthese kann mit `population.useCensusStructure=true`
+zusätzlich `CensusStructureSource` und `CensusHouseholdSampler` verwenden. Voraussetzung:
+KIT-Haushaltspool. Hashgeprüfte Zensus-2022-Raster liefern Alters- und Haushaltsgrößenanteile
+für interne Zonen; der Adapter gewichtet vorhandene Haushalte. Daten- und Fitfehler fallen
+mit Diagnose auf die bisherige Ziehung zurück. Die resultierenden Personen sind die
+Eingabe für Aktivitäten und MobileCity. Cache unter `data/census-cache/structure/`,
+Laufbericht unter `population/census-structure.json`; keine zusätzliche Pipeline-Stufe.
+[Schwellen, Bedienung und Grenzen](06-gta-integration-konzept.md#regionale-zensus-struktur).
+
 ## Backend-Module (Spring Modulith, analog simudrive)
 
 | Modul | Verantwortung |
@@ -163,6 +174,213 @@ Prognosewerte. Der kanonische Hauptmodus stammt aus `mainMode`; die potenziell i
 logiTopp-Zeiten, keine beobachteten Ankunftszeiten. Die Dateien werden deterministisch sortiert
 und atomar ersetzt.
 
+## Fahrzeugtypen und externe Fahrzeugkonfigurationen — Entwurf (2026-09-17)
+
+**Status: geprüftes Konzept, noch nicht implementiert.** Anlass ist eine externe
+`vehicle.json` mit Diesel-Lieferwagen und elektrischem Lastenrad. Ziel ist ein
+simulatorunabhängiger Fahrzeugkatalog mit mitgelieferten Standardtypen und importierbaren
+Sondertypen, etwa autonomen Leichtfahrzeugen. Ein erfolgreich eingelesener Parameter gilt
+erst dann als simulationswirksam, wenn der jeweilige Zielmodell-Adapter ihn nachweislich nutzt.
+
+### Befund zur Beispieldatei und zum aktuellen Code
+
+Die Datei ist syntaktisch gültiges JSON, enthält zwei eindeutige IDs und keine doppelten
+Objektschlüssel. Bei beiden Einträgen liegen aktuelle Masse und Volumen der Ladung innerhalb
+der angegebenen Ladekapazität. Fachliche Vollständigkeit oder Messwertqualität folgt daraus
+nicht. Es fehlen insbesondere Schema-/Typversionen, eindeutige Energieeinheiten und die
+Trennung zwischen Typdefinition und Fahrzeugzustand.
+
+| Eingabefeld | Bewertung und vorgesehene Abbildung |
+|---|---|
+| `id`, `type` | Typ-ID und Fahrzeug-ID unterscheiden. `veh_001` könnte beides meinen. Katalogtypen erhalten stabile `id` + `version`, Instanzen eine eigene `vehicleId` + `typeRef`. `type` wird zur Fahrzeugkategorie. |
+| `domain`, `modality` | Einsatzzweck, Fahrzeugkategorie und Verkehrsmodus getrennt halten. Ein Pkw kann Personen oder Güter transportieren; ein autonomes Fahrzeug begründet allein keinen neuen Nachfrage-Modus. |
+| `physical_properties.mass_kg` | Leer-/Betriebsmasse, aktuelle Gesamtmasse und maximale Gesamtmasse unterscheiden. Es ist unklar, ob 2.500 kg bzw. 120 kg Fahrer und Ladung bereits enthalten. Keine automatische Übernahme als Leermasse. |
+| `max_speed_kmh` | Technische Höchstgeschwindigkeit; Adapter konvertiert bei Bedarf. 130 km/h entsprechen ca. 36,111 m/s, 25 km/h ca. 6,944 m/s. Beim Pedelec eine mögliche Unterstützungsgrenze separat erfassen. |
+| `acceleration_mps2` | Technische Fähigkeit oder gewähltes Fahrverhalten klären; Bremsverzögerung, Notbremsverzögerung und Fahrverhaltensprofil ergänzen. |
+| `size_m.length/width/height` | Als Abmessungen des Typs übernehmen; positive Werte und Einheiten validieren. |
+| `energy_profile.energy_type` | `diesel` ist ein Energieträger, `electric` beschreibt einen Antrieb. Antriebsvariante und Energieträger explizit typisieren. Muskelkraft, elektrische Unterstützung und später Hybrid berücksichtigen. |
+| `consumption_per_km` | Ohne Einheit nicht automatisch verwendbar. **Falls** Diesel in l/km und Strom in kWh/km gemeint sind: 0,08 → 8 l/100 km; 0,01 → 10 Wh/km. Mess-/Referenzbedingungen und Bilanzgrenze fehlen. |
+| `co2_per_km_g` | Referenzfaktor mit Bilanzgrenze speichern: direkte Emissionen, Energiebereitstellung oder Lebenszyklus; CO₂ von CO₂e unterscheiden. Die 5 g/km beim E-Lastenrad nicht als direkte Abgasemission übernehmen. |
+| `noise_db` | Bewertungsverfahren, Gewichtung, Abstand, Geschwindigkeit und Lastzustand fehlen. Zunächst Referenzangabe; kein allgemeingültiger konstanter Simulationsparameter. |
+| `logistics.cargo_capacity` | Maximale Nutzlast in kg und nutzbares Ladevolumen in m³ am Typ; später ggf. Paketplätze und Abmessungsgrenzen. |
+| `logistics.current_load` | Gehört zum Zustand einer Instanz bzw. ihrer Initialisierung, nicht zum Typ. Ladungswechsel müssen auftrags-/ereignisbezogen bilanziert werden. |
+| `delivery_mode`, `loading_time_s`, `unloading_time_s` | Zum Einsatz-/Serviceprofil. Für Zeiten festlegen, ob je Halt, Paket oder kg; die Datei sagt dies nicht. Technik kann Servicezeiten begrenzen, ein Betrieb kann andere Abläufe wählen. |
+| `allowed_networks` | Gewünschte Netznutzung als Routingprofil; tatsächliche Kantenfreigaben, Fahrzeugklasse und Abmessungen gemeinsam prüfen. `road`/`bike` reichen als Ausführungsvertrag nicht aus. |
+| `parking_behavior` | Betriebs-/Verhaltensprofil mit definierter Semantik; `search` oder `flexible` bewirken ohne entsprechenden Adapter keine Parkplatzsuche. |
+| `charging.required`, `charging_speed_kw` | Ladefähigkeit am Antrieb; aktueller Ladebedarf am Fahrzeugzustand bzw. in der Strategie. Maximale Aufnahmeleistung des Fahrzeugs von Stationsleistung unterscheiden; nutzbare Batteriekapazität, Ladeverluste und Anschlüsse ergänzen. |
+
+Der aktuelle Code besitzt noch keinen gemeinsamen konfigurierbaren Fahrzeugtypvertrag:
+
+- `Scenario.Depot.vehicleType` und das Frontend kennen `TRUCK`/`CARGO_BIKE`.
+- `PopulationGenerator` zieht gegenwärtig mit Wahrscheinlichkeit 0,08 `bev`, sonst
+  `conventional`; Segment, Sitzplatzzahl und Reichweite sind fest vorgegeben.
+  `LegacyExportGenerator.convertCars` exportiert anschließend ausdrücklich alle Pkw als
+  `conventional`. Eine durchgängig wirksame elektrische Flotte ist damit nicht nachgewiesen.
+- Der Depotexport leitet die Fahrzeugzahl aus `employees` ab und schreibt `volume=150.0`
+  unabhängig vom Typ. Die Einheit/Semantik dieses Legacy-Feldes muss am Fremdparser bewiesen
+  werden, bevor es mit `cargoCapacity.volumeM3` belegt wird.
+- `SumoRunner.writeTripsXml` definiert `pkw`, `fahrrad`, `lkw` und `lastenrad` fest;
+  Typabmessungen, Batterie und externe Konfigurationen werden dort nicht eingelesen.
+- `SumoRunner.Trip` enthält keine dauerhafte Fahrzeug-ID. Jeder Abschnitt bekommt im Export
+  eine neue `vN`-ID. Für fahrtenübergreifende Batterie-, Beladungs- und Flottenzustände braucht
+  es zuerst eine belastbare Fahrzeug-/Tourzuordnung; die Typklasse allein löst das nicht.
+- `SumoRunner.parseEmissions` erkennt Typnamen aktuell nur mit `\w+`; frei gewählte IDs mit
+  Bindestrich oder Namensraum würden in dieser Auswertung verloren gehen. Adapter-IDs und
+  Rückzuordnung zum Katalog sind Teil des neuen Vertrags.
+- Der aktuelle `MobileCityExporter` liefert in `TECCarFleet` den Pkw-Bestand pro Bezirk,
+  aber keinen frei konfigurierbaren Antriebsmix.
+
+### Metamodell: Typ, Instanz und Betrieb trennen
+
+Empfohlen wird eine gemeinsame `VehicleType`-Klasse mit komponierten Profilen.
+Vererbung bzw. eine geschlossene Variantenfamilie ist beim **Antrieb** sinnvoll; eine
+Kreuzhierarchie wie `AutonomousElectricCargoBike` würde unabhängige Eigenschaften koppeln.
+
+```mermaid
+classDiagram
+    VehicleType *-- PhysicalProperties
+    VehicleType *-- TransportCapacity
+    VehicleType *-- Powertrain
+    VehicleType --> DrivingProfile
+    VehicleType --> RoutingProfile
+    Powertrain <|-- CombustionPowertrain
+    Powertrain <|-- ElectricPowertrain
+    Powertrain <|-- HumanPowered
+    Powertrain <|-- HybridPowertrain
+    VehicleInstance --> VehicleType : typeRef
+    VehicleInstance *-- VehicleState
+    FleetAssignment --> VehicleType : typeRef
+    FleetAssignment --> OperationProfile
+    FleetAssignment o-- VehicleInstance
+```
+
+| Baustein | Wesentliche Attribute |
+|---|---|
+| `VehicleType` | `id`, `version`, `name`, `category`, Quellen-/Qualitätsangaben, physische Eigenschaften, Kapazität, Antrieb, Profilreferenzen |
+| `PhysicalProperties` | `curbMassKg` mit festgelegter Bezugsdefinition, optional `maxGrossMassKg`, `lengthM`, `widthM`, `heightM`, `maxSpeedKmh`, technische Beschleunigungs-/Bremsgrenzen |
+| `TransportCapacity` | `passengerSeats` ohne Bedienperson, `operatorSeats`, `payloadKg`, `cargoVolumeM3`; Personengewicht und Nutzlastgrenze gemeinsam prüfen |
+| `CombustionPowertrain` | Kraftstoff, `tankCapacityL`, optionaler Referenzverbrauch `litresPerKm`, Emissionsprofil mit Quellen und Geltungsbereich |
+| `ElectricPowertrain` | `usableBatteryCapacityKwh`, `maxChargePowerKw`, Anschlüsse, Lade-/Rekuperationswirkungsgrad, optionaler Referenzverbrauch `kwhPerKm`; `assistanceMode` trennt Vollantrieb von Pedalunterstützung |
+| `HumanPowered` / `HybridPowertrain` | Muskelkraft ohne erfundene Batterie; Hybrid als explizite Kombination aus Verbrenner, E-Antrieb und Betriebsstrategie. Hybrid zunächst nur als Ausbaupunkt, nicht als unterstützte Simulation ausweisen. |
+| `DrivingProfile` | `controlMode` (menschlich/automatisiert/ferngesteuert), Verhaltensmodell, Zeitabstand, Mindestabstand, gewünschte Beschleunigung/Bremsung; automatisierte Betriebsgrenzen separat beschreiben |
+| `RoutingProfile` | Verkehrsklasse, zugelassene Netztypen, zusätzliche Restriktionen; Adapter übersetzt in Modell-/Netzberechtigungen |
+| `OperationProfile` | Einsatzart, Lade-/Entladezeitmodell mit Bezugsgröße, Parkstrategie, Lade-/Tankstrategie |
+| `FleetAssignment` | Zuordnung zu Depot, Haushalt oder Dienst, referenzierter Typ mit Version, Anzahl bzw. explizite Instanzen; Bestandsanteile für private Pkw als eigene Allokationsregel |
+| `VehicleInstance` / `VehicleState` | `vehicleId`, `typeRef`, Betreiber/Standort, aktuelle Ladung, Belegung, Batterieenergie bzw. Tankfüllung, Verfügbarkeit; Anfangszustand getrennt vom späteren Zustand |
+
+Ein Fahrzeugkatalog definiert verfügbare Typen; er erzeugt noch keine Nachfrage oder Flotte.
+Szenarien benötigen deshalb zusätzlich Zuordnungen und Mengen/Anteile. Autonome
+Leichtfahrzeuge können auf dieser Basis konfiguriert werden; Disposition, Leerfahrten,
+Ladeentscheidungen oder ein neues Mobilitätsangebot benötigen jeweils eigene Betriebslogik.
+Ein `controlMode=automated` beweist deren Umsetzung nicht.
+
+### Externer Vertrag und Standardkatalog
+
+Vorgeschlagen wird `synthesis-vehicle-configuration-v1`, mit JSON-Schema und fachlicher
+Validierung. Die folgende **Strukturskizze** ist noch kein vollständiges Importschema:
+
+```json
+{
+  "schemaVersion": "synthesis-vehicle-configuration-v1",
+  "vehicleTypes": [],
+  "catalogRefs": [
+    { "id": "standard.pkw.benzin", "version": "1" }
+  ],
+  "fleetAssignments": [],
+  "initialVehicles": []
+}
+```
+
+`vehicleTypes` enthält vollständige externe Typdefinitionen, `catalogRefs` ausdrücklich
+gewählte unveränderliche Standardversionen. Alle `typeRef`-Referenzen aus Zuordnungen und
+Instanzen müssen innerhalb dieser aufgelösten Konfiguration existieren. Der kanonische
+API-Vertrag verwendet wie `Scenario` camelCase. Ein separater Importadapter kann die
+angelieferte snake_case-Datei normalisieren, muss aber fehlende Einheiten, die Massendefinition
+und die Typ-/Instanzentscheidung als offene Eingaben melden statt sie still zu erraten.
+
+| Vorgeschlagener Endpunkt | Zweck |
+|---|---|
+| `GET /api/vehicle-types` | Mitgelieferte Standardtypen mit Version, Quellen, Annahmen und Unterstützung pro Zielmodell auflisten |
+| `GET /api/vehicle-configurations/schema` | Versioniertes JSON-Schema für externe Anbieter bereitstellen |
+| `POST /api/vehicle-configurations/validate` | Konfiguration ohne Speicherung prüfen; normalisierte Vorschau, Fehlerpfade, Warnungen und Zielmodell-Kompatibilität zurückgeben |
+| `GET /api/scenarios/{id}/vehicle-configuration` | Vollständige aktuell gespeicherte Szenario-Konfiguration lesen |
+| `PUT /api/scenarios/{id}/vehicle-configuration` | Typen, Referenzen, Zuordnungen und Anfangszustände gemeinsam validieren und atomar als vollständige Konfiguration ersetzen |
+
+Die Studio-Dateiauswahl nutzt denselben JSON-Vertrag wie externe HTTP-Clients. Ungültige
+Eingaben verändern keine gespeicherte Konfiguration. Ein vorgeschalteter Validierungsaufruf
+ist optional; `PUT` validiert immer selbst. Vorgesehene Antworten: `400` für ungültiges JSON,
+`422` für Schema-/Fachfehler, `404` für unbekannte Szenarien und `409` für Versionskonflikte.
+Ein ETag mit `If-Match` verhindert verlorene parallele Änderungen. Imports sind zunächst
+szenariolokal; sie überschreiben keine globalen Standardtypen.
+
+Mitgelieferte Vorlagen sollten mindestens Pkw Benzin, Pkw Diesel, Pkw elektrisch,
+Lieferwagen Diesel/elektrisch, Fahrrad sowie Lastenrad mit/ohne elektrische Unterstützung
+abdecken. Autonome Leichtfahrzeuge können als explizit experimentelle Vorlagen ergänzt
+werden. Es gibt keinen universell kalibrierten „Standard-Pkw“: jede Vorlage braucht eine
+Version und Kennzeichnung ihrer Parameter als gemessen, aus einer Quelle übernommen oder
+angenommen. Eine Vorlagenkopie erhält eine neue Typidentität. Unbekannte Werte bleiben
+unbekannt; Nullwerte dürfen nicht fehlende Batterie-, Emissions- oder Kapazitätsdaten verdecken.
+
+Zu validieren sind insbesondere eindeutige IDs/Versionen, Referenzen, endliche Zahlen,
+positive Abmessungen, nichtnegative Mengen, aktive antriebsspezifische Pflichtfelder,
+Ladung ≤ Kapazität, Batterieenergie ≤ nutzbare Kapazität und widerspruchsfreie
+Antriebs-/Ladeangaben. Unbekannte Kernfelder werden abgelehnt; Erweiterungen gehören in
+einen ausdrücklich definierten Namensraum. Strukturprüfung und physikalische Plausibilität
+sind getrennte Prüfungen; widersprüchliche Verbrauchs-/Emissionswerte brauchen Quellenklärung.
+
+Der Start eines Jobs friert die aufgelöste Konfiguration einschließlich Standardversionen
+und Inhaltshash ein. Vorgesehene Ablage: Szenarioeingabe unter
+`uploads/vehicle-configuration.json`, verwendeter Snapshot und Adapterbericht unter
+`artifacts/vehicles/`, Hash/Vertragsversion im Manifest. Ein späterer Katalogwechsel verändert
+keinen bereits gestarteten Lauf. Eine deterministische Allokation erhält einen eigenen aus
+dem Szenario-Seed abgeleiteten Zufallsstrom, damit sie nicht die Bevölkerungssynthese verändert.
+
+### Wirkung in den Zielmodellen und Umsetzungsschnitt
+
+SUMO kann Typabmessungen, Leermasse, Höchstgeschwindigkeit und Fahrverhaltensparameter
+abbilden; Geschwindigkeiten stehen dort in m/s. Breite wirkt beim Standardmodell nur in
+der Darstellung und beim Sublane-Modell auch im Fahrverhalten. Technische Maximalbeschleunigung
+und gewünschte Beschleunigung sind zu unterscheiden. Diese Grenzen sind im Adapterbericht
+auszuweisen. Siehe [SUMO-Fahrzeugtypen](https://sumo.dlr.de/docs/Definition_of_Vehicles,_Vehicle_Types,_and_Routes.html).
+
+Für Batteriestand und Laden benötigt SUMO ein Battery-Device, ein Verbrauchsmodell und
+Ladeinfrastruktur; die aktuelle Dokumentation verwendet Wh für Kapazität und W für
+Ladeleistung. Der Adapter muss die tatsächlich installierte Version berücksichtigen.
+Ein konstantes `kwhPerKm` kann separat eine Referenzbilanz liefern, ersetzt aber kein
+fahrzustandsabhängiges Energiemodell. Siehe [SUMO-Elektromodell](https://sumo.dlr.de/docs/Models/Electric.html).
+Fahrfolgemodelle wie [ACC](https://sumo.dlr.de/docs/Car-Following-Models/ACC.html) beschreiben
+Teilmechanismen; daraus folgt keine vollständige autonome Betriebsführung.
+
+Jeder Adapter meldet pro Parameter und ausgewählter Funktion `applied`, `approximated`,
+`metadataOnly` oder `unsupported`, jeweils mit Begründung. Nicht unterstützte angeforderte
+Simulationsfunktionen blockieren die Ausführung; reine Katalogmetadaten dürfen gespeichert
+bleiben. Eine Näherung erfordert eine explizite Szenarioentscheidung und erscheint im
+Ergebnisbericht. Diesel- und Elektrofahrzeuge dürfen insbesondere nicht still gleichgesetzt
+werden. Vorhandene Szenarien ohne neue Konfiguration behalten zunächst ihr bisheriges Verhalten.
+
+1. **Katalog und Import:** Typ-/Profilklassen, JSON-Schema, Standardversionen, Validierung,
+   API und UI-Vorschau; Frontend-Vertrag parallel spiegeln. Speicherung allein als solche
+   kennzeichnen, noch keine simulierte Wirkung behaupten.
+2. **Durchgängige Typzuordnung:** Typreferenzen bei Population, Depot-/Flottenerzeugung,
+   Legacy-Export, Tourergebnis und SUMO erhalten. Eindeutige dauerhafte Depot-/Fahrzeug-IDs
+   ergänzen, wo sie fehlen. Die Legacy-Parser einschließlich Kapazitäts- und BEV-Format
+   zuerst am lokalen Fremdcode prüfen; Änderungen am GPL-Tool über den versionierten
+   Patch-/Build-Vertrag statt durch unversionierte Eingriffe in `validation/`.
+3. **Verkehrsparameter:** Konfigurierbare SUMO-Typen einschließlich ID-Rückzuordnung,
+   Routingberechtigungen und Emissionsauswertung. Nachweisen, dass eine gezielte Änderung
+   etwa an Länge/Höchstgeschwindigkeit tatsächlich im Routing und Lauf ankommt.
+4. **Zustand und Betrieb:** Durchgehende Fahrzeugidentität über Fahrten/Stopps, Batterie,
+   Laden, Beladung und autonome Betriebsstrategie als getrennt nachgewiesene Ausbaustufen.
+   Zuerst vollständige kleine Prozesskette erproben; neue experimentelle Laufzeitfähigkeit
+   bleibt bis zur Abnahme ausgeschaltet.
+
+Abnahme: Import→Persistierung→Export erhält Werte und Einheiten; ungültiger Import lässt
+den Vorgänger unverändert; gleiche Konfiguration/Seeds liefern gleiche Typzuordnung;
+gemischte Flotten verlieren keine Typidentität; unbekannte Zielmodellfähigkeiten werden
+sichtbar zurückgewiesen. Ein Batterietest muss mindestens zwei Abschnitte desselben Fahrzeugs
+umfassen, damit ein irrtümlicher Reset am zweiten Abschnitt auffällt. Bestandsregression,
+Backend-Suite und Frontend-Tests/AOT-Build ergänzen diese Wirkungsnachweise.
+
 ## Frontend (Angular, wie simudrive)
 
 1. **Region wählen:** Leaflet + Zeichenwerkzeuge (BBox/Polygon) + Nominatim-Gemeindesuche;
@@ -177,17 +395,71 @@ und atomar ersetzt.
 
 ## MobileCity-Integration (Export-Adapter)
 
-Zwei getrennte Übergabepunkte:
+**Stand 2026-09-22:** Die Übergabe erfolgt von SyntheSis nach MobileCity als aggregierte
+District-Tabellen und Netze. Der vorhandene Export liefert einen Teilbeitrag oder ergänzt
+eine vorbereitete TRAMIGO-Vorlage oder erzeugt ein eigenständiges Regionalpaket mit
+eigenen Districts und aus OD-Matrizen abgeleiteten Verbindungsnetzen. KBA/BKG liefert
+optional private BEV-Anteile, Zensus-Struktur die Populationsgewichtung. Quellen,
+Modellannahmen und Hashes werden mit dem Paket gespeichert. `data-inventory.json` hält je
+Bereich Status, Auflösungsweg, Abdeckung und wirksamen Wert fest; gebietsbezogene BKG- und
+weitere verfügbare Quellantworten werden als Lauf-Snapshots kopiert. Einzelwege und
+Logistiktouren haben darin noch keinen bestätigten Zielvertrag. Das Transitnetz wird im
+Regionalmodus aus einem Volltages-GTFS erzeugt. Der Java-Adapter
+wählt deterministisch einen repräsentativen Mittwoch, mappt die etablierte Route-Type-
+Kodierung der mitgelieferten Network Pipeline, bildet Fahrzeiten/Frequenzen und GTFS-Transfers
+ab und verbindet jeden District über einen abgeleiteten Fußzugang mit der größten
+Servicekomponente. MobileCity arbeitet intern mit ungerichteten Kanten; deshalb wird je Kante
+die größere der beiden Richtungsfrequenzen exportiert. Fehlt ein Feed, ist der synthetische
+Matrix-Fallback nur bei gesetzter Szenariofreigabe zulässig.
 
-1. **Netz-Seite (heute schon machbar):** Der Adapter erzeugt die Eingaben der bestehenden
-   Network-Pipelines – `districts.gpkg` + `districts.xlsx` (Car/Bike) und reicht den GTFS-Clip
-   (Transit) durch; danach laufen die vorhandenen Tools (Car/Bike/Transit → OLC Mapper →
-   Config Tool) unverändert als containerisierte Stufen und liefern die Messagepack-Konfiguration
-   für die App.
-2. **Nachfrage-Seite (zu klären):** In welchem Format MobileCity Nachfrage/Agenten/Pakettouren
-   konsumiert, geht aus der ZIP nicht hervor (sie behandelt nur Netze). Kandidat: Wege- und
-   Tourenlisten auf die OLC-Knoten-IDs der Netzkonfiguration mappen (Zonen-Zentroid → nächster
-   OLC-Knoten). **→ Schnittstellen-Definition mit Takomat/Projektpartnern, früh klären.**
+Öffentliche Ladeinfrastruktur wird in einem eigenen Quellenadapter vor dem Schreiben der
+Zieltabellen aufgelöst. `MobileCityChargingSource` liest den hashgeprüften BNetzA-Snapshot
+vom 01.09.2026, ordnet die Koordinaten mit den tatsächlichen District-Geometrien zu und
+aggregiert die veröffentlichte Spalte `Anzahl Ladepunkte`. `REGchargers` enthält damit
+Ladepunkte, nicht Standorte oder einzelne Steckertypen. Inbetriebnahmejahre liefern eine
+kumulative, als Untergrenze gekennzeichnete Historie der im Snapshot noch geführten Anlagen.
+Nach dem letzten beobachteten Jahr bleiben Zellen leer, sodass MobileCity seinen eigenen
+Ausbaupfad verwendet. Alternativ kann der Nutzer eine Ladepunktzahl je 1.000 Einwohner als
+Annahme oder Fallback angeben. Quellmetadaten und der regionale Ausschnitt liegen in
+`charging-provenance.json` und `charging-points.csv`.
+
+Carsharing wird mangels einer kleinräumig vollständigen, allgemein nutzbaren Quelle als
+explizite Szenarioannahme modelliert. `carsharingVehiclesPer1000` wird anhand der erzeugten
+District-Bevölkerung auf `carsharing.stock.total` verteilt; `carsharingMemberShare` wird als
+gebietsweite Zahl in `carsharing.member` geschrieben. Beide Werte bleiben über den
+Exporthorizont konstant. Leere Eingaben bedeuten die im Dateninventar ausgewiesene
+Nullannahme. So kopiert der Regionalexport weder Karlsruher Bestände noch Servicegebiete.
+
+Umland ist ein eigener, optionaler Szenariovertrag. Manuell aktiviert eine positive
+`surroundingPopulation` die Richtungsanker als `districtType=0`. Automatisch erzeugen
+`autoSurrounding=true` und `surroundingBufferKm` einen in EPSG:3035 gepufferten Ring um den
+Kartenausschnitt, schneiden ihn überlappungsfrei in N/NE/E/SE/S/SW/W/NW und aggregieren
+Zensus-2022-Bevölkerung sowie Altersgruppen. Die externen Netzanker liegen im jeweiligen
+Sektor; eine manuelle Gesamtsumme skaliert dessen beobachtete Gewichte exakt. Ohne beide
+Aktivierungen bleiben die Anker reine Ziele der SyntheSis-Außenbeziehungen. Pkw- und
+BEV-Struktur werden weiterhin aus der Binnenbevölkerung extrapoliert und als Annahme
+protokolliert. Vier Pflichtanteile für Bildung, Arbeit, Einkauf und Freizeit schreiben den
+nativen Vertrag `tripShareToStudyArea`: Wege von Umlandbewohnern in das Untersuchungsgebiet.
+Study-Area-Zähler sowie gebietsweite Finanz-, Transit- und Sharing-Größen schließen das
+Umland aus. BA-Pendlerdaten dürfen künftig ausschließlich den Arbeitszweck belegen.
+
+**Ausbauziel:** Aus der Kartenauswahl werden regionale Daten automatisch ermittelt und mit
+versionierten Modellprofilen sowie gezielten Nutzervorgaben zusammengeführt. Der Export
+erhält die aufgelösten Werte einschließlich Quelle, Datenjahr, räumlicher Abdeckung und
+Annahmen. Die UI bietet Rücksetzen auf Automatik und kennzeichnet fehlende Werte.
+Regions-, Jahres- oder Konfigurationswechsel markieren ein vorhandenes Paket im Studio als
+veraltet; laufende Jobs verwenden einen festen Szenariostand. Die optionale Stufe 10
+`MobileCity-Validierung` startet nach einem vollständigen Export den echten ConfigTool-Import,
+lädt die erzeugten Binärdateien erneut und simuliert den Prüfhorizont. Fehlende lokale
+Laufzeit ergibt `SKIPPED`, ein fachlicher oder technischer Prüffehler `FAILED`. Bericht und
+Logs liegen getrennt unter `mobilecity-validation/`.
+
+Der umgesetzte Stand und die weiteren Arbeitspakete mit Abnahmekriterien stehen im
+[MobileCity-Konzept](06-gta-integration-konzept.md#mobilecity-naechste-schritte).
+Die GTFS-Netzabbildung, der BNetzA-Ladepunktadapter, die manuelle Carsharing-Modellierung
+sowie manuelles und Zensus-basiertes Umland sind umgesetzt. Abnahmen über weitere
+Regionstypen, automatische Wegeanteile/Sharing-Quellen und weitere Regionalprofile bleiben
+Ausbauziele.
 
 ## Deployment
 

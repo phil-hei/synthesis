@@ -96,11 +96,22 @@ public class GtfsCropper {
                 return keep;
             });
 
-            // 4. Halte (Union aus Bbox + von behaltenen Fahrten referenziert)
+            // 4. Übergeordnete Stationen mitnehmen. GTFS-Transfers referenzieren häufig
+            // parent_station statt der Plattform-ID aus stop_times.
+            Set<String> parentStops = new HashSet<>();
+            forEachRow(zip, "stops.txt", (h, r) -> {
+                if (keptStops.contains(get(h, r, "stop_id"))) {
+                    String parent = get(h, r, "parent_station");
+                    if (!parent.isBlank()) parentStops.add(parent);
+                }
+            });
+            keptStops.addAll(parentStops);
+
+            // 5. Halte (von behaltenen Fahrten referenziert + deren parent_station)
             int stopCount = copyFiltered(zip, "stops.txt", out,
                     (h, r) -> keptStops.contains(get(h, r, "stop_id")));
 
-            // 5. trips → routes/services sammeln, shape_id-Spalte streichen
+            // 6. trips → routes/services sammeln, shape_id-Spalte streichen
             Set<String> keptRoutes = new HashSet<>();
             Set<String> keptServices = new HashSet<>();
             int tripCount = copyFilteredDroppingColumn(zip, "trips.txt", out, "shape_id", (h, r) -> {
@@ -111,8 +122,12 @@ public class GtfsCropper {
                 }
                 return keep;
             });
+            // Frequency-based feeds use one template trip plus headways. Keep that table or the
+            // downstream adapter would undercount the daily service and the vehicle peak.
+            copyFiltered(zip, "frequencies.txt", out,
+                    (h, r) -> keptTrips.contains(get(h, r, "trip_id")));
 
-            // 6. routes → agencies sammeln
+            // 7. routes → agencies sammeln
             Set<String> keptAgencies = new HashSet<>();
             int routeCount = copyFiltered(zip, "routes.txt", out, (h, r) -> {
                 boolean keep = keptRoutes.contains(get(h, r, "route_id"));
@@ -122,7 +137,7 @@ public class GtfsCropper {
                 return keep;
             });
 
-            // 7. Abhängige Tabellen (fehlende Dateien werden übersprungen)
+            // 8. Abhängige Tabellen (fehlende Dateien werden übersprungen)
             copyFiltered(zip, "calendar.txt", out,
                     (h, r) -> keptServices.contains(get(h, r, "service_id")));
             copyFiltered(zip, "calendar_dates.txt", out,
@@ -181,7 +196,9 @@ public class GtfsCropper {
             return 0;
         }
         int written = 0;
-        out.putNextEntry(new ZipEntry(name));
+        ZipEntry outputEntry = new ZipEntry(name);
+        outputEntry.setTime(0);
+        out.putNextEntry(outputEntry);
         Writer writer = new java.io.OutputStreamWriter(out, StandardCharsets.UTF_8);
         try (BufferedReader reader = reader(zip, entry)) {
             String headerLine = reader.readLine();

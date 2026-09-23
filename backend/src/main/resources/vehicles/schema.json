@@ -1,0 +1,774 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "synthesis-vehicle-configuration-v1"
+    },
+    "application": {
+      "enum": [
+        "catalogOnly",
+        "sumoTraffic"
+      ]
+    },
+    "allowBehaviorApproximation": {
+      "type": "boolean",
+      "default": false
+    },
+    "requiredCapabilities": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "enum": [
+          "traffic"
+        ]
+      }
+    },
+    "vehicleTypes": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/vehicleType"
+      }
+    },
+    "catalogRefs": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/typeRef"
+      }
+    },
+    "trafficAssignments": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/trafficAssignment"
+      }
+    },
+    "fleetAssignments": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/fleetAssignment"
+      }
+    },
+    "initialVehicles": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/vehicleInstance"
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "application",
+    "requiredCapabilities",
+    "vehicleTypes",
+    "catalogRefs",
+    "trafficAssignments",
+    "fleetAssignments",
+    "initialVehicles"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:synthesis:vehicle-configuration:v1",
+  "$defs": {
+    "typeRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "quality": {
+          "enum": [
+            "assumed",
+            "sourced",
+            "measured"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "source",
+        "quality",
+        "notes"
+      ]
+    },
+    "physical": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "curbMassKg": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxGrossMassKg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lengthM": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "widthM": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "heightM": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxSpeedKmh": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxAccelerationMps2": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "curbMassKg",
+        "lengthM",
+        "widthM",
+        "heightM",
+        "maxSpeedKmh"
+      ]
+    },
+    "capacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "passengerSeats": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "operatorSeats": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "payloadKg": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cargoVolumeM3": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "passengerSeats",
+        "operatorSeats",
+        "payloadKg",
+        "cargoVolumeM3"
+      ]
+    },
+    "combustion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "combustion"
+        },
+        "fuel": {
+          "enum": [
+            "gasoline",
+            "diesel"
+          ]
+        },
+        "tankCapacityL": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "litresPerKm": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "fuel",
+        "tankCapacityL"
+      ]
+    },
+    "electric": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "electric"
+        },
+        "usableBatteryCapacityKwh": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxChargePowerKw": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "chargingEfficiency": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recuperationEfficiency": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kwhPerKm": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assistanceMode": {
+          "enum": [
+            "full",
+            "pedalAssist"
+          ]
+        },
+        "assistanceCutoffKmh": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "connectors": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "usableBatteryCapacityKwh",
+        "maxChargePowerKw",
+        "assistanceMode",
+        "connectors"
+      ]
+    },
+    "human": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "human"
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "driving": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "controlMode": {
+          "enum": [
+            "human",
+            "automated",
+            "remote"
+          ]
+        },
+        "carFollowModel": {
+          "enum": [
+            "Krauss",
+            "IDM",
+            "ACC",
+            "CACC"
+          ]
+        },
+        "accelerationMps2": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "decelerationMps2": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "emergencyDecelerationMps2": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "minGapM": {
+          "type": "number",
+          "minimum": 0
+        },
+        "timeHeadwayS": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "controlMode",
+        "carFollowModel",
+        "accelerationMps2",
+        "decelerationMps2",
+        "emergencyDecelerationMps2",
+        "minGapM",
+        "timeHeadwayS"
+      ]
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sumoVehicleClass": {
+          "enum": [
+            "passenger",
+            "delivery",
+            "bicycle"
+          ]
+        },
+        "sumoEmissionClass": {
+          "enum": [
+            "Zero",
+            "HBEFA3/PC_G_EU4",
+            "HBEFA3/PC_D_EU4",
+            "HBEFA3/LDV_D_EU4",
+            "HBEFA3/LDV_G_EU4"
+          ]
+        },
+        "allowedNetworks": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "enum": [
+              "road",
+              "bike"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "sumoVehicleClass",
+        "sumoEmissionClass",
+        "allowedNetworks"
+      ]
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deliveryMode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "loadingTimeS": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unloadingTimeS": {
+          "type": "number",
+          "minimum": 0
+        },
+        "serviceTimeBasis": {
+          "enum": [
+            "stop",
+            "parcel",
+            "kg"
+          ]
+        },
+        "parkingBehavior": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "deliveryMode",
+        "loadingTimeS",
+        "unloadingTimeS",
+        "serviceTimeBasis",
+        "parkingBehavior"
+      ]
+    },
+    "emissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gramsPerKm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "substance": {
+          "enum": [
+            "CO2",
+            "CO2e"
+          ]
+        },
+        "boundary": {
+          "enum": [
+            "tailpipe",
+            "wellToWheel",
+            "lifecycle"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "gramsPerKm",
+        "substance",
+        "boundary",
+        "source"
+      ]
+    },
+    "noise": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "decibels": {
+          "type": "number"
+        },
+        "weighting": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "distanceM": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "speedKmh": {
+          "type": "number",
+          "minimum": 0
+        },
+        "conditions": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "decibels",
+        "weighting",
+        "distanceM",
+        "speedKmh",
+        "conditions"
+      ]
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cargoWeightKg": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cargoVolumeM3": {
+          "type": "number",
+          "minimum": 0
+        },
+        "passengers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "operators": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "batteryEnergyKwh": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fuelLitres": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "cargoWeightKg",
+        "cargoVolumeM3",
+        "passengers",
+        "operators"
+      ]
+    },
+    "trafficAssignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "enum": [
+            "car",
+            "bicycle",
+            "deliveryVan",
+            "cargoBike"
+          ]
+        },
+        "typeRef": {
+          "$ref": "#/$defs/typeRef"
+        },
+        "share": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "role",
+        "typeRef",
+        "share"
+      ]
+    },
+    "fleetAssignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "typeRef": {
+          "$ref": "#/$defs/typeRef"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "locationRef": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "id",
+        "typeRef",
+        "count",
+        "locationRef"
+      ]
+    },
+    "vehicleInstance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "vehicleId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "typeRef": {
+          "$ref": "#/$defs/typeRef"
+        },
+        "fleetId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "locationRef": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "state": {
+          "$ref": "#/$defs/state"
+        }
+      },
+      "required": [
+        "vehicleId",
+        "typeRef",
+        "locationRef",
+        "state"
+      ]
+    },
+    "vehicleType": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "category": {
+          "enum": [
+            "passengerCar",
+            "deliveryVan",
+            "bicycle",
+            "cargoBike",
+            "lightVehicle"
+          ]
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "physical": {
+          "$ref": "#/$defs/physical"
+        },
+        "capacity": {
+          "$ref": "#/$defs/capacity"
+        },
+        "powertrain": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/combustion"
+            },
+            {
+              "$ref": "#/$defs/electric"
+            },
+            {
+              "$ref": "#/$defs/human"
+            }
+          ]
+        },
+        "driving": {
+          "$ref": "#/$defs/driving"
+        },
+        "routing": {
+          "$ref": "#/$defs/routing"
+        },
+        "operation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/operation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "emissions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/emissions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "noise": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/noise"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "name",
+        "category",
+        "provenance",
+        "physical",
+        "capacity",
+        "powertrain",
+        "driving",
+        "routing"
+      ]
+    }
+  },
+  "description": "Strukturvertrag. Referenzen, Summen, Kapazitäten und Zielmodellfähigkeiten prüft zusätzlich die Validierungs-API."
+}

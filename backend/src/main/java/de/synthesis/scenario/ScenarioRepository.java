@@ -47,12 +47,19 @@ public class ScenarioRepository {
         return scenarioDir(id).resolve("uploads");
     }
 
-    public Scenario save(Scenario scenario) {
+    public synchronized Scenario save(Scenario scenario) {
         try {
             Path dir = scenarioDir(scenario.id);
             Files.createDirectories(dir);
-            mapper.writerWithDefaultPrettyPrinter()
-                    .writeValue(dir.resolve("scenario.json").toFile(), scenario);
+            Path temporary = Files.createTempFile(dir, ".scenario-", ".json");
+            try {
+                mapper.writerWithDefaultPrettyPrinter().writeValue(temporary.toFile(), scenario);
+                Files.move(temporary, dir.resolve("scenario.json"),
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                Files.deleteIfExists(temporary);
+            }
             return scenario;
         } catch (IOException e) {
             throw new UncheckedIOException("Szenario konnte nicht gespeichert werden: " + scenario.id, e);
