@@ -201,7 +201,9 @@ def run(args):
                 for district in summary['updatedDistricts']:
                     expected = (sum(input_value(pop[f'population[AgeGroups.{g}]'], district) for g in ('Children', 'Adults', 'Seniors'))
                                 if metric == 'population' else input_value(fleet['stock.shareElectric' if metric == 'bevShare' else 'stock.total'], district))
-                    passed = district in actual and abs(actual[district] - expected) < (1e-5 if metric == 'bevShare' else .5)
+                    # Native CSV logger emits BEV shares to three decimals; allow only that rounding error.
+                    tolerance = 0.000500001 if metric == 'bevShare' else .5
+                    passed = district in actual and abs(actual[district] - expected) <= tolerance
                     report['contributionChecks'].append({'district': district, 'year': year, 'metric': metric,
                                                          'expected': expected, 'actual': actual.get(district), 'passed': passed})
                     if not passed:

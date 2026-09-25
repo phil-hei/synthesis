@@ -454,6 +454,33 @@ lädt die erzeugten Binärdateien erneut und simuliert den Prüfhorizont. Fehlen
 Laufzeit ergibt `SKIPPED`, ein fachlicher oder technischer Prüffehler `FAILED`. Bericht und
 Logs liegen getrennt unter `mobilecity-validation/`.
 
+### Offline-Abnahme mit realen Quellen: Rastatt
+
+`scripts/check-mobilecity-rastatt-sources.py --work-dir /private/tmp/mobilecity-rastatt-check`
+führt einen reproduzierbaren, opt-in Prüffall für eine kleine Zone in der Rastatter Innenstadt aus.
+Benötigt werden die lokal vorbereitete `tramigo-v2`-Profilmappe, das amtliche
+Zensus-2022-Bevölkerungsraster und dessen Alters-/Haushaltsarchive, der KVV-GTFS-Feed,
+.NET 8 und der MobileCity ConfigTool-Quellstand. Die Pfade lassen sich mit `--help`
+anpassen. Das Skript lädt keine Quellen aus dem Netz: Es verwendet KBA- und
+BNetzA-Referenzstände aus dem Backend sowie eine festgehaltene BKG-WFS-Antwort
+für Rastatt. Damit prüft es die Datenabbildung, aber nicht die heutige Verfügbarkeit
+des BKG-Dienstes. Der Ausgabeordner muss neu sein und enthält Eingabe-Hashes,
+Quellenstände, Abdeckungen, exportierte Summen, Importpaket, native Logs und
+`rastatt-source-report.json`. Fehlende lokale Eingaben beenden den Lauf mit Fehler.
+Auch fehlender GTFS-Upload und eine nicht belegbare KBA/BKG-Zuordnung werden
+im Java-Prüffall als Fehlerfälle geprüft; es gibt hier keine manuelle BEV-Annahme
+und keinen synthetischen ÖV-Fallback.
+
+Referenzlauf vom 25.09.2026: 21 Bevölkerungszellen, 1.639 Einwohner,
+21 Alters- und 20 Haushaltszellen mit einer gewichteten Zone, 100 %
+BKG-Flächenabdeckung, 6 KVV-Haltestellen im Ausschnitt, 233 geplante
+Fahrten am repräsentativen Mittwoch (08.07.2026) und 6 öffentliche
+Ladepunkte. Der ConfigTool-Import und die Simulation 2026–2036 bestanden.
+Die Quelle für Pkw-Bestände bleibt die synthetische Haushaltsstichprobe;
+KBA liefert den BEV-Anteil. Das Modellprofil ist unkalibriert, das Netz
+besteht aus aggregierten OD-Verbindungen, und weder Logistik noch eine
+Umlandbevölkerung sind in diesem Prüffall modelliert.
+
 Der umgesetzte Stand und die weiteren Arbeitspakete mit Abnahmekriterien stehen im
 [MobileCity-Konzept](06-gta-integration-konzept.md#mobilecity-naechste-schritte).
 Die GTFS-Netzabbildung, der BNetzA-Ladepunktadapter, die manuelle Carsharing-Modellierung
