@@ -3689,3 +3689,41 @@ Rundungsstelle und verlangt beide Gebietssummen exakt.
 mit **210 Tests, 0 Fehlern und 7 umgebungsabhängigen Skips**. Das Frontend besteht **52/52**
 Tests und den Angular-Produktionsbuild. Die vier MobileCity-Hilfsskripte kompilieren mit
 Python; `git diff --check` bleibt ohne Befund.
+
+
+<a id="mobilecity-mehrregionenpruefung-2026-09-25"></a>
+
+## MobileCity-Mehrregionenprüfung (2026-09-25) — fünf geografische Basispakete bestanden
+
+`MobileCityRegionalExporterTest.regionalMatrixExportsCompletePackagesAcrossGeographies`
+erzeugt fünf feste Kartenausschnitte mit demselben Seed. Er prüft Gebietssummen für Personen
+und Pkw, vollständige Zuordnung aller Quellzonen, erforderliche CSV-Familien und Shapefile-
+Teile, Dateninventar sowie bytegleichen ZIP-Inhalt beim erneuten Export. Das Skript
+`scripts/check-mobilecity-regions.py` führt danach für jedes Paket den echten ConfigTool-
+Import, das binäre Zurücklesen, Bestands-/BEV-Prüfungen und elf Simulationsjahre aus.
+
+| Gebietstyp | Testgebiet | Personen | Pkw | Districts | Nativer Befund |
+|---|---|---:|---:|---:|---|
+| Stadt | Berlin | 1.800 | 891 | 4 | 11 Jahre, 276 CSV, 17/17 Beiträge, 0 nicht endliche Zellen |
+| Land | Uckermark | 4.000 | 1.954 | 4 | 11 Jahre, 276 CSV, 17/17 Beiträge, 0 nicht endliche Zellen |
+| Grenzlage | Kehl/Straßburg | 1.800 | 891 | 4 | 11 Jahre, 276 CSV, 17/17 Beiträge, 0 nicht endliche Zellen |
+| Kleiner angeschnittener Ausschnitt | Rastatt | 200 | 96 | 1 | 11 Jahre, 276 CSV, 5/5 Beiträge, 0 nicht endliche Zellen |
+| Außerhalb Deutschlands | Basel | 1.800 | 891 | 4 | 11 Jahre, 276 CSV, 17/17 Beiträge, 0 nicht endliche Zellen |
+
+Wiederholung mit lokal vorbereitetem `tramigo-v2`-Profil, .NET 8 und ConfigTool:
+
+```bash
+python3 scripts/check-mobilecity-regions.py --work-dir /tmp/mobilecity-regions-neuer-lauf
+```
+
+Der Sammelbericht `matrix-report.json` und die Einzelberichte `native-*/validation-report.json`
+liegen im gewählten Arbeitsverzeichnis. Der hier geprüfte Bericht liegt lokal unter
+`/private/tmp/mobilecity-region-matrix-20260925-final/matrix-report.json`; Gesamtstatus
+`passed`, fünf Fälle, null Fehler. Das Skript bricht bei fehlenden lokalen Werkzeugen oder
+Profilen sichtbar ab und bewahrt Logs und Teilergebnisse.
+
+**Aussagegrenze:** Die geografischen Fälle nutzen synthetische Populationen, 3 % BEV als
+manuelle Annahme, modellierten ÖV und ein unkalibriertes TRAMIGO-Modellprofil. Sie prüfen
+technische Übertragbarkeit des Exports, nicht beobachtete regionale Bestände, echte GTFS-
+Relationen, KBA-/Zensus-Abdeckung, Umland-Pendleranteile oder fachliche Prognosegüte.
+Diese Datenpfade und die Abnahme mit Takomat bleiben Gegenstand der nächsten Prüfphase.

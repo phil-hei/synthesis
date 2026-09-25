@@ -11,6 +11,63 @@ import static org.assertj.core.api.Assertions.*;
 class MobileCityRegionalExporterTest {
     @TempDir Path dir;
     private final ObjectMapper json=new ObjectMapper();
+
+    /** Repeatable geography suite; set matrixOutput to retain imports for native validation. */
+    @Test void regionalMatrixExportsCompletePackagesAcrossGeographies() throws Exception {
+        record Case(String name,double minLat,double maxLat,double minLon,double maxLon,int maxDistricts) {}
+        List<Case> cases=List.of(
+                new Case("city-berlin",52.50,52.52,13.40,13.43,4),
+                new Case("rural-uckermark",53.15,53.18,13.80,13.86,4),
+                new Case("border-kehl",48.55,48.57,7.78,7.81,4),
+                new Case("clipped-rastatt",48.858,48.861,8.201,8.204,1),
+                new Case("outside-germany-basel",47.55,47.57,7.58,7.61,4));
+        String retained=System.getProperty("synthesis.mobilecity.matrixOutput");
+        String localProfile=System.getProperty("synthesis.mobilecity.matrixProfile");
+        Path profiles=localProfile==null?profile():Path.of(localProfile);
+        for(Case sample:cases) {
+            Scenario s=scenario();
+            s.region.minLat=sample.minLat;s.region.maxLat=sample.maxLat;
+            s.region.minLon=sample.minLon;s.region.maxLon=sample.maxLon;
+            s.mobileCity.maxDistricts=sample.maxDistricts;
+            s.mobileCity.templateId=localProfile==null?"fixture":"tramigo-v2";
+            s.mobileCity.electricShare=.03; // explicit manual assumption, including outside Germany
+            s.mobileCity.allowSyntheticTransitFallback=true;
+            var zones=GridZoning.generate(s.region,1000,100);
+            zones.forEach(z->{z.population=200;z.attractivities.put("Work",10.0);});
+            Path out=(retained==null?dir:Path.of(retained)).resolve(sample.name);
+            var pop=new PopulationGenerator(zones,new Random(42)).generate(out.resolve("population"),s);
+            new ActivityGenerator(new Random(42)).generate(out.resolve("population/activity.csv"),pop.persons());
+            new MatrixGenerator().generate(out.resolve("matrix"),zones);
+            new MobileCityExporter(zones,s,profiles).export(out);
+            Path mobile=out.resolve("mobilecity");
+            var summary=json.readTree(mobile.resolve("summary.json").toFile());
+            assertThat(summary.path("mode").asText()).as(sample.name).isEqualTo("regional");
+            assertThat(summary.path("inhabitants").path("total").asInt()).as(sample.name).isEqualTo(pop.persons().size());
+            assertThat(summary.path("privateCars").asInt()).as(sample.name).isEqualTo(pop.carCount());
+            assertThat(summary.path("districts").path("studyArea").asInt()).as(sample.name)
+                    .isBetween(1,sample.maxDistricts);
+            assertThat(json.readTree(mobile.resolve("data-inventory.json").toFile()).path("ready").asBoolean())
+                    .as(sample.name).isTrue();
+            for(String extension:List.of("shp","shx","dbf","prj"))
+                assertThat(mobile.resolve("districts."+extension)).as(sample.name).exists();
+            try(var zip=new ZipFile(mobile.resolve("mobilecity-import.zip").toFile())) {
+                var contract=json.readTree(getClass().getResourceAsStream("/mobilecity-contract.json"));
+                var families=contract.fieldNames();
+                while(families.hasNext()) {
+                    String family=families.next();
+                    assertThat(zip.getEntry("Import/"+family+".csv")).as(sample.name+" "+family).isNotNull();
+                }
+            }
+            var provenance=json.readTree(mobile.resolve("provenance.json").toFile());
+            List<Long> mapped=new ArrayList<>();
+            for(var district:provenance.path("districts"))
+                for(var id:district.path("sourceZoneIds"))mapped.add(id.asLong());
+            assertThat(mapped).as(sample.name).containsExactlyInAnyOrderElementsOf(zones.stream().map(z->z.id).toList());
+            byte[] first=Files.readAllBytes(mobile.resolve("mobilecity-import.zip"));
+            new MobileCityExporter(zones,s,profiles).export(out);
+            assertThat(Files.readAllBytes(mobile.resolve("mobilecity-import.zip"))).as(sample.name).isEqualTo(first);
+        }
+    }
     @Test void fullRegionalPackagePreservesStocksAreaMembershipAndReproducibility() throws Exception {
         Scenario s=scenario();var zones=GridZoning.generate(s.region,1000,100);
         zones.forEach(z->{z.population=z.index==0?0:200;z.attractivities.put("Education_Primary",z.index==1?100.0:0.0);});

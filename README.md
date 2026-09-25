@@ -105,9 +105,11 @@ Rastern aggregiert; eine manuelle Gesamtsumme skaliert bei Bedarf die beobachtet
 Verteilung. Die vier eingehenden Wegeanteile bleiben explizite Fachvorgaben. Ihre automatische
 Ableitung, zunächst für Arbeit aus BA-Pendlerdaten, ist noch offen.
 Der Export nutzt noch unkalibrierte Modellparameter und
-vereinfachte Auto-/Radnetze. Zwei regionale Testpakete laufen im
-nativen Kern über den gesamten exportierten Horizont fehlerfrei; das belegt keine regionale
-Kalibrierung. Der separate TRAMIGO-Vorlagenmodus behält seine bekannten Referenzfehler.
+vereinfachte Auto-/Radnetze. Eine wiederholbare geografische Prüfmatrix erzeugt fünf
+synthetische Gebietsproben (Stadt, Land, Randlage, kleiner Ausschnitt, Ausland); alle liefen
+im nativen Kern über elf Jahre fehlerfrei. Das belegt die technische Übertragbarkeit unter
+den gewählten Annahmen, keine regionale Kalibrierung oder Abnahme echter Verkehrsangebote.
+Der separate TRAMIGO-Vorlagenmodus behält seine bekannten Referenzfehler.
 Für einen ersten lauffähigen Importsatz setzt „Rudimentären MobileCity-Export konfigurieren“
 einen dokumentierten Offline-Basissatz; „Szenario erzeugen“ speichert die sichtbare
 Konfiguration vor dem Lauf und bietet danach `mobilecity-import.zip` zum Download an.
