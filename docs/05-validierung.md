@@ -3726,4 +3726,46 @@ Profilen sichtbar ab und bewahrt Logs und Teilergebnisse.
 manuelle Annahme, modellierten ÖV und ein unkalibriertes TRAMIGO-Modellprofil. Sie prüfen
 technische Übertragbarkeit des Exports, nicht beobachtete regionale Bestände, echte GTFS-
 Relationen, KBA-/Zensus-Abdeckung, Umland-Pendleranteile oder fachliche Prognosegüte.
-Diese Datenpfade und die Abnahme mit Takomat bleiben Gegenstand der nächsten Prüfphase.
+Ein realer Mehrzonen-Quellenpfad ist im folgenden Abschnitt geprüft; der
+GTFS-Relationsvergleich und die fachliche Abnahme mit Takomat bleiben offen.
+
+
+<a id="mobilecity-rastatt-livequellen-2026-09-28"></a>
+
+## MobileCity-Rastatt mit Live-BKG und regionalen Quellen (2026-09-28)
+
+`scripts/check-mobilecity-rastatt-sources.py --case cross-municipality
+--work-dir /private/tmp/mobilecity-cross-municipality-neuer-lauf` prüft vier
+2-km-Zonen zwischen Rastatt und Nachbargemeinden. Der Test nutzt das amtliche
+Zensus-2022-Raster und dessen Alters-/Haushaltsarchive, die gepinnte KBA-Tabelle
+vom 01.07.2026, den gepinnten BNetzA-Snapshot vom 01.09.2026 und den lokalen
+KVV-GTFS-Feed. Nur die Gemeindegeometrien kommen live vom BKG-WFS; die genaue
+Antwort wird für den Lauf als `fleet-boundaries.geojson` gespeichert und gehasht.
+
+| Zone | Zensus-Einwohner | BKG-Abdeckung | Öffentliche Ladepunkte 2026 | KVV-Halte im Ausschnitt |
+|---|---:|---:|---:|---:|
+| 100001 | 12.034 | 100 % | 12 | 23 |
+| 100002 | 1.670 | 100 % | 20 | 7 |
+| 100003 | 1.630 | 100 % | 0 | 6 |
+| 100004 | 4.274 | 100 % | 14 | 15 |
+
+Alle vier Zonen erhielten Zensus-Alters-/Haushaltsstrukturen, KBA-BEV-Anteile
+und einen GTFS-Zugangsknoten. Insgesamt wurden 19.608 Einwohner, 46
+öffentliche Ladepunkte und 370 Fahrten am repräsentativen Mittwoch
+(08.07.2026) exportiert. Die fünf berührten Gemeinden sind Bietigheim,
+Muggensturm, Ötigheim, Rastatt und Steinmauern. Eine künstliche, ansonsten
+formal gültige BKG-Teilantwort nur für Rastatt ließ drei Zonen ohne BEV-Anteil;
+der Regionalexport verweigerte das Paket mit `BEV-Anteil fehlt`.
+
+Der ConfigTool-Import, das binäre Zurücklesen und die Simulation 2026–2036
+bestanden; 276 native CSV-Ausgaben enthielten keine nicht endlichen Werte.
+Der Bericht des Prüflaufs liegt unter
+`/private/tmp/mobilecity-cross-municipality-20260928-final/rastatt-source-report.json`.
+Der BKG-Zeitstempel der live abgerufenen Antwort war
+`2026-09-28T07:57:42.611Z` (den exakten Wert pro Wiederholung enthält der Bericht).
+
+**Aussagegrenze:** Die Prüfung belegt einen funktionsfähigen Mehrzonen-Export
+für diesen Ausschnitt. Pkw-Bestände kommen weiterhin aus synthetischen
+Haushalten, das OD-Netz ist aggregiert, und das Modellprofil bleibt
+unkalibriert. Weitere Regionen und der fachliche Relationsvergleich mit
+Takomat sind nicht durch diesen Test abgenommen.

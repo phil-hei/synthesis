@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-"""Offline Rastatt source acceptance: Zensus, pinned KBA/BKG, BNetzA and KVV GTFS.
+"""Rastatt source acceptance with pinned or live BKG municipality boundaries.
 
 Needs the locally prepared tramigo-v2 profile, source archives, .NET 8 and ConfigTool.
-The BKG GeoJSON is a pinned response fixture; this does not test today's live WFS.
+The default one-zone case uses a pinned BKG response; --case cross-municipality
+fetches today's BKG WFS and retains its exact response for review.
 """
 import argparse
+import csv
+import io
 import hashlib
 import json
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 AGE = 'age5-88965e23852b901c2eeb27502688777934ef2d1a4ed20f0e6544b773b35005c5.zip'
@@ -35,7 +39,10 @@ def invoke(command, cwd, log):
 def main(args):
     output = args.work_dir.resolve()
     output.mkdir(parents=True, exist_ok=False)
-    report = {'status': 'failed', 'scope': 'Rastatt one-zone offline source acceptance',
+    live = args.case == 'cross-municipality'
+    report = {'status': 'failed', 'scope': ('Rastatt cross-municipality live BKG source acceptance'
+                                           if live else 'Rastatt one-zone offline source acceptance'),
+              'case': args.case,
               'sources': {}, 'checks': {}, 'errors': []}
     report_path = output / 'rastatt-source-report.json'
     try:
@@ -44,10 +51,11 @@ def main(args):
             'zensusAges': args.structure_source / AGE,
             'zensusHouseholds': args.structure_source / HOUSEHOLDS,
             'kvvGtfs': args.gtfs,
-            'bkgBoundaries': ROOT / 'backend/src/test/resources/mobilecity/bkg-rastatt.geojson',
             'kbaStock': ROOT / 'backend/src/main/resources/reference/kba-private-fleet-2026-07.csv',
             'bnetzaCharging': ROOT / 'backend/src/main/resources/reference/bnetza-public-charging-2026-09-01.csv.gz',
         }
+        if not live:
+            sources['bkgBoundaries'] = ROOT / 'backend/src/test/resources/mobilecity/bkg-rastatt.geojson'
         for name, path in sources.items():
             path = path.resolve()
             if not path.is_file():
@@ -62,7 +70,8 @@ def main(args):
         report['sources']['zensusHouseholds']['referenceDate'] = '2022-05-15'
         report['sources']['kbaStock']['referenceDate'] = '2026-07-01'
         report['sources']['bnetzaCharging']['snapshotDate'] = '2026-09-01'
-        report['sources']['bkgBoundaries']['note'] = 'Pinned response fixture, not a live WFS check'
+        if not live:
+            report['sources']['bkgBoundaries']['note'] = 'Pinned response fixture, not a live WFS check'
 
         profile = output / 'profiles'
         shutil.copytree(args.profile_dir / 'tramigo-v2', profile / 'tramigo-v2')
@@ -71,13 +80,16 @@ def main(args):
         for name in (AGE, HOUSEHOLDS):
             (structure_cache / name).symlink_to((args.structure_source / name).resolve())
         package = output / 'run'
-        command = ['mvn', '-o', '-q', '-Dtest=MobileCityRastattSourcesTest',
+        test_class = ('MobileCityCrossMunicipalitySourcesTest' if live
+                      else 'MobileCityRastattSourcesTest')
+        command = ['mvn', '-o', '-q', f'-Dtest={test_class}',
                    f'-Dsynthesis.mobilecity.rastatt.output={package}',
                    f'-Dsynthesis.mobilecity.rastatt.profile={profile}',
                    f'-Dsynthesis.mobilecity.rastatt.gtfs={args.gtfs.resolve()}',
                    f'-Dsynthesis.mobilecity.rastatt.populationCache={args.population_cache.resolve()}',
                    f'-Dsynthesis.mobilecity.rastatt.structureCache={structure_cache}', 'test']
-        print('Exporting Rastatt from local observed sources...', flush=True)
+        print(('Exporting cross-municipality Rastatt with live BKG WFS...' if live
+               else 'Exporting Rastatt from local observed sources...'), flush=True)
         if invoke(command, ROOT / 'backend', output / 'export-test.log'):
             raise RuntimeError('Rastatt source export failed; see export-test.log')
         report['checks']['sourceIntegration'] = json.loads((package / 'source-check.json').read_text())
@@ -88,6 +100,45 @@ def main(args):
                               ('charging', 'charging-provenance.json')):
             report['checks'][key] = json.loads((mobile / filename).read_text())
         report['checks']['inventory'] = json.loads((mobile / 'data-inventory.json').read_text())
+        if live:
+            boundary = mobile / 'fleet-boundaries.geojson'
+            if not boundary.is_file():
+                raise FileNotFoundError('Live BKG boundary response not retained in export')
+            fleet = report['checks']['fleet']
+            boundary_sha = sha256(boundary)
+            if boundary_sha != fleet.get('boundarySha256'):
+                raise RuntimeError('Retained BKG response hash differs from fleet provenance')
+            if not str(fleet.get('boundarySource', '')).startswith('https://sgx.geodatenzentrum.de/wfs_vg250?'):
+                raise RuntimeError('Fleet source is not the live BKG WFS')
+            report['sources']['bkgBoundaries'] = {
+                'url': fleet['boundarySource'], 'sha256': boundary_sha,
+                'snapshotPath': str(boundary),
+                'responseTime': fleet.get('boundarySnapshotTime'),
+                'note': 'Live BKG WFS response retained; may change on later runs',
+            }
+            integration = report['checks']['sourceIntegration']
+            zones = integration.get('zones', [])
+            if len(zones) < 2 or any(zone.get('bkgCoverage', 0) < .999
+                                     or zone.get('gtfsAccessNodes') != 1 for zone in zones):
+                raise RuntimeError('One or more zones lack full KBA/BKG or GTFS access evidence')
+            with zipfile.ZipFile(mobile / 'gtfs-feed.zip') as archive:
+                stop_file = next((name for name in archive.namelist()
+                                  if name.endswith('stops.txt')), None)
+                if stop_file is None:
+                    raise RuntimeError('Cropped GTFS snapshot lacks stops.txt')
+                for zone in zones:
+                    zone['kvvStopsInZone'] = 0
+                with archive.open(stop_file) as raw:
+                    for stop in csv.DictReader(io.TextIOWrapper(raw, encoding='utf-8-sig')):
+                        lat, lon = float(stop['stop_lat']), float(stop['stop_lon'])
+                        for zone in zones:
+                            b = zone['bounds']
+                            if b['minLat'] <= lat < b['maxLat'] and b['minLon'] <= lon < b['maxLon']:
+                                zone['kvvStopsInZone'] += 1
+            if any(zone['kvvStopsInZone'] == 0 for zone in zones):
+                raise RuntimeError('A study zone has no local KVV stop in the cropped feed')
+            if sum(zone['kvvStopsInZone'] for zone in zones) != integration['kvvStopsInRegion']:
+                raise RuntimeError('Per-zone KVV stop counts differ from the crop report')
         native_dir = output / 'native'
         command = [sys.executable, str(ROOT / 'scripts/validate-mobilecity.py'),
                    '--dotnet', str(args.dotnet.resolve()),
@@ -102,12 +153,18 @@ def main(args):
             report['checks']['native'] = {'status': native.get('status'),
                                           'years': native.get('years', []),
                                           'outputCsvCount': native.get('outputCsvCount', 0),
+                                          'contributionChecks': len(native.get('contributionChecks', [])),
+                                          'failedContributionChecks': sum(
+                                              check.get('passed') is not True
+                                              for check in native.get('contributionChecks', [])),
                                           'errors': native.get('errors', []),
                                           'nonFiniteCells': native.get('nonFiniteCells', [])}
         if native_exit or not native_report.is_file() or report['checks']['native']['status'] != 'passed':
             raise RuntimeError('Native import or simulation failed; see native.log and native/validation-report.json')
         if len(report['checks']['native']['years']) != args.years:
             raise RuntimeError('Native simulation did not cover every requested year')
+        if report['checks']['native']['failedContributionChecks']:
+            raise RuntimeError('Native model did not preserve every checked contribution')
         report['status'] = 'passed'
     except Exception as error:
         report['errors'].append(str(error))
@@ -120,6 +177,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work-dir', type=Path, required=True, help='New output directory')
+    parser.add_argument('--case', choices=('offline', 'cross-municipality'), default='offline',
+                        help='Pinned one-zone fixture or live BKG multi-zone acceptance')
     parser.add_argument('--population-cache', type=Path,
                         default=ROOT / 'backend/data/census-cache')
     parser.add_argument('--structure-source', type=Path,

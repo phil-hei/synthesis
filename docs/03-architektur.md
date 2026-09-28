@@ -481,6 +481,23 @@ KBA liefert den BEV-Anteil. Das Modellprofil ist unkalibriert, das Netz
 besteht aus aggregierten OD-Verbindungen, und weder Logistik noch eine
 Umlandbevölkerung sind in diesem Prüffall modelliert.
 
+Für die gemeindeübergreifende Live-Prüfung:
+
+```bash
+python3 scripts/check-mobilecity-rastatt-sources.py --case cross-municipality \
+  --work-dir /private/tmp/mobilecity-cross-municipality-neuer-lauf
+```
+
+Der Vier-Zonen-Ausschnitt wird über den aktuellen BKG-VG250-WFS abgerufen.
+Der Lauf hält dessen unveränderte Antwort samt Zeitstempel und SHA-256 im Paket
+und Prüfbericht fest. Je Zone weist der Bericht Zensus-Einwohner und
+Strukturauflösung, zugeordnete KBA-Gemeinden und Flächenabdeckung, öffentliche
+Ladepunkte, KVV-Haltestellen im Zonenausschnitt und den GTFS-Zugangsknoten aus.
+Er fordert volle KBA/BKG-Abdeckung und reale KVV-Halte in jeder Zone. Eine
+simulierte Teilantwort nur für Rastatt lässt drei Zonen unbelegt; der Export
+bricht dann ohne stillen BEV-Ersatz ab. Der Live-Lauf setzt Netzverfügbarkeit
+des BKG-Dienstes voraus und kann bei einer Quellenänderung andere Werte liefern.
+
 Der umgesetzte Stand und die weiteren Arbeitspakete mit Abnahmekriterien stehen im
 [MobileCity-Konzept](06-gta-integration-konzept.md#mobilecity-naechste-schritte).
 Die GTFS-Netzabbildung, der BNetzA-Ladepunktadapter, die manuelle Carsharing-Modellierung
