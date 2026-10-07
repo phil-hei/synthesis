@@ -14,7 +14,7 @@ fi
 if [[ $PROFILE == full ]]; then
   export SYNTHESIS_TRANSIT_VENV="$SYNTHESIS_ROOT/validation/transit-venv/bin/python"
   export SYNTHESIS_RUN_ACTITOPP_TEST=true
-  export SYNTHESIS_ACTITOPP_DIR="${SYNTHESIS_ACTITOPP_DIR:-$SYNTHESIS_ROOT/validation/actitoppNG}"
+  export SYNTHESIS_ACTITOPP_DIR="${SYNTHESIS_ACTITOPP_DIR:-$SYNTHESIS_ROOT/adapters/actitopp/build/install/synthesis-actitopp-adapter}"
   export SYNTHESIS_KIT_JAVA_HOME
   SYNTHESIS_KIT_JAVA_HOME=$(kit_java_home)
 fi

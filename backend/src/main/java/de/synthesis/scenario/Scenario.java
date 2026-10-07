@@ -198,6 +198,8 @@ public class Scenario {
         /** Ziel-Modal-Split der Kalibrierung (Anteile je Modus); Default = MiD 2017 bundesweit, editierbar/regional. */
         public Map<String, Double> calibrationTarget = defaultModalSplit();
         public double carsPerHousehold = 1.0;
+        /** Explicit regional assumption for actiTopp; not inferred from census. */
+        public String areaType = "PROVINCIAL";
 
         private static Map<String, Double> defaultModalSplit() {
             Map<String, Double> split = new LinkedHashMap<>();

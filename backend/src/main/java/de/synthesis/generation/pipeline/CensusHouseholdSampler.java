@@ -13,7 +13,7 @@ final class CensusHouseholdSampler {
     private double[] weights;
     private final double[] actualAges = new double[3], actualHouseholds = new double[6];
     private double fitError;
-    private int iterations, truncatedHouseholds;
+    private int iterations, completedBoundaryHouseholds;
 
     CensusHouseholdSampler(PopulationSample sample, CensusStructureSource.Margins target) {
         this.target = target; this.sample = sample;
@@ -93,24 +93,20 @@ final class CensusHouseholdSampler {
     boolean usable() { return Double.isFinite(fitError) && fitError <= MAX_FIT_ERROR; }
 
     List<PopulationSample.Member> draw(Random random, int remaining) {
+        List<PopulationSample.Member> members;
         if (!usable()) {
-            var members = sample.randomHousehold(random);
-            if (members.size() > remaining) { members = members.subList(0, remaining); truncatedHouseholds++; }
-            observe(members);
-            return members;
+            members = sample.randomHousehold(random);
+        } else {
+            // Preserve the fitted distribution and the entire boundary household.
+            double roll = random.nextDouble(); int chosen = weights.length - 1;
+            for (int i = 0; i < weights.length; i++) {
+                roll -= weights[i];
+                if (roll < 0) { chosen = i; break; }
+            }
+            var pool = patterns.get(chosen);
+            members = pool.get(random.nextInt(pool.size()));
         }
-        double sum = 0;
-        for (int i = 0; i < weights.length; i++) if (sizes[i] <= remaining) sum += weights[i];
-        boolean trim = sum <= 1e-12;
-        if (trim) sum = Arrays.stream(weights).sum();
-        double roll = random.nextDouble() * sum; int chosen = -1;
-        for (int i = 0; i < weights.length; i++) {
-            if ((!trim && sizes[i] > remaining) || weights[i] <= 0) continue;
-            chosen = i; roll -= weights[i]; if (roll <= 0) break;
-        }
-        var pool = patterns.get(chosen);
-        var members = pool.get(random.nextInt(pool.size()));
-        if (members.size() > remaining) { members = members.subList(0, remaining); truncatedHouseholds++; }
+        if (members.size() > remaining) completedBoundaryHouseholds++;
         observe(members);
         return members;
     }
@@ -138,7 +134,8 @@ final class CensusHouseholdSampler {
         r.put("sampleMaxShareError", Arrays.stream(actualAges).sum() == 0 ? null : Math.max(
                 maxDifference(CensusStructureSource.shares(actualAges), target.ages()),
                 maxDifference(CensusStructureSource.shares(actualHouseholds), target.households())));
-        r.put("truncatedHouseholds", truncatedHouseholds);
+        r.put("truncatedHouseholds", 0);
+        r.put("completedBoundaryHouseholds", completedBoundaryHouseholds);
         List<String> missing = new ArrayList<>();
         for (int k = 0; k < 9; k++) {
             boolean present = false;

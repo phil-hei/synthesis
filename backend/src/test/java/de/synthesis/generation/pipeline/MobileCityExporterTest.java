@@ -64,7 +64,7 @@ class MobileCityExporterTest {
     }
 
     @Test
-    void preservesGlobalPopulationAndCarTotalsAcrossFractionalZoneWeights(@TempDir Path artifacts)
+    void preservesSourcePopulationAndExpandsCarOwnershipAcrossFractionalZoneWeights(@TempDir Path artifacts)
             throws Exception {
         List<Zone> zones = new ArrayList<>();
         for (int i = 0; i < 9; i++) {
@@ -83,9 +83,27 @@ class MobileCityExporterTest {
         MobileCityPopulation mobile = new MobileCityPopulation(
                 zones, artifacts.resolve("population"), 1, 2026);
 
+        // Whole households may overshoot the synthetic target. MobileCity still uses
+        // the source population and expands the sampled ownership shares per zone.
         assertThat(java.util.Arrays.stream(mobile.ages)
-                .flatMapToLong(java.util.Arrays::stream).sum()).isEqualTo(generated.persons().size());
-        assertThat(java.util.Arrays.stream(mobile.cars).sum()).isEqualTo(generated.carCount());
+                .flatMapToLong(java.util.Arrays::stream).sum()).isEqualTo(250);
+        Map<Long, Integer> householdZones = new LinkedHashMap<>();
+        generated.persons().forEach(person -> householdZones.put(
+                person.householdId(), person.homeZoneIndex()));
+        long[] cars = new long[zones.size()];
+        for (String row : Files.readAllLines(artifacts.resolve("population/car.csv")).subList(
+                1, generated.carCount() + 1)) {
+            cars[householdZones.get(Long.parseLong(row.split(";", -1)[0]))]++;
+        }
+        double expectedCars = 0;
+        for (int i = 0; i < zones.size(); i++) {
+            int index = i;
+            long size = generated.persons().stream()
+                    .filter(person -> person.homeZoneIndex() == index).count();
+            long exportedPopulation = java.util.Arrays.stream(mobile.ages[i]).sum();
+            expectedCars += exportedPopulation * cars[i] / (double) size;
+        }
+        assertThat(java.util.Arrays.stream(mobile.cars).sum()).isEqualTo(Math.round(expectedCars));
     }
 
     /** Independent emulation of the Config Tool's padded separator/table-block logic. */

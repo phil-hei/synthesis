@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-02",
+  "contract": "synthesis-logitopp-adapter-v2",
+  "java": "25.0.4",
+  "upstream": {
+    "logitopp": "70f4f6771034f4d1ec9050bb3744114428f67fa3",
+    "mobitopp_rastatt": "8ba241b6d1cd4dbb9e0e961acd9f381a0f454611",
+    "mobitopp_jar": "0.3.580"
+  },
+  "source_policy": "git archive of pinned original commits; no working-tree patches; distinct Synthesis classes; generated binding manifest checked",
+  "fixture": "existing 0e020eab exported population and demand; parcel settings copied to temporary fixture with returns enabled at 20 percent",
+  "persons": 1966,
+  "population_fraction_at_native_run": 1.0,
+  "days": 7,
+  "backend_launcher_run": {
+    "exit_code": 0,
+    "duration_seconds": 3
+  },
+  "results": {
+    "person_trip_rows": 44021,
+    "people_with_trips": 1944,
+    "parcel_orders": 1792,
+    "unique_parcels_in_states": 1792,
+    "delivery_orders": 1499,
+    "pickup_orders": 293,
+    "final_states": [
+      {
+        "pickup": false,
+        "state": "DELIVERED",
+        "count": 1329
+      },
+      {
+        "pickup": false,
+        "state": "UNDEFINED",
+        "count": 170
+      },
+      {
+        "pickup": true,
+        "state": "DELIVERED",
+        "count": 262
+      },
+      {
+        "pickup": true,
+        "state": "UNDEFINED",
+        "count": 31
+      }
+    ],
+    "planned_tour_stop_rows": 1177
+  },
+  "adapter_tests": {
+    "passed": 4,
+    "cases": [
+      "delivery registers exactly once",
+      "pickup registers exactly once",
+      "same-day delay preserves duration",
+      "next-day delay removes intermediate activity and adjusts duration"
+    ]
+  },
+  "backend_runner_tests": {
+    "passed": 6
+  },
+  "limitations": [
+    "Existing exported weekly plans were used; this is not a fresh actiTopp-to-logiTopp household generation test.",
+    "Undelivered/uncollected orders remain at week end; native success is not a completion guarantee.",
+    "TSP still geometric; SUMO delays do not update activity plans online.",
+    "Destination choice diagnostic probe is not enabled in this adapter."
+  ],
+  "artifact_hashes": {
+    "demandsimulationResult.csv": "fa28cd7be1c3a045ca3d4d0b314a60ce03a29c5b5c872db1fda06c3d8be8607e",
+    "parcel-demand.csv": "7a290936f0d4532bc38604a5ebef070782e6f9669d3f45a019e9a72c6ba8b23b",
+    "parcel-states.csv": "3de3e5265b42b8880610c6242f970a5ee32c361812053ca2057a01e319437aae",
+    "planned-tours.csv": "2cde72ba225386d9f043e21c2c2a5367d2aae676da80bd3c4415972630bc7130"
+  },
+  "backend_tests": {
+    "total": 221,
+    "passed": 212,
+    "skipped": 9,
+    "failures": 0,
+    "errors": 0
+  },
+  "no_kit_class_replacement": {
+    "own_class_files": 9,
+    "overlapping_class_names_with_kit_jars": 0
+  },
+  "preflight": {
+    "adapter_markers_and_launchers": "passed",
+    "overall": "failed on existing unrelated environment checks",
+    "remaining": [
+      "Skill registry differences between .agents and .claude",
+      "Ollama qwen2.5:7b-instruct not running"
+    ]
+  }
+}

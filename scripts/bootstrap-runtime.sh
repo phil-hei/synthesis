@@ -55,8 +55,8 @@ if [[ $PROFILE == kit || $PROFILE == all ]]; then
 
   publish_kit_dependency "$SYNTHESIS_ROOT/validation/kotlin-units" 1.0.0
   publish_kit_dependency "$SYNTHESIS_ROOT/validation/DCML" 1.1.0
-  sh "$SYNTHESIS_ROOT/legacy/actitopp-synthesis-v1/apply.sh"
-  sh "$SYNTHESIS_ROOT/legacy/logitopp-returns-v1/apply.sh"
+  bash "$SYNTHESIS_ROOT/scripts/build-actitopp-adapter.sh"
+  bash "$SYNTHESIS_ROOT/scripts/build-logitopp-adapter.sh"
 fi
 
 if [[ $PROFILE == transit || $PROFILE == all ]]; then

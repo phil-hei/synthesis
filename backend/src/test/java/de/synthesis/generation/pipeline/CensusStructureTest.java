@@ -82,7 +82,7 @@ class CensusStructureTest {
         assertThat(((List<?>)impossible.report().get("unsupportedGroups")).contains("household-size-6+")).isTrue();
     }
 
-    @Test void rejectedFitReportsAppliedSeedSharesAndCountsTruncatedHouseholds() {
+    @Test void rejectedFitRetainsCompleteBoundaryHousehold() {
         var pool = PopulationSample.fromResource("/kit-population-sample.csv");
         var target = margins(new double[]{.1,.4,.5},new double[]{.4,.3,.12,.08,.06,.04});
         var sampler = new CensusHouseholdSampler(pool,target);
@@ -93,8 +93,9 @@ class CensusStructureTest {
         assertThat((double[])sampler.report().get("expectedAgeShares"))
                 .containsExactly(CensusStructureSource.shares(counts), org.assertj.core.data.Offset.offset(1e-12));
         assertThat(pool.randomHousehold(new Random(0))).hasSizeGreaterThan(1);
-        assertThat(sampler.draw(new Random(0),1)).hasSize(1);
-        assertThat(sampler.report().get("truncatedHouseholds")).isEqualTo(1);
+        assertThat(sampler.draw(new Random(0),1)).isEqualTo(pool.randomHousehold(new Random(0)));
+        assertThat(sampler.report().get("truncatedHouseholds")).isEqualTo(0);
+        assertThat(sampler.report().get("completedBoundaryHouseholds")).isEqualTo(1);
     }
 
     @Test void rastattMarginsMeetDeclaredFitAndSamplingLimitsAcrossSeeds() {
@@ -110,7 +111,7 @@ class CensusStructureTest {
             while (remaining>0) remaining -= sampler.draw(random,remaining).size();
             assertThat((Double)sampler.report().get("fitMaxShareError")).isLessThanOrEqualTo(.02);
             assertThat((Double)sampler.report().get("sampleMaxShareError")).isLessThan(.04);
-            assertThat(sampler.report().get("samplePersons")).isEqualTo(20000.0);
+            assertThat((Double)sampler.report().get("samplePersons")).isBetween(20000.0, 20004.0);
         }
     }
 
@@ -126,10 +127,10 @@ class CensusStructureTest {
             var generator = new PopulationGenerator(zones,new Random(42)); generator.useCensusStructure(source);
             Path population = dir.resolve(run).resolve("population");
             var result = generator.generate(population,scenario);
-            assertThat(result.persons()).hasSize(200).allMatch(p -> p.age()>=65);
+            assertThat(result.persons()).hasSizeBetween(200,204).allMatch(p -> p.age()>=65);
             Files.writeString(population.resolve("activity.csv"), "personOid;activityType;activityNr\n");
             var exported = new MobileCityPopulation(zones,population,1,2026);
-            assertThat(exported.ages[home.index]).containsExactly(0,0,200);
+            assertThat(exported.ages[home.index]).containsExactly(0,0,result.persons().size());
             new MobileCityExporter(zones,scenario,null).export(dir.resolve(run));
             assertThat(Files.readString(dir.resolve(run).resolve("mobilecity/POPinhabitants.csv"))).contains("Seniors");
         }

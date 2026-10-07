@@ -41,10 +41,17 @@ class PopulationGeneratorTest {
         PopulationGenerator.Result result =
                 new PopulationGenerator(zones, new Random(42)).generate(dir, scenario);
 
-        assertEquals(2_000, result.persons().size(),
-                "5 % von 40.000 müssen unabhängig von der Zonenzahl exakt 2.000 Personen ergeben");
-        assertEquals(2_001, java.nio.file.Files.readAllLines(dir.resolve("person.csv")).size(),
-                "CSV enthält Header plus exakt die globale Stichprobe");
+        int maxHouseholdSize = PopulationSample.fromResource("/kit-population-sample.csv")
+                .households().stream().mapToInt(List::size).max().orElseThrow();
+        assertTrue(result.persons().size() >= 2000 && result.persons().size() < 2000 + maxHouseholdSize,
+                "Rundung ganzer Haushalte darf sich nicht über 576 Zonen aufsummieren");
+        assertEquals(result.persons().size() + 1,
+                java.nio.file.Files.readAllLines(dir.resolve("person.csv")).size());
+        var rounding = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(dir.resolve("household-rounding.json").toFile());
+        assertEquals(2000, rounding.path("targetPersons").asInt());
+        assertEquals(result.persons().size() - 2000, rounding.path("difference").asInt());
+
     }
 
     @Test
@@ -201,4 +208,48 @@ class PopulationGeneratorTest {
                         .filter(person -> treatmentZones.get(person.workZoneIndex()).external).count(),
                 "Anker-Geometrie darf die vorab gewählte Außenquote nicht verändern");
     }
+    @Test
+    void fixedDestinationsPreferFastNetworkConnectionOverEqualGeometry(@TempDir Path dir) throws Exception {
+        List<Zone> zones = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            Zone z = new Zone(); z.index = i; z.id = 100000 + i;
+            z.minLat = 48; z.maxLat = 48.01; z.minLon = 8; z.maxLon = 8.01;
+            z.centroidLat = 48.005; z.centroidLon = 8.005;
+            z.population = i == 0 ? 2000 : 0;
+            z.attractivities.put("Work", i == 0 ? 0.0 : 1000.0);
+            zones.add(z);
+        }
+        var generator = new PopulationGenerator(zones, new Random(42), 42);
+        generator.useDestinationTravelTimes(new float[][]{{5, 5, 120}, {5, 5, 120}, {120, 120, 5}});
+        Scenario scenario = new Scenario(); scenario.population.useKitPopulation = false;
+        var result = generator.generate(dir, scenario);
+        long fast = result.persons().stream().filter(p -> p.workZoneIndex() == 1).count();
+        long slow = result.persons().stream().filter(p -> p.workZoneIndex() == 2).count();
+        assertTrue(fast > slow * 10, "Identische Geometrie, aber schnelle Netzverbindung muss Zielwahl prägen");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> generator.useDestinationTravelTimes(new float[][]{{5}}));
+    }
+
+    @Test void unreachableFixedDestinationsDoNotSilentlyChooseLastZone(@TempDir Path dir) {
+        Zone home = new Zone(); home.index = 0; home.id = 100000; home.population = 1;
+        home.minLat = 48; home.maxLat = 48.01; home.minLon = 8; home.maxLon = 8.01;
+        var generator = new PopulationGenerator(List.of(home), new Random(42));
+        generator.useDestinationTravelTimes(new float[][]{{Float.POSITIVE_INFINITY}});
+        Scenario scenario = new Scenario(); scenario.population.useKitPopulation = false;
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> generator.generate(dir, scenario));
+    }
+
+    @Test void completesLastPoolHouseholdInsteadOfRemovingFamilyMembers(@TempDir Path dir) throws Exception {
+        var original = PopulationSample.fromResource("/kit-population-sample.csv").randomHousehold(new Random(0));
+        assertTrue(original.size() > 1);
+        Zone home = new Zone(); home.index = 0; home.id = 100000; home.population = 1;
+        home.minLat = 48; home.maxLat = 48.01; home.minLon = 8; home.maxLon = 8.01;
+        Scenario scenario = new Scenario(); scenario.population.useKitPopulation = true;
+        var result = new PopulationGenerator(List.of(home), new Random(0)).generate(dir, scenario);
+        assertEquals(original.stream().map(PopulationSample.Member::age).toList(),
+                result.persons().stream().map(PopulationGenerator.PersonRef::age).toList());
+        assertEquals(1, result.householdCount());
+    }
+
 }

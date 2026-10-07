@@ -1,0 +1,54 @@
+plugins { id 'application' }
+allprojects {
+    apply plugin: 'java-library'
+    repositories { mavenCentral() }
+    java { toolchain { languageVersion = JavaLanguageVersion.of(25) }; withSourcesJar() }
+    configurations.all { exclude group: 'xerces', module: 'xerces' }
+    dependencies {
+        compileOnly 'org.projectlombok:lombok:1.18.46'
+        annotationProcessor 'org.projectlombok:lombok:1.18.46'
+    }
+}
+dependencies {
+    implementation project(':rastatt-core'); implementation project(':logitopp-core')
+    runtimeOnly 'org.mozilla:rhino-engine:1.8.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
+    testImplementation 'org.mockito:mockito-core:5.11.0'
+}
+test { useJUnitPlatform(); systemProperty 'net.bytebuddy.experimental', 'true' }
+
+application {
+    mainClass = 'edu.kit.ifv.mobitopp.simulation.SynthesisDeliveryRunner'
+    applicationDefaultJvmArgs = ['-Xmx12G', '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.util=ALL-UNNAMED', '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED']
+}
+project(':logitopp-core') {
+    sourceSets.main.java.srcDirs = ["${rootProject.property('logitoppSourceDir')}/src/main/java"]
+    sourceSets.main.resources.srcDirs = ["${rootProject.property('logitoppSourceDir')}/src/main/resources"]
+    dependencies {
+        api files("${rootProject.property('rastattSourceDir')}/libs/mobitopp-0.3.580.jar")
+        api 'org.jgrapht:jgrapht-core:1.5.1'
+        api 'org.yaml:snakeyaml:1.17'
+        api 'org.apache.commons:commons-compress:1.28.0'
+        api 'com.google.code.gson:gson:2.13.2'
+    }
+}
+project(':rastatt-core') {
+    sourceSets.main.java.srcDirs = ["${rootProject.property('rastattSourceDir')}/src/main/java", "${rootDir}/../../legacy/logitopp-returns-v1/harness-artifacts/src/main/java"]
+    sourceSets.main.resources.srcDirs = ["${rootProject.property('rastattSourceDir')}/src/main/resources"]
+    dependencies {
+        api project(':logitopp-core')
+        api files("${rootProject.property('rastattSourceDir')}/libs/actitopp-1.9.2.53.jar")
+        api 'net.sf.opencsv:opencsv:2.3'
+        api 'org.slf4j:slf4j-api:1.7.36'
+        runtimeOnly 'org.slf4j:slf4j-simple:1.7.36'
+    }
+}
+distributions.main.contents {
+    from("${property('rastattSourceDir')}/config/shared") { into 'config/shared' }
+    from("${property('rastattSourceDir')}/data/rastatt/rastatt.net.bz2") { into 'data/rastatt' }
+    from(property('rastattSourceDir')) { include '*LICENSE*', '*COPYING*'; into 'licenses/mobitopp-rastatt' }
+    from(property('logitoppSourceDir')) { include '*LICENSE*', '*COPYING*'; into 'licenses/logitopp' }
+    from(property('rastattSourceDir')) { include 'src/**'; into 'sources/mobitopp-rastatt' }
+    from(property('logitoppSourceDir')) { include 'src/**'; into 'sources/logitopp' }
+}

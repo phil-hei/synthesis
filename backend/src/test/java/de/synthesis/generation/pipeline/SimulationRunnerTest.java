@@ -10,7 +10,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifiziert die Parameter-Overrides in der logiTopp-Run-Config OHNE echten Gradle-Lauf
@@ -131,7 +131,7 @@ class SimulationRunnerTest {
         assertThrows(java.io.IOException.class, runner::verifyHarnessContract,
                 "Ein fehlender Marker darf nicht als kompatibler Harness gelten");
 
-        Path marker = project.resolve("config/synthesis/harness-contract.properties");
+        Path marker = project.resolve("synthesis-contract.properties");
         Files.writeString(marker, "contractVersion=old-contract\n");
         assertThrows(java.io.IOException.class, runner::verifyHarnessContract,
                 "Eine unbekannte Vertragsversion muss sichtbar fehlschlagen");
@@ -139,4 +139,29 @@ class SimulationRunnerTest {
         Files.writeString(marker, "contractVersion=" + SimulationRunner.HARNESS_CONTRACT + "\n");
         assertDoesNotThrow(runner::verifyHarnessContract);
     }
+    @Test
+    void startsPrebuiltLauncherWithConfigAndRequiresContract() throws Exception {
+        Path[] p = prepare();
+        Path distribution = tempDir.resolve("adapter distribution");
+        Files.createDirectories(distribution.resolve("bin"));
+        SynthesisProperties.Simulation settings = new SynthesisProperties.Simulation();
+        settings.setProjectDir(distribution.toString());
+        SimulationRunner runner = new SimulationRunner(settings);
+        assertFalse(runner.isAvailable());
+        Files.writeString(distribution.resolve("synthesis-contract.properties"),
+                "contractVersion=" + SimulationRunner.HARNESS_CONTRACT + "\n");
+        Files.writeString(distribution.resolve("bin/synthesis-logitopp-adapter"), """
+                #!/bin/sh
+                test "$#" -eq 1 || exit 2
+                test -f "$1" || exit 3
+                test -f synthesis-contract.properties || exit 4
+                cat "$1"
+                """);
+        assertTrue(runner.isAvailable());
+        var result = runner.run(scenario(), p[1], message -> {});
+        assertEquals(p[1].resolve("simulation/results"), result.resultsDir());
+        assertTrue(Files.readString(p[1].resolve("simulation/run.log"))
+                .contains("harnessContract: " + SimulationRunner.HARNESS_CONTRACT));
+    }
+
 }

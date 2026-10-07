@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2480" height="980" viewBox="0 0 2480 980">
+<defs><marker id="a" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#56677d" stroke-width="1.5"/></marker></defs>
+<rect width="2480" height="980" fill="white"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#24374c}.title{font-size:38px;font-weight:700}.sub{font-size:23px;fill:#526477}.head{font-size:25px;font-weight:700;fill:white}.body{font-size:23px}.label{font-size:19px;font-weight:700;fill:#526477}.out{font-size:22px;font-weight:700}</style>
+<text x="38" y="55" class="title">SyntheSis – vom Szenario zu Nachfrage und Simulation</text>
+<text x="38" y="96" class="sub">Acht aufeinanderfolgende Phasen · Jede Phase entspricht einer Vertiefungsfolie · Stand 30.09.2026</text>
+<rect x="36" y="143" width="280" height="434" rx="16" fill="#f5f8fc" stroke="#d7e0e9"/>
+<rect x="36" y="143" width="280" height="64" rx="16" fill="#365c91" stroke="#365c91"/>
+<text x="53" y="184" class="head">1  Szenario</text>
+<text x="53" y="251" class="body">Gebiet und Bezugsjahr</text>
+<text x="53" y="294" class="body">Auflösung und Ziele</text>
+<text x="53" y="337" class="body">Bevölkerungsvorgaben</text>
+<text x="53" y="380" class="body">Logistikkonzept</text>
+<path d="M53 421H299" stroke="#d7e0e9"/>
+<text x="53" y="454" class="label">ERGEBNIS</text>
+<text x="53" y="493" class="out">Szenariokonfiguration</text>
+<text x="53" y="525" class="out">und Nutzervorgaben</text>
+<path d="M317 340H336" fill="none" stroke="#56677d" stroke-width="3" marker-end="url(#a)"/>
+<rect x="340" y="143" width="280" height="434" rx="16" fill="#f5f8fc" stroke="#d7e0e9"/>
+<rect x="340" y="143" width="280" height="64" rx="16" fill="#2a6bd4" stroke="#2a6bd4"/>
+<text x="357" y="184" class="head">2  Zonierung</text>
+<text x="357" y="251" class="body">EPSG:3035-Raster</text>
+<text x="357" y="294" class="body">Verkehrszellen und IDs</text>
+<text x="357" y="337" class="body">Gebiet in Zellen teilen</text>
+<text x="357" y="380" class="body">INSPIRE als Quellraster</text>
+<path d="M357 421H603" stroke="#d7e0e9"/>
+<text x="357" y="454" class="label">ERGEBNIS</text>
+<text x="357" y="493" class="out">Zonen und Geometrien</text>
+<text x="357" y="525" class="out">als räumlicher Bezug</text>
+<path d="M621 340H640" fill="none" stroke="#56677d" stroke-width="3" marker-end="url(#a)"/>
+<rect x="644" y="143" width="280" height="434" rx="16" fill="#f5f8fc" stroke="#d7e0e9"/>
+<rect x="644" y="143" width="280" height="64" rx="16" fill="#247e99" stroke="#247e99"/>
+<text x="661" y="184" class="head">3  Datengrundlage</text>
+<text x="661" y="251" class="body">OSM: Orte und Straßen</text>
+<text x="661" y="294" class="body">Zensus: Einwohner</text>
+<text x="661" y="337" class="body">Regionale Strukturen</text>
+<text x="661" y="380" class="body">Optional: Pendlerdaten</text>
+<path d="M661 421H907" stroke="#d7e0e9"/>
+<text x="661" y="454" class="label">ERGEBNIS</text>
+<text x="661" y="493" class="out">Zonale Bevölkerung</text>
+<text x="661" y="525" class="out">und Zielattraktivitäten</text>
+<path d="M925 340H944" fill="none" stroke="#56677d" stroke-width="3" marker-end="url(#a)"/>
+<rect x="948" y="143" width="280" height="434" rx="16" fill="#f5f8fc" stroke="#d7e0e9"/>
+<rect x="948" y="143" width="280" height="64" rx="16" fill="#408447" stroke="#408447"/>
+<text x="965" y="184" class="head">4  Bevölkerung</text>
+<text x="965" y="251" class="body">Haushalte und Personen</text>
+<text x="965" y="294" class="body">Alter, Pkw und Ziele</text>
+<text x="965" y="337" class="body">KIT-Pool / Synthese</text>
+<text x="965" y="380" class="body">Optional: Nachgewichtung</text>
+<path d="M965 421H1211" stroke="#d7e0e9"/>
+<text x="965" y="454" class="label">ERGEBNIS</text>
+<text x="965" y="493" class="out">Synthetische Haushalte,</text>
+<text x="965" y="525" class="out">Personen und Pkw</text>
+<path d="M1229 340H1248" fill="none" stroke="#56677d" stroke-width="3" marker-end="url(#a)"/>
+<rect x="1252" y="143" width="280" height="434" rx="16" fill="#f5f8fc" stroke="#d7e0e9"/>
+<rect x="1252" y="143" width="280" height="64" rx="16" fill="#628936" stroke="#628936"/>
+<text x="1269" y="184" class="head">5  Aktivitäten</text>
+<text x="1269" y="251" class="body">Wochenpläne je Person</text>
+<text x="1269" y="294" class="body">actiTopp als Standard</text>
+<text x="1269" y="337" class="body">Alternativ: GTA/Vorlagen</text>
+<text x="1269" y="380" class="body">Arbeit, Einkauf, Freizeit</text>
+<path d="M1269 421H1515" stroke="#d7e0e9"/>
+<text x="1269" y="454" class="label">ERGEBNIS</text>
+<text x="1269" y="493" class="out">Aktivitätsfolgen</text>
+<text x="1269" y="525" class="out">mit Zeiten und Dauer</text>
+<path d="M1533 340H1552" fill="none" stroke="#56677d" stroke-width="3" marker-end="url(#a)"/>
+<rect x="1556" y="143" width="280" height="434" rx="16" fill="#f5f8fc" stroke="#d7e0e9"/>
+<rect x="1556" y="143" width="280" height="64" rx="16" fill="#d47a15" stroke="#d47a15"/>
+<text x="1573" y="184" class="head">6  Netz &amp; Logistik</text>
+<text x="1573" y="251" class="body">GraphHopper-Matrizen</text>
+<text x="1573" y="294" class="body">Zeiten, Distanzen, Kosten</text>
+<text x="1573" y="337" class="body">Depots / Paketstationen</text>
+<text x="1573" y="380" class="body">Paketraten und Zustellorte</text>
+<path d="M1573 421H1819" stroke="#d7e0e9"/>
+<text x="1573" y="454" class="label">ERGEBNIS</text>
+<text x="1573" y="493" class="out">Erreichbarkeiten und</text>
+<text x="1573" y="525" class="out">Logistikeingaben</text>
+<path d="M1837 340H1856" fill="none" stroke="#56677d" stroke-width="3" marker-end="url(#a)"/>
+<rect x="1860" y="143" width="280" height="434" rx="16" fill="#f5f8fc" stroke="#d7e0e9"/>
+<rect x="1860" y="143" width="280" height="64" rx="16" fill="#8150b1" stroke="#8150b1"/>
+<text x="1877" y="184" class="head">7  Nachfrage</text>
+<text x="1877" y="251" class="body">mobiTopp / logiTopp</text>
+<text x="1877" y="294" class="body">Ziel- und Moduswahl</text>
+<text x="1877" y="337" class="body">Private Paketaufträge</text>
+<text x="1877" y="380" class="body">Zustelltouren</text>
+<path d="M1877 421H2123" stroke="#d7e0e9"/>
+<text x="1877" y="454" class="label">ERGEBNIS</text>
+<text x="1877" y="493" class="out">Personenwege, Pakete,</text>
+<text x="1877" y="525" class="out">Touren und OD-Ströme</text>
+<path d="M2141 340H2160" fill="none" stroke="#56677d" stroke-width="3" marker-end="url(#a)"/>
+<rect x="2164" y="143" width="280" height="434" rx="16" fill="#f5f8fc" stroke="#d7e0e9"/>
+<rect x="2164" y="143" width="280" height="64" rx="16" fill="#198899" stroke="#198899"/>
+<text x="2181" y="184" class="head">8  Simulation</text>
+<text x="2181" y="251" class="body">SUMO-Verkehrsablauf</text>
+<text x="2181" y="294" class="body">OSM-Netz + Nachfrage</text>
+<text x="2181" y="337" class="body">Karten und Kennzahlen</text>
+<text x="2181" y="380" class="body">Optional: Netz-Feedback</text>
+<path d="M2181 421H2427" stroke="#d7e0e9"/>
+<text x="2181" y="454" class="label">ERGEBNIS</text>
+<text x="2181" y="493" class="out">Verkehrsbelastungen</text>
+<text x="2181" y="525" class="out">und Auswertungen</text>
+<rect x="36" y="617" width="1800" height="76" rx="16" fill="#eaf0f7" stroke="#d7e0e9"/>
+<text x="57" y="649" class="out">Phasen 1–6 bauen das SyntheSis Mobility &amp; Logistics Model auf.</text>
+<text x="57" y="679" class="body">Raum · Bevölkerung · Aktivitäten · Netze · Logistik · Quellen und Annahmen</text>
+<rect x="1860" y="617" width="584" height="76" rx="16" fill="#f3edfa" stroke="#d7e0e9"/>
+<text x="1880" y="649" class="out">Phasen 7–8 erzeugen Ergebnisse.</text>
+<text x="1880" y="679" class="body">Nachfrage → Verkehrsablauf → Auswertung</text>
+<path d="M1700 578V610" fill="none" stroke="#56677d" stroke-width="3" marker-end="url(#a)"/>
+<path d="M1700 694V739" fill="none" stroke="#56677d" stroke-width="3" marker-end="url(#a)"/>
+<rect x="36" y="750" width="2408" height="123" rx="16" fill="#edf7f9" stroke="#d7e0e9"/>
+<text x="58" y="790" class="out">MobileCity-Export: heute nach der Vorbereitung in Phase 6, vor der Nachfragesimulation in Phase 7</text>
+<text x="58" y="828" class="body">Aggregierte Eingaben + GTFS + optionale KBA-/BKG-/BNetzA-Daten + Referenzparameter → Konfiguration; native Prüfung optional.</text>
+<text x="58" y="856" class="sub">Eine Übergabe der späteren logiTopp-Nachfrage ist noch abzustimmen und zu implementieren.</text>
+<text x="38" y="920" class="sub">Einordnung: Fachliche Präsentationsphasen, keine zusätzlichen Softwaremodule. Zielmodelle und Zusatzquellen sind wählbar.</text>
+<text x="38" y="954" class="sub">Noch offen: gebäudebasierte Wohnpunkte, gemeinsame Netzrouten für Touren, GTFS-Zeitmatrix und durchgehende Exportfreigabe.</text>
+</svg>

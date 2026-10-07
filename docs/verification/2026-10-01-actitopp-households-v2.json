@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-01",
+  "contract": "synthesis-actitopp-households-v2",
+  "coreSource": "unchanged pinned KIT commit 69729de78326dca5e4853c94bac1161d51592513, compiled from git archive",
+  "runtime": "Java 25",
+  "populationPersons": 1966,
+  "households": 986,
+  "cars": 986,
+  "plannedPersons": 1874,
+  "infantsUsingBackendFallback": 92,
+  "activities": 49468,
+  "allHouseholdAttributesMatchPopulation": true,
+  "allNonInfantPersonsCovered": true,
+  "allActivitiesHaveValidTimes": true,
+  "backendTests": {
+    "tests": 220,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 8
+  },
+  "frontendTestsPassed": 52,
+  "frontendProductionBuild": "passed",
+  "limitations": [
+    "No logiTopp adapter migration yet",
+    "No automated regional area type or commute distances yet",
+    "Population sampler can still trim the last seed household",
+    "No claim of coordinated shared car use"
+  ]
+}

@@ -95,16 +95,17 @@ if [[ $PROFILE == full ]]; then
   check_repo "logitopp" "$SYNTHESIS_ROOT/validation/logitopp" "$SYNTHESIS_LOGITOPP_COMMIT"
   check_repo "mobitopp-rastatt" "$SYNTHESIS_ROOT/validation/mobitopp-rastatt" "$SYNTHESIS_MOBITOPP_RASTATT_COMMIT"
 
-  grep -q '^contractVersion=synthesis-actitopp-v1$' \
-    "$SYNTHESIS_ROOT/validation/actitoppNG/synthesis-contract.properties" 2>/dev/null \
-    && ok "actiTopp-Vertrag" || fail "actiTopp-Vertrag (apply.sh ausführen)"
-  [[ -f $SYNTHESIS_ROOT/validation/actitoppNG/src/main/kotlin/SynthesisRunner.kt ]] \
-    && ok "actiTopp-Runner" || fail "actiTopp-Runner"
-  grep -q 'runSynthesis' "$SYNTHESIS_ROOT/validation/actitoppNG/build.gradle.kts" 2>/dev/null \
-    && ok "actiTopp-Gradle-Task" || fail "actiTopp-Gradle-Task"
-  grep -q '^contractVersion=synthesis-logitopp-returns-v1$' \
-    "$SYNTHESIS_ROOT/validation/mobitopp-rastatt/config/synthesis/harness-contract.properties" 2>/dev/null \
-    && ok "logiTopp-Harness-Vertrag" || fail "logiTopp-Harness-Vertrag"
+  actitopp_dist="$SYNTHESIS_ROOT/adapters/actitopp/build/install/synthesis-actitopp-adapter"
+  grep -q '^contractVersion=synthesis-actitopp-households-v2$' \
+    "$actitopp_dist/synthesis-contract.properties" 2>/dev/null \
+    && ok "Separater actiTopp-Haushaltsadapter" || fail "actiTopp-Adapter (scripts/build-actitopp-adapter.sh ausführen)"
+  [[ -f $actitopp_dist/bin/synthesis-actitopp-adapter ]] \
+    && ok "actiTopp-Launcher" || fail "actiTopp-Launcher"
+  grep -q '^contractVersion=synthesis-logitopp-adapter-v2$' \
+    "$SYNTHESIS_ROOT/adapters/logitopp/build/install/synthesis-logitopp-adapter/synthesis-contract.properties" 2>/dev/null \
+    && ok "Separater logiTopp-Adapter" || fail "Separater logiTopp-Adapter"
+  [[ -f $SYNTHESIS_ROOT/adapters/logitopp/build/install/synthesis-logitopp-adapter/bin/synthesis-logitopp-adapter ]] \
+    && ok "logiTopp-Launcher" || fail "logiTopp-Launcher"
 
   for executable in sumo netconvert duarouter; do
     has "$executable" && ok "$executable" || fail "$executable"

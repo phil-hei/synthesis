@@ -159,7 +159,8 @@ public class SynthesisProperties {
         }
         /** Simulierter Tag (0 = Montag) und Obergrenze der Fahrzeug-Trips (Performance). */
         private int day = 0;
-        private int maxTrips = 4000;
+        /** Negative Werte: unbegrenzt; 0: keine Personenwege; positiv: Testlimit je Modus. */
+        private int maxTrips = -1;
         private int timeoutMinutes = 15;
         /** Zonen-Obergrenze fürs Netz-Feedback (OD-Routing ist n²). */
         private int feedbackMaxZones = 150;
@@ -188,11 +189,11 @@ public class SynthesisProperties {
         public void setFeedbackTolerance(double feedbackTolerance) { this.feedbackTolerance = feedbackTolerance; }
     }
 
-    /** KIT actiTopp (actitoppNG) activity scheduling, run as a Gradle task. */
+    /** KIT actiTopp (actitoppNG) activity scheduling via a separate SyntheSis adapter. */
     public static class Actitopp {
         private boolean enabled = true;
-        /** Pfad zum actitoppNG-Projekt (gradlew + runSynthesis). */
-        private String projectDir = "../validation/actitoppNG";
+        /** Pfad zur installDist-Ausgabe des separaten SyntheSis-Adapters. */
+        private String projectDir = "../adapters/actitopp/build/install/synthesis-actitopp-adapter";
         private int timeoutMinutes = 20;
 
         public boolean isEnabled() { return enabled; }
@@ -203,11 +204,11 @@ public class SynthesisProperties {
         public void setTimeoutMinutes(int timeoutMinutes) { this.timeoutMinutes = timeoutMinutes; }
     }
 
-    /** logiTopp-Lauf (Pipeline-Stufe 12) im Legacy-Projekt mobitopp-rastatt. */
+    /** logiTopp-Lauf (Pipeline-Stufe 12) im separaten SyntheSis-Adapter. */
     public static class Simulation {
         private boolean enabled = true;
-        /** Pfad zum mobitopp-rastatt-Projekt (gradlew + runDeliverySynthesis). */
-        private String projectDir = "../validation/mobitopp-rastatt";
+        /** Pfad zur vorgebauten logiTopp-Adapter-Distribution. */
+        private String projectDir = "../adapters/logitopp/build/install/synthesis-logitopp-adapter";
         private int timeoutMinutes = 30;
         /** Max. Iterationen der Modal-Split-Kalibrierung (je Iteration ein Sim-Lauf). */
         private int calibrationIterations = 8;

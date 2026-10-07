@@ -14,6 +14,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SumoDemandSelectionTest {
 
     @Test
+    void defaultTransfersAllEligibleTripsBeyondFormerLimit(@TempDir Path tempDir) throws Exception {
+        Path csv = tempDir.resolve("full-demand.csv");
+        StringBuilder content = new StringBuilder("personOid;tripId;legId;tripMode;mainMode;legMode;distanceInKm;sourceZone;targetZone;fromX;fromY;toX;toY;tripBegin;tripEnd\n");
+        for (int i = 0; i < 4100; i++) {
+            content.append("p").append(i).append(";t").append(i)
+                    .append(";0;1;1;1;2;A;B;8.1;48.1;8.2;48.2;10;15\n");
+        }
+        Files.writeString(csv, content);
+        TravelDemand demand = new LogitoppDemandAdapter().read(csv);
+        SynthesisProperties.Sumo config = new SynthesisProperties.Sumo();
+        SumoRunner.DemandSelection selection = new SumoRunner(config).selectDemand(demand, false);
+        assertThat(selection.cars()).hasSize(4100);
+        assertThat(selection.capped()).isZero();
+        assertThat(selection.emitted()).isEqualTo(demand.tripCount());
+
+        // An explicit zero keeps its existing meaning; only negative values disable the cap.
+        config.setMaxTrips(0);
+        SumoRunner.DemandSelection none = new SumoRunner(config).selectDemand(demand, false);
+        assertThat(none.emitted()).isZero();
+        assertThat(none.capped()).isEqualTo(4100);
+    }
+
+    @Test
     void accountsForEveryCanonicalTripAndUsesDeterministicModeCaps(@TempDir Path tempDir)
             throws Exception {
         Path csv = tempDir.resolve("demand.csv");

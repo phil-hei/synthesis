@@ -2,3 +2,9 @@ validation/
 takomat-beispiel-export.zip
 .runtime/
 .DS_Store
+
+adapters/**/build/
+adapters/**/.gradle/
+.runtime-actitopp-source.*/
+
+.runtime-logitopp-source.*/

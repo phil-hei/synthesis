@@ -26,6 +26,8 @@ import de.synthesis.scenario.Scenario;
  *    die Eurostat-Namen "T"/"TOT_P"/"OBS_VALUE".
  * 3. Generic WGS84: columns lat/lon (or latitude/longitude) + population/einwohner.
  *
+ * Known source grids of 1–10 km are uniformly disaggregated to 100 m allocation points.
+ * These are modelled weights, not observed finer census cells.
  * Point data is zoning-agnostic: the pipeline maps points into whatever zone
  * grid the scenario uses, which sidesteps the format heterogeneity of
  * zone-based inputs.
@@ -100,17 +102,25 @@ public final class PopulationGridParser {
                     }
                     double lat;
                     double lon;
+                    double[] sourceCell = null;
                     if (zensus) {
                         double easting = parseNumber(cells[xCol]);
                         double northing = parseNumber(cells[yCol]);
                         if (!withinLaeaBounds(easting, northing, laeaBounds)) {
                             continue;
                         }
+                        double resolution = header[xCol].replace("\"", "").trim().equalsIgnoreCase("x_mp_1km") ? 1000 : 0;
+                        if (resolution == 0 && gridIdCol >= 0) {
+                            try { resolution = gridIdToCentre(cells[gridIdCol])[2]; }
+                            catch (IllegalArgumentException ignored) { /* valid coordinates remain usable */ }
+                        }
+                        sourceCell = new double[]{easting, northing, resolution};
                         double[] latLon = Epsg3035.toLatLon(easting, northing);
                         lat = latLon[0];
                         lon = latLon[1];
                     } else if (gridId) {
                         double[] centre = gridIdToCentre(cells[gridIdCol]);
+                        sourceCell = centre;
                         if (!withinLaeaBounds(centre[0], centre[1], laeaBounds)) {
                             continue;
                         }
@@ -121,11 +131,25 @@ public final class PopulationGridParser {
                         lat = parseNumber(cells[latCol]);
                         lon = parseNumber(cells[lonCol]);
                     }
-                    if (region != null && (lat < region.minLat || lat > region.maxLat
-                            || lon < region.minLon || lon > region.maxLon)) {
-                        continue;
+                    if (sourceCell != null && sourceCell[2] >= 1000) {
+                        // Uniform density on the common 100 m grid, not observed extra detail.
+                        // Filter subcell centres so cells overlapping a region are not lost merely
+                        // because the coarse source centre lies outside it.
+                        int cellsPerSide = (int) Math.round(sourceCell[2] / 100);
+                        if (cellsPerSide > 100 || cellsPerSide * 100 != sourceCell[2])
+                            throw new IllegalArgumentException("Nicht unterstützte Rasterauflösung");
+                        double share = population / ((double) cellsPerSide * cellsPerSide);
+                        for (int y = 0; y < cellsPerSide; y++) {
+                            for (int x = 0; x < cellsPerSide; x++) {
+                                double[] position = Epsg3035.toLatLon(
+                                        sourceCell[0] - sourceCell[2] / 2 + x * 100 + 50,
+                                        sourceCell[1] - sourceCell[2] / 2 + y * 100 + 50);
+                                addPoint(points, region, position[0], position[1], share);
+                            }
+                        }
+                    } else {
+                        addPoint(points, region, lat, lon, population);
                     }
-                    points.add(new GridPoint(lat, lon, population));
                 } catch (RuntimeException e) {
                     skipped++;
                 }
@@ -133,6 +157,14 @@ public final class PopulationGridParser {
             String format = zensus ? "zensus-gitter-epsg3035"
                     : gridId ? "inspire-grid-id-epsg3035" : "wgs84-punkte";
             return new ParseResult(points, format, skipped);
+        }
+    }
+
+    private static void addPoint(List<GridPoint> points, Scenario.Region region,
+                                 double lat, double lon, double population) {
+        if (region == null || (lat >= region.minLat && lat <= region.maxLat
+                && lon >= region.minLon && lon <= region.maxLon)) {
+            points.add(new GridPoint(lat, lon, population));
         }
     }
 
@@ -175,7 +207,7 @@ public final class PopulationGridParser {
             Pattern.compile("(\\d+)(m|km)N(\\d+)E(\\d+)", Pattern.CASE_INSENSITIVE);
 
     /**
-     * INSPIRE-Zell-ID → LAEA-Zellmittelpunkt {easting, northing}. Beide ID-Formen adressieren
+     * INSPIRE-Zell-ID → LAEA-Zellmittelpunkt und Auflösung {easting, northing, resolution}. Beide ID-Formen adressieren
      * die Zell-Ecke (links unten); der Mittelpunkt (+res/2) haelt die Punkt-in-Zone-Zuordnung
      * deckungsgleich mit den x_mp/y_mp-Mittelpunktspalten der Zensus-CSVs.
      */
@@ -186,7 +218,7 @@ public final class PopulationGridParser {
             double res = Double.parseDouble(full.group(1));
             double northing = Double.parseDouble(full.group(2));
             double easting = Double.parseDouble(full.group(3));
-            return new double[]{easting + res / 2, northing + res / 2};
+            return new double[]{easting + res / 2, northing + res / 2, res};
         }
         Matcher shortForm = GRID_ID_SHORT.matcher(id);
         if (shortForm.matches()) {
@@ -194,7 +226,7 @@ public final class PopulationGridParser {
                     * ("km".equalsIgnoreCase(shortForm.group(2)) ? 1000 : 1);
             double northing = Double.parseDouble(shortForm.group(3)) * res;
             double easting = Double.parseDouble(shortForm.group(4)) * res;
-            return new double[]{easting + res / 2, northing + res / 2};
+            return new double[]{easting + res / 2, northing + res / 2, res};
         }
         throw new IllegalArgumentException("Keine INSPIRE-Zell-ID: " + value);
     }

@@ -88,6 +88,7 @@ export interface Scenario {
     /** GTA 3c: zusätzliche LLM-Moduswahl auf den simulierten Trips (Vergleich zu MNL/MiD). */
     llmModeChoice: boolean;
     carsPerHousehold: number;
+    areaType?: string;
   };
   logistics: {
     parcelsPerPersonWeek: number;

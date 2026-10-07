@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#526277" stroke-width="1.8"/></marker></defs>
+<rect width="1600" height="960" fill="#ffffff"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#203047}.title{font-size:32px;font-weight:700}.subtitle{font-size:18px;fill:#526277}.heading{font-size:23px;font-weight:700}.body{font-size:20px}.small{font-size:17px;fill:#526277}.pill{font-size:16px;font-weight:700}</style>
+<text x="44" y="48" class="title">SyntheSis Mobility &amp; Logistics Model</text>
+<text x="44" y="80" class="subtitle">Vom Untersuchungsgebiet zu Szenariodaten, Nachfrage und Simulation · Stand 29.09.2026</text>
+<rect x="40" y="116" width="365" height="200" rx="16" fill="#eef4ff" stroke="#d6dfe9"/>
+<text x="62" y="156" class="heading">1  Gebiet &amp; Quellen</text>
+<text x="62" y="195" class="body">Kartenausschnitt und Auflösung</text>
+<text x="62" y="226" class="body">OSM: Orte und Straßennetz</text>
+<text x="62" y="257" class="body">Zensus, optionale Fachdaten</text>
+<text x="62" y="288" class="body">Nutzervorgaben</text>
+<rect x="425" y="116" width="365" height="200" rx="16" fill="#eef4ff" stroke="#d6dfe9"/>
+<text x="447" y="156" class="heading">2  Raum &amp; Bevölkerung</text>
+<text x="447" y="195" class="body">Verkehrszellen in EPSG:3035</text>
+<text x="447" y="226" class="body">Attraktivitäten und feste Ziele</text>
+<text x="447" y="257" class="body">Haushalte, Personen, Pkw</text>
+<text x="447" y="288" class="body">INSPIRE-Daten im Hintergrund</text>
+<rect x="810" y="116" width="365" height="200" rx="16" fill="#eff7eb" stroke="#d6dfe9"/>
+<text x="832" y="156" class="heading">3  Aktivitäten</text>
+<text x="832" y="195" class="body">Wochenpläne je Person</text>
+<text x="832" y="226" class="body">Standard: actiTopp</text>
+<text x="832" y="257" class="body">Alternativ: GTA / Vorlagen</text>
+<text x="832" y="288" class="body">Einkaufswege separat von Paketen</text>
+<rect x="1195" y="116" width="365" height="200" rx="16" fill="#fff3e5" stroke="#d6dfe9"/>
+<text x="1217" y="156" class="heading">4  Netz &amp; Logistik</text>
+<text x="1217" y="195" class="body">GraphHopper → Zonenmatrizen</text>
+<text x="1217" y="226" class="body">Depots und Paketstationen</text>
+<text x="1217" y="257" class="body">Paketnachfrageparameter</text>
+<text x="1217" y="288" class="body">ÖPNV-Matrix derzeit geschätzt</text>
+<path d="M222,316 V356" fill="none" stroke="#526277" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M607,316 V356" fill="none" stroke="#526277" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M992,316 V356" fill="none" stroke="#526277" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1377,316 V356" fill="none" stroke="#526277" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="40" y="366" width="1520" height="100" rx="16" fill="#203b5b"/>
+<text x="64" y="405" class="heading" style="fill:#ffffff">Gemeinsame Modellgrundlage: SyntheSis Mobility &amp; Logistics Model</text>
+<text x="64" y="438" class="body" style="fill:#ffffff">Raum · Bevölkerung · Aktivitäten · Netze · Logistik · Annahmen · Quellen und Qualität</text>
+<text x="47" y="804" class="small">Heute verteilt auf Konfiguration und Artefakte; ein einheitlicher versionierter Datenvertrag ist geplant.</text>
+<path d="M270,466 V542" fill="none" stroke="#526277" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M795,466 V542" fill="none" stroke="#526277" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="40" y="552" width="470" height="228" rx="16" fill="#edf8fb" stroke="#d6dfe9"/>
+<text x="62" y="592" class="heading">MobileCity: Konfigurationsexport</text>
+<text x="62" y="631" class="body">Heute aus vorbereiteten Eingaben</text>
+<text x="62" y="662" class="body">Bevölkerung, Wegehäufigkeiten, Netze</text>
+<text x="62" y="693" class="body">TRAMIGO-Referenzparameter ergänzen</text>
+<text x="62" y="724" class="body">Optional: lokales ConfigTool prüfen</text>
+<text x="62" y="755" class="body">Noch keine Paketlogistik im Zielformat</text>
+<rect x="565" y="552" width="470" height="228" rx="16" fill="#f5efff" stroke="#d6dfe9"/>
+<text x="587" y="592" class="heading">mobiTopp / logiTopp</text>
+<text x="587" y="631" class="body">Ziel- und Verkehrsmittelwahl</text>
+<text x="587" y="662" class="body">Private Paketaufträge und Touren</text>
+<text x="587" y="693" class="body">Ergebnis: simulierte Nachfrage</text>
+<text x="587" y="724" class="body">demand/: Wege und Verkehrsströme</text>
+<text x="587" y="755" class="body">Kennzahlen und Auswertung</text>
+<path d="M1035,640 H1080" fill="none" stroke="#526277" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1090" y="552" width="470" height="228" rx="16" fill="#edf8fb" stroke="#d6dfe9"/>
+<text x="1112" y="592" class="heading">SUMO: Verkehrsablauf</text>
+<text x="1112" y="631" class="body">Nachfrage + OSM-basiertes Netz</text>
+<text x="1112" y="662" class="body">Straßenrouten und Fahrzeugbewegung</text>
+<text x="1112" y="693" class="body">Kein Mengenlimit als Standard</text>
+<text x="1112" y="724" class="body">Gewählter Tag / unterstützte Modi</text>
+<text x="1112" y="755" class="body">Optional: Netz-Feedback</text>
+<rect x="40" y="817" width="1520" height="101" rx="12" fill="#faf8f3" stroke="#dac99f" stroke-dasharray="7 5"/>
+<text x="60" y="852" class="heading">Nächste Schritte – noch nicht Teil des heutigen Ablaufs</text>
+<text x="60" y="884" class="small">GTFS-Reisezeiten · gemeinsame Routingnutzung für Touren · geprüfte Paketfreigabe · MobileCity-Nachfrageadapter abstimmen</text>
+<text x="44" y="943" class="small">Die MobileCity-Verzweigung zeigt bewusst den Ist-Stand. Ergebnisse müssen künftig nicht mit SyntheSis übereinstimmen.</text>
+</svg>

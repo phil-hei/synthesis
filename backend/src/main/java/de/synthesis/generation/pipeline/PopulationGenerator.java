@@ -42,8 +42,33 @@ public class PopulationGenerator {
     private CensusStructureSource.Resolved censusStructure;
     private final Map<String, Object> censusReport = new java.util.LinkedHashMap<>();
 
+    private float[][] destinationTravelTimeMin;
+    /** Explicit initial gravity assumption, not an empirically fitted coefficient. */
+    public static final double DESTINATION_TIME_SCALE_MIN = 20.0;
+
+    /** Initial CAR matrix shared with demand generation; observed commuter relations retain priority. */
+    public void useDestinationTravelTimes(float[][] times) {
+        if (times == null || times.length != zones.size())
+            throw new IllegalArgumentException("Zielwahl-Reisematrix passt nicht zu den Zonen");
+        float[][] copy = new float[times.length][];
+        for (int i = 0; i < times.length; i++) {
+            if (times[i] == null || times[i].length != zones.size())
+                throw new IllegalArgumentException("Zielwahl-Reisematrix muss quadratisch sein");
+            copy[i] = times[i].clone();
+            for (float value : copy[i]) {
+                if (Float.isNaN(value) || value < 0)
+                    throw new IllegalArgumentException("Ungültige Zielwahl-Reisezeit");
+            }
+        }
+        destinationTravelTimeMin = copy;
+        gravityCache.clear();
+    }
+
     public void useCensusStructure(CensusStructureSource.Resolved structure) { this.censusStructure = structure; }
     public Map<String, Object> censusStructureReport() { return censusReport; }
+    private final Map<String, Object> householdRoundingReport = new java.util.LinkedHashMap<>();
+    public Map<String, Object> householdRoundingReport() { return householdRoundingReport; }
+
 
     public PopulationGenerator(List<Zone> zones, Random random) {
         this(zones, random, 0L);
@@ -88,6 +113,12 @@ public class PopulationGenerator {
      * OSM place nodes (Gaussian footprint weights), then POI density, then uniform noise.
      */
     public void distributePopulation(int totalPersons, int[] poiCountPerZone, double[] placeWeights) {
+        distributePopulation(totalPersons, poiCountPerZone, placeWeights, true);
+    }
+
+    /** Preserve supplied raster weights; only modelled settlement weights need smoothing. */
+    public void distributePopulation(int totalPersons, int[] poiCountPerZone,
+                                     double[] placeWeights, boolean smoothWeights) {
         double[] weights = new double[zones.size()];
         double placeSum = 0;
         if (placeWeights != null) {
@@ -100,7 +131,7 @@ public class PopulationGenerator {
             double weight;
             if (placeSum > 0) {
                 // small floor keeps remote zones from being completely empty
-                weight = placeWeights[zone.index] + placeSum / zones.size() * 0.03;
+                weight = placeWeights[zone.index] + (smoothWeights ? placeSum / zones.size() * 0.03 : 0);
             } else {
                 weight = 1 + 0.5 * random.nextDouble();
                 if (poiCountPerZone != null) {
@@ -118,6 +149,7 @@ public class PopulationGenerator {
     public Result generate(Path populationDir, Scenario scenario) throws IOException {
         Files.createDirectories(populationDir);
         censusReport.clear();
+        householdRoundingReport.clear();
         Files.deleteIfExists(populationDir.resolve("census-structure.json"));
         if (scenario.population.useCensusStructure && !scenario.population.useKitPopulation)
             throw new IllegalArgumentException("Zensus-Struktur benötigt das KIT-Demografie-Sample");
@@ -128,6 +160,10 @@ public class PopulationGenerator {
         long carId = 1;
         int carCount = 0;
         int externalWorkDestinations = 0;
+        int[] sampledPersonsByZone = sampledPersonsByZone(scenario.population.samplingFraction);
+        List<Map<String, Object>> roundingZones = new ArrayList<>();
+        int roundingCarry = 0;
+
 
         try (Writer households = Files.newBufferedWriter(populationDir.resolve("household.csv"));
              Writer personsCsv = Files.newBufferedWriter(populationDir.resolve("person.csv"));
@@ -152,11 +188,14 @@ public class PopulationGenerator {
                 censusReport.put("seedPoolCompositionSha256", kitSample.fingerprint());
                 censusReport.put("seedPoolHouseholds", kitSample.householdCount());
             }
-            int[] sampledPersonsByZone = sampledPersonsByZone(scenario.population.samplingFraction);
 
             for (int zonePosition = 0; zonePosition < zones.size(); zonePosition++) {
                 Zone zone = zones.get(zonePosition);
-                int remaining = sampledPersonsByZone[zonePosition];
+                // Complete the last household. Carry the small overrun to subsequent zones
+                // so it does not accumulate systematically across thousands of small cells.
+                int targetPersons = sampledPersonsByZone[zonePosition];
+                int remaining = targetPersons - roundingCarry;
+                int personsBeforeZone = persons.size();
                 CensusHouseholdSampler regional = null;
                 if (scenario.population.useCensusStructure && censusStructure != null
                         && censusStructure.zones().containsKey(zone.index) && remaining > 0 && !zone.external)
@@ -214,12 +253,25 @@ public class PopulationGenerator {
                     remaining -= size;
                     householdId++;
                 }
+                roundingCarry = -remaining;
+                int actualPersons = persons.size() - personsBeforeZone;
+                roundingZones.add(Map.of("zoneId", zone.id, "targetPersons", targetPersons,
+                        "actualPersons", actualPersons, "difference", actualPersons - targetPersons));
                 if (regional != null) {
                     Map<String, Object> report = regional.report(); report.put("zoneId", zone.id);
                     structureZones.add(report);
                 }
             }
         }
+        householdRoundingReport.put("schemaVersion", 1);
+        householdRoundingReport.put("policy", "whole-households-with-zone-rounding-carry-v1");
+        int targetPersons = java.util.Arrays.stream(sampledPersonsByZone).sum();
+        householdRoundingReport.put("targetPersons", targetPersons);
+        householdRoundingReport.put("actualPersons", persons.size());
+        householdRoundingReport.put("difference", persons.size() - targetPersons);
+        householdRoundingReport.put("zones", roundingZones);
+        new com.fasterxml.jackson.databind.ObjectMapper().writerWithDefaultPrettyPrinter()
+                .writeValue(populationDir.resolve("household-rounding.json").toFile(), householdRoundingReport);
         if (scenario.population.useCensusStructure) {
             long weighted = structureZones.stream().filter(r -> "weighted".equals(r.get("status"))).count();
             censusReport.put("schemaVersion", 1);
@@ -284,16 +336,13 @@ public class PopulationGenerator {
     /**
      * One household composition: a KIT-sampled household when a pool is given
      * (realistic joint age/sex/size), otherwise a template draw (independent ages,
-     * random sex) capped at the zone's remaining persons.
+     * random sex). The final composition is always preserved in full.
      */
     private List<PopulationSample.Member> drawHousehold(PopulationSample kitSample, int remaining) {
         if (kitSample != null) {
-            List<PopulationSample.Member> sampled = kitSample.randomHousehold(random);
-            return sampled.size() <= remaining
-                    ? sampled
-                    : new ArrayList<>(sampled.subList(0, remaining));
+            return kitSample.randomHousehold(random);
         }
-        int size = Math.min(drawHouseholdSize(), remaining);
+        int size = drawHouseholdSize();
         List<PopulationSample.Member> members = new ArrayList<>(size);
         for (int member = 0; member < size; member++) {
             String gender = random.nextBoolean() ? "MALE" : "FEMALE";
@@ -403,7 +452,7 @@ public class PopulationGenerator {
         return Math.min(count, 3);
     }
 
-    /** Gravity-model destination choice: attractivity / (1 + distance_km^2). */
+    /** Observed commuter destinations first; otherwise attraction decays with initial network travel time. */
     private int sampleWorkZone(int homeIndex, long personId) {
         if (externalWorkShare != null && commuterMapping != null
                 && commuterMapping.hasExternalDistribution(homeIndex)) {
@@ -462,7 +511,9 @@ public class PopulationGenerator {
                     weights[candidate.index] = sum;
                     continue;
                 }
-                double distance = GridZoning.distanceKm(home, candidate);
+                double distance = destinationTravelTimeMin == null
+                        ? GridZoning.distanceKm(home, candidate)
+                        : destinationTravelTimeMin[homeIndex][candidate.index] / DESTINATION_TIME_SCALE_MIN;
                 double attractivity = candidate.attractivities.getOrDefault(category, 0.0) + 1;
                 sum += attractivity / (1 + distance * distance);
                 weights[candidate.index] = sum;
@@ -479,7 +530,10 @@ public class PopulationGenerator {
     }
 
     private int sampleCumulative(double[] cumulative, Random destinationRandom) {
-        double roll = destinationRandom.nextDouble() * cumulative[cumulative.length - 1];
+        double total = cumulative[cumulative.length - 1];
+        if (!(total > 0) || !Double.isFinite(total))
+            throw new IllegalArgumentException("Keine erreichbare Zielzone für diese Zielverteilung");
+        double roll = destinationRandom.nextDouble() * total;
         for (int i = 0; i < cumulative.length; i++) {
             if (roll < cumulative[i]) {
                 return i;

@@ -1,0 +1,61 @@
+{
+  "region": "Dortmund/Brackel/Unna",
+  "osmSource": "https://overpass-api.de/api/interpreter",
+  "osmAttribution": "© OpenStreetMap-Mitwirkende; ODbL",
+  "bbox": [
+    51.46,
+    7.43,
+    51.555,
+    7.735
+  ],
+  "highways": "motorway|trunk|primary|secondary|tertiary|residential|unclassified",
+  "graphEdges": 14784,
+  "routes": [
+    {
+      "to": 1,
+      "from": 0,
+      "timeMin": 9.426966666666667,
+      "distanceM": 7101.053956466546
+    },
+    {
+      "to": 2,
+      "from": 1,
+      "timeMin": 12.185633333333334,
+      "distanceM": 9342.24148894098
+    },
+    {
+      "to": 0,
+      "from": 2,
+      "timeMin": 3.4995166666666666,
+      "distanceM": 2556.7312328776743
+    },
+    {
+      "to": 0,
+      "from": 3,
+      "timeMin": 12.505666666666666,
+      "distanceM": 11118.221422736524
+    },
+    {
+      "to": 4,
+      "from": 0,
+      "timeMin": 11.887366666666667,
+      "distanceM": 9320.855452597672
+    },
+    {
+      "to": 3,
+      "from": 4,
+      "timeMin": 5.902933333333333,
+      "distanceM": 5384.518360465933
+    }
+  ],
+  "sumoVersion": "1.27.1",
+  "sumoSeed": 42,
+  "scheduledVehicles": 665,
+  "frameTimeSeconds": 180,
+  "vehiclesActiveAtFrame": 277,
+  "demand": "Illustrative, no logiTopp regional run",
+  "locations": "Illustrative home, work, shopping and depot; not claimed real addresses",
+  "graphhopperToSumo": "Same OSM source; SUMO reroutes start/end edges; no edge-sequence transfer",
+  "sumoEndpointSnapping": "Depot start is snapped to a nearby edge with a verified connection to the home edge; unrouteable background trips are omitted.",
+  "deliveryTour": "D (Depot) → A (Alex Zuhause) → E (separate Zustellzone) → D"
+}

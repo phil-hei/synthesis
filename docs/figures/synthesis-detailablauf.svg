@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1720" viewBox="0 0 1500 1720">
+<rect width="1500" height="1720" fill="white"/>
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L7 4L0 8" fill="#627489"/></marker></defs>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#20364d}.title{font-size:33px;font-weight:700}.sub{font-size:21px;fill:#51687c}.h{font-size:23px;font-weight:700}.b{font-size:20px}.n{font-size:23px;font-weight:700;fill:white}</style>
+<text x="38" y="51" class="title">SyntheSis – die detaillierte Generierungspipeline</text>
+<text x="38" y="88" class="sub">Ursprüngliche Schrittfolge: 13 Stufen bis SUMO + 2 optionale Nachbearbeitungen</text>
+<text x="38" y="126" class="sub">Eingang: Gebiet, Szenarioeinstellungen, Uploads und externe Quellen</text>
+<text x="116" y="173" class="sub">SCHRITT UND VERARBEITUNG</text>
+<text x="1030" y="173" class="sub">ERGEBNIS</text>
+<rect x="103" y="193" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="230" r="24" fill="#336a9c"/>
+<text x="49" y="238" class="n">1</text>
+<text x="121" y="222" class="h">Zonierung</text>
+<text x="121" y="250" class="b">Gebiet in EPSG:3035-Zellen aufteilen</text>
+<text x="1030" y="237" class="b">Zonen, IDs und Geometrien</text>
+<path d="M57 255V280" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="283" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="320" r="24" fill="#336a9c"/>
+<text x="49" y="328" class="n">2</text>
+<text x="121" y="312" class="h">OSM-Daten und Einwohnerverteilung</text>
+<text x="121" y="340" class="b">Orte einlesen; Bevölkerungsraster zuordnen</text>
+<text x="1030" y="327" class="b">Einrichtungen und zonale Einwohner</text>
+<path d="M57 345V370" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="373" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="410" r="24" fill="#336a9c"/>
+<text x="49" y="418" class="n">3</text>
+<text x="121" y="402" class="h">Zielattraktivitäten und Außenzonen</text>
+<text x="121" y="430" class="b">Mögliche Ziele bewerten; Pendlerdaten ergänzen</text>
+<text x="1030" y="417" class="b">Zielgewichte und externe Ziele</text>
+<path d="M57 435V460" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="463" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="500" r="24" fill="#336a9c"/>
+<text x="49" y="508" class="n">4</text>
+<text x="121" y="492" class="h">Bevölkerungssynthese</text>
+<text x="121" y="520" class="b">Haushalte, Personen, Pkw und feste Ziele erzeugen</text>
+<text x="1030" y="507" class="b">Synthetische Bevölkerung</text>
+<path d="M57 525V550" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="553" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="590" r="24" fill="#336a9c"/>
+<text x="49" y="598" class="n">5</text>
+<text x="121" y="582" class="h">Wochenaktivitäten</text>
+<text x="121" y="610" class="b">actiTopp; alternativ GTA oder Vorlagen</text>
+<text x="1030" y="597" class="b">Aktivitäten mit Zeiten und Dauer</text>
+<path d="M57 615V640" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="643" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="680" r="24" fill="#336a9c"/>
+<text x="49" y="688" class="n">6</text>
+<text x="121" y="672" class="h">Erreichbarkeitsmatrizen</text>
+<text x="121" y="700" class="b">GraphHopper; ergänzende Modellannahmen</text>
+<text x="1030" y="687" class="b">Distanzen, Reisezeiten und Kosten</text>
+<path d="M57 705V730" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="733" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="770" r="24" fill="#336a9c"/>
+<text x="49" y="778" class="n">7</text>
+<text x="121" y="762" class="h">Logistik</text>
+<text x="121" y="790" class="b">Depots, Stationen, Dienste und Paketraten modellieren</text>
+<text x="1030" y="777" class="b">Logistikeingaben, noch keine Aufträge</text>
+<path d="M57 795V820" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="823" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="860" r="24" fill="#336a9c"/>
+<text x="49" y="868" class="n">8</text>
+<text x="121" y="852" class="h">Eingabeformat für logiTopp</text>
+<text x="121" y="880" class="b">Daten in das angebundene KIT-Format übersetzen</text>
+<text x="1030" y="867" class="b">Ausführbares Eingabepaket</text>
+<path d="M57 885V910" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="913" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="950" r="24" fill="#287e87"/>
+<text x="49" y="958" class="n">9</text>
+<text x="121" y="942" class="h">MobileCity-Export · nach Auswahl</text>
+<text x="121" y="970" class="b">Vorbereitete Daten und Zusatzquellen aggregieren</text>
+<text x="1030" y="957" class="b">MobileCity-Konfiguration</text>
+<path d="M57 975V1000" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="1003" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="1040" r="24" fill="#287e87"/>
+<text x="42" y="1048" class="n">10</text>
+<text x="121" y="1032" class="h">MobileCity-Prüfung · optional</text>
+<text x="121" y="1060" class="b">Lokales ConfigTool: Import und Verarbeitung prüfen</text>
+<text x="1030" y="1047" class="b">Prüfstatus und Berichte</text>
+<path d="M57 1065V1090" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="1093" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="1130" r="24" fill="#287e87"/>
+<text x="42" y="1138" class="n">11</text>
+<text x="121" y="1122" class="h">Quellenmanifest</text>
+<text x="121" y="1150" class="b">Einstellungen, Quellen und Annahmen dokumentieren</text>
+<text x="1030" y="1137" class="b">Herkunft der generierten Eingaben</text>
+<path d="M57 1155V1180" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="1183" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="1220" r="24" fill="#7b50a0"/>
+<text x="42" y="1228" class="n">12</text>
+<text x="121" y="1212" class="h">Nachfragesimulation · logiTopp</text>
+<text x="121" y="1240" class="b">Ziel-/Moduswahl, private Pakete und Touren</text>
+<text x="1030" y="1227" class="b">Wege, Aufträge, Touren und OD-Ströme</text>
+<path d="M57 1245V1270" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="1273" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="1310" r="24" fill="#7b50a0"/>
+<text x="42" y="1318" class="n">13</text>
+<text x="121" y="1302" class="h">Verkehrssimulation · SUMO</text>
+<text x="121" y="1330" class="b">Nachfrage auf OSM-basiertem Straßennetz simulieren</text>
+<text x="1030" y="1317" class="b">Straßenrouten, Belastungen, Fahrzeiten</text>
+<path d="M57 1335V1360" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="1363" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="1400" r="24" fill="#7a8191"/>
+<text x="42" y="1408" class="n">14</text>
+<text x="121" y="1392" class="h">Netz-Feedback · optional</text>
+<text x="121" y="1420" class="b">Pkw-Zeiten anpassen; logiTopp/SUMO wiederholen</text>
+<text x="1030" y="1407" class="b">Aktualisierte Zeiten und Ergebnisse</text>
+<path d="M57 1425V1450" stroke="#627489" stroke-width="2" marker-end="url(#a)"/>
+<rect x="103" y="1453" width="1357" height="76" rx="10" fill="#f1f5fa" stroke="#d9e2ed"/>
+<circle cx="57" cy="1490" r="24" fill="#7a8191"/>
+<text x="42" y="1498" class="n">15</text>
+<text x="121" y="1482" class="h">LLM-Modusvergleich · optional</text>
+<text x="121" y="1510" class="b">Alternative Verkehrsmittelwahl analysieren</text>
+<text x="1030" y="1497" class="b">Experimenteller Verhaltensvergleich</text>
+<text x="38" y="1588" class="sub">Die Pfeile zeigen die Ausführungsreihenfolge; gewählte Zielmodelle bestimmen, welche Stufen laufen.</text>
+<text x="38" y="1620" class="sub">MobileCity liest heute vorbereitete Eingaben (Stufe 9), noch keine späteren logiTopp-Einzelwege (Stufe 12).</text>
+<text x="38" y="1652" class="sub">Einwohnerverteilung erfolgt zwischen Stufe 2 und 3. Fachliche Grundlage: SyntheSis Mobility &amp; Logistics Model.</text>
+<text x="38" y="1694" class="sub">Stand 30.09.2026 · Gleiche Nummerierung wie im Backend und in der ausführlichen Pipeline-Dokumentation</text>
+</svg>

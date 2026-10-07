@@ -174,7 +174,7 @@ public class SumoRunner {
         }
         int ptVehicles = pt != null ? pt.ptVehicles() : 0;
         log.accept(carTrips + " PKW- + " + bikeTrips + " Rad- + " + walkTrips + " Fuß-Trips (Tag "
-                + day + ", max " + maxTrips + " je Modus) + " + deliveryTrips
+                + day + (maxTrips < 0 ? ", ohne Mengenlimit) + " : ", max " + maxTrips + " je Modus) + ") + deliveryTrips
                 + " Lieferverkehr-Legs + " + ptRiders + " ÖV-Fahrgäste ("
                 + ptVehicles + " ÖV-Fahrten) übernommen");
         log.accept("Demand-Bilanz: " + selection.emitted() + " übernommen, "
@@ -575,7 +575,7 @@ public class SumoRunner {
                         .thenComparing(TravelDemand.PersonTrip::personOid)
                         .thenComparing(TravelDemand.PersonTrip::tripId))
                 .toList();
-        int limit = Math.max(0, maxTrips);
+        int limit = maxTrips < 0 ? ordered.size() : maxTrips;
         List<Trip> selected = new ArrayList<>(Math.min(limit, ordered.size()));
         if (ordered.size() <= limit) {
             for (TravelDemand.PersonTrip trip : ordered) {

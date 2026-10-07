@@ -1,6 +1,6 @@
 # Reproduzierbare Laufumgebung
 
-Stand: 2026-08-11
+Stand: 2026-10-02
 
 ## Ziel
 
@@ -62,7 +62,19 @@ existiert der manuelle beziehungsweise per `RUN_FULL_INTEGRATION=true` aktivierb
 Job `full-runtime-tests`. Er verlangt einen Shell-Runner mit Tag
 `synthesis-runtime`, auf dem `scripts/preflight.sh full` erfolgreich ist.
 
-## KIT-Vertrag: Ausgangspunkt ist Upstream (seit 2026-08-13)
+## Aktuelle KIT-Anbindung ohne Quellcodepatches (02.10.2026)
+
+`bootstrap-runtime.sh kit` baut `adapters/actitopp` und `adapters/logitopp` über
+`build-actitopp-adapter.sh` beziehungsweise `build-logitopp-adapter.sh`.
+Die Builds lesen Originalcommits mit `git archive` und laufen unter Java 25.
+Das Backend startet vorgebaute Launcher. Marker sind
+`synthesis-actitopp-households-v2` und `synthesis-logitopp-adapter-v2`.
+Der logiTopp-Build verwendet weiterhin die geprüften generierten
+Wahlmodellbindungen aus `legacy/logitopp-returns-v1/harness-artifacts`; die
+Patches und `apply.sh` werden nicht ausgeführt. Lokale Altänderungen in KIT-
+Checkouts werden ignoriert. Details und Abnahme: [Adapterkonzept](17-kit-adapter-und-haushaltskonzept.md).
+
+## Historischer KIT-Patchvertrag (seit 2026-08-13; nicht mehr im Bootstrap)
 
 `legacy/logitopp-returns-v1/apply.sh` setzt auf dem **Upstream-Stand der gepinnten
 Commits** auf, nicht auf einem lokal gewachsenen Zwischenstand. Der Vertrag besteht aus

@@ -2381,3 +2381,30 @@ Volumenkapazität. Codeprüfung von `Scenario`, `PopulationGenerator`, `LegacyEx
 `SumoRunner` und `MobileCityExporter`; Abgleich mit offizieller SUMO-Dokumentation.
 **Noch nicht umgesetzt:** Fahrzeugkatalog, Import-API, neue Klassen und Laufzeitanbindung.
 Es wurden weder neue Simulationsparameter aktiviert noch Simulationsversuche durchgeführt.
+
+## Separate KIT-Adapter und gemeinsame Haushaltsgrundlage (✅ 2026-10-07)
+
+Die Laufwege von actiTopp und mobiTopp/logiTopp verwenden separate Adapter unter
+`adapters/`, gebaut aus gepinnten Originalcommits per `git archive`. Der Bootstrap
+wendet die früheren Patchverträge nicht mehr an. actiTopp erhält vollständige
+Haushalte einschließlich Kleinkindern, tatsächliche Pkw-Anzahlen und einen
+expliziten Siedlungstyp. Ganze gezogene Haushalte werden erhalten; der kleine
+Personenüberhang wird über Zonen ausgeglichen und in
+`population/household-rounding.json` ausgewiesen.
+
+Die Matrizenstufe steht jetzt vor Bevölkerung und Aktivitäten: feste Arbeits-
+und Bildungsziele nutzen initiale Pkw-Reisezeiten mit einer ausdrücklich
+unkalibrierten Skala von 20 Minuten; beobachtete Pendlerbeziehungen haben Vorrang.
+Bekannte grobe Bevölkerungsraster werden gleichmäßig auf 100-m-Zuordnungspunkte
+verteilt, ohne zusätzliche Glättung. Neue Szenarien verwenden das ausgerichtete
+EPSG:3035-Raster. SUMO übernimmt standardmäßig alle unterstützten Wege des
+ausgewählten Tages; positive Mengenlimits bleiben für Tests verfügbar.
+
+**Verifiziert (2026-10-07):** vollständige Backend-Suite mit 224 Tests,
+215 bestanden, 9 explizit übersprungen, keine Fehler; 52 Frontendtests und
+Produktionsbuild bestanden. Beide Adapter-Builds erfolgreich; der native
+actiTopp-Haushaltstest zusätzlich aktiviert und ohne Skip bestanden.
+Die vorherigen nativen Wochenlauf-Belege und Grenzen stehen in
+[docs/17](17-kit-adapter-und-haushaltskonzept.md) und den dort verlinkten
+Prüfberichten. Ein neuer durchgängiger Haushaltslauf über beide Adapter und
+fachlich kalibrierte feste Ziele bleiben offen.

@@ -263,6 +263,12 @@ Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
 | [docs/07-ansatz-zusammenfassung.md](docs/07-ansatz-zusammenfassung.md) | Kompaktes Briefing: Ansatz, 15-stufige Pipeline, KI-Pipeline (GTA), Artefakte, Datenfluss, Tech-Stack |
 | [docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md) | Gepinnte Laufzeiten und KIT-Commits, Bootstrap, Preflight, gemeinsamer Start und vollständige Self-hosted-CI-Abnahme |
 | [docs/09-verkehrsbedarfsmodellierung-handoff.md](docs/09-verkehrsbedarfsmodellierung-handoff.md) | Technisches Handoff zur Wiederverwendung der Bevölkerungs- und Verkehrsbedarfsmodellierung, einschließlich Codefragmenten und LLM-Arbeitsauftrag |
+| [docs/10-modellierungs-generierungspipeline.md](docs/10-modellierungs-generierungspipeline.md) | Aktueller Ablauf von Kartenausschnitt und Quelldaten bis zu logiTopp-, SUMO- und MobileCity-Artefakten: Verwendung, Begründung, Beispiele und Modellgrenzen |
+| [docs/11-modellierungsfragen-und-zielbild.md](docs/11-modellierungsfragen-und-zielbild.md) | 26 fachliche Klärungen zu Granularität, Routing, Stichproben und MobileCity; Zielbild des SyntheSis Mobility & Logistics Model |
+| [docs/12-praesentationsleitfaden.md](docs/12-praesentationsleitfaden.md) | Lineare Phasengrafik als SVG/PNG, eine Vertiefungsfolie je Phase und Vergleich mit der früheren Prozessgrafik |
+| [docs/13-dateninventar-modell.md](docs/13-dateninventar-modell.md) | Benutzereingaben, externe Quellen und erzeugte Daten mit Verwendung, Phasen und Grenzen |
+| [docs/14-detailablauf-und-wochenplan.md](docs/14-detailablauf-und-wochenplan.md) | Aktuelle Präsentationsgrundlage: ursprüngliche 15-Schritt-Pipeline, Grafik und konkretes Wochenplanbeispiel |
+| [docs/15-datenquellen-und-modellrollen.md](docs/15-datenquellen-und-modellrollen.md) | Zensus und Haushaltspool, MiD und Pendlerdaten, Behördenquellen sowie Personenmobilität und Paketlogistik |
 
 ## Kernaussagen (TL;DR)
 
@@ -280,3 +286,18 @@ Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
    als WGS84-Shapefile und aggregierte EpigeneCSV-Tabellen für Bevölkerung, Wege, Attraktivitäten,
    privaten Pkw-Bestand, öffentliche Ladepunkte, Carsharing-Annahmen und GTFS-ÖV. Vollständige Regionalpakete bestehen den nativen ConfigTool-
    Import; Profilparameter, weitere Regionalquellen und die fachliche Abnahme mit Takomat bleiben offen.
+
+### Separater actiTopp-Adapter
+
+`bash scripts/build-actitopp-adapter.sh` baut den SyntheSis-Runner mit unveränderten
+KIT-Quellen und Java 25. Die Pipeline übergibt die tatsächlichen Haushaltsmitglieder
+und Pkw-Anzahlen; der Siedlungstyp ist in der UI wählbar.
+[Aufbau, Eingabevertrag und native Prüfung](adapters/actitopp/README.md).
+
+
+Die native Nachfragegenerierung nutzt jetzt ebenfalls einen separaten
+[mobiTopp/logiTopp-Adapter](adapters/logitopp/README.md). Der Build liest
+unveränderte KIT-Originalquellen; eigene Retouren- und Runner-Erweiterungen
+liegen außerhalb der KIT-Checkouts. Installation:
+`bash scripts/build-logitopp-adapter.sh`. Der alte Patchvertrag wird vom
+Bootstrap nicht mehr angewendet. [Abnahme und Zeitkonflikte](docs/17-kit-adapter-und-haushaltskonzept.md).

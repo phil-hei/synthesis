@@ -183,13 +183,13 @@ describe('StudioComponent', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    const zoningSelect = element.querySelector<HTMLSelectElement>(
-      'label[title^="Zonierungs-Gitter"] select');
-    expect(zoningSelect).not.toBeNull();
-    expect(Array.from(zoningSelect!.options).map(option => option.value))
-      .toEqual(['grid', 'epsg3035', 'inspire']);
-    zoningSelect!.value = 'epsg3035';
-    zoningSelect!.dispatchEvent(new Event('change'));
+    expect(element.querySelector('label[title^="Zonierungs-Gitter"] select')).toBeNull();
+    const migrate = Array.from(element.querySelectorAll('button'))
+      .find(button => button.textContent?.includes('Auf europäisches Raster umstellen'));
+    expect(draft.zoning.mode).toBe('grid');
+    expect(migrate).toBeDefined();
+    migrate!.click();
+    expect(draft.zoning.mode).toBe('epsg3035');
 
     expect(preview).toHaveBeenCalledOnce();
     expect(preview).toHaveBeenCalledWith();

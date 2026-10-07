@@ -40,6 +40,13 @@ class ScenarioControllerTest {
     }
 
     @Test
+    void rejectsUnknownActivityAreaType() {
+        Scenario scenario = validScenario();
+        scenario.population.areaType = "unknown";
+        assertBadRequest(scenario, "Ungültiger Raumtyp für die Aktivitätenplanung");
+    }
+
+    @Test
     void rejectsUnknownBehaviorSource() {
         Scenario scenario = validScenario();
         scenario.population.behaviorSource = "unknown";
@@ -77,7 +84,7 @@ class ScenarioControllerTest {
     void defaultsExposeDisabledReturnDemand() {
         Scenario defaults = controller.defaults();
 
-        assertEquals("grid", defaults.zoning.mode);
+        assertEquals("epsg3035", defaults.zoning.mode);
         assertEquals(100.0, defaults.zoning.cellSizeMeters);
         assertEquals(600, defaults.zoning.maxZones);
         assertFalse(defaults.population.correctDistanceDecay,

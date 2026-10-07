@@ -3,7 +3,7 @@ package de.synthesis.generation.pipeline;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Konfiguriert die separat laufenden KIT-Gradle-Prozesse mit ihrem gepinnten JDK. */
+/** Konfiguriert die separat laufenden KIT-Adapterprozesse mit ihrem gepinnten JDK. */
 final class ExternalJavaToolchain {
 
     static final int KIT_JAVA = 25;

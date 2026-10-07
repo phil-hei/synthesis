@@ -30,9 +30,9 @@ Eine Generierung durchläuft 15 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | 1 | Zonierung | Region → freies Bbox-Raster, flexibel EPSG:3035-ausgerichtetes Raster oder amtliches INSPIRE-Raster; Zellgröße wird an das szenariospezifische Zonenlimit angepasst | `zones.csv` |
 | 2 | OSM-Daten (POIs) | Szenario-Snapshot oder Overpass: Shops/Amenities/… und bevölkerte `place`-Nodes (synthetischer Fallback nur beim Live-Pfad) | `uploads/osm-data.json` (optional), Provenienz in `manifest.json` |
 | 3 | Attraktivitäten + Pendleranker | Ziel-Attraktivität je Zelle; optional koordinatenbasierte Pendler-OD, externe Arbeitsortanker auf reale gewichtete Ziele verschoben; diagnostischer OSM-Außenzielkandidat mit automatischem OD-Gegencheck | `attractivities.csv`, `population/commuters.csv`, `population/external-destination-candidates.json` |
-| 4 | Bevölkerungssynthese | Gesamtzahl/Verteilung: manuell → alternatives Upload-Raster → hashgeprüfter Destatis-Zensus 2022 → OSM → Dichte; danach Personen/Haushalte (KIT-Sample, optional experimentell nach regionalen Zensus-Anteilen gewichtet, oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv`; optional `population/census-structure.json`, Provenienz in `manifest.json` |
-| 5 | **Aktivitätenpläne (Achse A)** | Wochenpläne je Person aus `actiTopp` \| `GTA-LLM` \| `Template` | `activity.csv` |
-| 6 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle; Netzquelle Szenario-OSM-XML → Serverdatei → Overpass, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
+| 4 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle; Netzquelle Szenario-OSM-XML → Serverdatei → Overpass, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
+| 5 | Bevölkerungssynthese | Gesamtzahl/Verteilung: manuell → alternatives Upload-Raster → hashgeprüfter Destatis-Zensus 2022 → OSM → Dichte; danach Personen/Haushalte (KIT-Sample, optional experimentell nach regionalen Zensus-Anteilen gewichtet, oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv`; optional `population/census-structure.json`, Provenienz in `manifest.json` |
+| 6 | **Aktivitätenpläne (Achse A)** | Wochenpläne je Person aus `actiTopp` \| `GTA-LLM` \| `Template` | `activity.csv` |
 | 7 | Logistik | Depots, Packstationen, Paketnachfrage sowie optionale Kundenretouren als Pickup-Nachfrage | `distribution-centers.csv`, `cepsp-shares.csv`, `parcel-demand-config.yaml` |
 | 8 | Legacy-Export | Umwandlung in das logiTopp-Legacy-Format | `legacy/…` |
 | 9 | **MobileCity-Export (B)** | Teilbeitrag, TRAMIGO-Vorlage oder eigenes Regionalpaket mit OD-Verbindungsnetzen, regionalem GTFS, optionalem KBA-BEV-Anteil, öffentlichen BNetzA-Ladepunkten, expliziten Carsharing-Annahmen und optionalen manuellen oder Zensus-Pufferring-basierten Umland-Districts samt vier eingehenden Zweckanteilen; experimentell, unkalibrierte Profile | `mobilecity/` (6 bzw. 25 CSV-Familien, Shapefile, Dateninventar und Provenienz; vollständige Modi zusätzlich Governance und ZIP). [Grenzen und Ausbau](06-gta-integration-konzept.md#mobilecity-naechste-schritte) |
@@ -103,11 +103,11 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 [Karte/Parameter (UI)]
         ↓
 [Spring-Boot-Pipeline]
-  Zonen → POIs/Attraktivität → Population
+  Zonen → POIs/Attraktivität → Routing-Matrizen → Population
         ↓
   ── Verhalten ──  actiTopp | LLM-Agenten | Template  → activity.csv
         ↓
-  Routing-Matrizen (GraphHopper) + Logistik
+  Logistik (auf den initialen Reisematrizen)
         ↓
   ── Export ── MobileCity        logiTopp → Native Demand → SUMO (optional)
                               ↑            ↓             |

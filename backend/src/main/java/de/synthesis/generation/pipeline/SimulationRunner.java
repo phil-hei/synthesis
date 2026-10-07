@@ -12,16 +12,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Pipeline-Stufe 12: orchestriert die logiTopp-Wochensimulation im Legacy-Projekt
- * (validation/mobitopp-rastatt). Schreibt eine per-Szenario-Run-Config mit absoluten
- * Pfaden auf den Legacy-Export, ruft `sh gradlew runDeliverySynthesis -PconfigFile=…`
- * auf und legt Log + Ergebnisse unter artifacts/simulation/ ab.
+ * Orchestriert die logiTopp-Wochensimulation über den separaten SyntheSis-Adapter.
+ * Schreibt eine per-Szenario-Run-Config mit absoluten Pfaden auf den Legacy-Export,
+ * ruft den vorgebauten Adapter-Launcher auf und legt Log + Ergebnisse unter artifacts/simulation/ ab.
  */
 public class SimulationRunner {
 
-    static final String HARNESS_CONTRACT = "synthesis-logitopp-returns-v1";
+    static final String HARNESS_CONTRACT = "synthesis-logitopp-adapter-v2";
     private static final Path HARNESS_CONTRACT_FILE =
-            Path.of("config/synthesis/harness-contract.properties");
+            Path.of("synthesis-contract.properties");
 
     public record Result(Path resultsDir, long durationSeconds) {
     }
@@ -34,10 +33,14 @@ public class SimulationRunner {
         this.timeoutMinutes = config.getTimeoutMinutes();
     }
 
-    /** Verfügbar, wenn das Legacy-Projekt mit Gradle-Wrapper und Delivery-Task existiert. */
+    /** Verfügbar, wenn der vorgebaute Adapter mit passendem Vertrag existiert. */
     public boolean isAvailable() {
-        return Files.exists(projectDir.resolve("gradlew"))
-                && Files.exists(projectDir.resolve("build.gradle"));
+        try {
+            verifyHarnessContract();
+            return Files.isRegularFile(projectDir.resolve("bin/synthesis-logitopp-adapter"));
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     public Path projectDir() {
@@ -74,8 +77,8 @@ public class SimulationRunner {
         log.accept("Run-Config geschrieben: " + artifacts.relativize(config));
 
         Path logFile = simulationDir.resolve("run.log");
-        ProcessBuilder builder = new ProcessBuilder("sh", "gradlew", "runDeliverySynthesis",
-                "-PconfigFile=" + config.toAbsolutePath());
+        ProcessBuilder builder = new ProcessBuilder("sh", projectDir.resolve("bin/synthesis-logitopp-adapter").toString(),
+                config.toAbsolutePath().toString());
         builder.directory(projectDir.toFile());
         ExternalJavaToolchain.configure(builder);
         builder.redirectErrorStream(true);
@@ -199,8 +202,8 @@ public class SimulationRunner {
     void verifyHarnessContract() throws IOException {
         Path marker = projectDir.resolve(HARNESS_CONTRACT_FILE);
         if (!Files.exists(marker)) {
-            throw new IOException("Legacy-Harness-Vertrag fehlt: " + marker
-                    + " (legacy/logitopp-returns-v1/apply.sh ausführen)");
+            throw new IOException("logiTopp-Adapter-Vertrag fehlt: " + marker
+                    + " (scripts/build-logitopp-adapter.sh ausführen)");
         }
         Properties properties = new Properties();
         try (InputStream in = Files.newInputStream(marker)) {
@@ -208,7 +211,7 @@ public class SimulationRunner {
         }
         String actual = properties.getProperty("contractVersion", "");
         if (!HARNESS_CONTRACT.equals(actual)) {
-            throw new IOException("Inkompatibler Legacy-Harness-Vertrag: erwartet "
+            throw new IOException("Inkompatibler logiTopp-Adapter-Vertrag: erwartet "
                     + HARNESS_CONTRACT + ", gefunden " + (actual.isBlank() ? "(leer)" : actual));
         }
     }

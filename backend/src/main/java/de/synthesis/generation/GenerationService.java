@@ -78,8 +78,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class GenerationService {
 
     public static final List<String> STAGES = List.of(
-            "Zonierung", "OSM-Daten (POIs)", "Attraktivitäten", "Bevölkerungssynthese",
-            "Aktivitätenpläne", "Matrizen", "Logistik", "Legacy-Export", "MobileCity-Export",
+            "Zonierung", "OSM-Daten (POIs)", "Attraktivitäten", "Matrizen", "Bevölkerungssynthese",
+            "Aktivitätenpläne", "Logistik", "Legacy-Export", "MobileCity-Export",
             "MobileCity-Validierung", "Manifest", "Simulation (logiTopp)", "SUMO (Verkehr)",
             "Netz-Feedback", "LLM-Moduswahl");
 
@@ -322,13 +322,17 @@ public class GenerationService {
                 stageAttractivities(ctx);
                 return null;
             });
+            stage(job, "Matrizen", () -> {
+                stageMatrices(ctx);
+                return null;
+            });
+            ctx.populationGenerator.useDestinationTravelTimes(ctx.carTravelTimeMin);
+            job.summary.put("fixedDestinationImpedance", "initial-car-travel-time");
+            job.summary.put("fixedDestinationTimeScaleMinutes", PopulationGenerator.DESTINATION_TIME_SCALE_MIN);
+            job.log("Feste Arbeits-/Bildungsziele verwenden die initiale Pkw-Reisematrix; Pendlerdaten haben Vorrang");
             ctx.population = stage(job, "Bevölkerungssynthese", () -> stagePopulationSynthesis(ctx));
             stage(job, "Aktivitätenpläne", () -> {
                 stageActivityPlans(ctx);
-                return null;
-            });
-            stage(job, "Matrizen", () -> {
-                stageMatrices(ctx);
                 return null;
             });
             ctx.logistics = stage(job, "Logistik", () -> stageLogistics(ctx));
@@ -521,7 +525,7 @@ public class GenerationService {
 
         // Alternative/neuere Uploads gewinnen vor dem backendseitig versionierten Zensus 2022.
         double[] gridWeights = null;
-        long gridPopulation = 0;
+        double gridPopulation = 0;
         String gridSource = null;
         Path gridFile = scenarios.uploadsDir(scenario.id).resolve("population-grid.csv");
         if (Files.exists(gridFile)) {
@@ -531,7 +535,7 @@ public class GenerationService {
                 int index = GridZoning.zoneIndexOf(ctx.zones, point.lat(), point.lon());
                 if (index >= 0) {
                     gridWeights[index] += point.population();
-                    gridPopulation += Math.round(point.population());
+                    gridPopulation += point.population();
                 }
             }
             if (gridPopulation > 0) {
@@ -557,7 +561,7 @@ public class GenerationService {
                     int index = GridZoning.zoneIndexOf(ctx.zones, point.lat(), point.lon());
                     if (index >= 0) {
                         gridWeights[index] += point.population();
-                        gridPopulation += Math.round(point.population());
+                        gridPopulation += point.population();
                     }
                 }
                 if (gridPopulation > 0) {
@@ -579,7 +583,7 @@ public class GenerationService {
             ctx.populationSource = "user-defined";
             ctx.populationSourceLabel = "Manuelle Einwohnerzahl";
         } else if (gridWeights != null) {
-            ctx.totalPersons = (int) gridPopulation;
+            ctx.totalPersons = (int) Math.round(gridPopulation);
             ctx.populationSource = gridSource;
             ctx.populationSourceLabel = "upload-grid".equals(gridSource)
                     ? "Hochgeladenes Bevölkerungsraster" : "Destatis Zensus 2022";
@@ -608,7 +612,8 @@ public class GenerationService {
                 : !populationPlaces.isEmpty() ? "osm-places"
                 : !ctx.pois.isEmpty() ? "poi-density" : "uniform-noise";
         ctx.populationGenerator.distributePopulation(
-                ctx.totalPersons, ctx.pois.isEmpty() ? null : poiCounts, weights);
+                ctx.totalPersons, ctx.pois.isEmpty() ? null : poiCounts, weights, gridWeights == null);
+        if (gridWeights != null) job.log("Bevölkerungsraster ohne zusätzliche Glättung: bekannte 1–10-km-Zellen gleichmäßig auf 100-m-Zuordnungspunkte verteilt; unbekannte Auflösung bleibt punktbasiert");
     }
 
     // --- Stufe 3: Attraktivitäten -------------------------------------------------
@@ -799,6 +804,12 @@ public class GenerationService {
         }
         ctx.job.log(result.persons().size() + " Personen in " + result.householdCount()
                 + " Haushalten, " + result.carCount() + " Pkw");
+        var rounding = ctx.populationGenerator.householdRoundingReport();
+        ctx.job.summary.put("populationTargetPersons", rounding.get("targetPersons"));
+        ctx.job.summary.put("populationRoundingDifference", rounding.get("difference"));
+        ctx.job.log("Vollständige Haushalte: Ziel " + rounding.get("targetPersons")
+                + ", tatsächlich " + rounding.get("actualPersons") + ", Differenz "
+                + rounding.get("difference") + "; Details: population/household-rounding.json");
         ctx.job.summary.put("externalWorkDestinations", result.externalWorkDestinations());
         ctx.job.summary.put("externalWorkShareActual", result.persons().isEmpty() ? 0
                 : (double) result.externalWorkDestinations() / result.persons().size());
@@ -853,10 +864,17 @@ public class GenerationService {
                 try {
                     job.log("Starte KIT actiTopp (" + runner.projectDir().getFileName() + ")…");
                     ActitoppRunner.Result result = runner.run(
-                            populationDir.resolve("person.csv"), populationDir.resolve("actitopp"));
+                            populationDir.resolve("person.csv"), populationDir.resolve("household.csv"),
+                            populationDir.resolve("car.csv"), scenario.population.areaType, populationDir.resolve("actitopp"));
                     count = generator.generateFromActitopp(
                             result.scheduleCsv(), ctx.population.persons(), activityCsv);
                     source = "actiTopp";
+                    job.summary.put("actitoppHouseholds", result.households());
+                    job.summary.put("actitoppCars", result.cars());
+                    job.summary.put("actitoppAreaType", scenario.population.areaType);
+                    job.log("actiTopp: " + result.households() + " vollständige Haushaltskontexte, "
+                            + result.cars() + " tatsächliche Pkw; Raumtyp " + scenario.population.areaType
+                            + " (Szenarioannahme)");
                 } catch (Exception e) {
                     job.log("actiTopp fehlgeschlagen (" + e.getMessage() + ") – Fallback Template-Generator");
                     count = generator.generate(activityCsv, ctx.population.persons());
@@ -1141,7 +1159,7 @@ public class GenerationService {
             job.stage("Simulation (logiTopp)").status = "SKIPPED";
             job.log("Simulation übersprungen ("
                     + (properties.getSimulation().isEnabled()
-                    ? "Legacy-Projekt nicht gefunden: " + runner.projectDir()
+                    ? "logiTopp-Adapter fehlt oder ist inkompatibel: " + runner.projectDir()
                     : "deaktiviert") + ")");
             return;
         }

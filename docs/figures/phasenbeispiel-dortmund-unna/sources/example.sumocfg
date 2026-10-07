@@ -1,0 +1,1 @@
+<configuration><input><net-file value="network.net.xml.gz"/><route-files value="routes.rou.xml.gz"/></input><time><end value="600"/></time><random_number><seed value="42"/></random_number><gui_only><gui-settings-file value="view.xml"/></gui_only></configuration>

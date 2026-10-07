@@ -43,6 +43,7 @@ public class ScenarioController {
     public Scenario defaults() {
         Scenario scenario = new Scenario();
         scenario.zoning.maxZones = properties.getMaxZones();
+        scenario.zoning.mode = "epsg3035";
         return scenario;
     }
 
@@ -234,6 +235,10 @@ public class ScenarioController {
             throw badRequest("Unbekanntes Zielmodell");
         }
         validateReturns(scenario);
+        if (!java.util.Set.of("RURAL", "PROVINCIAL", "CITYOUTSKIRT", "METROPOLITAN", "CONURBATION")
+                .contains(scenario.population.areaType == null ? "" : scenario.population.areaType)) {
+            throw badRequest("Ungültiger Raumtyp für die Aktivitätenplanung");
+        }
         double samplingFraction = scenario.population.samplingFraction;
         if (!Double.isFinite(samplingFraction) || samplingFraction <= 0 || samplingFraction > 1) {
             throw badRequest("Stichprobenanteil muss größer 0 und höchstens 1 sein");

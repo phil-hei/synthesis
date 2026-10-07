@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-02",
+  "fixedDestinationTimes": "Initial CAR matrix now precedes population and is used for fixed WORK/EDUCATION destinations; observed commuter relations retain priority",
+  "timeDecayScaleMinutes": 20,
+  "scaleIsEmpiricallyCalibrated": false,
+  "tests": {
+    "fullBackendSuite": {
+      "total": 223,
+      "passed": 214,
+      "skipped": 9,
+      "errors": 0,
+      "failures": 0
+    },
+    "finalPopulationTests": {
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    "kitRescheduling": {
+      "tests": 3,
+      "errors": 0,
+      "failures": 0
+    }
+  },
+  "homeDelayExample": {
+    "plannedHomeArrival": "18:00",
+    "actualHomeArrival": "18:30",
+    "nextActivity": "next day 08:00",
+    "nextObservedTripMinutes": 30,
+    "adjustedHomeDurationMinutes": 780,
+    "nextDeparture": "next day 07:30"
+  },
+  "limits": [
+    "Initial car-time proxy for fixed destinations; multimodal/GTFS weighting still open",
+    "Matrix routing estimates remain marked as estimates",
+    "Home example uses unchanged KIT strategy and observed next-trip duration; actual next arrival not guaranteed",
+    "No foreign KIT source changes"
+  ],
+  "vehicleImportExample": "Strict parser rejects unversioned vehicles root array; field mapping and pending UI documented"
+}

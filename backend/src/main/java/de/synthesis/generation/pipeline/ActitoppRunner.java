@@ -2,10 +2,7 @@ package de.synthesis.generation.pipeline;
 
 import de.synthesis.SynthesisProperties;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -13,19 +10,18 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Bridges the pipeline to KIT actiTopp (actitoppNG): writes the synthesized
- * persons as an input CSV, invokes the {@code runSynthesis} Gradle task in the
- * actitoppNG project and returns the generated weekly schedule CSV
+ * persons as an input CSV, invokes a separate SyntheSis adapter with unchanged
+ * actiTopp core sources and returns the generated weekly schedule CSV
  * (personId;activityType;startMinute;durationMinute). Calibrated activity
  * scheduling replaces the simple template generator when enabled.
  */
 public class ActitoppRunner {
 
-    static final String CONTRACT = "synthesis-actitopp-v1";
-    private static final Path BUILD_FILE = Path.of("build.gradle.kts");
+    static final String CONTRACT = "synthesis-actitopp-households-v2";
+    private static final Path LAUNCHER = Path.of("bin/synthesis-actitopp-adapter");
     private static final Path CONTRACT_FILE = Path.of("synthesis-contract.properties");
-    private static final Path RUNNER_SOURCE = Path.of("src/main/kotlin/SynthesisRunner.kt");
 
-    public record Result(Path scheduleCsv, long persons) {
+    public record Result(Path scheduleCsv, long persons, long households, long cars) {
     }
 
     private final Path projectDir;
@@ -37,11 +33,7 @@ public class ActitoppRunner {
     }
 
     public boolean isAvailable() {
-        if (!Files.exists(projectDir.resolve("gradlew"))
-                || !Files.exists(projectDir.resolve(BUILD_FILE))
-                || !Files.exists(projectDir.resolve(RUNNER_SOURCE))) {
-            return false;
-        }
+        if (!Files.isRegularFile(projectDir.resolve(LAUNCHER))) return false;
         try {
             verifyContract();
             return true;
@@ -58,17 +50,18 @@ public class ActitoppRunner {
      * Runs actiTopp for the persons in {@code personCsv} (the pipeline's person.csv)
      * and returns the schedule CSV under {@code workDir}.
      */
-    public Result run(Path personCsv, Path workDir) throws IOException, InterruptedException {
+    public Result run(Path personCsv, Path householdCsv, Path carCsv, String areaType, Path workDir) throws IOException, InterruptedException {
         verifyContract();
         Files.createDirectories(workDir);
         Path input = workDir.resolve("actitopp-input.csv");
         Path output = workDir.resolve("actitopp-schedule.csv");
-        long persons = writeInput(personCsv, input);
+        ActitoppInput.Counts counts = ActitoppInput.write(personCsv, householdCsv, carCsv, areaType, input);
 
+        Files.deleteIfExists(output);
+        Files.deleteIfExists(workDir.resolve("actitopp-households.csv"));
         Path logFile = workDir.resolve("actitopp.log");
-        ProcessBuilder builder = new ProcessBuilder("sh", "gradlew", "--quiet", "runSynthesis",
-                "-Pinput=" + input.toAbsolutePath(),
-                "-Poutput=" + output.toAbsolutePath());
+        ProcessBuilder builder = new ProcessBuilder("sh", projectDir.resolve(LAUNCHER).toString(),
+                input.toAbsolutePath().toString(), output.toAbsolutePath().toString());
         builder.directory(projectDir.toFile());
         ExternalJavaToolchain.configure(builder);
         builder.redirectErrorStream(true);
@@ -83,14 +76,14 @@ public class ActitoppRunner {
             throw new IOException("actiTopp fehlgeschlagen (Exit " + process.exitValue() + "): "
                     + lastLines(logFile));
         }
-        return new Result(output, persons);
+        return new Result(output, counts.persons(), counts.households(), counts.cars());
     }
 
     void verifyContract() throws IOException {
         Path marker = projectDir.resolve(CONTRACT_FILE);
         if (!Files.isRegularFile(marker)) {
             throw new IOException("actiTopp-Vertrag fehlt: " + marker
-                    + " (legacy/actitopp-synthesis-v1/apply.sh ausführen)");
+                    + " (scripts/build-actitopp-adapter.sh ausführen)");
         }
         Properties properties = new Properties();
         try (var in = Files.newInputStream(marker)) {
@@ -101,29 +94,9 @@ public class ActitoppRunner {
             throw new IOException("Inkompatibler actiTopp-Vertrag: erwartet " + CONTRACT
                     + ", gefunden " + (actual.isBlank() ? "(leer)" : actual));
         }
-        if (!Files.readString(projectDir.resolve(BUILD_FILE)).contains("runSynthesis")) {
-            throw new IOException("actiTopp-Gradle-Task runSynthesis fehlt");
+        if (!Files.isRegularFile(projectDir.resolve(LAUNCHER))) {
+            throw new IOException("Separater actiTopp-Adapter fehlt: " + projectDir.resolve(LAUNCHER));
         }
-    }
-
-    /** person.csv → actiTopp input (personId;age;employment;gender). */
-    private long writeInput(Path personCsv, Path input) throws IOException {
-        long count = 0;
-        try (BufferedReader reader = Files.newBufferedReader(personCsv, StandardCharsets.UTF_8);
-             Writer writer = Files.newBufferedWriter(input)) {
-            writer.write("personId;age;employment;gender\n");
-            reader.readLine(); // header: personId;personNumber;householdId;age;employment;gender;...
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] c = line.split(";", -1);
-                writer.write(c[0] + ";" + c[3] + ";" + c[4] + ";" + c[5] + "\n");
-                count++;
-            }
-        }
-        return count;
     }
 
     private static String lastLines(Path logFile) {
