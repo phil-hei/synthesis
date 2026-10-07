@@ -301,3 +301,12 @@ unveränderte KIT-Originalquellen; eigene Retouren- und Runner-Erweiterungen
 liegen außerhalb der KIT-Checkouts. Installation:
 `bash scripts/build-logitopp-adapter.sh`. Der alte Patchvertrag wird vom
 Bootstrap nicht mehr angewendet. [Abnahme und Zeitkonflikte](docs/17-kit-adapter-und-haushaltskonzept.md).
+
+### Gemeinsame Straßenrouten (experimentell)
+
+Die Studio-Option „Gemeinsame Straßenrouten verwenden“ überträgt konkrete
+GraphHopper-Straßenfolgen für Pkw, Rad und Zustell-Legs nach SUMO. Sie ist
+standardmäßig aus und benötigt reales Routing. Zuordnungen, Ersatzrouten und
+getrennte Reisezeitwerte stehen in den `sumo/shared-road-*.jsonl`-Berichten;
+Routenveränderungen nach der Zuordnung werden als Fehler erkannt.
+[Abnahme, Netzimport und Grenzen](docs/20-erweiterungen-routenkonsistenz-und-zeitfeedback.md#experimenteller-adapter-umgesetzt-07102026).

@@ -2408,3 +2408,36 @@ Die vorherigen nativen Wochenlauf-Belege und Grenzen stehen in
 [docs/17](17-kit-adapter-und-haushaltskonzept.md) und den dort verlinkten
 Prüfberichten. Ein neuer durchgängiger Haushaltslauf über beide Adapter und
 fachlich kalibrierte feste Ziele bleiben offen.
+
+## Gemeinsame Straßenrouten GraphHopper → SUMO (✅ 2026-10-07, experimentell)
+
+`population.sharedRoadRoutes` (Default `false`) überträgt konkrete gerichtete
+OSM-Wegfolgen für Pkw/Rad und Zustell-Legs nach SUMO. Personenwege und
+Zustellstopps verwenden dabei ihre tatsächlichen Nachfragekoordinaten.
+Netzversionen, Profil, Punkte, Straßenfolge und Fallbacks werden pro Fahrzeug
+festgehalten; nach `duarouter` wird jede zugeordnete Route auf unveränderte
+Kantenfolge geprüft. Der Netzimport erhält OSM-Abschnitte und Radzugänge.
+
+**Spikes und Negativbefunde:** Zusammengeführte Kreuzungen und entfernte
+Kurzabschnitte verhinderten im Standardnetz eine vollständige Rastatt-Zuordnung.
+Zusätzlich fehlte die OSM-Radzugangsübernahme; der Router wählte Rad-Routen
+neu. Abschnitte erhalten, `osm.bike-access` und `keep-route-probability=1`
+beheben diese Fälle im kleinen nativen Probelauf. Ein DOM-Netzleser wurde wegen
+seines Hängers beim großen Netz verworfen; der Adapter liest XML als Stream.
+
+**Verifiziert:** `SharedRoadRoutesTest` prüft Richtung, geteilte Kanten,
+Teilpositionen, fehlende/gesperrte Verbindungen sowie veränderte/verlorene Routen.
+Der native Rastatt-Test überträgt sechs Fahrten (Pkw, Rad, Lieferwagen und
+Lastenrad einschließlich Depot-Rückwegen); alle sechs kommen ohne Umrouting an.
+Die API prüft das Realrouting-Gate; das Studio prüft Sichtbarkeit und Auswahl.
+
+**Grenzen und nächste Abnahme:** zusätzliche Gebiete und belastete A/B-Läufe,
+Fallbackquote, Netzkosten und Reisezeitvergleich. Statische SUMO-Kantenzeiten
+sind als Schätzung von beobachteten TripInfo-Zeiten getrennt. Fuß/ÖV,
+stoppspezifische Tourplanung und zeitabhängige Matrizen bleiben offen.
+[Vertrag und Artefakte](20-erweiterungen-routenkonsistenz-und-zeitfeedback.md#experimenteller-adapter-umgesetzt-07102026).
+
+**Abschluss-Gates (07.10.2026):** 230 Backendtests, 221 bestanden und
+9 explizit übersprungen, keine Fehler; 53 Frontendtests und Produktionsbuild
+bestanden. Alle fünf Straßenroutentests einschließlich nativer Kette bestanden
+ohne Skip. [Prüfbericht](verification/2026-10-07-shared-road-routes.json).

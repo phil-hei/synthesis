@@ -34,6 +34,15 @@ public final class SumoVehicleTypes {
         }
     }
     public boolean active() { return config.appliesToSumo(); }
+    /** Routing checks use the actual selected vType, including catalogue overrides. */
+    public String vehicleClass(String id) {
+        if (types.containsKey(id)) return types.get(id).routing().sumoVehicleClass();
+        return switch (id) {
+            case "fahrrad", "lastenrad" -> "bicycle";
+            case "lkw" -> "delivery";
+            default -> "passenger";
+        };
+    }
     public String resultName(String id) { return names.getOrDefault(id, id); }
     public void beginExport() { exported.clear(); }
     public String select(String legacyType, String stableTripKey) {

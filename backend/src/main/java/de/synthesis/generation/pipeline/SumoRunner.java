@@ -60,6 +60,12 @@ public class SumoRunner {
     private final int maxTrips;
     private final int timeoutMinutes;
     private final SumoVehicleTypes vehicleTypes;
+    private boolean sharedRoadRoutes;
+
+    public SumoRunner useSharedRoadRoutes(boolean enabled) {
+        sharedRoadRoutes = enabled;
+        return this;
+    }
 
     public SumoRunner(SynthesisProperties.Sumo config) {
         this(config, VehicleConfiguration.empty(), 42);
@@ -115,6 +121,8 @@ public class SumoRunner {
             throws IOException, InterruptedException {
         Path dir = artifacts.resolve("sumo");
         Files.createDirectories(dir);
+        for (String report : List.of("shared-road-routes.jsonl", "shared-road-routes-summary.json", "shared-road-times.jsonl"))
+            Files.deleteIfExists(dir.resolve(report));
         if (vehicleTypes.active()) VehicleArtifacts.write(artifacts.resolve("vehicles/sumo-execution.json"),
                 Map.of("status", "started", "fleetStateSimulated", false));
 
@@ -122,12 +130,16 @@ public class SumoRunner {
 
         long start = System.currentTimeMillis();
         // 1. OSM → SUMO-Netz: Auto-/Radkanten + Gehwege/Querungen für die multimodale Simulation
-        exec(dir, log, binDir.resolve("netconvert").toString(),
+        List<String> netArgs = new ArrayList<>(List.of(binDir.resolve("netconvert").toString(),
                 "--osm-files", "network.osm", "-o", "net.net.xml",
-                "--geometry.remove", "--ramps.guess", "--junctions.join",
-                "--tls.guess-signals", "--tls.discard-simple",
+                "--geometry.remove", String.valueOf(!sharedRoadRoutes),
+                "--junctions.join", String.valueOf(!sharedRoadRoutes),
+                "--ramps.guess", "--tls.guess-signals", "--tls.discard-simple",
                 "--keep-edges.by-vclass", "passenger,bicycle,pedestrian", "--remove-edges.isolated",
-                "--no-turnarounds", "--sidewalks.guess", "--crossings.guess");
+                "--no-turnarounds", "--sidewalks.guess", "--crossings.guess"));
+        if (sharedRoadRoutes) netArgs.addAll(List.of("--osm.bike-access", "--output.original-names", "--plain-output-prefix",
+                "route-geo", "--proj.plain-geo"));
+        exec(dir, log, netArgs.toArray(new String[0]));
 
         // ÖV-Infrastruktur (gtfs2pt) zum frisch gebauten Netz beschaffen – Ergebnis fließt
         // sowohl in die intermodale Personen-Routung als auch in die Simulation ein
@@ -155,7 +167,7 @@ public class SumoRunner {
             deliveryTrips = delivery.size();
             trips.addAll(delivery);
         }
-        writeTripsXml(trips, dir.resolve("trips.xml"));
+        writeTripsXml(trips, dir.resolve("trips.xml"), osmXml);
 
         // Personen: Fußgänger (Fußweg) und – falls ÖV verfügbar – ÖV-Nachfrage (intermodal:
         // Fußweg → Ride → Fußweg). Beide sind SUMO-<person>, keine <trip>.
@@ -188,12 +200,21 @@ public class SumoRunner {
                 "-n", "net.net.xml", "--route-files", routeFiles, "-o", "routes.rou.xml",
                 "--mapmatch.distance", String.valueOf(MAPMATCH_DISTANCE_M),
                 "--ignore-errors", "--no-step-log"));
+        if (sharedRoadRoutes) dua.addAll(List.of("--keep-route-probability", "1"));
         if (pt != null) {
             dua.add("--additional-files");
             dua.add(pt.vtypes().toAbsolutePath() + "," + pt.stops().toAbsolutePath()
                     + "," + pt.vehicles().toAbsolutePath());
         }
         exec(dir, log, dua.toArray(new String[0]));
+        if (sharedRoadRoutes) {
+            SharedRoadRoutes.verifyWritten(dir);
+            var routeSummary = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readTree(dir.resolve("shared-road-routes-summary.json").toFile());
+            log.accept("Gemeinsame Straßenrouten: " + routeSummary.path("mapped").asInt()
+                    + " geprüft, " + routeSummary.path("fallback").asInt()
+                    + " Ersatzrouten; Details: sumo/shared-road-routes-summary.json");
+        }
 
         // 4. SUMO-Lauf
         // Kantenscharfe Messung (Netzlast): über den ganzen Tag aggregierte edgeData
@@ -219,6 +240,7 @@ public class SumoRunner {
                 </configuration>
                 """, additionalFiles));
         exec(dir, log, binDir.resolve("sumo").toString(), "-c", "scenario.sumocfg");
+        if (sharedRoadRoutes) SharedRoadRoutes.writeObservedTimes(dir);
 
         // Kantengeometrien in WGS84 exportieren und mit den Messwerten zur Staukarte verbinden
         exec(dir, log, binDir.resolve("netconvert").toString(),
@@ -737,10 +759,11 @@ public class SumoRunner {
     }
 
     /** Alle Trips (nach Abfahrt sortiert) mit Fahrzeugtypen als trips.xml schreiben. */
-    private void writeTripsXml(List<Trip> trips, Path out) throws IOException {
+    private void writeTripsXml(List<Trip> trips, Path out, String osmXml) throws IOException {
         trips.sort(Comparator.comparingInt(Trip::departSec));
         vehicleTypes.beginExport();
-        try (Writer writer = Files.newBufferedWriter(out)) {
+        try (SharedRoadRoutes shared = sharedRoadRoutes ? new SharedRoadRoutes(out.getParent(), osmXml) : null;
+             Writer writer = Files.newBufferedWriter(out)) {
             writer.write("<routes>\n");
             // HBEFA3-Emissionsklassen: Benzin-Pkw EU4, Diesel-Lieferwagen EU4, Rad/Lastenrad emissionsfrei
             writer.write("  <vType id=\"pkw\" vClass=\"passenger\" emissionClass=\"HBEFA3/PC_G_EU4\"/>\n");
@@ -752,6 +775,10 @@ public class SumoRunner {
             for (Trip t : trips) {
                 String type = vehicleTypes.select(t.type(), t.departSec() + "|" + t.fromLon() + "|"
                         + t.fromLat() + "|" + t.toLon() + "|" + t.toLat());
+                if (shared != null) {
+                    String explicit = shared.vehicle("v" + id, type, vehicleTypes.vehicleClass(type), t);
+                    if (explicit != null) { writer.write(explicit); id++; continue; }
+                }
                 writer.write(String.format(
                         "  <trip id=\"v%d\" type=\"%s\" depart=\"%d\" fromLonLat=\"%s,%s\" toLonLat=\"%s,%s\"/>%n",
                         id++, type, t.departSec(), t.fromLon(), t.fromLat(), t.toLon(), t.toLat()));

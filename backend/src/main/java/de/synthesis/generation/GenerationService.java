@@ -1360,7 +1360,8 @@ public class GenerationService {
             job.log("SUMO übersprungen (Verkehrssimulation nicht ausgewählt)");
             return;
         }
-        SumoRunner runner = new SumoRunner(properties.getSumo(), ctx.vehicles.resolved(), scenario.population.seed);
+        SumoRunner runner = new SumoRunner(properties.getSumo(), ctx.vehicles.resolved(), scenario.population.seed)
+                    .useSharedRoadRoutes(scenario.population.sharedRoadRoutes);
         Path demandResult = artifacts.resolve("simulation").resolve("results")
                 .resolve("demandsimulationResult.csv");
         if (!properties.getSumo().isEnabled() || !runner.isAvailable()) {
@@ -1389,6 +1390,11 @@ public class GenerationService {
                     sumo.meanRouteLengthM() / 1000, sumo.meanSpeedMs() * 3.6, sumo.co2Kg(),
                     sumo.durationSeconds()));
             job.summary.put("sumoVehicles", sumo.vehicles());
+            if (scenario.population.sharedRoadRoutes) {
+                var routes = mapper.readTree(artifacts.resolve("sumo/shared-road-routes-summary.json").toFile());
+                job.summary.put("sharedRoadRoutesMapped", routes.path("mapped").asInt());
+                job.summary.put("sharedRoadRoutesFallback", routes.path("fallback").asInt());
+            }
         } catch (Exception e) {
             // FAILED statt SKIPPED: der Nutzer soll Fehler von bewusster Abwahl unterscheiden können
             job.stage("SUMO (Verkehr)").status = "FAILED";
@@ -1475,7 +1481,8 @@ public class GenerationService {
             return;
         }
         try {
-            SumoRunner runner = new SumoRunner(properties.getSumo(), ctx.vehicles.resolved(), scenario.population.seed);
+            SumoRunner runner = new SumoRunner(properties.getSumo(), ctx.vehicles.resolved(), scenario.population.seed)
+                    .useSharedRoadRoutes(scenario.population.sharedRoadRoutes);
             SimulationRunner simRunner = new SimulationRunner(properties.getSimulation());
             Path simulationDir = artifacts.resolve("simulation");
             Path modeChoiceOverride = modeChoiceCalibrationOverride(scenario, simulationDir);
@@ -1547,6 +1554,11 @@ public class GenerationService {
                         plannedTours, job::log);
                 writeSumoSummary(artifacts.resolve("sumo").resolve("summary.json"), sumo);
                 job.summary.put("sumoVehicles", sumo.vehicles());
+                if (scenario.population.sharedRoadRoutes) {
+                    var routes = mapper.readTree(artifacts.resolve("sumo/shared-road-routes-summary.json").toFile());
+                    job.summary.put("sharedRoadRoutesMapped", routes.path("mapped").asInt());
+                    job.summary.put("sharedRoadRoutesFallback", routes.path("fallback").asInt());
+                }
             }
 
             Map<String, Double> finalSplit = readModalSplit(

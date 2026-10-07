@@ -186,6 +186,8 @@ public class Scenario {
          * Pkw-Matrix zurück und logiTopp entscheidet einmal neu (benötigt logiTopp + SUMO).
          */
         public boolean sumoFeedback = false;
+        /** Experimental: preserve concrete GraphHopper street paths in SUMO. */
+        public boolean sharedRoadRoutes = false;
         /**
          * @deprecated Kompatibilitätsfeld. Bei SUMO wird ÖV automatisch versucht, sobald ein
          * regionaler GTFS-Feed und die Transit-Werkzeuge verfügbar sind.

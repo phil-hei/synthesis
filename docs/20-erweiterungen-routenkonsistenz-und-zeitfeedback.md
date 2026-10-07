@@ -1,6 +1,6 @@
 # Erweiterungen: Routenkonsistenz, Zeitfeedback und Modellvergleich
 
-Stand: 02.10.2026. Geprüft anhand von `GenerationService.stageNetworkFeedback`,
+Stand: 07.10.2026. Geprüft anhand von `GenerationService.stageNetworkFeedback`,
 `SumoRunner.computeOdFactors`, `RoutingEngine` und der KIT-Rescheduling-Tests.
 
 ## Kurze Erweiterungspunkte für die Folien
@@ -52,6 +52,54 @@ Umsetzung außerhalb der KIT-Komponenten:
 Die Konsistenz der Reisematrizen ist zusätzlich zu prüfen: Auch bei identischem
 Weg können GraphHopper-Profile und SUMO-Fahrzeuge unterschiedliche freie Zeiten
 liefern. Eine gemeinsame Routenbasis entfernt nicht automatisch diese Differenz.
+
+### Experimenteller Adapter umgesetzt (07.10.2026)
+
+`population.sharedRoadRoutes=false` ist eine neue, ausdrücklich optionale
+Szenarioeinstellung. Im Studio ist sie bei gewähltem SUMO als „Gemeinsame
+Straßenrouten verwenden“ sichtbar. Sie benötigt `useRealRouting=true`.
+Der Standardpfad oben bleibt bestehen; der Adapter überträgt konkrete Wege aus
+GraphHopper für Pkw, Rad, Lieferwagen und Lastenrad auf dasselbe OSM-Netz in SUMO.
+Es werden die tatsächlichen Start-/Zielkoordinaten der Nachfragewege bzw.
+Zustell-Legs verwendet, keine Zonenschwerpunkte als Ersatz.
+
+Der GraphHopper-Import erhält OSM-Weg-IDs über eine eigene Parser-Erweiterung.
+Der SUMO-Import bewahrt Abschnitte (`geometry.remove=false`,
+`junctions.join=false`), importiert Radzugangsregeln (`osm.bike-access`) und
+exportiert ursprüngliche OSM-Bezüge sowie geografische Kantengeometrien.
+Der Adapter prüft Fahrtrichtung, geometrische Nähe (15 m), Fahrzeugklassen und
+zulässige Fahrstreifenverbindungen einschließlich interner Kreuzungskanten.
+Die gesamte ursprüngliche Geometrie wird in höchstens 15-m-Abständen auf
+Abdeckung geprüft, damit gleiche Weg-IDs keine Abkürzung verdecken.
+Geteilte Kanten werden verbunden; mehrere OSM-Bezüge je Kante werden berücksichtigt.
+`duarouter --keep-route-probability 1` erhält explizite Routen. Verändert oder
+verwirft der Router eine bereits zugeordnete Route, scheitert die SUMO-Stufe sichtbar.
+Eine nicht zuordenbare Route wird als `fallback-duarouter` ausgewiesen und weiterhin
+auf dem SUMO-Netz berechnet. Die Zuordnungs-/Fallbackzahlen erscheinen im Job-Log.
+
+Artefakte unter `sumo/`:
+
+- `shared-road-routes.jsonl`: Profil, konkrete Punkte, gerichtete OSM-Wegfolge,
+  Netzhashes, SUMO-Kanten und Anfangs-/Endpositionen pro Fahrzeug.
+- `shared-road-routes-summary.json`: Zuordnungen, Ersatzrouten, nach dem Router
+  geprüfte Routen, GraphHopper-Version und Importannahmen.
+- `shared-road-times.jsonl`: GraphHopper-Zeit, statische SUMO-Kantenzeit-Schätzung
+  und tatsächliche TripInfo-Zeiten getrennt. Fehlende Ankünfte heißen
+  `missing-tripinfo` und werden nicht als null Sekunden interpretiert.
+
+**Grenzen:** Die statische Kantenzeit berücksichtigt keine Kreuzungswartezeiten,
+Fahrzeugbeschleunigung oder individuelle Geschwindigkeitsfaktoren und ist kein
+separater unbelasteter Simulationslauf. Das kleine Rastatt-Beispiel prüft die
+technische Kette, keine Stauwirkung oder regionale Abdeckung. Die Zuordnung ist
+konservativ; jedes Netz muss auf seine Fallbackquote geprüft werden. Der geänderte
+Netzimport erzeugt mehr Kanten und benötigt zusätzliche Rechenzeit. Fußgänger,
+ÖV und Rail/Tram bleiben im bisherigen Pfad. Die Tourreihenfolge in logiTopp
+wird weiterhin geometrisch geplant; stoppspezifische Netzzeiten in der
+Tourplanung sind ein weiterer Schritt. Die zonalen Matrixzeiten bleiben
+zonale Näherungen und werden durch diese Routeübertragung nicht zu Haus-zu-Haus-Zeiten.
+
+Quellen: [SUMO-Netzexport](https://sumo.dlr.de/docs/Networks/Export.html),
+[explizite Fahrzeugrouten](https://sumo.dlr.de/docs/Definition_of_Vehicles,_Vehicle_Types,_and_Routes.html).
 
 ## Zeitfeedback: schon vorhanden und noch offen
 

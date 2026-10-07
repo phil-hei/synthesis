@@ -234,6 +234,8 @@ public class ScenarioController {
                 .anyMatch(target -> target == null || !TARGET_MODELS.contains(target))) {
             throw badRequest("Unbekanntes Zielmodell");
         }
+        if (scenario.population.sharedRoadRoutes && !scenario.population.useRealRouting)
+            throw badRequest("Gemeinsame Straßenrouten benötigen reales Routing");
         validateReturns(scenario);
         if (!java.util.Set.of("RURAL", "PROVINCIAL", "CITYOUTSKIRT", "METROPOLITAN", "CONURBATION")
                 .contains(scenario.population.areaType == null ? "" : scenario.population.areaType)) {

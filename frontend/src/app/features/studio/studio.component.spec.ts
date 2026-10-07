@@ -260,6 +260,22 @@ describe('StudioComponent', () => {
     expect(component.scenario.population.samplingFraction).toBe(0.4);
   });
 
+  it('exposes shared street routes only for SUMO and preserves the selection', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('shared-route-test');
+    fixture.detectChanges();
+    const checkbox = () => Array.from((fixture!.nativeElement as HTMLElement).querySelectorAll('label'))
+      .find(label => label.textContent?.includes('Gemeinsame Straßenrouten'))?.querySelector<HTMLInputElement>('input');
+    expect(checkbox()).toBeUndefined();
+    component.scenario.targetModels = ['logitopp', 'sumo'];
+    fixture.detectChanges();
+    expect(checkbox()).toBeDefined();
+    checkbox()!.click();
+    expect(component.scenario.population.sharedRoadRoutes).toBe(true);
+  });
+
   it('automatically selects and locks logiTopp when SUMO is selected', () => {
     fixture = TestBed.createComponent(StudioComponent);
     fixture.detectChanges();

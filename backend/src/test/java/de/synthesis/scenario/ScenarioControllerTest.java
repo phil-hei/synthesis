@@ -85,6 +85,7 @@ class ScenarioControllerTest {
         Scenario defaults = controller.defaults();
 
         assertEquals("epsg3035", defaults.zoning.mode);
+        assertFalse(defaults.population.sharedRoadRoutes);
         assertEquals(100.0, defaults.zoning.cellSizeMeters);
         assertEquals(600, defaults.zoning.maxZones);
         assertFalse(defaults.population.correctDistanceDecay,
@@ -327,6 +328,14 @@ class ScenarioControllerTest {
         assertEquals(0.35, persisted.logistics.returns.shareOfPrivateOrders);
         assertEquals(0.75, persisted.logistics.returns.pickupShares.home);
         assertEquals(0.25, persisted.logistics.returns.pickupShares.work);
+    }
+
+    @Test
+    void sharedRoadRoutesRequireRealRouting() {
+        Scenario scenario = validScenario();
+        scenario.population.sharedRoadRoutes = true;
+        scenario.population.useRealRouting = false;
+        assertBadRequest(scenario, "Gemeinsame Straßenrouten benötigen reales Routing");
     }
 
     @Test

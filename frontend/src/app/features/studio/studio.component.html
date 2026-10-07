@@ -534,6 +534,12 @@
             LLM-Verkehrsmittelwahl (experimenteller Vergleich)
           </label>
         }
+        @if (hasTarget('sumo')) {
+          <label class="checkbox" title="Experimentell: konkrete Straßenrouten für Pkw, Rad und Zustellfahrzeuge aus GraphHopper nach SUMO übertragen. Benötigt reales Routing; nicht zuordenbare Wege werden als Ersatzrouten im Prüfbericht ausgewiesen. Der Netzimport erhält dafür die OSM-Abschnitte und kann länger dauern.">
+            <input type="checkbox" [(ngModel)]="scenario.population.sharedRoadRoutes">
+            Gemeinsame Straßenrouten verwenden (experimentell)
+          </label>
+        }
         @if (hasTarget('logitopp') && hasTarget('sumo')) {
           <label class="checkbox"
             title="Gleichgewichts-Schleife: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu, SUMO simuliert erneut – iterativ bis Konvergenz (mehrere zusätzliche Simulationsläufe, daher langsamer).">

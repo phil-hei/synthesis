@@ -3769,3 +3769,31 @@ für diesen Ausschnitt. Pkw-Bestände kommen weiterhin aus synthetischen
 Haushalten, das OD-Netz ist aggregiert, und das Modellprofil bleibt
 unkalibriert. Weitere Regionen und der fachliche Relationsvergleich mit
 Takomat sind nicht durch diesen Test abgenommen.
+
+## Gemeinsame GraphHopper-/SUMO-Straßenrouten (2026-10-07) — kleine native Kette bestanden
+
+**Befund:** Ein Rastatt-Probelauf mit Pkw, Fahrrad sowie Hin-/Rückwegen von
+Lieferwagen und Lastenrad überträgt alle sechs Straßenfolgen. Nach `duarouter`
+sind alle sechs Kantenfolgen unverändert; alle sechs TripInfo-Ankünfte sind
+vorhanden und melden `rerouteNo=0`. Die vier ursprünglichen Adaptertests plus
+die zusätzliche Geometrieabdeckung prüfen auch unzulässige Verbindungen,
+Gegenrichtung, Abkürzungen und verworfene/veränderte Routen.
+[Native Zahlen und Netz-Hashes](verification/2026-10-07-shared-road-routes.json).
+
+Beim Pkw-Beispiel beträgt die GraphHopper-Zeit 190,777 s, die statische
+SUMO-Kantenzeit-Schätzung 120,720 s und die tatsächliche SUMO-Dauer 238 s.
+Das zeigt trotz gleicher Straßenfolge unterschiedliche Zeitannahmen. Der
+Unterschied ist kein isolierter Staueffekt: Kantenzeit-Schätzung und
+Simulation unterscheiden sich zusätzlich bei Kreuzungen, Beschleunigung und
+Fahrzeuggeschwindigkeit. Der Probelauf enthält keine Belastungs-A/B-Prüfung.
+
+**Negativbefunde:** Kreuzungszusammenführung entfernt Kurzabschnitte;
+fehlender OSM-Radzugangsimport verhindert zunächst Radzuordnungen;
+`duarouter` kann explizite Rad-Routen neu auswählen. Der experimentelle
+Import erhält Abschnitte und Radzugänge, und die Routenübernahme wird explizit
+festgelegt. Die Nachprüfung erkennt jede verlorene oder veränderte Zuordnung.
+
+**Konsequenz:** Option bleibt `sharedRoadRoutes=false` im Standard.
+Gebietsabdeckung, Fallbackquote, Rechenkosten und getrennte unbelastete/belastete
+Läufe sind nächste Abnahmen. Aus der technischen Kette folgt weder eine
+kalibrierte Reisezeitmatrix noch eine Netzzeit-basierte logiTopp-Tourplanung.

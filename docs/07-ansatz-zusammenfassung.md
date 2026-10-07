@@ -268,3 +268,10 @@ Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 *Verweise:* Zwei-Achsen-Modell, GTA-Integration und Roadmap im Detail unter
 [docs/06-gta-integration-konzept.md](06-gta-integration-konzept.md); Validierung des Legacy-Stacks
 unter [docs/05-validierung.md](05-validierung.md).
+
+**Gemeinsame Straßenrouten (07.10.2026, opt-in):** Konkrete GraphHopper-Pfade
+für Pkw, Rad und Zustell-Legs werden nach OSM-Bezug, Richtung und Befahrbarkeit
+auf SUMO übertragen und nach dem Router geprüft. Ersatzrouten und Reisezeiten
+werden getrennt ausgewiesen. Sechs Rastatt-Testfahrten kommen ohne Umrouting an;
+Gebietsabdeckung und Belastungswirkung sind damit nicht nachgewiesen.
+[Details](20-erweiterungen-routenkonsistenz-und-zeitfeedback.md#experimenteller-adapter-umgesetzt-07102026).

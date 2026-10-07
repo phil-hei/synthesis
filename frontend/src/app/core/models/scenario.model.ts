@@ -71,6 +71,7 @@ export interface Scenario {
     gtaWhatIf: string;
     /** Netz-Feedback: SUMO-Stauzeiten → Pkw-Matrix → erneute logiTopp-Entscheidung. */
     sumoFeedback: boolean;
+    sharedRoadRoutes?: boolean;
     /** Optional hochgeladener GTFS-Feed (Pfad); Fallback zum Auto-Fetch. */
     gtfsUploadPath?: string;
     useKitPopulation: boolean;

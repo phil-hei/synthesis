@@ -66,12 +66,12 @@ public class SynthesisSimulatorBuilder {
 
 	public SynthesisSimulatorBuilder(SimulationContext context) {
 		this.context = context;
-		
+
 		try {
 			export = new VisumDmdExportShortTerm(context);
 			export.init();
 			context.personResults().addListener(export);
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -105,7 +105,7 @@ public class SynthesisSimulatorBuilder {
 				PersonStateSimple.UNINITIALIZED, context());
 
 		createMatrixWriters(simulator);
-	
+
 		return simulator;
 	}
 

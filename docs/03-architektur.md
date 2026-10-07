@@ -510,3 +510,15 @@ Ausbauziele.
 Docker-Compose: `frontend` (nginx), `backend` (Spring Boot), `graphhopper`, optional `r5`,
 `worker-python` (Geo-Skripte, OSM2Attractiveness), `worker-mobitopp` (JDK + mobiTopp/logiTopp-Jars),
 später `worker-mobilecity` (Python-Pipelines + .NET Config Tool). Artefakte auf gemeinsamem Volume.
+
+## Optionaler Straßenroutenadapter (07.10.2026)
+
+`population.sharedRoadRoutes=false` ergänzt die bestehende SUMO-Stufe, ohne
+eine zusätzliche Stufe oder parallele Generierung einzuführen. Der initiale
+Matrizenpfad bleibt zonal. Innerhalb der optionalen SUMO-Ausführung berechnet
+`RoutingEngine.roadPath` konkrete Wege auf demselben OSM-Snapshot;
+`SumoRoadRouteMapper` übersetzt deren OSM-Bezüge auf zulässige gerichtete
+SUMO-Kanten. `SharedRoadRoutes` schreibt Herkunft, Zuordnungen, Ersatzrouten
+und Zeiten und prüft die Straßenfolge nach dem Router. KIT-Kerne bleiben
+unverändert; das Routing innerhalb ihrer Tourplanung wird hiermit nicht ersetzt.
+[Artefaktvertrag und Grenzen](20-erweiterungen-routenkonsistenz-und-zeitfeedback.md#experimenteller-adapter-umgesetzt-07102026).

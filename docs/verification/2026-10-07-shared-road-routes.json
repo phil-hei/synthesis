@@ -1,0 +1,178 @@
+{
+  "date": "2026-10-07",
+  "fixture": "validation/rastatt-test.osm",
+  "scope": "small native GraphHopper → OSM references → netconvert → explicit route → duarouter → SUMO chain",
+  "summary": {
+    "mapped": 6,
+    "verifiedRoutes": 6,
+    "sumoNetSha256": "d676bb593859f07f6e263c40bd7784e1ee5ccbe0f78a82da75b7ed686851a823",
+    "netImport": "preserve-osm-sections-no-junction-join",
+    "geometryToleranceM": 15.0,
+    "fallback": 0,
+    "schemaVersion": 1,
+    "graphHopperVersion": "8.0",
+    "osmSha256": "1de66fccfbcd79b03b879e2ab139795bb36607c3c7fefd42315f5d872e096ce9"
+  },
+  "vehicles": [
+    {
+      "id": "v0",
+      "vehicleClass": "passenger",
+      "osmWayBlocks": 24,
+      "sumoEdges": 59,
+      "timing": {
+        "vehicleId": "v0",
+        "routeStatus": "shared",
+        "graphHopperTimeSec": 190.777,
+        "sumoEdgeFreeFlowEstimateSec": 120.72040717605213,
+        "completion": "completed",
+        "sumoTripInfo": {
+          "depart": "600.00",
+          "arrival": "838.00",
+          "duration": "238.00",
+          "departDelay": "0.00",
+          "waitingTime": "47.00",
+          "timeLoss": "78.56",
+          "rerouteNo": "0",
+          "vaporized": ""
+        }
+      }
+    },
+    {
+      "id": "v1",
+      "vehicleClass": "bicycle",
+      "osmWayBlocks": 38,
+      "sumoEdges": 62,
+      "timing": {
+        "vehicleId": "v1",
+        "routeStatus": "shared",
+        "graphHopperTimeSec": 320.23,
+        "sumoEdgeFreeFlowEstimateSec": 141.23467181917943,
+        "completion": "completed",
+        "sumoTripInfo": {
+          "depart": "1200.00",
+          "arrival": "1598.00",
+          "duration": "398.00",
+          "departDelay": "0.00",
+          "waitingTime": "50.00",
+          "timeLoss": "84.50",
+          "rerouteNo": "0",
+          "vaporized": ""
+        }
+      }
+    },
+    {
+      "id": "v2",
+      "vehicleClass": "delivery",
+      "osmWayBlocks": 24,
+      "sumoEdges": 59,
+      "timing": {
+        "vehicleId": "v2",
+        "routeStatus": "shared",
+        "graphHopperTimeSec": 190.777,
+        "sumoEdgeFreeFlowEstimateSec": 120.72040717605213,
+        "completion": "completed",
+        "sumoTripInfo": {
+          "depart": "2400.00",
+          "arrival": "2641.00",
+          "duration": "241.00",
+          "departDelay": "0.00",
+          "waitingTime": "38.00",
+          "timeLoss": "72.22",
+          "rerouteNo": "0",
+          "vaporized": ""
+        }
+      }
+    },
+    {
+      "id": "v3",
+      "vehicleClass": "delivery",
+      "osmWayBlocks": 24,
+      "sumoEdges": 59,
+      "timing": {
+        "vehicleId": "v3",
+        "routeStatus": "shared",
+        "graphHopperTimeSec": 190.777,
+        "sumoEdgeFreeFlowEstimateSec": 121.56118832021484,
+        "completion": "completed",
+        "sumoTripInfo": {
+          "depart": "2760.00",
+          "arrival": "2951.00",
+          "duration": "191.00",
+          "departDelay": "0.00",
+          "waitingTime": "0.00",
+          "timeLoss": "26.13",
+          "rerouteNo": "0",
+          "vaporized": ""
+        }
+      }
+    },
+    {
+      "id": "v4",
+      "vehicleClass": "bicycle",
+      "osmWayBlocks": 38,
+      "sumoEdges": 62,
+      "timing": {
+        "vehicleId": "v4",
+        "routeStatus": "shared",
+        "graphHopperTimeSec": 320.23,
+        "sumoEdgeFreeFlowEstimateSec": 141.23467181917943,
+        "completion": "completed",
+        "sumoTripInfo": {
+          "depart": "3000.00",
+          "arrival": "3392.00",
+          "duration": "392.00",
+          "departDelay": "0.00",
+          "waitingTime": "69.00",
+          "timeLoss": "106.06",
+          "rerouteNo": "0",
+          "vaporized": ""
+        }
+      }
+    },
+    {
+      "id": "v5",
+      "vehicleClass": "bicycle",
+      "osmWayBlocks": 39,
+      "sumoEdges": 63,
+      "timing": {
+        "vehicleId": "v5",
+        "routeStatus": "shared",
+        "graphHopperTimeSec": 320.191,
+        "sumoEdgeFreeFlowEstimateSec": 143.99216878650995,
+        "completion": "completed",
+        "sumoTripInfo": {
+          "depart": "3660.00",
+          "arrival": "4168.00",
+          "duration": "508.00",
+          "departDelay": "0.00",
+          "waitingTime": "112.00",
+          "timeLoss": "151.19",
+          "rerouteNo": "0",
+          "vaporized": ""
+        }
+      }
+    }
+  ],
+  "limits": [
+    "Small geometry/connectivity test, not regional coverage or a congestion experiment",
+    "Free-flow time is a static lane-speed estimate, excludes junctions and vehicle factors",
+    "Foot/public transport routes and network-based logiTopp tour planning are not part of this change"
+  ],
+  "gates": {
+    "backend": {
+      "tests": 230,
+      "passed": 221,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0
+    },
+    "frontendTestsPassed": 53,
+    "frontendProductionBuild": "passed",
+    "sharedRoadRouteTests": {
+      "tests": 5,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0
+    }
+  }
+}
