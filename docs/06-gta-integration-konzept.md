@@ -3929,3 +3929,14 @@ Dauerzählstellen-Stundenwerte als Kalibrierziele, KV-Terminals und Binnenhäfen
 täglicher Maut-Fahrleistungsindex für Saisonfaktoren. Lizenz- und Formatprüfung bleibt der
 lokalen Sitzung vorbehalten (kein Download aus der Sandbox).
 
+### Recherche: Werkzeuge und Daten im Umfeld (2026-11-04)
+Breitere Recherche zu Werkzeugen und Datensätzen, geordnet nach Nutzen für bekannte Lücken:
+[docs/24-werkzeuge-und-daten-umfeld.md](24-werkzeuge-und-daten-umfeld.md). Hohe Priorität:
+Geofabrik-Extrakte mit `osmium` als zweite OSM-Quelle (Overpass-Ausfälle), SUMO `routeSampler`
+für die Zählstellen-Kalibrierung des Schwerverkehrs, MiD 2023 als neue Referenz neben MiD 2017
+(2,9 statt 3,1 Wege je Person und Tag), GraphHopper-Truck-Profil mit Gewichts-/Höhenlimits,
+jsprit/VROOM für Touren. Mittlere Priorität: ArchUnit, dependency-check/Renovate, Actuator,
+Zensus-2022-Gebäuderaster, Hauskoordinaten, Photon, bundesweiter DELFI-GTFS, Ollama-Schemaausgabe,
+SrV 2023, SimWrapper. Geprüft und verworfen: ActivitySim, kommerzielle Verkehrsdaten,
+Microsoft/Google-Gebäudeumrisse, Spring Modulith.
+
