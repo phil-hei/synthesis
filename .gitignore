@@ -10,3 +10,4 @@ adapters/**/.gradle/
 .runtime-logitopp-source.*/
 __pycache__/
 *.pyc
+backend/src/main/resources/static/

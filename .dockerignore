@@ -1,0 +1,16 @@
+# Nur Quellen ins Build-Kontext; Build-Ausgaben, lokale Daten und gitignorierte Laufzeit bleiben draußen.
+.git
+.runtime
+validation
+backend/data
+backend/target
+backend/src/main/resources/static
+frontend/node_modules
+frontend/dist
+frontend/.angular
+adapters/**/build
+adapters/**/.gradle
+.m2
+.npm
+**/__pycache__
+**/.DS_Store

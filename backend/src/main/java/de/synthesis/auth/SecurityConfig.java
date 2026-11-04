@@ -84,7 +84,7 @@ public class SecurityConfig {
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/api/auth/login", "/api/auth/me").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/me", "/api/health").permitAll()
                         .requestMatchers("/api/users", "/api/users/**").hasRole(UserAccount.ROLE_ADMIN)
                         .requestMatchers("/api/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").authenticated()
                         // Statische Dateien des Frontends; die Anmeldung selbst passiert in der App.

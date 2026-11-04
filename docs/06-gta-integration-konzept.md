@@ -3811,3 +3811,27 @@ nennt den Anlass, die Entscheidung und den Nachweis.
   Neustart ohne zweiten Bootstrap, letzter Admin geschützt); Frontend `AppComponent`-Spec mit
   Nutzerchip/Admin-Link; beide Gates grün (Zahlen im Commit).
 
+### SPA-Auslieferung, Container-Image und CI-Ausbau — ✅ UMGESETZT (2026-11-04)
+- **Anlass:** Für den Server-Betrieb brauchte die Plattform einen zweiten Webserver für das
+  Angular-Frontend, CORS mit Credentials und einen Dev-Server-Proxy; das ist für einen
+  Login-geschützten Betrieb unnötig fragil.
+- **Mechanik:** `FrontendConfig` liefert den Build aus `synthesis.frontend.dir` oder
+  `classpath:/static/` aus. Dateien mit Hash im Namen (`main-*.js`, `styles-*.css`, `media/`)
+  bekommen `Cache-Control: max-age=1 Jahr, immutable`, `index.html` `no-cache`; Router-Pfade ohne
+  Dateiendung fallen auf `index.html` zurück, `/api/**` und Dateinamen nie (404). `/api/health`
+  ist ein anmeldefreier Lebenszeichen-Endpunkt für Healthchecks. Leere `allowed-origins` schalten
+  CORS ab (same-origin).
+- **Container:** `Dockerfile` (node → maven → JRE, unprivilegiert, Volume `/app/data`, optional
+  `WITH_SUMO=true`), `docker-compose.yml`, `.dockerignore`. `.gitlab-ci.yml` bekommt
+  `scripts-tests` (Python-`unittest`, 96 Tests, 4 Skips wegen optionalem `openpyxl`) und den
+  Job `docker-image` (Registry-Push auf Default-Branch/Tags, sonst manuell).
+- **Linux-Pfade:** `ExternalJavaToolchain` und `kit_java_home` suchten das KIT-JDK nur unter
+  Homebrew/macOS; jetzt zusätzlich `/usr/lib/jvm/java-25-openjdk-*`, `temurin-25-jdk-*`,
+  `/opt/java/openjdk-25`.
+- **Ehrlicher Befund:** Der Docker-Build selbst konnte in dieser Umgebung nicht laufen (kein
+  Daemon); die erste Abnahme ist `docker compose up --build` auf dem Zielsystem (docs/08).
+- **Verifiziert:** `SpaFallbackTest` (@SpringBootTest: `/` → Forward auf `index.html`, `/vergleich`
+  und `/login` → `index.html` mit `no-cache`; `main-*.js` immutable; `/media/*` 200; `/missing.png`
+  und `/api/does-not-exist` 404; `/api/health` 200), `AuthFlowTest` erweitert um `/api/health` ohne
+  Sitzung; Backend-/Frontend-Gates grün (Zahlen im Commit).
+

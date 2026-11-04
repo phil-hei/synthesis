@@ -30,11 +30,20 @@ kit_java_home() {
       return 0
     fi
   fi
-  local homebrew_jdk="/opt/homebrew/opt/openjdk@$SYNTHESIS_KIT_JAVA/libexec/openjdk.jdk/Contents/Home"
-  if [[ -x $homebrew_jdk/bin/java ]]; then
-    printf '%s\n' "$homebrew_jdk"
-    return 0
-  fi
+  local candidate
+  for candidate in \
+    "/opt/homebrew/opt/openjdk@$SYNTHESIS_KIT_JAVA/libexec/openjdk.jdk/Contents/Home" \
+    "/usr/lib/jvm/java-$SYNTHESIS_KIT_JAVA-openjdk-amd64" \
+    "/usr/lib/jvm/java-$SYNTHESIS_KIT_JAVA-openjdk-arm64" \
+    "/usr/lib/jvm/java-$SYNTHESIS_KIT_JAVA-openjdk" \
+    "/usr/lib/jvm/temurin-$SYNTHESIS_KIT_JAVA-jdk-amd64" \
+    "/usr/lib/jvm/temurin-$SYNTHESIS_KIT_JAVA-jdk-arm64" \
+    "/opt/java/openjdk-$SYNTHESIS_KIT_JAVA"; do
+    if [[ -x $candidate/bin/java ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
   if [[ -x /usr/libexec/java_home ]]; then
     local macos_jdk macos_major
     macos_jdk=$(/usr/libexec/java_home -v "$SYNTHESIS_KIT_JAVA" 2>/dev/null || true)

@@ -46,6 +46,20 @@ public class SynthesisProperties {
     public Auth getAuth() { return auth; }
     public void setAuth(Auth auth) { this.auth = auth; }
 
+    private Frontend frontend = new Frontend();
+
+    /** Auslieferung des Angular-Builds durch das Backend (Plattform-Betrieb ohne eigenen Webserver). */
+    public static class Frontend {
+        /** Verzeichnis mit index.html des Builds; leer = {@code classpath:/static/} (im Jar gebündelt). */
+        private String dir = "";
+
+        public String getDir() { return dir; }
+        public void setDir(String dir) { this.dir = dir; }
+    }
+
+    public Frontend getFrontend() { return frontend; }
+    public void setFrontend(Frontend frontend) { this.frontend = frontend; }
+
     /** Optional native validation of a complete MobileCity import package. */
     public static class MobileCityValidation {
         private boolean enabled = true;

@@ -1,6 +1,6 @@
 # Reproduzierbare Laufumgebung
 
-Stand: 2026-10-02
+Stand: 2026-11-04
 
 ## Ziel
 
@@ -97,6 +97,48 @@ rekonstruiert").
 **Nicht aufweichen:** Patches für diesen Vertrag niemals mit `--ignore-space-change`
 erzeugen oder anwenden — solche Patches sind nicht rückrechenbar, und genau daran ist
 die Vorversion gescheitert.
+
+## Plattform-Betrieb im Container (2026-11-04)
+
+Für den Server-Betrieb mit Anmeldung liefert das Backend den Angular-Build selbst aus
+(`FrontendConfig`: `synthesis.frontend.dir` oder gebündelt unter `classpath:/static/`;
+Deep-Links wie `/vergleich` bekommen `index.html`, `/api/**` nie). Damit besteht die
+Plattform aus einem Prozess, einem Port und einer Herkunft; CORS ist nur für den
+Dev-Server (`synthesis.auth.allowed-origins`) nötig.
+
+```sh
+# Image bauen und starten (Frontend + Backend, Daten im Volume synthesis-data)
+docker compose up -d --build
+
+# Startpasswort des Administrators lesen, dann http://localhost:8090 öffnen
+docker compose exec synthesis cat /app/data/initial-admin-password.txt
+
+# Lebenszeichen (anmeldefrei, auch für Reverse-Proxy und Container-Healthcheck)
+curl -fsS http://localhost:8090/api/health
+```
+
+| Baustein | Inhalt |
+|---|---|
+| `Dockerfile` | Drei Stufen: `node:20` (`npm ci`, `ng build`) → `maven:3.9.11-eclipse-temurin-21` (Build kopiert nach `src/main/resources/static`, `mvn package -DskipTests`) → `eclipse-temurin:21-jre-noble` (unprivilegierter Nutzer, `/app/data` als Volume, Healthcheck auf `/api/health`). `--build-arg WITH_SUMO=true` installiert SUMO aus dem Ubuntu-PPA `sumo/stable`; `SUMO_HOME=/usr/share/sumo` ist vorbelegt, ohne Installation bleibt die SUMO-Stufe `SKIPPED`. |
+| `docker-compose.yml` | Ein Dienst, Port 8090, Volume `synthesis-data` (Szenarien, `users.json`, Startpasswort), Umgebungsvariablen nach Spring-Konvention (`SYNTHESIS_DATA_DIR`, `SYNTHESIS_AUTH_ENABLED`, `SYNTHESIS_OVERPASS_LIVE_DATA_ENABLED`, …). |
+| `.gitlab-ci.yml` | Neuer Job `scripts-tests` (Python-`unittest` der Hilfsskripte) und Stage `build` mit `docker-image` (Docker-in-Docker, Push in die GitLab Container Registry als `:<kurzer SHA>`, auf dem Default-Branch zusätzlich `:latest`, bei Tags `:<tag>`; auf anderen Branches manuell). |
+
+**Nicht im Image:** KIT-Adapter (actiTopp/logiTopp, Java 25), Ollama, .NET-ConfigTool, GTFS-venv.
+Die betroffenen Stufen enden als `SKIPPED` beziehungsweise mit dokumentiertem Fallback; für den
+vollen Umfang bleibt der Self-hosted-Runner beziehungsweise ein Host mit `scripts/bootstrap-runtime.sh`
+der Vertrag. Die KIT-JDK-Suche (`ExternalJavaToolchain`, `kit_java_home` in `runtime-common.sh`)
+kennt seit 2026-11-04 neben Homebrew auch die üblichen Linux-Pfade (`/usr/lib/jvm/java-25-openjdk-*`,
+`temurin-25-jdk-*`), gesteuert bleibt sie über `SYNTHESIS_KIT_JAVA_HOME`.
+
+**Ehrlicher Befund (2026-11-04):** Der Docker-Build wurde in der Entwicklungsumgebung dieses Standes
+nicht ausgeführt (kein Docker-Daemon verfügbar); Dockerfile und Compose folgen den oben genannten
+offiziellen Images, der SPA-Auslieferungspfad ist durch `SpaFallbackTest` abgedeckt. Der erste
+`docker compose up --build` auf einem Zielsystem ist daher die Abnahme dieses Abschnitts.
+
+Hinter einem TLS-Reverse-Proxy (nginx, Traefik, Caddy) werden `X-Forwarded-*`-Header ausgewertet
+(`server.forward-headers-strategy: framework`), damit Session-Cookie und Redirects die externe
+Adresse tragen. Das Session-Cookie ist `HttpOnly` und `SameSite=Lax`; `Secure` setzt der Proxy
+beziehungsweise `server.servlet.session.cookie.secure=true` bei direktem HTTPS.
 
 ## Abnahmekriterium
 

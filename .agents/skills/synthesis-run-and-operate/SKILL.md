@@ -31,10 +31,18 @@ cd frontend && npm install && npm start
 ```
 
 - Studio: http://localhost:4300 · Swagger-UI: http://localhost:8090/swagger-ui.html
+- **Anmeldung (seit 2026-11-04):** Studio und API verlangen eine Sitzung. Beim ersten Start ohne
+  Konten legt das Backend `admin` an; Startpasswort im Log und in
+  `backend/data/initial-admin-password.txt`. Weitere Konten unter „Benutzer“ (nur ADMIN).
+  Abschalten für lokale Einzelnutzer-Entwicklung: `synthesis.auth.enabled=false`.
+- **Container (Plattform):** `docker compose up -d --build` → http://localhost:8090 (Backend liefert
+  das Frontend selbst aus); Startpasswort: `docker compose exec synthesis cat /app/data/initial-admin-password.txt`.
 - Der `data-dir` ist relativ (`synthesis.data-dir: data` in `backend/src/main/resources/application.yml`)
   → das Backend **aus `backend/` starten**, sonst entsteht ein zweiter `data/`-Baum.
-- Job-Status lebt **in-memory** (`GenerationService.jobs`): nach Backend-Neustart ist
-  `GET /generation` 404, die Artefakte auf Platte bleiben aber erhalten.
+- Job-Status lebt in-memory (`GenerationService.jobs`) und wird seit 2026-11-04 nach jeder Stufe
+  als `artifacts/job.json` gespeichert: nach Backend-Neustart liefert `GET /generation` den letzten
+  Stand; ein beim Neustart aktiver Lauf wird als `FAILED` („Backend wurde während des Laufs
+  beendet“) gemeldet.
 
 ## 2. UI-Walkthrough (Studio, 6 Schritte)
 
@@ -63,6 +71,18 @@ cd frontend && npm install && npm start
 Alle Pfade aus dem Controller-Code abgelesen (Stand 2026-07-08). curl-Beispiele sind
 **UNGETESTET**, die Struktur ist aber durch den Controller-Code belegt. Direkt gegen
 `:8090` oder via Frontend-Proxy `:4300/api`.
+
+**Mit Anmeldung (Default seit 2026-11-04):** jede `/api/**`-Anfrage braucht das Session-Cookie,
+schreibende zusätzlich den CSRF-Token aus dem Cookie `XSRF-TOKEN` als Header `X-XSRF-TOKEN`.
+Muster für curl (Cookie-Jar `cj`):
+
+```bash
+curl -s -c cj -b cj http://localhost:8090/api/auth/me >/dev/null          # setzt XSRF-TOKEN
+TOKEN=$(awk '$6=="XSRF-TOKEN"{print $7}' cj)
+curl -s -c cj -b cj -H "X-XSRF-TOKEN: $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"<Startpasswort>"}' http://localhost:8090/api/auth/login
+# danach alle Beispiele unten mit:  -b cj -c cj -H "X-XSRF-TOKEN: $TOKEN"
+```
 
 ### Szenarien (`ScenarioController`, `/api/scenarios`)
 

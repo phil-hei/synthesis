@@ -53,6 +53,12 @@ Gespeicherte Änderungen gelten nach einem **Backend-Neustart** für alle Szenar
 Installation. Details zu Persistenz und Vorrang der Werte:
 [globale Tool-Einstellungen](docs/06-gta-integration-konzept.md#phase-4--produktiv-härtung-querschnittlich).
 
+**Server-Betrieb als Plattform (Container):** `docker compose up -d --build` baut Frontend und
+Backend in ein Image, liefert die Oberfläche unter http://localhost:8090 aus und hält Szenarien,
+Benutzerkonten und das Startpasswort im Volume `synthesis-data`. Externe Werkzeuge (SUMO, KIT-Adapter,
+Ollama) sind nicht Teil des Images; Details, Grenzen und Reverse-Proxy-Hinweise in
+[docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md#plattform-betrieb-im-container-2026-11-04).
+
 Optionaler **schwerer Güterverkehr** ergänzt Personen- und Paketverkehr in SUMO:
 vorbereitete Tages-OD-Mengen per CSV mit optionalen gerichteten Netzkanten, Solo-LKW/Sattelzüge und getrennte Kartenlayer
 für Personenfahrzeuge und Logistik. Der Baustein ist experimentell und verlangt

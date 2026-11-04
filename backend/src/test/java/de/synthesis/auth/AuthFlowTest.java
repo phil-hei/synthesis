@@ -64,6 +64,7 @@ class AuthFlowTest {
 
         mvc.perform(get("/api/scenarios")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/health")).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("UP"));
 
         // CSRF-Cookie kommt mit der ersten Antwort; der Login selbst braucht den Token.
         MvcResult probe = mvc.perform(get("/api/auth/me")).andReturn();

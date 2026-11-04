@@ -5,7 +5,7 @@ description: >
   (Scenario.java, z. B. behaviorSource, targetModels, sumoFeedback,
   calibrateModeChoice, llmModeChoice, useRealRouting, samplingFraction sowie das Legacy-Feld useOsmData) und
   Betriebs-Properties (SynthesisProperties, Prefix synthesis.: census, overpass, simulation, actitopp,
-  sumo, transit inkl. GTFS-Feed-Registry, MobileCity-Validierung, llm) samt Defaults, Konsumenten und Gates. Laden, WENN
+  sumo, transit inkl. GTFS-Feed-Registry, MobileCity-Validierung, llm, auth, frontend) samt Defaults, Konsumenten und Gates. Laden, WENN
   du wissen musst (a) welches Flag/Property Verhalten X steuert, (b) was der Default von Y ist
   (inkl. berechneter Defaults aus $SUMO_HOME), (c) ob ein Feature produktiv oder experimentell
   ist, (d) wie man ein neues Szenario-Flag oder eine neue Betriebs-Property anlegt (Checkliste
@@ -510,6 +510,26 @@ Gate-Reihenfolge: Ziel `mobilecity` → vollständiger Regional-/Vorlagenmodus �
 `mobileCity.validateNative` → Betriebs-Property/Werkzeuge. Nicht angefordert oder nicht
 verfügbar = `SKIPPED`; gestarteter Prozess mit Fehler/Timeout = `FAILED`.
 
+### 2.9 `synthesis.auth` (Plattform-Anmeldung, seit 2026-11-04)
+
+| Key | Default | Zweck | Konsument |
+|---|---|---|---|
+| `enabled` | `true` | Cookie-Session-Login für `/api/**`; `false` nur für lokale Einzelnutzer-Entwicklung (API offen, `/api/auth/me` meldet einen lokalen Admin) | `SecurityConfig`, `AuthController` |
+| `allowed-origins` | `[http://localhost:4300]` | CORS mit Credentials für externe Dev-Server; leer = same-origin, kein CORS | `WebConfig` |
+| `bootstrap-admin` | `admin` | Name des Administrators, der beim ersten Start ohne Konten angelegt wird (Startpasswort in `<data-dir>/initial-admin-password.txt` und im Log) | `UserStore` |
+| `min-password-length` | `8` | Mindestlänge neuer Passwörter | `UserStore` |
+
+Konten liegen in `<data-dir>/users.json` (bcrypt). Rollen `ADMIN` (Kontenverwaltung `/api/users`)
+und `USER`; alle Angemeldeten teilen den Szenario-Arbeitsbereich, löschen darf nur Ersteller
+(`Scenario.createdBy`) oder Admin. Anmeldefrei: `/api/auth/login`, `/api/auth/me`, `/api/health`
+und die statischen Frontend-Dateien. Session-Cookie-Parameter unter `server.servlet.session.*`.
+
+### 2.10 `synthesis.frontend` (SPA-Auslieferung durch das Backend, seit 2026-11-04)
+
+| Key | Default | Zweck | Konsument |
+|---|---|---|---|
+| `dir` | `""` | Verzeichnis des Angular-Builds (`index.html`); leer = `classpath:/static/` (vom Docker-Build ins Jar gebündelt). Nichts gefunden = nur API | `FrontendConfig` |
+
 ---
 
 ## 3. Env-Variablen
@@ -517,6 +537,7 @@ verfügbar = `SKIPPED`; gestarteter Prozess mit Fehler/Timeout = `FAILED`.
 | Variable | Wirkung | Konsument |
 |---|---|---|
 | `SUMO_HOME` | Quelle der **berechneten Defaults** `synthesis.sumo.bin-dir`, `synthesis.sumo.sumo-home`, `synthesis.transit.gtfs2pt` (Ableitung s. Abschnitte 2.4/2.5). Ungesetzt → PATH-Erkennung, danach versionsunabhängiger macOS-Framework-Fallback | `SynthesisProperties.Sumo`/`Transit` – statisch bei Bean-Erzeugung gelesen; **Backend-Neustart nötig** nach Änderung |
+| `SYNTHESIS_DATA_DIR`, `SYNTHESIS_AUTH_ENABLED`, `SYNTHESIS_AUTH_ALLOWED_ORIGINS`, … | Spring-Relaxed-Binding: jede Property aus Abschnitt 2 lässt sich als Env-Variable setzen (`synthesis.data-dir` → `SYNTHESIS_DATA_DIR`). So konfiguriert `docker-compose.yml` den Container | Spring Boot Binder |
 | `SYNTHESIS_TRANSIT_VENV` | **Nur Test-Gate, keine Laufzeit-Wirkung:** `backend/src/test/java/de/synthesis/generation/pipeline/PtIntegrationTest.java` liest sie via `System.getenv` und überspringt den (langsamen) ÖV-Integrationstest, wenn ungesetzt („SYNTHESIS_TRANSIT_VENV nicht gesetzt – ÖV-Integrationstest übersprungen"). Zeigt auf den Python-Interpreter eines venv mit pandas/rtree/pyproj. Für den **Betrieb** gilt stattdessen `synthesis.transit.venv-python` | `PtIntegrationTest` |
 
 ---
