@@ -1,7 +1,7 @@
 import { MappingEditorComponent } from '../../shared/mapping-editor.component';
 import { hasTourPoint, tourContextQuestions } from './company-tour-questions';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
@@ -55,7 +55,7 @@ export class CompanyTourImportComponent implements OnChanges, OnDestroy {
     ['windowStart', 'Kundenfenster Beginn'], ['windowEnd', 'Kundenfenster Ende'],
     ['orderType', 'Auftragsart (Rohcode)'], ['workValue', 'Arbeitswert (Einheit ungeklärt)']
   ];
-  constructor(public api: ApiService) {}
+  readonly api = inject(ApiService);
   ngOnChanges(): void {
     this.requests.unsubscribe(); this.requests = new Subscription();
     this.commonDepotAddress = ''; this.commonDepot = this.point();

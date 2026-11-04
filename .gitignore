@@ -11,3 +11,4 @@ adapters/**/.gradle/
 __pycache__/
 *.pyc
 backend/src/main/resources/static/
+.claude/settings.local.json

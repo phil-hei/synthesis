@@ -45,8 +45,8 @@
         <label title="Anzeigename des Szenarios">Name
           <input [(ngModel)]="scenario.name" title="Anzeigename des Szenarios">
         </label>
-        <label title="Untersuchungsgebiet: mit „Region zeichnen' direkt auf der Karte aufziehen oder den sichtbaren Kartenausschnitt übernehmen">
-          Region
+        <div class="field-group" role="group" aria-label="Region" title="Untersuchungsgebiet: mit „Region zeichnen' direkt auf der Karte aufziehen oder den sichtbaren Kartenausschnitt übernehmen">
+          <span class="field-label">Region</span>
           @if (scenario.region) {
             <span class="region-info">
               {{ scenario.region.minLat | number:'1.3-3' }}, {{ scenario.region.minLon | number:'1.3-3' }} –
@@ -55,7 +55,7 @@
           } @else {
             <span class="region-info missing">Noch keine Region gesetzt – auf der Karte zeichnen</span>
           }
-        </label>
+        </div>
         <label title="Tatsächlich verwendete Kantenlänge einer quadratischen Verkehrszelle. Bei einer neuen Region berechnet SyntheSis automatisch die kleinste Zellgröße, die das gewählte Zonenlimit einhält. Der nach der Vorschau tatsächlich verwendete Wert steht immer im Feld.">
           Räumliche Auflösung (m) ⓘ
           <input type="number" [(ngModel)]="scenario.zoning.cellSizeMeters"

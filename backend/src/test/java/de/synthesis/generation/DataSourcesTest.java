@@ -5,7 +5,6 @@ import de.synthesis.data.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.data.importing.*;
-import de.synthesis.generation.*;
 import de.synthesis.generation.demand.TrafficDemandArtifacts;
 import de.synthesis.generation.pipeline.*;
 import de.synthesis.scenario.*;

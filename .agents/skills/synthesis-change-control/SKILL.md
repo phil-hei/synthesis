@@ -69,6 +69,9 @@ cd backend && mvn -o test
 
 # Gate 2 – Frontend-Tests + strict-AOT-Build (fängt NG5002/TS2531, die ng serve NICHT fängt)
 cd frontend && npm test && npm run build
+
+# Gate 3 (seit 2026-11-04) – Lint; läuft auch im CI-Job frontend-tests-and-build
+cd frontend && npm run lint
 ```
 
 Nützlich bei Maven-Fehlern („Unable to find a single main class"):

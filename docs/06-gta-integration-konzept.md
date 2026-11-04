@@ -3856,3 +3856,18 @@ nennt den Anlass, die Entscheidung und den Nachweis.
   Playwright gegen das laufende Backend mit ausgeliefertem Build: Deep-Link → Anmeldung mit
   Rücksprung → Studio → Benutzerseite → Abmelden → 401; Screenshots bei 1440 px und 900 px.
 
+### Qualitätswerkzeuge: JaCoCo, Spotless, angular-eslint, Angular-Patch — ✅ UMGESETZT (2026-11-04)
+- **Anlass:** Keine Abdeckungsmessung, kein Linter im Frontend, `npm audit --omit=dev` meldete
+  eine hohe Schwachstelle in `@angular/router` (CI-Job `audit:prod` rot), und die
+  maschinenspezifische `.claude/settings.local.json` war versioniert.
+- **Mechanik:** JaCoCo-Bericht nach jedem `mvn test`; Spotless mit drei Regeln ohne Phasenbindung
+  (8 ungenutzte Importe entfernt); angular-eslint 21 mit begründeten Abweichungen, `npm run lint`
+  in CI und `scripts/verify.sh`; Konstruktor-Injektion in 9 Klassen auf `inject()` umgestellt;
+  Angular 21.2.26 / CLI 21.2.29 (0 Meldungen); `__pycache__`, `*.pyc` und
+  `.claude/settings.local.json` ignoriert.
+- **Bewusst nicht:** keine Mindestabdeckung, keine Komplettformatierung (Prettier/google-java-format)
+  — beides würde Diffs erzeugen, die die Historie unlesbar machen.
+- **Verifiziert:** Backend-Suite 494 Tests, 0 Fehler, 44 übersprungen, `target/site/jacoco`
+  vorhanden; `npm run lint` ohne Befund; Frontend 135 Tests grün, AOT-Build grün;
+  `npm audit --omit=dev`: 0 Schwachstellen.
+

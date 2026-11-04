@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, OnDestroy } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { DataSourceService } from '../../core/services/data-source.service';
 import { CandidateDecision } from '../../core/models/data-source.model';
@@ -33,7 +33,7 @@ export class SourceRunReportComponent implements OnChanges, OnDestroy {
   aspects: Aspect[] = [];
   loading = false; message = ''; error = '';
   private request?: Subscription;
-  constructor(private api: DataSourceService) { }
+  private readonly api = inject(DataSourceService);
   ngOnChanges(): void { this.refresh(); }
   ngOnDestroy(): void { this.request?.unsubscribe(); }
   get artifactBase(): string { return `/api/scenarios/${encodeURIComponent(this.scenarioId)}/artifacts/`; }

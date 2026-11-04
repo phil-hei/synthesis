@@ -140,6 +140,19 @@ Hinter einem TLS-Reverse-Proxy (nginx, Traefik, Caddy) werden `X-Forwarded-*`-He
 Adresse tragen. Das Session-Cookie ist `HttpOnly` und `SameSite=Lax`; `Secure` setzt der Proxy
 beziehungsweise `server.servlet.session.cookie.secure=true` bei direktem HTTPS.
 
+## Qualitätswerkzeuge (2026-11-04)
+
+| Werkzeug | Aufruf | Bindung |
+|---|---|---|
+| JaCoCo 0.8.13 | `cd backend && mvn -o test` → `target/site/jacoco/index.html` | an `test` gebunden; keine Mindestabdeckung erzwungen (erst messen, dann Schwelle) |
+| Spotless 2.46.1 (nur `removeUnusedImports`, `trimTrailingWhitespace`, `endWithNewline`) | `mvn spotless:check` / `mvn spotless:apply` | bewusst an keine Phase gebunden; die Gates bleiben wie bisher. Erster Lauf entfernte 8 ungenutzte Importe |
+| angular-eslint 21 (flat config `frontend/eslint.config.js`) | `cd frontend && npm run lint` | CI-Job `frontend-tests-and-build` und `scripts/verify.sh`; Abweichungen von den Empfehlungen sind in der Konfiguration begründet (`!= null` in Vorlagen, `any` in Specs, `autofocus` auf der Anmeldeseite) |
+| `npm audit --omit=dev` | `npm run audit:prod` (CI) | Angular auf 21.2.26 / CLI 21.2.29 angehoben, weil `@angular/router` < 21.2.25 eine hohe Meldung trug und der CI-Job sonst rot wäre |
+
+Die Umstellung der Konstruktor-Injektion auf `inject()` (9 Klassen) wurde von Hand gemacht: das
+Angular-Schematic `ng generate @angular/core:inject` formatiert die betroffenen Dateien komplett
+um (Anführungszeichen, Importumbrüche) und hätte einen unlesbaren Diff erzeugt.
+
 ## Abnahmekriterium
 
 Ein Rechner gilt als vollständig eingerichtet, wenn `scripts/preflight.sh full`

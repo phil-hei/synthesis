@@ -3,7 +3,6 @@ package de.synthesis.companytour;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 import java.io.*;
 import java.nio.file.NoSuchFileException;
 import java.util.List;

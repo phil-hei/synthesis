@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnDestroy, SimpleChanges, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -50,7 +50,7 @@ export class EnergyInfrastructurePanelComponent implements OnChanges, OnDestroy 
   @Output() sourcesChanged = new EventEmitter<void>();
   message = ''; working = false;
   private pending?: Subscription;
-  constructor(private api: ApiService) { }
+  private readonly api = inject(ApiService);
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['scenario']) { this.pending?.unsubscribe(); this.message = ''; this.working = false; }
   }

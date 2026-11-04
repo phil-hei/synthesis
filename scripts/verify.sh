@@ -20,6 +20,6 @@ if [[ $PROFILE == full ]]; then
 fi
 
 (cd "$SYNTHESIS_ROOT/backend" && mvn -o test)
-(cd "$SYNTHESIS_ROOT/frontend" && npm run audit:prod && npm test && npm run build)
+(cd "$SYNTHESIS_ROOT/frontend" && npm run audit:prod && npm run lint && npm test && npm run build)
 
 echo "SyntheSis-Verifikation ($PROFILE) erfolgreich."

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HelpTipComponent } from '../../shared/help-tip.component';
 import { CompanyTourImportComponent } from './company-tour-import.component';
@@ -117,8 +117,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   private energyLayer: L.GeoJSON<EnergyGeoJson['features'][number]['properties'], Point> | null = null;
   private energyRequest = 0;
 
-  constructor(private api: ApiService) {
-  }
+  private readonly api = inject(ApiService);
 
   ngOnInit(): void {
     this.reloadScenarios();
@@ -418,7 +417,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
    * Richtwerte nach dem MiD-2017-Stadt-Land-Muster; an offizielle Regionaltabellen anpassbar.
    * Jede Vorlage summiert sich zu 1,0.
    */
-  readonly regionPresets: { id: string; label: string; split: { [key: string]: number } }[] = [
+  readonly regionPresets: { id: string; label: string; split: Record<string, number> }[] = [
     { id: 'mid', label: 'MiD 2017 (bundesweit)',
       split: { pedestrian: 0.22, bike: 0.11, car: 0.43, passenger: 0.14, publicTransport: 0.10 } },
     { id: 'metropole', label: 'Metropole (RegioStaR 71)',

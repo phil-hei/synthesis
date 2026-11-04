@@ -112,7 +112,7 @@ export interface Scenario {
     /** Zwei-Hebel-Kalibrierung: ÖV-Niveau (asc_put) + Fernweg-Schräge (b_tt_put), experimentell. */
     calibrateModeDistance: boolean;
     /** Ziel-Modal-Split der Kalibrierung (Modus → Anteil), Default MiD. */
-    calibrationTarget: { [mode: string]: number };
+    calibrationTarget: Record<string, number>;
     /** GTA 3c: zusätzliche LLM-Moduswahl auf den simulierten Trips (Vergleich zu MNL/MiD). */
     llmModeChoice: boolean;
     carsPerHousehold: number;

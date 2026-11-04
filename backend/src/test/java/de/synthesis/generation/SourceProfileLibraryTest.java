@@ -3,7 +3,6 @@ package de.synthesis.generation;
 import de.synthesis.data.*;
 import de.synthesis.data.importing.*;
 import de.synthesis.generation.pipeline.OverpassClient;
-import de.synthesis.scenario.Scenario;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;

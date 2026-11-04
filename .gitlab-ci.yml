@@ -34,6 +34,7 @@ frontend-tests-and-build:
     - cd frontend
     - npm ci
     - npm run audit:prod
+    - npm run lint
     - npm test
     - npm run build
 

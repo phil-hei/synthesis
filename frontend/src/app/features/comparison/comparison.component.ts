@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
@@ -33,8 +33,7 @@ export class ComparisonComponent implements OnInit {
     passenger: 'MIV (Mitfahrer)', publicTransport: 'ÖV', other: 'Sonstige'
   };
 
-  constructor(private api: ApiService) {
-  }
+  private readonly api = inject(ApiService);
 
   ngOnInit(): void {
     this.api.listScenarios().subscribe({
