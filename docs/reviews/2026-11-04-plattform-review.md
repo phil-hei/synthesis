@@ -168,3 +168,63 @@ Mindestabdeckung. Alle experimentellen Flags bleiben mit Default `false` erhalte
 
 Jeder Schritt folgt `synthesis-change-control`: Gates grün, datierter Eintrag in docs/06, deutsche
 Commit-Nachricht mit „Verifiziert“.
+
+## Anhang: Prompt für die lokale Claude-Code-Sitzung
+
+Zum Kopieren in eine lokale Sitzung im Repo-Clone (Rechner mit SUMO, KIT-Adaptern, Ollama, .NET und Docker):
+
+```text
+Du arbeitest im SyntheSis-Repo (Angular 21 + Spring Boot 3.5, Java 21; KIT-Adapter unter Java 25).
+Lies zuerst .claude/skills/synthesis-change-control/SKILL.md und
+.claude/skills/synthesis-docs-and-writing/SKILL.md und halte dich daran: Gates vor jedem Commit,
+datierter ✅/❌-Eintrag in docs/06-gta-integration-konzept.md (Abschnitt K) im selben Commit,
+deutsche Commit-Titel „Bereich: Zusammenfassung“ mit WARUM und „Verifiziert:“ im Body,
+validation/ nie anfassen, experimentelle Flags bleiben default=false, FAILED ≠ SKIPPED.
+
+Ausgangslage: Auf dem Branch claude/zen-archimedes-gap5me (Remote GitHub phil-hei/synthesis)
+liegt der Umbau zur Login-Plattform (Spring Security, users.json, SPA aus dem Backend,
+Dockerfile/Compose, CI, JaCoCo/Spotless/ESLint). In der Cloud-Sandbox konnten die Pfade mit
+SUMO, actiTopp/logiTopp, GTFS-venv, Ollama, .NET und der Docker-Build nicht geprüft werden
+(44 übersprungene Tests). Das holst du hier nach. Lies dazu
+docs/reviews/2026-11-04-plattform-review.md (Befunde H1–H5, M1–M9, N1–N8 und den
+Arbeitsauftrag) und docs/23-offene-datenquellen-schwerlastverkehr.md.
+
+Schritt 1 – Branch und Abhängigkeiten:
+  git fetch <github-remote> claude/zen-archimedes-gap5me && git checkout claude/zen-archimedes-gap5me
+  cd backend && mvn -B dependency:resolve-plugins dependency:go-offline && cd ..
+  cd frontend && npm ci && cd ..
+  Prüfe mit git remote -v, welches Remote GitHub und welches GitLab ist. Pushe nur auf den
+  Branch claude/zen-archimedes-gap5me und frage mich, bevor du nach GitLab pushst oder mergst.
+
+Schritt 2 – Laufzeitabnahme (Befund H3):
+  scripts/preflight.sh full, dann scripts/verify.sh full. Wenn Preflight etwas als FEHLT meldet,
+  richte es nach .claude/skills/synthesis-build-and-env/SKILL.md ein (scripts/bootstrap-runtime.sh)
+  oder sag mir, was fehlt. Ziel: verify.sh full endet mit „erfolgreich“ und die Backend-Suite hat
+  deutlich weniger als 44 Skips; liste die verbleibenden Skips mit Grund auf.
+  Danach: docker compose up -d --build; http://localhost:8090 öffnen; Startpasswort mit
+  docker compose exec synthesis cat /app/data/initial-admin-password.txt; als admin anmelden,
+  ein Szenario anlegen, generieren, Artefakte laden, abmelden. Prüfe docker compose logs auf
+  ERROR. Baue einmal mit --build-arg WITH_SUMO=true und prüfe, ob die SUMO-Stufe im Container
+  läuft statt SKIPPED. Halte alle Ergebnisse (Zahlen, Laufzeiten, Skips, Fehler) datiert in
+  docs/06 Abschnitt K und in docs/08 (Abschnitt „Plattform-Betrieb im Container“) fest.
+  Was rot ist, behebst du mit minimalen Änderungen; jede Behebung ein eigener Commit.
+
+Schritt 3 – Befunde H4/H5:
+  Spring Boot auf 3.5.16 (gleiche Linie), Node 22 in Dockerfile, .gitlab-ci.yml und
+  runtime/versions.env (Preflight-Erwartung anpassen). Beide Gates, dann Commit.
+
+Schritt 4 – kleine Betriebs- und Doku-Punkte aus dem Review (M3, M4, N1–N5), je ein Commit:
+  Warteposition im Jobstatus und Studio anzeigen; Sicherung des Volumes /app/data und
+  Aufräumen alter Artefakte dokumentieren; application-prod.yml mit leeren allowed-origins und
+  cookie.secure=true; Reverse-Proxy-Beispiel in docs/08; Swagger-Hinweis.
+
+Schritt 5 – Datenquellen (docs/23), nur wenn Zeit bleibt und nach Rücksprache:
+  Lade für eine Testregion den Start-Ziel-CSV-Export des Lkw-Verkehrsportals, die
+  VP2040-Gütermatrix 2019 (Mobilithek) und die Beschäftigten 13111 der Gemeinden; prüfe Lizenz,
+  Format und Spalten und trage die Ergebnisse in docs/23 bei den „zu prüfen“-Stellen nach.
+  Keine Importer bauen, bevor Lizenz und Spalten geklärt sind.
+
+Nicht tun: Refactorings von GenerationService oder StudioComponent (M1, M2) in dieser Sitzung,
+keine Spring-Boot-4- oder Angular-22-Migration, keine Komplettformatierung, keine Pushes auf
+andere Branches. Berichte am Ende: was grün ist, was du geändert hast, was offen bleibt.
+```
