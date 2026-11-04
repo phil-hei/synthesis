@@ -727,8 +727,27 @@ button.link {
 }
 
 .stages li[data-status="SKIPPED"] .status-dot {
-  background: #f39c12;
+  background: #d3dbe4;
+  border: 2px solid #b9c4d0;
+  box-sizing: border-box;
 }
+
+.stages li[data-fallback="true"] .status-dot {
+  background: linear-gradient(135deg, #27ae60 50%, #f39c12 50%);
+}
+
+.stage-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.stage-badge.fallback { background: #fff2dc; color: #8a5a12; }
+.stage-badge.skipped { background: #eef2f6; color: #66778a; }
+.stage-message.note { color: #8a5a12; font-size: 11px; }
 
 @keyframes pulse {
   from { opacity: 1; }

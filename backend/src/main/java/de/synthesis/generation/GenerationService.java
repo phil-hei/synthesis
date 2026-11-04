@@ -182,8 +182,18 @@ public class GenerationService {
         }
     }
 
+    /** In-memory status first; after a backend restart the persisted {@code artifacts/job.json}. */
     public Optional<GenerationJob> status(String scenarioId) {
-        return Optional.ofNullable(jobs.get(scenarioId));
+        GenerationJob job = jobs.get(scenarioId);
+        if (job != null) {
+            return Optional.of(job);
+        }
+        try {
+            Path file = scenarios.artifactsDir(scenarioId).resolve(GenerationJob.FILE);
+            return Files.isRegularFile(file) ? Optional.of(GenerationJob.read(file)) : Optional.empty();
+        } catch (IllegalArgumentException | IOException e) {
+            return Optional.empty();
+        }
     }
 
     public record ZonePreview(List<Zone> zones, double cellSizeMeters, boolean autoAdjusted) {
@@ -351,6 +361,7 @@ public class GenerationService {
         PipelineContext ctx = new PipelineContext(scenario, job, scenarios.artifactsDir(scenario.id));
         ctx.companyTours = companyTours;
         ctx.sourceInputs = sourceInputs;
+        job.persist(ctx.artifacts.resolve(GenerationJob.FILE));
         try {
             Path sourceDir=ctx.artifacts.resolve("sources");
             for(String name:List.of("plan.json","lock.json","resolution.json","population-failure.json","workplace-failure.json","population-grid.csv"))Files.deleteIfExists(sourceDir.resolve(name));
@@ -477,6 +488,7 @@ public class GenerationService {
             }
             job.finishedAt = finishedAt;
             job.currentStage = null;
+            job.persist(ctx.artifacts.resolve(GenerationJob.FILE));
         }
     }
 
@@ -560,21 +572,31 @@ public class GenerationService {
             job.log("Live-Overpass zentral deaktiviert, nutze synthetische Daten");
             return;
         }
-        ctx.osmDataSource = "overpass-live";
+        boolean poisLoaded = false;
+        boolean placesLoaded = false;
         try {
             ctx.pois = overpass.fetchPois(ctx.scenario.region);
+            poisLoaded = true;
             job.log(ctx.pois.size() + " POIs von Overpass geladen");
         } catch (Exception e) {
-            job.stage("OSM-Daten (POIs)").message = "Overpass nicht erreichbar: " + e.getMessage();
+            job.fallback("OSM-Daten (POIs)", "Overpass nicht erreichbar, synthetische Attraktivitäten: " + e.getMessage());
             job.log("Overpass-POIs fehlgeschlagen (" + e.getMessage() + ") – Fallback auf synthetische Daten");
         }
         try {
             ctx.places = overpass.fetchPlaces(ctx.scenario.region,
                     ctx.scenario.population.externalTrips);
+            placesLoaded = true;
             job.log(ctx.places.size() + " Siedlungen (place-Nodes mit Einwohnerzahl) geladen");
         } catch (Exception e) {
+            job.fallback("OSM-Daten (POIs)", "Overpass-Siedlungen nicht erreichbar, Bevölkerung über Dichte/POIs");
             job.log("Overpass-Places fehlgeschlagen (" + e.getMessage() + ") – Bevölkerung über Dichte/POIs");
         }
+        // Die Herkunft beschreibt, was tatsächlich verwendet wurde – nicht, was versucht wurde.
+        // Vorher stand nach einem Overpass-Ausfall "overpass-live" im Manifest, obwohl die
+        // Attraktivitäten synthetisch waren (Befund 2026-11-04).
+        ctx.osmDataSource = poisLoaded && placesLoaded ? "overpass-live"
+                : poisLoaded || placesLoaded ? "overpass-live-partial" : "synthetic-fallback";
+        job.summary.put("osmDataSource", ctx.osmDataSource);
         writeOsmSnapshot(ctx);
     }
 
@@ -1012,10 +1034,12 @@ public class GenerationService {
                     writeGtaPersonas(populationDir.resolve("gta-personas.json"),
                             scenario.population.gtaWhatIf, gtaResult.personaSummaries());
                 } catch (Exception e) {
+                    job.fallback("Aktivitätenpläne", "GTA fehlgeschlagen, actiTopp verwendet: " + e.getMessage());
                     job.log("GTA fehlgeschlagen (" + e.getMessage() + ") – Fallback actiTopp");
                     behavior = "actitopp";
                 }
             } else {
+                job.fallback("Aktivitätenpläne", "GTA-LLM nicht erreichbar, actiTopp verwendet");
                 job.log("GTA-LLM nicht erreichbar (" + properties.getLlm().getEndpoint()
                         + ") – Fallback actiTopp");
                 behavior = "actitopp";
@@ -1039,10 +1063,12 @@ public class GenerationService {
                             + result.cars() + " tatsächliche Pkw; Raumtyp " + scenario.population.areaType
                             + " (Szenarioannahme)");
                 } catch (Exception e) {
+                    job.fallback("Aktivitätenpläne", "actiTopp fehlgeschlagen, Template-Generator verwendet: " + e.getMessage());
                     job.log("actiTopp fehlgeschlagen (" + e.getMessage() + ") – Fallback Template-Generator");
                     count = generator.generate(activityCsv, ctx.population.persons());
                 }
             } else {
+                job.fallback("Aktivitätenpläne", "actiTopp nicht verfügbar, Template-Generator verwendet");
                 job.log("actiTopp nicht verfügbar (" + runner.projectDir()
                         + ") – Template-Generator");
                 count = generator.generate(activityCsv, ctx.population.persons());
@@ -1910,6 +1936,9 @@ public class GenerationService {
     private void writeRunSummary(PipelineContext ctx) {
         GenerationJob job = ctx.job;
         job.summary.put("zones", ctx.zones.size());
+        long external = ctx.zones.stream().filter(z -> z.external).count();
+        job.summary.put("zonesInternal", ctx.zones.size() - external);
+        job.summary.put("zonesExternal", external);
         job.summary.put("populationSource", ctx.populationSource);
         job.summary.put("populationSourceLabel", ctx.populationSourceLabel);
         if (!"user-defined".equals(ctx.populationSource)
@@ -1947,6 +1976,7 @@ public class GenerationService {
             return engine;
         } catch (Exception e) {
             if(ctx.scenario.population.roadLocatedActivities)throw new IOException("Straßennahe Orte: Straßengraph nicht verfügbar; kein Orts-Fallback",e);
+            ctx.job.fallback("Matrizen", "Straßennetz nicht verfügbar, Luftlinienmatrizen: " + e.getMessage());
             ctx.job.log("Routing nicht verfügbar (" + e.getMessage() + ") – Fallback auf Luftlinie");
             return null;
         }
@@ -2125,6 +2155,7 @@ public class GenerationService {
             throw error;
         } finally {
             info.durationMs = System.currentTimeMillis() - start;
+            job.persist(scenarios.artifactsDir(job.scenarioId).resolve(GenerationJob.FILE));
         }
     }
 

@@ -3739,3 +3739,41 @@ Laufzeitcode und führt keine zusätzlichen bestandenen Gates ein.
   neue Pipeline-Stufe oder neue Zufallsfolge; `dataPlan.enabled=false` bleibt Default.
   [Bedienung und Vertrag](examples/source-run-report/README.md),
   [ausgeführte Tests und Browsernachweis](05-validierung.md#quellenlaufbericht-und-lesbare-teileherkunft-2026-11-04).
+
+## K. Plattform-Härtung und Betrieb (ab 2026-11-04)
+
+Dieser Abschnitt sammelt die Umbauten vom Einzelnutzer-Werkzeug zur Server-Plattform:
+Statusvertrag, Nachvollziehbarkeit, Anmeldung, Deployment und Qualitätswerkzeuge. Jeder Eintrag
+nennt den Anlass, die Entscheidung und den Nachweis.
+
+### Fallback-Sichtbarkeit, Provenienz und persistierter Jobstatus — ✅ UMGESETZT (2026-11-04)
+- **Anlass (Befund vom 2026-11-04):** Ein Lauf ohne Overpass-Zugang stand in der Pipeline-Anzeige
+  als grüne Stufe „OSM-Daten (POIs)“, obwohl die Attraktivitäten synthetisch waren; die Meldung war
+  gesetzt, aber nur bei `FAILED` sichtbar. Gleichzeitig nannte `manifest.json` unter
+  `inputProvenance.osmData.source` den Wert `overpass-live`, weil `osmDataSource` vor dem Abruf
+  gesetzt und bei Ausfall nicht korrigiert wurde. Beides widersprach dem Herkunftsprinzip.
+- **Fallback-Markierung:** `GenerationJob.StageInfo.fallback` ergänzt den Statusvertrag
+  `PENDING | RUNNING | DONE | FAILED | SKIPPED` um eine orthogonale Kennzeichnung: Die Stufe bleibt
+  `DONE`, trägt aber Markierung und Meldung. Gesetzt wird sie bei Overpass-Ausfall (POIs oder
+  Siedlungen), Luftlinienmatrizen nach gescheitertem Netzaufbau und bei Verhaltensquellen-Fallback
+  (GTA → actiTopp → Template). Das Studio zeigt dafür ein zweifarbiges Statuszeichen, ein
+  „Fallback“-Badge und die Meldung; übersprungene Stufen zeigen ihren Grund ebenfalls.
+- **Provenienz:** `osmDataSource` wird erst nach den Abrufen bestimmt:
+  `overpass-live` (beide Abrufe), `overpass-live-partial` (einer) oder `synthetic-fallback`.
+- **Jobstatus überlebt Neustarts:** `GenerationJob` wird als `artifacts/job.json` nach jeder Stufe
+  und am Laufende atomar gespeichert; `GenerationService.status()` liest die Datei, wenn der Lauf
+  nicht mehr im Speicher ist. Ein beim Neustart noch aktiver Lauf wird als `FAILED` mit Grund
+  gemeldet, damit das Studio nicht endlos pollt.
+- **Thread-Sicherheit:** `summary` war eine `LinkedHashMap`, die der Worker schreibt, während der
+  Status-Endpunkt sie serialisiert. Sie ist jetzt synchronisiert und wird nur als Kopie
+  serialisiert; Zustandsfelder sind `volatile`.
+- **Ergebnisanzeige:** `zonesInternal`/`zonesExternal` trennen interne Zellen von Außenankern
+  (vorher „529 Zonen“ links und „537“ rechts ohne Erklärung).
+- **Testfix:** `NativeVehicleChainsIntegrationTest` setzte `assumeTrue` innerhalb der
+  `assertThrows`-Lambda; ohne SUMO wurde der Test rot statt übersprungen. Die Annahme steht jetzt
+  davor.
+- **Verifiziert:** `GenerationJobTest` (Serialisierung genau einmal, Roundtrip, nebenläufige
+  Snapshots), `GenerationServiceFallbackTest` (Overpass-Ausfall → `DONE` + Fallback,
+  Manifest `synthetic-fallback`, Status aus `job.json` nach Neustart); Backend-Suite 489 Tests,
+  0 Fehler, 44 übersprungen; Frontend 130 Tests grün, AOT-Build grün.
+

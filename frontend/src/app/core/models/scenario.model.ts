@@ -140,6 +140,8 @@ export interface StageInfo {
   status: 'PENDING' | 'RUNNING' | 'DONE' | 'FAILED' | 'SKIPPED';
   durationMs: number;
   message?: string;
+  /** DONE, aber mit dokumentiertem Fallback (z. B. Overpass nicht erreichbar, Luftlinienmatrizen). */
+  fallback?: boolean;
 }
 
 export interface GenerationJob {

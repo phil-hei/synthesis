@@ -848,15 +848,23 @@
         <section class="block">
           <h2>Pipeline</h2>
           <ul class="stages">
-            @for (stage of job.stages; track stage) {
-              <li [attr.data-status]="stage.status" [title]="stage.message || ''">
+            @for (stage of job.stages; track stage.name) {
+              <li [attr.data-status]="stage.status" [attr.data-fallback]="stage.fallback ? 'true' : null"
+                [title]="stage.message || ''">
                 <span class="status-dot"></span>
                 <span class="stage-name">{{ stage.name }}</span>
+                @if (stage.fallback) {
+                  <span class="stage-badge fallback" title="Stufe abgeschlossen, aber mit Ersatzverfahren">Fallback</span>
+                } @else if (stage.status === 'SKIPPED') {
+                  <span class="stage-badge skipped">übersprungen</span>
+                }
                 @if (stage.durationMs) {
                   <span class="stage-time">{{ stage.durationMs }} ms</span>
                 }
                 @if (stage.status === 'FAILED' && stage.message) {
                   <small class="stage-message error">{{ stage.message }}</small>
+                } @else if (stage.message && (stage.fallback || stage.status === 'SKIPPED')) {
+                  <small class="stage-message note">{{ stage.message }}</small>
                 }
               </li>
             }
@@ -868,7 +876,13 @@
             <div class="summary">
               <h3>Ergebnis</h3>
               <table>
-                <tr><td>Zonen</td><td>{{ job.summary['zones'] }}</td></tr>
+                <tr title="Interne Verkehrszellen plus Außenanker für Wege über die Gebietsgrenze">
+                  <td>Zonen</td>
+                  <td>{{ job.summary['zonesInternal'] ?? job.summary['zones'] }}
+                    @if (job.summary['zonesExternal']) {
+                      <span class="mid">+ {{ job.summary['zonesExternal'] }} Außenanker</span>
+                    }
+                  </td></tr>
                 <tr><td>Personen</td><td>{{ job.summary['persons'] }}</td></tr>
                 <tr><td>Haushalte</td><td>{{ job.summary['households'] }}</td></tr>
                 <tr><td>Pkw</td><td>{{ job.summary['cars'] }}</td></tr>
