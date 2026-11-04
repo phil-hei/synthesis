@@ -3894,3 +3894,10 @@ nennt den Anlass, die Entscheidung und den Nachweis.
   `osmDataSource=disabled`); `scripts/preflight.sh core` ohne Fehler; Backend-Suite und
   Jar-Abnahme (Zahlen im Commit).
 
+### Zweites Review nach dem Umbau — Befundliste (2026-11-04)
+Vollständige Prüfung des neuen Standes mit Messwerten, priorisierten Befunden (H1–H5, M1–M9,
+N1–N8) und einem Arbeitsauftrag für die lokale Abnahme:
+[docs/reviews/2026-11-04-plattform-review.md](reviews/2026-11-04-plattform-review.md). Die
+Befunde H1 (Sitzungen überleben Kontoänderungen) und H2 (kein Schutz gegen Passwort-Raten)
+werden im Anschluss direkt behoben, die übrigen sind dort mit Empfehlung und Aufwand festgehalten.
+
