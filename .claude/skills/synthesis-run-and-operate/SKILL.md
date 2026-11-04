@@ -5,7 +5,7 @@ description: SyntheSis fahren — Backend/Frontend starten, Szenario anlegen und
 
 # SyntheSis: Betrieb & Bedienung (Runbook)
 
-Wie man das System startet, ein Szenario anlegt, die 14-stufige Pipeline laufen lässt und
+Wie man das System startet, ein Szenario anlegt, die 15-stufige Pipeline laufen lässt und
 die Ergebnisse (Artefakte) findet. Publikum: Mid-Level-Entwickler und Agenten, die das
 System bedienen — nicht verändern.
 
@@ -262,9 +262,9 @@ Schnellantworten: **kpis.json** → `artifacts/simulation/kpis.json` ·
 (`co2KgByType`) · **Netzlast** → `artifacts/sumo/congestion.geojson` ·
 **Touren** → `artifacts/simulation/tours.geojson`.
 
-## 5. Die 14 Pipeline-Stufen (aus `GenerationService.STAGES`)
+## 5. Die 15 Pipeline-Stufen (aus `GenerationService.STAGES`, Stand 2026-11-04)
 
-Stufennamen exakt wie im Job-Log. **FAILED-Semantik:** Bei Stufen 1–11 bricht eine
+Stufennamen exakt wie im Job-Log. **FAILED-Semantik:** Bei Stufen 1–12 bricht eine
 Exception den **gesamten Job** ab (`state=FAILED`, `error` gesetzt, Folgestufen bleiben
 PENDING). Die Stufen 12–14 fangen ihre Fehler selbst: die Stufe wird FAILED (mit
 `message`), der Job läuft weiter und kann trotzdem DONE werden. FAILED ≠ SKIPPED:
@@ -275,17 +275,18 @@ SKIPPED = bewusst übersprungen (Gate nicht erfüllt), FAILED = versucht und ges
 | 1 | Zonierung | immer (`zoning.mode`: `grid` freies Bbox-Raster \| `epsg3035` flexibel ausgerichtetes 100-m-Stufenraster \| `inspire` amtliche 100-m-/1-km-/10-km-Stufen; LAEA-Modi außerhalb Europas mit Bbox-Fallback; Limit aus `zoning.maxZones`; tatsächlicher Provider in `summary.zoningMode`) | – | Sekunden |
 | 2 | OSM-Daten (POIs) | automatisch: Szenario-Snapshot → Live-Overpass → synthetischer Fallback | nie wegen Nutzerabwahl; das Legacy-Feld `population.useOsmData` wird ignoriert | Sekunden–Minute (Overpass) |
 | 3 | Attraktivitäten | immer | – | Sekunden |
-| 4 | Bevölkerungssynthese | immer | – | Sekunden |
-| 5 | Aktivitätenpläne | immer (Achse A intern: gta → actitopp → Template-Fallback, nie SKIPPED) | – | Sekunden (Template/actiTopp) bis Minuten (GTA-LLM, z. B. ~140 s für 18 Persona-Calls) |
-| 6 | Matrizen | immer | – | Sekunden–Minuten (GraphHopper-Import; Fallback Luftlinie) |
+| 4 | Matrizen | immer | – | Sekunden–Minuten (GraphHopper-Import; Fallback Luftlinie, dann `fallback=true`) |
+| 5 | Bevölkerungssynthese | immer | – | Sekunden |
+| 6 | Aktivitätenpläne | immer (Achse A intern: gta → actitopp → Template-Fallback, nie SKIPPED; Fallback markiert) | – | Sekunden (Template/actiTopp) bis Minuten (GTA-LLM, z. B. ~140 s für 18 Persona-Calls) |
 | 7 | Logistik | immer | – | Sekunden |
 | 8 | Legacy-Export | immer | – | Sekunden |
 | 9 | MobileCity-Export | Ziel `mobilecity` gewählt | Ziel nicht gewählt | Sekunden |
-| 10 | Manifest | immer | – | < 1 s |
-| 11 | Simulation (logiTopp) | Ziel `logitopp` gewählt | Ziel nicht gewählt; `synthesis.simulation.enabled=false`; Legacy-Projekt (`validation/mobitopp-rastatt`) nicht gefunden | 250 Personen: Sekunden mit warmem Gradle-Daemon; Kalibrierung (`calibrateModeChoice`) = **mehrere** Sim-Läufe |
-| 12 | SUMO (Verkehr) | Ziel `sumo` gewählt | Ziel nicht gewählt; SUMO nicht verfügbar (`$SUMO_HOME`/Binaries fehlen); `demandsimulationResult.csv` fehlt (→ logiTopp-Ziel mitwählen!). ÖV-Teil intern übersprungen, wenn venv/gtfs2pt fehlt | Minuten; mit Fußgängern deutlich länger; **ÖV-Erstlauf ~20–25 min** (gtfs2pt), danach Cache |
-| 13 | Netz-Feedback | `population.sumoFeedback` | Flag aus; SUMO-Stufe nicht DONE oder `edgedata.xml` fehlt; logiTopp-Ziel fehlt; Zonen > `feedback-max-zones` (Default 150); keine routbaren Zonenrelationen | je Iteration 1× logiTopp + 1× SUMO (Default max. 3 Iterationen) |
-| 14 | LLM-Moduswahl | `population.llmModeChoice` | Flag aus; LLM nicht erreichbar (Ollama); `demandsimulationResult.csv` fehlt | Minuten (~5 LLM-Calls) |
+| 10 | MobileCity-Validierung | Ziel `mobilecity` + vollständiger Regional-/Vorlagenmodus + `mobileCity.validateNative` + `synthesis.mobile-city-validation.enabled` | nicht angefordert oder .NET/ConfigTool-Quellen fehlen (gestarteter Prozess mit Fehler/Timeout = FAILED) | Minuten (.NET-Build + Prüfsimulation) |
+| 11 | Manifest | immer | – | < 1 s |
+| 12 | Simulation (logiTopp) | Ziel `logitopp` gewählt | Ziel nicht gewählt; `synthesis.simulation.enabled=false`; Legacy-Projekt (`validation/mobitopp-rastatt`) nicht gefunden | 250 Personen: Sekunden mit warmem Gradle-Daemon; Kalibrierung (`calibrateModeChoice`) = **mehrere** Sim-Läufe |
+| 13 | SUMO (Verkehr) | Ziel `sumo` gewählt | Ziel nicht gewählt; SUMO nicht verfügbar (`$SUMO_HOME`/Binaries fehlen); `demandsimulationResult.csv` fehlt (→ logiTopp-Ziel mitwählen!). ÖV-Teil intern übersprungen, wenn venv/gtfs2pt fehlt | Minuten; mit Fußgängern deutlich länger; **ÖV-Erstlauf ~20–25 min** (gtfs2pt), danach Cache |
+| 14 | Netz-Feedback | `population.sumoFeedback` | Flag aus; SUMO-Stufe nicht DONE oder `edgedata.xml` fehlt; logiTopp-Ziel fehlt; Zonen > `feedback-max-zones` (Default 150); keine routbaren Zonenrelationen | je Iteration 1× logiTopp + 1× SUMO (Default max. 3 Iterationen) |
+| 15 | LLM-Moduswahl | `population.llmModeChoice` | Flag aus; LLM nicht erreichbar (Ollama); `demandsimulationResult.csv` fehlt | Minuten (~5 LLM-Calls) |
 
 Überlieferte Gesamtdauer: kleiner Voll-Lauf (kleine Region, wenige Personen) ~1–2 min
 ohne ÖV/Feedback/Kalibrierung.
