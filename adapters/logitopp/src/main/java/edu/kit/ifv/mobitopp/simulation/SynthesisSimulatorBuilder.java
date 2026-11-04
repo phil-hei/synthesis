@@ -349,7 +349,7 @@ public class SynthesisSimulatorBuilder {
 		DemandSimulatorDelivery simulator = new DemandSimulatorDelivery(targetSelector, modeSelector,
 				routeChoice, fixer, randomizer, tripFactory, rescheduling, CHOICE_SET,
 				PersonStateSimple.UNINITIALIZED, context(),
-				edu.kit.ifv.mobitopp.simulation.person.SimulationPersonPassenger::new,
+				SynthesisSimulationPerson::new,
 				privateParcelModel,
 				edu.kit.ifv.mobitopp.simulation.demand.BusinessParcelDemandModelBuilder
 						.nullBusinessParcelOrderModel(deliveryResults),

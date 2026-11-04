@@ -104,7 +104,7 @@ public final class DemandArtifacts {
         atomicWrite(file, writer -> {
             writer.write("personOid;tripId;plannedDepartureMinute;plannedArrivalMinute;"
                     + "mode;modeCode;tripModeCode;originZoneId;destinationZoneId;"
-                    + "fromLon;fromLat;toLon;toLat;distanceKm;legCount\n");
+                    + "fromLon;fromLat;toLon;toLat;distanceKm;legCount;trafficCategory\n");
             for (TravelDemand.PersonTrip trip : demand.trips()) {
                 row(writer,
                         trip.personOid(),
@@ -121,7 +121,8 @@ public final class DemandArtifacts {
                         number(trip.toLon()),
                         number(trip.toLat()),
                         number(trip.distanceKm()),
-                        Integer.toString(trip.legs().size()));
+                        Integer.toString(trip.legs().size()),
+                        "private");
             }
         });
     }

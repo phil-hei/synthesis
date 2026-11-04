@@ -1,0 +1,6 @@
+id;easting;northing;resolution;state;value
+a;4200000;2900000;1000;value;30
+zero;4201000;2900000;1000;value;0
+missing;4202000;2900000;1000;missing;NA
+secret;4203000;2900000;1000;suppressed;-1
+not-surveyed;4204000;2900000;1000;not-collected;

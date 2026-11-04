@@ -44,6 +44,7 @@ public class ScenarioController {
         Scenario scenario = new Scenario();
         scenario.zoning.maxZones = properties.getMaxZones();
         scenario.zoning.mode = "epsg3035";
+        scenario.freight.day = properties.getSumo().getDay();
         return scenario;
     }
 
@@ -105,13 +106,29 @@ public class ScenarioController {
     }
 
     private void validate(Scenario scenario) {
+        try { de.synthesis.data.SourcePlan.validate(scenario.dataPlan); }
+        catch (IllegalArgumentException e) { throw badRequest(e.getMessage()); }
+        if (scenario.energyInfrastructure == null) scenario.energyInfrastructure = new Scenario.EnergyInfrastructure();
+        if (scenario.energyInfrastructure.enabled && !scenario.energyInfrastructure.useBnetza && !scenario.energyInfrastructure.useOsm)
+            throw badRequest("Öffentliche Lade-/Tankstationen benötigen mindestens eine Datenquelle");
+        if (scenario.energyInfrastructure.verifyNetworkAccess && (!scenario.energyInfrastructure.enabled || !scenario.targets().contains("sumo")))
+            throw badRequest("Stations-Netzprüfung benötigt aktiven Stationsbestand und SUMO");
+        if (!Double.isFinite(scenario.energyInfrastructure.maxSnapDistanceM) || scenario.energyInfrastructure.maxSnapDistanceM < 1 || scenario.energyInfrastructure.maxSnapDistanceM > 300)
+            throw badRequest("Stations-Suchradius muss zwischen 1 und 300 m liegen");
+        if (scenario.vehicleOperations == null) scenario.vehicleOperations = de.synthesis.vehicle.VehicleOperationsConfiguration.empty();
+        if (scenario.companyTours == null) scenario.companyTours = new Scenario.CompanyTours();
+        if (scenario.companyTours.imports == null || scenario.companyTours.imports.size() > 100)
+            throw badRequest("Unternehmenstouren benötigen eine Liste mit höchstens 100 Importrevisionen");
+        if (scenario.companyTours.enabled) {
+            try { de.synthesis.companytour.CompanyTourImportService.requireScenarioDemand(scenario); }
+            catch (IllegalArgumentException e) { throw badRequest(e.getMessage()); }
+        }
+        var operationErrors = de.synthesis.vehicle.VehicleOperationsConfiguration.validate(scenario);
+        if (!operationErrors.isEmpty()) throw badRequest(operationErrors.getFirst().path() + ": " + operationErrors.getFirst().message());
         de.synthesis.vehicle.VehicleCatalog.Report vehicles = de.synthesis.vehicle.VehicleCatalog.validate(scenario.vehicleConfiguration);
         if (!vehicles.valid()) {
             var error = vehicles.errors().getFirst();
             throw badRequest("Fahrzeugkonfiguration: " + error.path() + ": " + error.message());
-        }
-        if (scenario.vehicleConfiguration.appliesToSumo() && !scenario.targets().contains("sumo")) {
-            throw badRequest("Fahrzeugkonfiguration sumoTraffic benötigt das Zielmodell SUMO");
         }
         if (scenario.referenceYear < 2000 || scenario.referenceYear > 2050) {
             throw badRequest("Bezugsjahr muss zwischen 2000 und 2050 liegen");
@@ -236,6 +253,8 @@ public class ScenarioController {
         }
         if (scenario.population.sharedRoadRoutes && !scenario.population.useRealRouting)
             throw badRequest("Gemeinsame Straßenrouten benötigen reales Routing");
+        if (scenario.population.roadLocatedActivities && !scenario.population.useRealRouting)
+            throw badRequest("Straßennahe Wohn- und Aktivitätsorte benötigen reales Routing");
         validateReturns(scenario);
         if (!java.util.Set.of("RURAL", "PROVINCIAL", "CITYOUTSKIRT", "METROPOLITAN", "CONURBATION")
                 .contains(scenario.population.areaType == null ? "" : scenario.population.areaType)) {
@@ -245,6 +264,8 @@ public class ScenarioController {
         if (!Double.isFinite(samplingFraction) || samplingFraction <= 0 || samplingFraction > 1) {
             throw badRequest("Stichprobenanteil muss größer 0 und höchstens 1 sein");
         }
+        try { de.synthesis.generation.pipeline.FreightDemandGenerator.validateDemand(scenario); }
+        catch (IllegalArgumentException e) { throw badRequest(e.getMessage()); }
     }
 
     private static void validateShare(Double value, String label) {
@@ -286,4 +307,35 @@ public class ScenarioController {
     private static ResponseStatusException badRequest(String reason) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, reason);
     }
+
+    /** Normalized OD CSV; coordinates must already identify sites or directed network boundary connectors. */
+    @PostMapping("/{id}/freight")
+    public Scenario.Freight uploadFreight(@PathVariable String id,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        Scenario scenario = get(id);
+        if (file.isEmpty() || file.getSize() > 5_000_000) throw badRequest("Güterverkehrs-CSV fehlt oder überschreitet 5 MB");
+        try {
+            var relations = de.synthesis.generation.pipeline.FreightDemandGenerator.parseCsv(file.getBytes());
+            if (relations.isEmpty()) throw badRequest("Güterverkehrs-CSV enthält keine Beziehungen");
+            de.synthesis.generation.pipeline.FreightDemandGenerator.validateRelations(relations, scenario.region);
+            scenario.freight.relations = relations;
+            repository.save(scenario);
+            return scenario.freight;
+        } catch (IllegalArgumentException e) { throw badRequest(e.getMessage()); }
+        catch (java.io.IOException e) { throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Güterverkehrs-Upload fehlgeschlagen", e); }
+    }
+    @PostMapping("/{id}/freight/sevas")
+    public Scenario.Freight uploadSevas(@PathVariable String id,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        Scenario scenario = get(id);
+        if (file.isEmpty() || file.getSize() > 5_000_000) throw badRequest("SEVAS-GeoJSON fehlt oder überschreitet 5 MB");
+        try {
+            var snapshot = de.synthesis.generation.pipeline.SevasFreightPermissions.parse(file.getBytes());
+            scenario.freight.sevasSnapshot = snapshot;
+            repository.save(scenario);
+            return scenario.freight;
+        } catch (IllegalArgumentException e) { throw badRequest(e.getMessage()); }
+        catch (java.io.IOException e) { throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "SEVAS-Upload fehlgeschlagen", e); }
+    }
+
 }

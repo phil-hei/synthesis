@@ -30,6 +30,31 @@ public class VehicleController {
         return VehicleCatalog.validate(parse(json));
     }
 
+    public record OperationsPreview(boolean valid, List<VehicleCatalog.Issue> errors,
+            VehicleConfiguration vehicleConfiguration, VehicleOperationsConfiguration vehicleOperations,
+            String vehicleConfigurationSha256, String operationsSha256) { }
+
+    @GetMapping("/vehicle-operations/example")
+    public JsonNode operationsExample() throws IOException { return resource("/vehicles/operations-example.json"); }
+
+    @GetMapping("/vehicle-operations/freight-example")
+    public JsonNode freightOperationsExample() throws IOException { return resource("/vehicles/operations-freight-example.json"); }
+
+    @PostMapping(value = "/vehicle-operations/validate", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public OperationsPreview validateOperations(@RequestBody String json) throws IOException {
+        if (json.length() > 2_000_000) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Betriebskonfiguration maximal 2 MB");
+        JsonNode input = VehicleJson.MAPPER.readTree(json);
+        if (input == null || !input.isObject() || input.size() != 2 || !input.has("vehicleConfiguration") || !input.has("vehicleOperations"))
+            throw new IOException("vehicleConfiguration und vehicleOperations erforderlich");
+        var vehicles = VehicleJson.read(input.path("vehicleConfiguration").toString());
+        var operations = VehicleJson.MAPPER.readValue(input.path("vehicleOperations").toString(), VehicleOperationsConfiguration.class);
+        var report = VehicleCatalog.validate(vehicles);
+        Scenario scenario = new Scenario(); scenario.targetModels = List.of("sumo");
+        scenario.vehicleConfiguration = vehicles; scenario.vehicleOperations = operations;
+        var errors = new java.util.ArrayList<>(report.errors()); errors.addAll(VehicleOperationsConfiguration.validate(scenario));
+        return new OperationsPreview(errors.isEmpty(), List.copyOf(errors), vehicles, operations, report.sha256(), VehicleJson.hash(operations));
+    }
+
     @GetMapping("/scenarios/{id}/vehicle-configuration")
     public ResponseEntity<VehicleConfiguration> get(@PathVariable String id) {
         Scenario scenario = scenario(id);
@@ -49,9 +74,9 @@ public class VehicleController {
                     "Zuerst Konfiguration laden und ETag als If-Match senden");
             if (!etag(scenario.vehicleConfiguration).equals(ifMatch)) throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Fahrzeugkonfiguration wurde zwischenzeitlich geändert; erneut laden");
-            if (config.appliesToSumo() && !scenario.targets().contains("sumo")) throw new ResponseStatusException(
-                    HttpStatus.UNPROCESSABLE_ENTITY, "Zuerst SUMO als Szenario-Zielmodell auswählen oder application=catalogOnly verwenden");
             scenario.vehicleConfiguration = config;
+            var operationErrors = VehicleOperationsConfiguration.validate(scenario);
+            if (!operationErrors.isEmpty()) return ResponseEntity.unprocessableEntity().body(Map.of("errors", operationErrors));
             scenarios.save(scenario);
             return ResponseEntity.ok().eTag(etag(config)).body(config);
         }

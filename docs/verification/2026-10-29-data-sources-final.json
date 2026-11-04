@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-29",
+  "scope": "municipal point and polygon area allocation, frozen references, exploration guard; not full concept acceptance",
+  "backend": {
+    "tests": 418,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 4,
+    "skipSuites": [
+      "de.synthesis.generation.pipeline.MobileCityRastattSourcesTest",
+      "de.synthesis.generation.pipeline.ActitoppIntegrationTest",
+      "de.synthesis.generation.pipeline.PtIntegrationTest",
+      "de.synthesis.generation.pipeline.MobileCityCrossMunicipalitySourcesTest"
+    ]
+  },
+  "focusedTests": 38,
+  "frontend": {
+    "tests": 103,
+    "files": 11,
+    "productionBuild": "passed"
+  },
+  "browserProofs": [
+    "2026-10-29-municipal-sources-ui.json",
+    "2026-10-29-municipal-areas-ui.json"
+  ],
+  "remaining": [
+    "authoritative source/key validation",
+    "automatic territorial edition crosswalks",
+    "scientifically validated freight generation fallback",
+    "complete legacy source migration"
+  ]
+}

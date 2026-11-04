@@ -1,7 +1,7 @@
 # Separater mobiTopp/logiTopp-Adapter
 
 Build: `bash scripts/build-logitopp-adapter.sh` aus dem Repository-Hauptverzeichnis.
-Java 25 wird über `runtime-common.sh` gewählt. Der Build führt vier Adaptertests
+Java 25 wird über `runtime-common.sh` gewählt. Der Build führt sieben Adaptertests
 und anschließend `installDist` aus. Das Backend startet die fertige Distribution,
 kein Gradle-Build erfolgt während der Nachfragegenerierung.
 
@@ -56,3 +56,14 @@ aller Pakete innerhalb dieser Woche und keine regionale Kalibrierung.
 Tourplanung nutzt weiterhin die bestehende geometrische TSP-Strategie.
 SUMO-Rückkopplung und eine eigene Priorisierung verspäteter Aktivitäten sind
 separate nächste Schritte.
+
+
+## Typisierte Bildungsziele (2026-10-26)
+
+`SynthesisSimulationPerson` erhält die exportierten Straßenkoordinaten für
+`EDUCATION_PRIMARY`, `EDUCATION_SECONDARY` und `EDUCATION_TERTIARY`, sofern das
+gewählte Ziel dieselbe feste Zone hat. Die ursprüngliche KIT-Ortsauswahl wird
+zuerst ausgeführt: deren Zufallsverbrauch bleibt erhalten. Ziel-/Moduswahl und
+abweichende bzw. nicht feste Zielzonen verwenden weiter die KIT-Logik. Keine
+Änderung an KIT-Quellen oder JARs. Der Test reproduziert den Zonenmittelpunkt-
+Rückfall an der tatsächlichen KIT-Klasse und prüft Koordinaten sowie Zufallsfolge.

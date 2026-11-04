@@ -26,6 +26,8 @@ export interface TourFeatureProperties {
   depot: string;
   vehicleType: string;
   tourId: string;
+  trafficCategory?: 'logistics';
+  demandSource?: string;
   distanceKm: number;
   stops: number;
   deliveries: number;
@@ -194,9 +196,38 @@ export interface SimKpis {
   simulationSeconds?: number;
 }
 
+export interface TrafficRouteProperties {
+  id: string;
+  trafficCategory: 'private' | 'logistics' | 'public_transport';
+  demandSource: string;
+  vehicleType: string;
+  movement: string;
+  departSec: number;
+}
+export type TrafficRoutesGeoJson = FeatureCollection<LineString, TrafficRouteProperties>;
+
+export interface TrafficCounts {
+  requested: number; routed: number; departed: number; completed: number;
+  unrouted: number; notDeparted: number; unfinished: number; vaporized: number;
+}
+export interface TrafficAccounting {
+  status: 'complete' | 'incomplete' | 'review-required';
+  demandRetained: boolean;
+  vehicles: TrafficCounts;
+  nativeVehicles?: TrafficCounts;
+  vehicleCountBasis?: 'requested-road-vehicles' | 'selected-road-trip-segments';
+  persons: TrafficCounts;
+  nativeVehicleTeleports: number | null;
+  teleportAccountingComplete: boolean;
+}
+
 /** sumo/summary.json – Kennzahlen des SUMO-Laufs (vehicleTripStatistics). */
 export interface SumoSummary {
+  /** Tatsächlich eingesetzte Fahrzeuge einschließlich Fahrrad (neue Läufe). */
   vehicles: number;
+  vehicleCountScope?: 'inserted-including-bicycles';
+  meanStatisticsScope?: 'motor-vehicle-trip-statistics' | 'motor-vehicle-journeys-including-duty-stops';
+  accounting?: TrafficAccounting;
   meanDurationMin: number;
   meanRouteLengthKm: number;
   meanSpeedKmh: number;
@@ -206,6 +237,9 @@ export interface SumoSummary {
   bikeTrips?: number;
   walkTrips?: number;
   deliveryTrips?: number;
+  heavyFreightTrips?: number;
+  companyTourLegs?: number;
+  companyTours?: { status: string; requestedTours?: number; completedTours?: number; completedRegionalTours?: number; outsideExecutionSimulated?: boolean; originalRequestedLegs?: number; requestedLegs: number };
   /** ÖV (Phase C): mitfahrende Nachfrage-Personen und fahrplangebundene ÖV-Fahrzeuge (Bus). */
   ptRiders?: number;
   ptVehicles?: number;
@@ -284,4 +318,17 @@ export interface LlmModeChoiceResult {
     travelTimesMin: ModalSplit;
     modalSplit: ModalSplit;
   }[];
+}
+
+
+/** Target-independent requests; OD connections do not certify street routes. */
+export interface TrafficDemandSummary {
+  contract: string;
+  movements: number;
+  tours: number;
+  byDemandSource: Record<string, number>;
+  byTrafficCategory: Record<string, number>;
+  personDemandStatus: 'available' | 'not-generated';
+  parcelDemandStatus: 'available' | 'not-generated';
+  geometry: string;
 }

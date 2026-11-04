@@ -14,6 +14,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SumoDemandSelectionTest {
 
     @Test
+    void lateArrivalsExtendHorizonWithoutSelectingNextDayDepartures(@TempDir Path tempDir) throws Exception {
+        Path csv = tempDir.resolve("overnight.csv");
+        Files.writeString(csv, """
+                personOid;tripId;legId;tripMode;mainMode;legMode;distanceInKm;sourceZone;targetZone;fromX;fromY;toX;toY;tripBegin;tripEnd
+                p;late;0;1;1;1;15;A;B;8.1;48.1;8.2;48.2;2877;2915
+                p;next-day;0;1;1;1;15;B;A;8.2;48.2;8.1;48.1;2880;4000
+                """);
+        TravelDemand demand = new LogitoppDemandAdapter().read(csv);
+        assertThat(SumoRunner.simulationEndSeconds(demand, 1, 86220)).isEqualTo(92100);
+        var config = new SynthesisProperties.Sumo();config.setDay(1);config.setMaxTrips(-1);
+        assertThat(new SumoRunner(config).selectDemand(demand,false).cars()).hasSize(1);
+        assertThat(SumoRunner.simulationEndSeconds(new TravelDemand(java.util.List.of(),0),1,100)).isEqualTo(86400);
+        assertThat(SumoRunner.simulationEndSeconds(new TravelDemand(java.util.List.of(),0),1,86399)).isEqualTo(89999);
+    }
+
+    @Test
     void defaultTransfersAllEligibleTripsBeyondFormerLimit(@TempDir Path tempDir) throws Exception {
         Path csv = tempDir.resolve("full-demand.csv");
         StringBuilder content = new StringBuilder("personOid;tripId;legId;tripMode;mainMode;legMode;distanceInKm;sourceZone;targetZone;fromX;fromY;toX;toY;tripBegin;tripEnd\n");

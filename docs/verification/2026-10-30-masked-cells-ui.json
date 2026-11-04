@@ -1,0 +1,3076 @@
+{
+  "passed": true,
+  "scenarioId": "17249bcd",
+  "frontend": "production build",
+  "viewportWidths": [
+    1440,
+    390
+  ],
+  "flow": [
+    "import population and workplace cells through shared mapping editor",
+    "select explicit dataset revisions",
+    "exclude unrequested models in both gap lists",
+    "set manual population anchor 60",
+    "preflight and save in UI",
+    "offline generation",
+    "verify known population 30, genuine zero, residual 30 and mask scopes",
+    "verify exported Work zero",
+    "verify exported population zero and retain complete-household rounding limit"
+  ],
+  "zeroZone": {
+    "externalId": 100010,
+    "modelIndex": 9
+  },
+  "dialogBounds": {
+    "width": 350,
+    "scroll": 350
+  },
+  "resolution": {
+    "decisions": [
+      {
+        "aspect": "freight.vehicleOd",
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "qualityMode": "exploration",
+        "selectionRole": "legacy-delegation",
+        "skipped": [],
+        "source": "legacy",
+        "status": "legacy"
+      },
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "opportunities.work",
+        "attribution": "",
+        "coverage": {
+          "minLat": 45,
+          "minLon": 5,
+          "maxLat": 56,
+          "maxLon": 16
+        },
+        "evidence": "user-provided-unverified",
+        "gapProviders": [
+          {
+            "provider": "osm-pois",
+            "excluded": true,
+            "onUnavailable": "next"
+          },
+          {
+            "provider": "synthetic",
+            "excluded": false,
+            "onUnavailable": "next"
+          }
+        ],
+        "gaps": "providers",
+        "label": "work-masks.csv",
+        "licence": "unknown",
+        "qualityMode": "exploration",
+        "referenceDate": "2026-01-01",
+        "revision": "91e45d3bb0d9bf9f0d8dba8a3cf3be1a2b1853e1f9e638b4e8f0a4e4a23f2276",
+        "selectionRole": "explicit-selection",
+        "skipped": [
+          {
+            "reason": "replaced-by-explicit-dataset-in-covered-area",
+            "source": "legacy"
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+        "status": "resolved",
+        "temporalTransfer": false
+      },
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "population.distribution",
+        "attribution": "",
+        "coverage": {
+          "minLat": 45,
+          "minLon": 5,
+          "maxLat": 56,
+          "maxLon": 16
+        },
+        "evidence": "user-provided-unverified",
+        "gapProviders": [
+          {
+            "provider": "osm-places",
+            "excluded": true,
+            "onUnavailable": "next"
+          },
+          {
+            "provider": "poi-density",
+            "excluded": true,
+            "onUnavailable": "next"
+          },
+          {
+            "provider": "uniform",
+            "excluded": false,
+            "onUnavailable": "next"
+          }
+        ],
+        "gaps": "providers",
+        "label": "population-masks.csv",
+        "licence": "unknown",
+        "qualityMode": "exploration",
+        "referenceDate": "2026-01-01",
+        "revision": "d41a2f393877f75836697f9915fba47ad56973d84d6184b426f6b5e1a9af37f6",
+        "selectionRole": "explicit-selection",
+        "skipped": [
+          {
+            "reason": "replaced-by-explicit-dataset-in-covered-area",
+            "source": "legacy"
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+        "status": "resolved",
+        "temporalTransfer": false
+      }
+    ],
+    "workplaces": {
+      "allocation": "uniform within each full source cell; unbuffered intersection quantities; no renormalization to region",
+      "appliedJobs": 30,
+      "cells": [
+        {
+          "easting": 4200000,
+          "id": "a",
+          "northing": 2900000,
+          "resolution": 1000,
+          "sourceRow": 2,
+          "state": "value",
+          "value": 30
+        },
+        {
+          "easting": 4201000,
+          "id": "zero",
+          "northing": 2900000,
+          "resolution": 1000,
+          "sourceRow": 3,
+          "state": "value",
+          "value": 0
+        },
+        {
+          "easting": 4202000,
+          "id": "missing",
+          "northing": 2900000,
+          "rawValue": "NA",
+          "resolution": 1000,
+          "sourceRow": 4,
+          "state": "missing"
+        },
+        {
+          "easting": 4203000,
+          "id": "secret",
+          "northing": 2900000,
+          "rawValue": -1,
+          "resolution": 1000,
+          "sourceRow": 5,
+          "state": "suppressed"
+        },
+        {
+          "easting": 4204000,
+          "id": "not-surveyed",
+          "northing": 2900000,
+          "rawValue": "",
+          "resolution": 1000,
+          "sourceRow": 6,
+          "state": "not-collected"
+        }
+      ],
+      "compositionContract": "synthesis-workplace-composition-v1",
+      "contract": "synthesis-masked-cell-allocation-v1",
+      "coverageToleranceMeters": 0.01,
+      "coveredZones": 2,
+      "crs": "EPSG:3035",
+      "fallbackZones": 19,
+      "gapPolicy": "providers",
+      "gapResolution": {
+        "candidates": [
+          {
+            "onUnavailable": "next",
+            "provider": "osm-pois",
+            "reason": "explicitly-excluded",
+            "status": "excluded",
+            "rank": 1
+          },
+          {
+            "onUnavailable": "next",
+            "provider": "synthetic",
+            "reason": "first-usable-candidate",
+            "status": "selected",
+            "rank": 2
+          }
+        ],
+        "contract": "synthesis-workplace-resolution-v1",
+        "provenance": {
+          "contract": "synthesis-source-provenance-v1",
+          "aspect": "opportunities.work",
+          "root": "weights",
+          "nodes": [
+            {
+              "id": "input",
+              "operation": "model-profile",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "source": {
+                "kind": "model",
+                "label": "Synthetische Arbeitsgewichte",
+                "origin": "synthetic-work-weights-v1",
+                "referenceDate": "",
+                "licence": "unknown",
+                "attribution": ""
+              },
+              "inputs": [],
+              "scope": {
+                "purpose": "Work",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "baseWeightPerKm2": 400,
+                "centralitySlope": 0.8,
+                "gaussianSigma": 0.5,
+                "modelVersion": "synthetic-work-weights-v1",
+                "seed": 6291337688135381000,
+                "seedRule": "scenario.population.seed XOR 0x574f524b5f56314c"
+              }
+            },
+            {
+              "id": "weights",
+              "operation": "synthetic-work-weights",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "inputs": [
+                "input"
+              ],
+              "scope": {
+                "purpose": "Work",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "observedJobTotalAvailable": false,
+                "unit": "model-weight"
+              }
+            }
+          ]
+        },
+        "provider": "synthetic",
+        "status": "resolved",
+        "sumWeights": 4505.54337474348,
+        "unit": "model-weight",
+        "zoneWeights": [
+          {
+            "weight": 69.02267603175198,
+            "externalId": 100001,
+            "modelIndex": 0
+          },
+          {
+            "weight": 160.51228874202133,
+            "externalId": 100002,
+            "modelIndex": 1
+          },
+          {
+            "weight": 550.5046749740044,
+            "externalId": 100003,
+            "modelIndex": 2
+          },
+          {
+            "weight": 576.3622823236432,
+            "externalId": 100004,
+            "modelIndex": 3
+          },
+          {
+            "weight": 192.79699252810389,
+            "externalId": 100005,
+            "modelIndex": 4
+          },
+          {
+            "weight": 130.35858596172196,
+            "externalId": 100006,
+            "modelIndex": 5
+          },
+          {
+            "weight": 55.953402332905576,
+            "externalId": 100007,
+            "modelIndex": 6
+          },
+          {
+            "weight": 113.41122972198244,
+            "externalId": 100008,
+            "modelIndex": 7
+          },
+          {
+            "weight": 610.5203971685288,
+            "externalId": 100011,
+            "modelIndex": 10
+          },
+          {
+            "weight": 137.5101859981364,
+            "externalId": 100012,
+            "modelIndex": 11
+          },
+          {
+            "weight": 91.72440530057455,
+            "externalId": 100013,
+            "modelIndex": 12
+          },
+          {
+            "weight": 144.9517285342757,
+            "externalId": 100014,
+            "modelIndex": 13
+          },
+          {
+            "weight": 60.594875628485916,
+            "externalId": 100015,
+            "modelIndex": 14
+          },
+          {
+            "weight": 205.10419339385973,
+            "externalId": 100016,
+            "modelIndex": 15
+          },
+          {
+            "weight": 287.47419937930204,
+            "externalId": 100017,
+            "modelIndex": 16
+          },
+          {
+            "weight": 121.98616577548432,
+            "externalId": 100018,
+            "modelIndex": 17
+          },
+          {
+            "weight": 598.392368019371,
+            "externalId": 100019,
+            "modelIndex": 18
+          },
+          {
+            "weight": 323.60918126274817,
+            "externalId": 100020,
+            "modelIndex": 19
+          },
+          {
+            "weight": 74.75354166657904,
+            "externalId": 100021,
+            "modelIndex": 20
+          }
+        ]
+      },
+      "inputJobs": 30,
+      "knownApplied": 30,
+      "knownInPartialZonesNotApplied": 0,
+      "knownInput": 30,
+      "knownOutside": 0,
+      "maskIntersectionToleranceM2": 0.01,
+      "missingCells": 1,
+      "notCollectedCells": 1,
+      "outsideJobs": 0,
+      "provenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "opportunities.work",
+        "root": "work-weights",
+        "nodes": [
+          {
+            "id": "cells",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "91e45d3bb0d9bf9f0d8dba8a3cf3be1a2b1853e1f9e638b4e8f0a4e4a23f2276",
+              "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+              "label": "work-masks.csv",
+              "origin": "Künstliche Zellen mit explizitem Wertstatus für Vertragsprüfung",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                }
+              ]
+            },
+            "parameters": {
+              "crs": "EPSG:3035",
+              "mapping": {
+                "tableId": "csv",
+                "headerRow": 1,
+                "columns": {
+                  "easting": 1,
+                  "id": 0,
+                  "northing": 2,
+                  "resolution": 3,
+                  "state": 4,
+                  "value": 5
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "workplace-cells-v1"
+            }
+          },
+          {
+            "id": "cell-allocation",
+            "operation": "uniform-source-cell-area",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [
+              "cells"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                }
+              ]
+            },
+            "parameters": {
+              "crs": "EPSG:3035",
+              "missingCells": 1,
+              "suppressedCells": 1,
+              "unit": "jobs"
+            }
+          },
+          {
+            "id": "gap/input",
+            "operation": "model-profile",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "source": {
+              "kind": "model",
+              "label": "Synthetische Arbeitsgewichte",
+              "origin": "synthetic-work-weights-v1",
+              "referenceDate": "",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "baseWeightPerKm2": 400,
+              "centralitySlope": 0.8,
+              "gaussianSigma": 0.5,
+              "modelVersion": "synthetic-work-weights-v1",
+              "seed": 6291337688135381000,
+              "seedRule": "scenario.population.seed XOR 0x574f524b5f56314c"
+            }
+          },
+          {
+            "id": "gap/weights",
+            "operation": "synthetic-work-weights",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "inputs": [
+              "gap/input"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "observedJobTotalAvailable": false,
+              "unit": "model-weight"
+            }
+          },
+          {
+            "id": "work-weights",
+            "operation": "fill-gaps",
+            "evidence": "derived",
+            "selectionRole": "composition",
+            "inputs": [
+              "cell-allocation",
+              "gap/weights"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "quantitiesComparable": false,
+              "quantityBasis": "known-source-cells-only"
+            }
+          }
+        ]
+      },
+      "quantityBasis": "known-source-cells-only",
+      "revision": "91e45d3bb0d9bf9f0d8dba8a3cf3be1a2b1853e1f9e638b4e8f0a4e4a23f2276",
+      "suppressedCells": 1,
+      "unappliedPartialJobs": 0,
+      "zoneMasks": [
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100001,
+            "modelIndex": 0
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100002,
+            "modelIndex": 1
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100003,
+            "modelIndex": 2
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100004,
+            "modelIndex": 3
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100005,
+            "modelIndex": 4
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100006,
+            "modelIndex": 5
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100007,
+            "modelIndex": 6
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100008,
+            "modelIndex": 7
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "value",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100009,
+            "modelIndex": 8
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [],
+          "knownAreaM2": 1000000
+        },
+        {
+          "state": "value",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100010,
+            "modelIndex": 9
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [],
+          "knownAreaM2": 1000000
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 1000000,
+          "zone": {
+            "externalId": 100011,
+            "modelIndex": 10
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "missing"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 1000000,
+          "zone": {
+            "externalId": 100012,
+            "modelIndex": 11
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "suppressed"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 1000000,
+          "zone": {
+            "externalId": 100013,
+            "modelIndex": 12
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "not-collected"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100014,
+            "modelIndex": 13
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100015,
+            "modelIndex": 14
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100016,
+            "modelIndex": 15
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100017,
+            "modelIndex": 16
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100018,
+            "modelIndex": 17
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100019,
+            "modelIndex": 18
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100020,
+            "modelIndex": 19
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100021,
+            "modelIndex": 20
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        }
+      ]
+    },
+    "populationSource": "user-defined",
+    "populationDistribution": "dataset:d41a2f393877f75836697f9915fba47ad56973d84d6184b426f6b5e1a9af37f6",
+    "population": {
+      "allocatedPersons": 60,
+      "candidates": [
+        {
+          "onUnavailable": "fail",
+          "provider": "revision:d41a2f393877f75836697f9915fba47ad56973d84d6184b426f6b5e1a9af37f6",
+          "reason": "explicit-selection",
+          "status": "selected",
+          "rank": 1
+        }
+      ],
+      "contract": "synthesis-population-resolution-v1",
+      "diagnostics": {
+        "maskedCells": {
+          "allocation": "uniform within each full source cell; unbuffered intersection quantities; no renormalization to region",
+          "cells": [
+            {
+              "easting": 4200000,
+              "id": "a",
+              "northing": 2900000,
+              "resolution": 1000,
+              "sourceRow": 2,
+              "state": "value",
+              "value": 30
+            },
+            {
+              "easting": 4201000,
+              "id": "zero",
+              "northing": 2900000,
+              "resolution": 1000,
+              "sourceRow": 3,
+              "state": "value",
+              "value": 0
+            },
+            {
+              "easting": 4202000,
+              "id": "missing",
+              "northing": 2900000,
+              "rawValue": "NA",
+              "resolution": 1000,
+              "sourceRow": 4,
+              "state": "missing"
+            },
+            {
+              "easting": 4203000,
+              "id": "secret",
+              "northing": 2900000,
+              "rawValue": -1,
+              "resolution": 1000,
+              "sourceRow": 5,
+              "state": "suppressed"
+            },
+            {
+              "easting": 4204000,
+              "id": "not-surveyed",
+              "northing": 2900000,
+              "rawValue": "",
+              "resolution": 1000,
+              "sourceRow": 6,
+              "state": "not-collected"
+            }
+          ],
+          "contract": "synthesis-masked-cell-allocation-v1",
+          "coverageToleranceMeters": 0.01,
+          "coveredZones": 2,
+          "crs": "EPSG:3035",
+          "fallbackZones": 19,
+          "knownApplied": 30,
+          "knownInPartialZonesNotApplied": 0,
+          "knownInput": 30,
+          "knownOutside": 0,
+          "maskIntersectionToleranceM2": 0.01,
+          "missingCells": 1,
+          "notCollectedCells": 1,
+          "quantityBasis": "known-source-cells-only",
+          "revision": "d41a2f393877f75836697f9915fba47ad56973d84d6184b426f6b5e1a9af37f6",
+          "suppressedCells": 1,
+          "zoneMasks": [
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "value",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [],
+              "knownAreaM2": 1000000
+            },
+            {
+              "state": "value",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [],
+              "knownAreaM2": 1000000
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 1000000,
+              "zone": {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "missing"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 1000000,
+              "zone": {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "suppressed"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 1000000,
+              "zone": {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "not-collected"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100015,
+                "modelIndex": 14
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100016,
+                "modelIndex": 15
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100017,
+                "modelIndex": 16
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100018,
+                "modelIndex": 17
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100019,
+                "modelIndex": 18
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100020,
+                "modelIndex": 19
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100021,
+                "modelIndex": 20
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            }
+          ]
+        },
+        "gapResolution": {
+          "persons": 30,
+          "provider": "uniform",
+          "candidates": [
+            {
+              "onUnavailable": "next",
+              "provider": "osm-places",
+              "reason": "explicitly-excluded",
+              "status": "excluded",
+              "rank": 1
+            },
+            {
+              "onUnavailable": "next",
+              "provider": "poi-density",
+              "reason": "explicitly-excluded",
+              "status": "excluded",
+              "rank": 2
+            },
+            {
+              "onUnavailable": "next",
+              "provider": "uniform",
+              "reason": "first-usable-candidate",
+              "status": "selected",
+              "rank": 3
+            }
+          ],
+          "status": "resolved",
+          "zonePersons": [
+            {
+              "zone": {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              "persons": 1.7859535259256936
+            },
+            {
+              "zone": {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              "persons": 1.6291709486345773
+            },
+            {
+              "zone": {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              "persons": 1.3734292506195136
+            },
+            {
+              "zone": {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              "persons": 1.6664207807375366
+            },
+            {
+              "zone": {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              "persons": 1.780918324784155
+            },
+            {
+              "zone": {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              "persons": 1.6620279495586923
+            },
+            {
+              "zone": {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              "persons": 1.432066340560654
+            },
+            {
+              "zone": {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              "persons": 1.6189368992099789
+            },
+            {
+              "zone": {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              "persons": 1.5783471477989335
+            },
+            {
+              "zone": {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              "persons": 1.4616992466054972
+            },
+            {
+              "zone": {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              "persons": 1.6115365144518563
+            },
+            {
+              "zone": {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              "persons": 1.3108970783586082
+            },
+            {
+              "zone": {
+                "externalId": 100015,
+                "modelIndex": 14
+              },
+              "persons": 1.420449018939964
+            },
+            {
+              "zone": {
+                "externalId": 100016,
+                "modelIndex": 15
+              },
+              "persons": 1.4557704824946198
+            },
+            {
+              "zone": {
+                "externalId": 100017,
+                "modelIndex": 16
+              },
+              "persons": 1.8239562275456034
+            },
+            {
+              "zone": {
+                "externalId": 100018,
+                "modelIndex": 17
+              },
+              "persons": 1.6128319169996432
+            },
+            {
+              "zone": {
+                "externalId": 100019,
+                "modelIndex": 18
+              },
+              "persons": 1.2700896730360607
+            },
+            {
+              "zone": {
+                "externalId": 100020,
+                "modelIndex": 19
+              },
+              "persons": 1.8405413975403881
+            },
+            {
+              "zone": {
+                "externalId": 100021,
+                "modelIndex": 20
+              },
+              "persons": 1.6649572761980187
+            }
+          ]
+        },
+        "distributionProvenance": {
+          "contract": "synthesis-source-provenance-v1",
+          "aspect": "population.distribution",
+          "root": "distribution",
+          "nodes": [
+            {
+              "id": "cells",
+              "operation": "source",
+              "evidence": "unknown",
+              "selectionRole": "primary",
+              "source": {
+                "kind": "dataset",
+                "revision": "d41a2f393877f75836697f9915fba47ad56973d84d6184b426f6b5e1a9af37f6",
+                "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+                "label": "population-masks.csv",
+                "origin": "Künstliche Zellen mit explizitem Wertstatus für Vertragsprüfung",
+                "referenceDate": "2026-01-01",
+                "licence": "unknown",
+                "attribution": ""
+              },
+              "inputs": [],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  }
+                ]
+              },
+              "parameters": {
+                "crs": "EPSG:3035",
+                "mapping": {
+                  "tableId": "csv",
+                  "headerRow": 1,
+                  "columns": {
+                    "easting": 1,
+                    "id": 0,
+                    "northing": 2,
+                    "resolution": 3,
+                    "state": 4,
+                    "value": 5
+                  },
+                  "decimalSeparator": "."
+                },
+                "schema": "population-cells-v1"
+              }
+            },
+            {
+              "id": "known-allocation",
+              "operation": "uniform-source-cell-area",
+              "evidence": "assumed",
+              "selectionRole": "primary",
+              "inputs": [
+                "cells"
+              ],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  }
+                ]
+              },
+              "parameters": {
+                "crs": "EPSG:3035",
+                "unit": "persons"
+              }
+            },
+            {
+              "id": "total-anchor",
+              "operation": "manual-total",
+              "evidence": "assumed",
+              "selectionRole": "primary",
+              "inputs": [],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "knownApplied": 30,
+                "persons": 60,
+                "residualPersons": 30
+              }
+            },
+            {
+              "id": "model-input",
+              "operation": "source",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "source": {
+                "kind": "model",
+                "sourceHash": "",
+                "label": "Räumliche Ersatzgewichte ohne Ortsdaten",
+                "origin": "density-estimate",
+                "referenceDate": "",
+                "licence": "unknown",
+                "attribution": ""
+              },
+              "inputs": [],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "provider": "uniform",
+                "version": "density-v1"
+              }
+            },
+            {
+              "id": "mask-fill",
+              "operation": "manual-residual-by-model-weights-v1",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "inputs": [
+                "total-anchor",
+                "model-input"
+              ],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "modelWeightDenominator": 24.396702773529086,
+                "persons": 30,
+                "seed": 5786932416442619000,
+                "seedRule": "scenario.population.seed XOR 0x504f505f4d41534b"
+              }
+            },
+            {
+              "id": "distribution",
+              "operation": "fill-gaps",
+              "evidence": "derived",
+              "selectionRole": "composition",
+              "inputs": [
+                "known-allocation",
+                "mask-fill"
+              ],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "knownZerosPreserved": true,
+                "unit": "persons"
+              }
+            }
+          ]
+        }
+      },
+      "distributionProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.distribution",
+        "root": "distribution",
+        "nodes": [
+          {
+            "id": "cells",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "d41a2f393877f75836697f9915fba47ad56973d84d6184b426f6b5e1a9af37f6",
+              "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+              "label": "population-masks.csv",
+              "origin": "Künstliche Zellen mit explizitem Wertstatus für Vertragsprüfung",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                }
+              ]
+            },
+            "parameters": {
+              "crs": "EPSG:3035",
+              "mapping": {
+                "tableId": "csv",
+                "headerRow": 1,
+                "columns": {
+                  "easting": 1,
+                  "id": 0,
+                  "northing": 2,
+                  "resolution": 3,
+                  "state": 4,
+                  "value": 5
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "population-cells-v1"
+            }
+          },
+          {
+            "id": "known-allocation",
+            "operation": "uniform-source-cell-area",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [
+              "cells"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                }
+              ]
+            },
+            "parameters": {
+              "crs": "EPSG:3035",
+              "unit": "persons"
+            }
+          },
+          {
+            "id": "total-anchor",
+            "operation": "manual-total",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "knownApplied": 30,
+              "persons": 60,
+              "residualPersons": 30
+            }
+          },
+          {
+            "id": "model-input",
+            "operation": "source",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "source": {
+              "kind": "model",
+              "sourceHash": "",
+              "label": "Räumliche Ersatzgewichte ohne Ortsdaten",
+              "origin": "density-estimate",
+              "referenceDate": "",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "provider": "uniform",
+              "version": "density-v1"
+            }
+          },
+          {
+            "id": "mask-fill",
+            "operation": "manual-residual-by-model-weights-v1",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "inputs": [
+              "total-anchor",
+              "model-input"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "modelWeightDenominator": 24.396702773529086,
+              "persons": 30,
+              "seed": 5786932416442619000,
+              "seedRule": "scenario.population.seed XOR 0x504f505f4d41534b"
+            }
+          },
+          {
+            "id": "distribution",
+            "operation": "fill-gaps",
+            "evidence": "derived",
+            "selectionRole": "composition",
+            "inputs": [
+              "known-allocation",
+              "mask-fill"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "knownZerosPreserved": true,
+              "unit": "persons"
+            }
+          }
+        ]
+      },
+      "distributionSource": "dataset:d41a2f393877f75836697f9915fba47ad56973d84d6184b426f6b5e1a9af37f6",
+      "status": "resolved",
+      "totalPersons": 60,
+      "totalProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.total",
+        "root": "total",
+        "nodes": [
+          {
+            "id": "total",
+            "operation": "manual-total",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "persons": 60
+            }
+          }
+        ]
+      },
+      "totalSource": "user-defined"
+    }
+  },
+  "lock": {
+    "datasets": {
+      "opportunities.work": {
+        "id": "91e45d3bb0d9bf9f0d8dba8a3cf3be1a2b1853e1f9e638b4e8f0a4e4a23f2276",
+        "data": {
+          "contract": "synthesis-aspect-dataset-v1",
+          "schemaId": "workplace-cells-v1",
+          "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+          "sourceFormat": "csv",
+          "structure": "0a49e0796ae1bca7cd39173c6ee15cc9b72bd8f88f9bf837f95b309e26290b2f",
+          "mapping": {
+            "tableId": "csv",
+            "headerRow": 1,
+            "columns": {
+              "easting": 1,
+              "id": 0,
+              "northing": 2,
+              "resolution": 3,
+              "state": 4,
+              "value": 5
+            },
+            "decimalSeparator": "."
+          },
+          "metadata": {
+            "label": "work-masks.csv",
+            "source": "Künstliche Zellen mit explizitem Wertstatus für Vertragsprüfung",
+            "referenceDate": "2026-01-01",
+            "unit": "jobs",
+            "coverage": {
+              "minLat": 45,
+              "minLon": 5,
+              "maxLat": 56,
+              "maxLon": 16
+            },
+            "licence": "unknown",
+            "attribution": ""
+          },
+          "rows": [
+            {
+              "sourceRow": 2,
+              "values": {
+                "easting": 4200000,
+                "id": "a",
+                "northing": 2900000,
+                "resolution": 1000,
+                "state": "value",
+                "value": 30
+              }
+            },
+            {
+              "sourceRow": 3,
+              "values": {
+                "easting": 4201000,
+                "id": "zero",
+                "northing": 2900000,
+                "resolution": 1000,
+                "state": "value",
+                "value": 0
+              }
+            },
+            {
+              "sourceRow": 4,
+              "values": {
+                "easting": 4202000,
+                "id": "missing",
+                "northing": 2900000,
+                "rawValue": "NA",
+                "resolution": 1000,
+                "state": "missing"
+              }
+            },
+            {
+              "sourceRow": 5,
+              "values": {
+                "easting": 4203000,
+                "id": "secret",
+                "northing": 2900000,
+                "rawValue": -1,
+                "resolution": 1000,
+                "state": "suppressed"
+              }
+            },
+            {
+              "sourceRow": 6,
+              "values": {
+                "easting": 4204000,
+                "id": "not-surveyed",
+                "northing": 2900000,
+                "rawValue": "",
+                "resolution": 1000,
+                "state": "not-collected"
+              }
+            }
+          ]
+        }
+      },
+      "population.distribution": {
+        "id": "d41a2f393877f75836697f9915fba47ad56973d84d6184b426f6b5e1a9af37f6",
+        "data": {
+          "contract": "synthesis-aspect-dataset-v1",
+          "schemaId": "population-cells-v1",
+          "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+          "sourceFormat": "csv",
+          "structure": "0a49e0796ae1bca7cd39173c6ee15cc9b72bd8f88f9bf837f95b309e26290b2f",
+          "mapping": {
+            "tableId": "csv",
+            "headerRow": 1,
+            "columns": {
+              "easting": 1,
+              "id": 0,
+              "northing": 2,
+              "resolution": 3,
+              "state": 4,
+              "value": 5
+            },
+            "decimalSeparator": "."
+          },
+          "metadata": {
+            "label": "population-masks.csv",
+            "source": "Künstliche Zellen mit explizitem Wertstatus für Vertragsprüfung",
+            "referenceDate": "2026-01-01",
+            "unit": "persons",
+            "coverage": {
+              "minLat": 45,
+              "minLon": 5,
+              "maxLat": 56,
+              "maxLon": 16
+            },
+            "licence": "unknown",
+            "attribution": ""
+          },
+          "rows": [
+            {
+              "sourceRow": 2,
+              "values": {
+                "easting": 4200000,
+                "id": "a",
+                "northing": 2900000,
+                "resolution": 1000,
+                "state": "value",
+                "value": 30
+              }
+            },
+            {
+              "sourceRow": 3,
+              "values": {
+                "easting": 4201000,
+                "id": "zero",
+                "northing": 2900000,
+                "resolution": 1000,
+                "state": "value",
+                "value": 0
+              }
+            },
+            {
+              "sourceRow": 4,
+              "values": {
+                "easting": 4202000,
+                "id": "missing",
+                "northing": 2900000,
+                "rawValue": "NA",
+                "resolution": 1000,
+                "state": "missing"
+              }
+            },
+            {
+              "sourceRow": 5,
+              "values": {
+                "easting": 4203000,
+                "id": "secret",
+                "northing": 2900000,
+                "rawValue": -1,
+                "resolution": 1000,
+                "state": "suppressed"
+              }
+            },
+            {
+              "sourceRow": 6,
+              "values": {
+                "easting": 4204000,
+                "id": "not-surveyed",
+                "northing": 2900000,
+                "rawValue": "",
+                "resolution": 1000,
+                "state": "not-collected"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "decisions": [
+      {
+        "aspect": "freight.vehicleOd",
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "qualityMode": "exploration",
+        "selectionRole": "legacy-delegation",
+        "skipped": [],
+        "source": "legacy",
+        "status": "legacy"
+      },
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "opportunities.work",
+        "attribution": "",
+        "coverage": {
+          "minLat": 45,
+          "minLon": 5,
+          "maxLat": 56,
+          "maxLon": 16
+        },
+        "evidence": "user-provided-unverified",
+        "gapProviders": [
+          {
+            "provider": "osm-pois",
+            "excluded": true,
+            "onUnavailable": "next"
+          },
+          {
+            "provider": "synthetic",
+            "excluded": false,
+            "onUnavailable": "next"
+          }
+        ],
+        "gaps": "providers",
+        "label": "work-masks.csv",
+        "licence": "unknown",
+        "qualityMode": "exploration",
+        "referenceDate": "2026-01-01",
+        "revision": "91e45d3bb0d9bf9f0d8dba8a3cf3be1a2b1853e1f9e638b4e8f0a4e4a23f2276",
+        "selectionRole": "explicit-selection",
+        "skipped": [
+          {
+            "reason": "replaced-by-explicit-dataset-in-covered-area",
+            "source": "legacy"
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+        "status": "resolved",
+        "temporalTransfer": false
+      },
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "population.distribution",
+        "attribution": "",
+        "coverage": {
+          "minLat": 45,
+          "minLon": 5,
+          "maxLat": 56,
+          "maxLon": 16
+        },
+        "evidence": "user-provided-unverified",
+        "gapProviders": [
+          {
+            "provider": "osm-places",
+            "excluded": true,
+            "onUnavailable": "next"
+          },
+          {
+            "provider": "poi-density",
+            "excluded": true,
+            "onUnavailable": "next"
+          },
+          {
+            "provider": "uniform",
+            "excluded": false,
+            "onUnavailable": "next"
+          }
+        ],
+        "gaps": "providers",
+        "label": "population-masks.csv",
+        "licence": "unknown",
+        "qualityMode": "exploration",
+        "referenceDate": "2026-01-01",
+        "revision": "d41a2f393877f75836697f9915fba47ad56973d84d6184b426f6b5e1a9af37f6",
+        "selectionRole": "explicit-selection",
+        "skipped": [
+          {
+            "reason": "replaced-by-explicit-dataset-in-covered-area",
+            "source": "legacy"
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+        "status": "resolved",
+        "temporalTransfer": false
+      }
+    ],
+    "references": {}
+  },
+  "zonesCsv": "\"matrixColumn\";\"id\";\"name\";\"areaType\";\"regionType\";\"classification\";\"parkingPlaces\";\"centroidLocation\";\"isDestination\";\"relief\"\n\"0\";\"100001\";\"LAEA3035RES1000mN2899000E4199000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.333214,49.196178: 0, 0.5)\";\"true\";\"0.0\"\n\"1\";\"100002\";\"LAEA3035RES1000mN2899000E4200000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.346928,49.196381: 0, 0.5)\";\"true\";\"0.0\"\n\"2\";\"100003\";\"LAEA3035RES1000mN2899000E4201000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.360642,49.196582: 0, 0.5)\";\"true\";\"0.0\"\n\"3\";\"100004\";\"LAEA3035RES1000mN2899000E4202000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.374357,49.196781: 0, 0.5)\";\"true\";\"0.0\"\n\"4\";\"100005\";\"LAEA3035RES1000mN2899000E4203000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.388071,49.196979: 0, 0.5)\";\"true\";\"0.0\"\n\"5\";\"100006\";\"LAEA3035RES1000mN2899000E4204000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.401786,49.197175: 0, 0.5)\";\"true\";\"0.0\"\n\"6\";\"100007\";\"LAEA3035RES1000mN2899000E4205000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.415501,49.197370: 0, 0.5)\";\"true\";\"0.0\"\n\"7\";\"100008\";\"LAEA3035RES1000mN2900000E4199000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.332909,49.205169: 0, 0.5)\";\"true\";\"0.0\"\n\"8\";\"100009\";\"LAEA3035RES1000mN2900000E4200000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.346625,49.205372: 0, 0.5)\";\"true\";\"0.0\"\n\"9\";\"100010\";\"LAEA3035RES1000mN2900000E4201000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.360342,49.205573: 0, 0.5)\";\"true\";\"0.0\"\n\"10\";\"100011\";\"LAEA3035RES1000mN2900000E4202000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.374059,49.205773: 0, 0.5)\";\"true\";\"0.0\"\n\"11\";\"100012\";\"LAEA3035RES1000mN2900000E4203000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.387776,49.205971: 0, 0.5)\";\"true\";\"0.0\"\n\"12\";\"100013\";\"LAEA3035RES1000mN2900000E4204000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.401493,49.206167: 0, 0.5)\";\"true\";\"0.0\"\n\"13\";\"100014\";\"LAEA3035RES1000mN2900000E4205000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.415211,49.206361: 0, 0.5)\";\"true\";\"0.0\"\n\"14\";\"100015\";\"LAEA3035RES1000mN2901000E4199000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.332603,49.214160: 0, 0.5)\";\"true\";\"0.0\"\n\"15\";\"100016\";\"LAEA3035RES1000mN2901000E4200000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.346322,49.214363: 0, 0.5)\";\"true\";\"0.0\"\n\"16\";\"100017\";\"LAEA3035RES1000mN2901000E4201000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.360042,49.214565: 0, 0.5)\";\"true\";\"0.0\"\n\"17\";\"100018\";\"LAEA3035RES1000mN2901000E4202000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.373761,49.214764: 0, 0.5)\";\"true\";\"0.0\"\n\"18\";\"100019\";\"LAEA3035RES1000mN2901000E4203000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.387481,49.214962: 0, 0.5)\";\"true\";\"0.0\"\n\"19\";\"100020\";\"LAEA3035RES1000mN2901000E4204000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.401201,49.215158: 0, 0.5)\";\"true\";\"0.0\"\n\"20\";\"100021\";\"LAEA3035RES1000mN2901000E4205000\";\"3\";\"123\";\"studyArea\";\"0\";\"(8.414920,49.215353: 0, 0.5)\";\"true\";\"0.0\"\n",
+  "javascriptErrors": [],
+  "populationHouseholdRounding": {
+    "policy": "whole-households-with-zone-rounding-carry-v1",
+    "targetPersons": 60,
+    "actualPersons": 63,
+    "difference": 3
+  },
+  "zeroPopulationZone": {
+    "actualPersons": 0,
+    "zoneId": 100010,
+    "difference": 0,
+    "targetPersons": 0
+  },
+  "date": "2026-10-30"
+}

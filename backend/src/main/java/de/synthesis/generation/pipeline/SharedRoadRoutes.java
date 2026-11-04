@@ -21,7 +21,7 @@ final class SharedRoadRoutes implements AutoCloseable {
 
     SharedRoadRoutes(Path dir, String osmXml) throws IOException {
         this.dir = dir;
-        osmHash = hash(osmXml); sumoHash = hash(Files.readString(dir.resolve("net.net.xml")));
+        osmHash = hash(osmXml); sumoHash = FreightProfileChecks.sha256(dir.resolve("net.net.xml"));
         mapping = new SumoRoadRouteMapper(dir.resolve("net.net.xml"), dir.resolve("route-geo.nod.xml"),
                 dir.resolve("route-geo.edg.xml"));
         report = Files.newBufferedWriter(dir.resolve("shared-road-routes.jsonl"));

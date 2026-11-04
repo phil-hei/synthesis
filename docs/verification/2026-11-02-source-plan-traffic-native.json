@@ -1,0 +1,4019 @@
+{
+  "date": "2026-11-02",
+  "scope": "18 actual native SUMO runs through GenerationService; heavy freight and company demand only",
+  "regions": [
+    {
+      "nativeRuntime": true,
+      "heavyExclusionPreservesCompanyLegs": 3,
+      "cases": [
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "5c289ebd385cbe565d0149947bf6e81f78f6dc6990c0df942028f2e660f1db70",
+            "freight/execution.json": "362b6c4542b174a48d1692442e0597a02779697ed8278a5efd2f101948ef4b22",
+            "sumo/traffic-execution.json": "6a97c02abd21ce691cf28556aa76f1a2f9829d816097535f7adf022960e6ec7c",
+            "sumo/traffic-routing.json": "eec381ae057bf689d99c0443f33156bd10ddcd950a0ba58a01a35352d8cb99fe"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 11,
+              "routed": 11,
+              "departed": 11,
+              "completed": 11,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 9,
+              "routed": 9,
+              "departed": 9,
+              "completed": 9,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 8,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 11,
+          "revision": "10b951c607b1127a5b5309f076eb7e123ea1ea85753df6ee082048d2d70c387a",
+          "seed": 7,
+          "teleports": 0
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "5c289ebd385cbe565d0149947bf6e81f78f6dc6990c0df942028f2e660f1db70",
+            "freight/execution.json": "191a5e1f4e7f685f96d9695892618cb7dc2f2cb56d942a6ee89dc727317dc015",
+            "sumo/traffic-execution.json": "f68dca4ff8b72ea0be3ca759f2fed0c8d87dcf20ab6a78fd7925f574d60d4f44",
+            "sumo/traffic-routing.json": "bcc651f9c6e7a0820fe54c6b6751ba7bd6efc4418155560d86b7f8ea61a70d70"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 12,
+              "routed": 12,
+              "departed": 12,
+              "completed": 12,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 5,
+                  "routed": 5,
+                  "departed": 5,
+                  "completed": 5,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 10,
+              "routed": 10,
+              "departed": 10,
+              "completed": 10,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_2",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_2",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 9,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 12,
+          "revision": "ec60979c305d55e250ff33bf92b585b5dbe797aec172ef34f5ef8235cfbd815b",
+          "seed": 7,
+          "teleports": 0
+        },
+        {
+          "source": "excluded",
+          "requestedAndCompletedMovements": 3,
+          "generatedHeavyTrips": 0,
+          "seed": 7,
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 3,
+              "routed": 3,
+              "departed": 3,
+              "completed": 3,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 1,
+              "routed": 1,
+              "departed": 1,
+              "completed": 1,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          }
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "5c289ebd385cbe565d0149947bf6e81f78f6dc6990c0df942028f2e660f1db70",
+            "freight/execution.json": "362b6c4542b174a48d1692442e0597a02779697ed8278a5efd2f101948ef4b22",
+            "sumo/traffic-execution.json": "6a97c02abd21ce691cf28556aa76f1a2f9829d816097535f7adf022960e6ec7c",
+            "sumo/traffic-routing.json": "eec381ae057bf689d99c0443f33156bd10ddcd950a0ba58a01a35352d8cb99fe"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 11,
+              "routed": 11,
+              "departed": 11,
+              "completed": 11,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 9,
+              "routed": 9,
+              "departed": 9,
+              "completed": 9,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 8,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 11,
+          "revision": "10b951c607b1127a5b5309f076eb7e123ea1ea85753df6ee082048d2d70c387a",
+          "seed": 42,
+          "teleports": 0
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "5c289ebd385cbe565d0149947bf6e81f78f6dc6990c0df942028f2e660f1db70",
+            "freight/execution.json": "191a5e1f4e7f685f96d9695892618cb7dc2f2cb56d942a6ee89dc727317dc015",
+            "sumo/traffic-execution.json": "f68dca4ff8b72ea0be3ca759f2fed0c8d87dcf20ab6a78fd7925f574d60d4f44",
+            "sumo/traffic-routing.json": "bcc651f9c6e7a0820fe54c6b6751ba7bd6efc4418155560d86b7f8ea61a70d70"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 12,
+              "routed": 12,
+              "departed": 12,
+              "completed": 12,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 5,
+                  "routed": 5,
+                  "departed": 5,
+                  "completed": 5,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 10,
+              "routed": 10,
+              "departed": 10,
+              "completed": 10,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_2",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_2",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 9,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 12,
+          "revision": "ec60979c305d55e250ff33bf92b585b5dbe797aec172ef34f5ef8235cfbd815b",
+          "seed": 42,
+          "teleports": 0
+        },
+        {
+          "source": "excluded",
+          "requestedAndCompletedMovements": 3,
+          "generatedHeavyTrips": 0,
+          "seed": 42,
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 3,
+              "routed": 3,
+              "departed": 3,
+              "completed": 3,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 1,
+              "routed": 1,
+              "departed": 1,
+              "completed": 1,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          }
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "5c289ebd385cbe565d0149947bf6e81f78f6dc6990c0df942028f2e660f1db70",
+            "freight/execution.json": "362b6c4542b174a48d1692442e0597a02779697ed8278a5efd2f101948ef4b22",
+            "sumo/traffic-execution.json": "6a97c02abd21ce691cf28556aa76f1a2f9829d816097535f7adf022960e6ec7c",
+            "sumo/traffic-routing.json": "eec381ae057bf689d99c0443f33156bd10ddcd950a0ba58a01a35352d8cb99fe"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 11,
+              "routed": 11,
+              "departed": 11,
+              "completed": 11,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 9,
+              "routed": 9,
+              "departed": 9,
+              "completed": 9,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 8,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 11,
+          "revision": "10b951c607b1127a5b5309f076eb7e123ea1ea85753df6ee082048d2d70c387a",
+          "seed": 777,
+          "teleports": 0
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "5c289ebd385cbe565d0149947bf6e81f78f6dc6990c0df942028f2e660f1db70",
+            "freight/execution.json": "191a5e1f4e7f685f96d9695892618cb7dc2f2cb56d942a6ee89dc727317dc015",
+            "sumo/traffic-execution.json": "f68dca4ff8b72ea0be3ca759f2fed0c8d87dcf20ab6a78fd7925f574d60d4f44",
+            "sumo/traffic-routing.json": "bcc651f9c6e7a0820fe54c6b6751ba7bd6efc4418155560d86b7f8ea61a70d70"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 12,
+              "routed": 12,
+              "departed": 12,
+              "completed": 12,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 5,
+                  "routed": 5,
+                  "departed": 5,
+                  "completed": 5,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 10,
+              "routed": 10,
+              "departed": 10,
+              "completed": 10,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_2",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_2",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 9,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 12,
+          "revision": "ec60979c305d55e250ff33bf92b585b5dbe797aec172ef34f5ef8235cfbd815b",
+          "seed": 777,
+          "teleports": 0
+        },
+        {
+          "source": "excluded",
+          "requestedAndCompletedMovements": 3,
+          "generatedHeavyTrips": 0,
+          "seed": 777,
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 3,
+              "routed": 3,
+              "departed": 3,
+              "completed": 3,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 1,
+              "routed": 1,
+              "departed": 1,
+              "completed": 1,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          }
+        }
+      ],
+      "region": "translated-north"
+    },
+    {
+      "nativeRuntime": true,
+      "heavyExclusionPreservesCompanyLegs": 3,
+      "cases": [
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "615bf68bbba36171961c47cb8dbee7128c90de49605c55ed99a9ffbe326be940",
+            "freight/execution.json": "362b6c4542b174a48d1692442e0597a02779697ed8278a5efd2f101948ef4b22",
+            "sumo/traffic-execution.json": "6a97c02abd21ce691cf28556aa76f1a2f9829d816097535f7adf022960e6ec7c",
+            "sumo/traffic-routing.json": "eec381ae057bf689d99c0443f33156bd10ddcd950a0ba58a01a35352d8cb99fe"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 11,
+              "routed": 11,
+              "departed": 11,
+              "completed": 11,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 9,
+              "routed": 9,
+              "departed": 9,
+              "completed": 9,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 8,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 11,
+          "revision": "c700cdd9bfdd0d3a4263e6232645e4df5a7d8c384f6f718b8f82ddd3f8b34a25",
+          "seed": 7,
+          "teleports": 0
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "615bf68bbba36171961c47cb8dbee7128c90de49605c55ed99a9ffbe326be940",
+            "freight/execution.json": "191a5e1f4e7f685f96d9695892618cb7dc2f2cb56d942a6ee89dc727317dc015",
+            "sumo/traffic-execution.json": "f68dca4ff8b72ea0be3ca759f2fed0c8d87dcf20ab6a78fd7925f574d60d4f44",
+            "sumo/traffic-routing.json": "bcc651f9c6e7a0820fe54c6b6751ba7bd6efc4418155560d86b7f8ea61a70d70"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 12,
+              "routed": 12,
+              "departed": 12,
+              "completed": 12,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 5,
+                  "routed": 5,
+                  "departed": 5,
+                  "completed": 5,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 10,
+              "routed": 10,
+              "departed": 10,
+              "completed": 10,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_2",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_2",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 9,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 12,
+          "revision": "cf18ede359246ad886d827214a39821fecfbe58bc12a2bfc44748940bb6c63e8",
+          "seed": 7,
+          "teleports": 0
+        },
+        {
+          "source": "excluded",
+          "requestedAndCompletedMovements": 3,
+          "generatedHeavyTrips": 0,
+          "seed": 7,
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 3,
+              "routed": 3,
+              "departed": 3,
+              "completed": 3,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 1,
+              "routed": 1,
+              "departed": 1,
+              "completed": 1,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          }
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "615bf68bbba36171961c47cb8dbee7128c90de49605c55ed99a9ffbe326be940",
+            "freight/execution.json": "362b6c4542b174a48d1692442e0597a02779697ed8278a5efd2f101948ef4b22",
+            "sumo/traffic-execution.json": "6a97c02abd21ce691cf28556aa76f1a2f9829d816097535f7adf022960e6ec7c",
+            "sumo/traffic-routing.json": "eec381ae057bf689d99c0443f33156bd10ddcd950a0ba58a01a35352d8cb99fe"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 11,
+              "routed": 11,
+              "departed": 11,
+              "completed": 11,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 9,
+              "routed": 9,
+              "departed": 9,
+              "completed": 9,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 8,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 11,
+          "revision": "c700cdd9bfdd0d3a4263e6232645e4df5a7d8c384f6f718b8f82ddd3f8b34a25",
+          "seed": 42,
+          "teleports": 0
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "615bf68bbba36171961c47cb8dbee7128c90de49605c55ed99a9ffbe326be940",
+            "freight/execution.json": "191a5e1f4e7f685f96d9695892618cb7dc2f2cb56d942a6ee89dc727317dc015",
+            "sumo/traffic-execution.json": "f68dca4ff8b72ea0be3ca759f2fed0c8d87dcf20ab6a78fd7925f574d60d4f44",
+            "sumo/traffic-routing.json": "bcc651f9c6e7a0820fe54c6b6751ba7bd6efc4418155560d86b7f8ea61a70d70"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 12,
+              "routed": 12,
+              "departed": 12,
+              "completed": 12,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 5,
+                  "routed": 5,
+                  "departed": 5,
+                  "completed": 5,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 10,
+              "routed": 10,
+              "departed": 10,
+              "completed": 10,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_2",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_2",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 9,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 12,
+          "revision": "cf18ede359246ad886d827214a39821fecfbe58bc12a2bfc44748940bb6c63e8",
+          "seed": 42,
+          "teleports": 0
+        },
+        {
+          "source": "excluded",
+          "requestedAndCompletedMovements": 3,
+          "generatedHeavyTrips": 0,
+          "seed": 42,
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 3,
+              "routed": 3,
+              "departed": 3,
+              "completed": 3,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 1,
+              "routed": 1,
+              "departed": 1,
+              "completed": 1,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          }
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "615bf68bbba36171961c47cb8dbee7128c90de49605c55ed99a9ffbe326be940",
+            "freight/execution.json": "362b6c4542b174a48d1692442e0597a02779697ed8278a5efd2f101948ef4b22",
+            "sumo/traffic-execution.json": "6a97c02abd21ce691cf28556aa76f1a2f9829d816097535f7adf022960e6ec7c",
+            "sumo/traffic-routing.json": "eec381ae057bf689d99c0443f33156bd10ddcd950a0ba58a01a35352d8cb99fe"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 11,
+              "routed": 11,
+              "departed": 11,
+              "completed": 11,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 9,
+              "routed": 9,
+              "departed": 9,
+              "completed": 9,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 8,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 11,
+          "revision": "c700cdd9bfdd0d3a4263e6232645e4df5a7d8c384f6f718b8f82ddd3f8b34a25",
+          "seed": 777,
+          "teleports": 0
+        },
+        {
+          "artifactHashes": {
+            "company-tours/input.json": "615bf68bbba36171961c47cb8dbee7128c90de49605c55ed99a9ffbe326be940",
+            "freight/execution.json": "191a5e1f4e7f685f96d9695892618cb7dc2f2cb56d942a6ee89dc727317dc015",
+            "sumo/traffic-execution.json": "f68dca4ff8b72ea0be3ca759f2fed0c8d87dcf20ab6a78fd7925f574d60d4f44",
+            "sumo/traffic-routing.json": "bcc651f9c6e7a0820fe54c6b6751ba7bd6efc4418155560d86b7f8ea61a70d70"
+          },
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 12,
+              "routed": 12,
+              "departed": 12,
+              "completed": 12,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "trailer",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 4,
+                  "routed": 4,
+                  "departed": 4,
+                  "completed": 4,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              },
+              {
+                "source": "heavy-freight",
+                "vehicleClass": "truck",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 5,
+                  "routed": 5,
+                  "departed": 5,
+                  "completed": 5,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 10,
+              "routed": 10,
+              "departed": 10,
+              "completed": 10,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "freight_inbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_inbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_inbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_internal_2",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_internal_2",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_outbound_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "truck",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_outbound_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_0",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_0",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "freight_through_1",
+                  "source": "heavy-freight",
+                  "vehicleClass": "trailer",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "freight_through_1",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          },
+          "executionStatus": "complete",
+          "generatedHeavyTrips": 9,
+          "privateDemandStatus": "not-generated",
+          "requestedAndCompletedMovements": 12,
+          "revision": "cf18ede359246ad886d827214a39821fecfbe58bc12a2bfc44748940bb6c63e8",
+          "seed": 777,
+          "teleports": 0
+        },
+        {
+          "source": "excluded",
+          "requestedAndCompletedMovements": 3,
+          "generatedHeavyTrips": 0,
+          "seed": 777,
+          "execution": {
+            "contract": "synthesis-traffic-execution-v1",
+            "status": "complete",
+            "routingVerified": true,
+            "demandRetained": true,
+            "vehicles": {
+              "requested": 3,
+              "routed": 3,
+              "departed": 3,
+              "completed": 3,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "persons": {
+              "requested": 0,
+              "routed": 0,
+              "departed": 0,
+              "completed": 0,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "groups": [
+              {
+                "source": "company-tours",
+                "vehicleClass": "delivery",
+                "kind": "vehicle",
+                "counts": {
+                  "requested": 3,
+                  "routed": 3,
+                  "departed": 3,
+                  "completed": 3,
+                  "unrouted": 0,
+                  "notDeparted": 0,
+                  "unfinished": 0,
+                  "vaporized": 0
+                }
+              }
+            ],
+            "nativeVehicles": {
+              "requested": 1,
+              "routed": 1,
+              "departed": 1,
+              "completed": 1,
+              "unrouted": 0,
+              "notDeparted": 0,
+              "unfinished": 0,
+              "vaporized": 0
+            },
+            "vehicleCountBasis": "selected-road-trip-segments",
+            "teleportAccountingComplete": true,
+            "nativeVehicleTeleports": 0,
+            "teleportEvents": [],
+            "requests": [
+              {
+                "request": {
+                  "id": "v0",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "10",
+                    "to": "20"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v1",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "20",
+                    "to": "40"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              },
+              {
+                "request": {
+                  "id": "v2",
+                  "source": "company-tours",
+                  "vehicleClass": "delivery",
+                  "person": false,
+                  "endpoints": {
+                    "from": "40",
+                    "to": "10"
+                  }
+                },
+                "status": "completed",
+                "nativeVehicleId": "physical.dmFuLTE",
+                "teleportEvents": 0
+              }
+            ],
+            "simulationEndSeconds": 86400
+          }
+        }
+      ],
+      "region": "south"
+    }
+  ],
+  "privateDemandStatus": "not-generated",
+  "parcelDemandStatus": "not-generated",
+  "nativeRuntimeExecuted": true
+}

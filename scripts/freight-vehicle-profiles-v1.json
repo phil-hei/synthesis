@@ -1,0 +1,19 @@
+{
+  "contract": "freight-operating-profiles-v1",
+  "profiles": {
+    "truck": {
+      "catalogId": "standard.heavyTruck.diesel",
+      "catalogVersion": "1",
+      "loadCase": "assumed-at-rated-gross-mass",
+      "actualMassKg": 26000,
+      "axleLoadsKg": null
+    },
+    "trailer": {
+      "catalogId": "standard.articulatedTruck.diesel",
+      "catalogVersion": "1",
+      "loadCase": "assumed-at-rated-gross-mass",
+      "actualMassKg": 40000,
+      "axleLoadsKg": null
+    }
+  }
+}

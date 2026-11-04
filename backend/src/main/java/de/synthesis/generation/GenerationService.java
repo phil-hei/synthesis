@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.synthesis.SynthesisProperties;
 import de.synthesis.generation.demand.LogitoppDemandAdapter;
 import de.synthesis.generation.demand.TravelDemand;
+import de.synthesis.generation.demand.TrafficDemand;
+import de.synthesis.generation.demand.TrafficDemandArtifacts;
+import de.synthesis.generation.demand.ParcelTourAdapter;
 import de.synthesis.generation.pipeline.ActitoppRunner;
 import de.synthesis.generation.pipeline.GtaBehaviorRunner;
 import de.synthesis.generation.pipeline.ActivityGenerator;
@@ -16,6 +19,7 @@ import de.synthesis.generation.pipeline.CensusPopulationSource;
 import de.synthesis.generation.pipeline.CensusStructureSource;
 import de.synthesis.generation.pipeline.ExternalZones;
 import de.synthesis.generation.pipeline.FeedbackMath;
+import de.synthesis.generation.pipeline.FreightDemandGenerator;
 import de.synthesis.generation.pipeline.GeoJson;
 import de.synthesis.generation.pipeline.Epsg3035;
 import de.synthesis.generation.pipeline.GridZoning;
@@ -32,6 +36,7 @@ import de.synthesis.generation.pipeline.DestinationChoiceParameterAdjuster;
 import de.synthesis.generation.pipeline.ModeChoiceCalibrator;
 import de.synthesis.generation.pipeline.ModeDistanceCalibrator;
 import de.synthesis.generation.pipeline.OverpassClient;
+import de.synthesis.generation.pipeline.EnergyInfrastructure;
 import de.synthesis.generation.pipeline.OsmDataSnapshot;
 import de.synthesis.generation.pipeline.OsmExternalDestinationCandidates;
 import de.synthesis.generation.pipeline.PopulationEstimator;
@@ -39,6 +44,7 @@ import de.synthesis.generation.pipeline.PopulationGenerator;
 import de.synthesis.generation.pipeline.PopulationGridParser;
 import de.synthesis.generation.pipeline.RoutingEngine;
 import de.synthesis.generation.pipeline.RoadNetworkFile;
+import de.synthesis.generation.pipeline.RoadLocations;
 import de.synthesis.generation.pipeline.SimulationResultIngestor;
 import de.synthesis.generation.pipeline.SimulationRunner;
 import de.synthesis.generation.pipeline.VisumMatrixWriter;
@@ -88,6 +94,7 @@ public class GenerationService {
     private final CensusPopulationSource census;
     private final SynthesisProperties properties;
     private final ObjectMapper mapper;
+    private final de.synthesis.data.importing.ImportRegistry importRegistry;
     private final Map<String, GenerationJob> jobs = new ConcurrentHashMap<>();
     // Bewusst 1: die Simulationsstufe startet eine logiTopp-JVM mit bis zu 12 GB Heap und teilt
     // sich das Gradle-Projekt mobitopp-rastatt; parallele Läufe würden RAM und Arbeitsverzeichnis
@@ -96,11 +103,19 @@ public class GenerationService {
 
     public GenerationService(ScenarioRepository scenarios, OverpassClient overpass,
                              SynthesisProperties properties, ObjectMapper mapper) {
+        this(scenarios, overpass, properties, mapper, de.synthesis.data.importing.ImportRegistry.builtins());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public GenerationService(ScenarioRepository scenarios, OverpassClient overpass,
+                             SynthesisProperties properties, ObjectMapper mapper,
+                             de.synthesis.data.importing.ImportRegistry importRegistry) {
         this.scenarios = scenarios;
         this.overpass = overpass;
         this.census = new CensusPopulationSource(properties.getCensus());
         this.properties = properties;
         this.mapper = mapper;
+        this.importRegistry = importRegistry;
     }
 
     public GenerationJob start(String scenarioId) {
@@ -112,12 +127,26 @@ public class GenerationService {
                     org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY,
                     "Fahrzeugkonfiguration: " + vehicleReport.errors().getFirst());
         }
-        if (scenario.vehicleConfiguration.appliesToSumo() && !scenario.targets().contains("sumo")) {
+        final de.synthesis.data.SourceResolver.Inputs sourceInputs;
+        try {
+            sourceInputs = de.synthesis.data.SourceResolver.prepare(scenario, scenarios, mapper, importRegistry);
+            FreightDemandGenerator.validateDemand(scenario);
+            if (scenario.freight.enabled && scenario.freight.relations.isEmpty())
+                throw new IllegalArgumentException("Bitte Güterverkehrsbeziehungen hochladen");
+        } catch (IllegalArgumentException | IOException e) {
             throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Fahrzeugkonfiguration sumoTraffic benötigt SUMO als Zielmodell");
+                    org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY, e.getMessage());
+        }
+        final de.synthesis.companytour.CompanyTourExecution.Batch companyInput;
+        try {
+            companyInput = de.synthesis.companytour.CompanyTourImportService.loadForGeneration(scenarios, mapper, scenario);
+        } catch (java.io.IOException | IllegalArgumentException e) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Unternehmenstouren: " + e.getMessage());
         }
         validateMobileCityPreflight(scenario);
+        if(scenario.population.roadLocatedActivities && !scenario.population.useRealRouting)
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY,"Straßennahe Wohn- und Aktivitätsorte benötigen reales Routing");
         GenerationJob existing = jobs.get(scenarioId);
         if (existing != null && (existing.state == GenerationJob.State.QUEUED
                 || existing.state == GenerationJob.State.RUNNING)) {
@@ -125,7 +154,7 @@ public class GenerationService {
         }
         GenerationJob job = new GenerationJob(scenarioId, STAGES);
         jobs.put(scenarioId, job);
-        executor.submit(() -> run(scenario, job));
+        executor.submit(() -> run(scenario, job, companyInput, sourceInputs));
         return job;
     }
 
@@ -262,6 +291,10 @@ public class GenerationService {
         final Path artifacts;
         final Random random;
         final VehicleCatalog.Report vehicles;
+        de.synthesis.companytour.CompanyTourExecution.Batch companyTours = de.synthesis.companytour.CompanyTourExecution.Batch.empty();
+        List<FreightDemandGenerator.Trip> freightTrips = List.of();
+        TrafficDemand trafficDemand;
+        de.synthesis.data.SourceResolver.Inputs sourceInputs = de.synthesis.data.SourceResolver.Inputs.empty();
         /** OSM-Straßennetz wird von Routing (Matrizen) UND SUMO gebraucht – einmal pro Lauf laden. */
         final AtomicReference<String> roadNetwork = new AtomicReference<>();
 
@@ -275,6 +308,7 @@ public class GenerationService {
         int totalPersons;
         PopulationGenerator populationGenerator;
         PopulationGenerator.Result population;
+        RoadLocations roadLocations;
         LogisticsGenerator logisticsGenerator;
         LogisticsGenerator.Result logistics;
         /** Pkw-Reisezeitmatrix (Minuten) aus der Matrizen-Stufe – Basis fürs Netz-Feedback. */
@@ -304,17 +338,64 @@ public class GenerationService {
 
     /** Orchestriert die 15 Pipeline-Stufen; die Fachlogik liegt in den stage*-Methoden. */
     private void run(Scenario scenario, GenerationJob job) {
+        run(scenario, job, de.synthesis.companytour.CompanyTourExecution.Batch.empty());
+    }
+    private void run(Scenario scenario, GenerationJob job, de.synthesis.companytour.CompanyTourExecution.Batch companyTours) {
+        try { run(scenario, job, companyTours, de.synthesis.data.SourceResolver.prepare(scenario, scenarios, mapper, importRegistry)); }
+        catch (Exception e) { job.state=GenerationJob.State.FAILED; job.error=e.getMessage(); job.finishedAt=Instant.now(); }
+    }
+    private void run(Scenario scenario, GenerationJob job, de.synthesis.companytour.CompanyTourExecution.Batch companyTours,
+                     de.synthesis.data.SourceResolver.Inputs sourceInputs) {
         job.state = GenerationJob.State.RUNNING;
         job.startedAt = Instant.now();
         PipelineContext ctx = new PipelineContext(scenario, job, scenarios.artifactsDir(scenario.id));
+        ctx.companyTours = companyTours;
+        ctx.sourceInputs = sourceInputs;
         try {
+            Path sourceDir=ctx.artifacts.resolve("sources");
+            for(String name:List.of("plan.json","lock.json","resolution.json","population-failure.json","workplace-failure.json","population-grid.csv"))Files.deleteIfExists(sourceDir.resolve(name));
+            if(scenario.dataPlan!=null&&scenario.dataPlan.enabled){
+                Files.createDirectories(sourceDir);
+                mapper.writerWithDefaultPrettyPrinter().writeValue(sourceDir.resolve("plan.json").toFile(),scenario.dataPlan);
+                mapper.writerWithDefaultPrettyPrinter().writeValue(sourceDir.resolve("lock.json").toFile(),sourceInputs);
+                SourceRunReport.write(ctx.artifacts, mapper, scenario, job, sourceInputs, null);
+            }
+            for (String name : List.of("input.json", "routing.json", "execution.json", "regional-projection.json", "network-paths.json")) Files.deleteIfExists(ctx.artifacts.resolve("company-tours").resolve(name));
+            if (companyTours.active()) { de.synthesis.vehicle.VehicleArtifacts.write(ctx.artifacts.resolve("company-tours/input.json"), companyTours);
+                de.synthesis.companytour.CompanyTourRegion.writeReport(ctx.artifacts,companyTours,de.synthesis.companytour.CompanyTourRegion.project(companyTours));
+            }
+            for (String name : List.of("person-trips.csv", "legs.csv", "zone-flows.csv", "od-flows.csv", "metadata.json",
+                    "traffic-demand.json", "traffic-summary.json", "movements.csv", "tours.json", "planned-connections.geojson"))
+                Files.deleteIfExists(ctx.artifacts.resolve("demand").resolve(name));
+            Files.deleteIfExists(ctx.artifacts.resolve(RoadLocations.FILE));
+            Files.deleteIfExists(ctx.artifacts.resolve("sumo/traffic-routes.geojson"));
+            Files.deleteIfExists(ctx.artifacts.resolve("sumo/traffic-categories.json"));
+            Files.deleteIfExists(ctx.artifacts.resolve("sumo/freight-network.geojson"));
+            Files.deleteIfExists(ctx.artifacts.resolve("sumo/freight-permissions.json"));
+            Files.deleteIfExists(ctx.artifacts.resolve("sumo/sevas-permissions.json"));
+            Files.deleteIfExists(ctx.artifacts.resolve("freight/execution.json"));
+            Files.deleteIfExists(ctx.artifacts.resolve("freight/edge-mapping.json"));
+            Files.deleteIfExists(ctx.artifacts.resolve("freight/route-checks.json"));
+            Files.deleteIfExists(ctx.artifacts.resolve("freight/profile-permissions.json"));
             VehicleArtifacts.snapshot(ctx.artifacts, scenario.vehicleConfiguration, ctx.vehicles);
+            EnergyInfrastructure.clear(ctx.artifacts);
+            de.synthesis.generation.pipeline.VehicleContinuity.clear(ctx.artifacts);
             if (scenario.vehicleConfiguration.appliesToSumo()) job.log(
                     "Fahrzeugkatalog für SUMO-Verkehr aktiv (" + ctx.vehicles.sha256()
-                    + "); Nachfrage, Flottenzustand und Ladeplanung bleiben unverändert");
+                    + "); bestehende Nachfrage, Fahrzeugzuordnungen separat über vehicleOperations");
             ctx.zones = stage(job, "Zonierung", () -> stageZoning(ctx));
             stage(job, "OSM-Daten (POIs)", () -> {
                 stageOsmData(ctx);
+                if (scenario.energyInfrastructure != null && scenario.energyInfrastructure.enabled) {
+                    job.stage("OSM-Daten (POIs)").status = "RUNNING";
+                    var energy = EnergyInfrastructure.generate(scenario, ctx.artifacts,
+                            scenarios.uploadsDir(scenario.id), () -> {
+                                if (!properties.getOverpass().isLiveDataEnabled())
+                                    throw new IOException("Live-OSM deaktiviert; Stationssnapshot hochladen oder OSM-Stationsquelle abwählen");
+                                return overpass.fetchEnergyStations(scenario.region);
+                            }, job::log);
+                    job.summary.put("energyInfrastructure", energy);
+                }
                 return null;
             });
             preparePopulationDistribution(ctx);
@@ -354,6 +435,8 @@ public class GenerationService {
             });
             stage(job, "Simulation (logiTopp)", () -> {
                 stageSimulation(ctx);
+                publishTrafficDemand(ctx, !job.stage("Simulation (logiTopp)").status.equals("SKIPPED"));
+                updateTrafficManifest(ctx);
                 return null;
             });
             stage(job, "SUMO (Verkehr)", () -> {
@@ -376,8 +459,23 @@ public class GenerationService {
             job.state = GenerationJob.State.FAILED;
             job.error = e.getMessage();
             job.log("FEHLER: " + e.getMessage());
+        } catch (Error error) {
+            // ExecutorService.submit captures Errors in an unobserved Future. Publish a terminal
+            // state first so a resource/VM failure cannot leave a finished job RUNNING forever.
+            job.state = GenerationJob.State.FAILED;
+            job.error = error.toString();
+            job.log("FEHLER: " + job.error);
+            throw error;
         } finally {
-            job.finishedAt = Instant.now();
+            Instant finishedAt = Instant.now();
+            try {
+                SourceRunReport.write(ctx.artifacts, mapper, scenario, job, sourceInputs, finishedAt);
+            } catch (IOException reportError) {
+                job.state = GenerationJob.State.FAILED;
+                if (job.error == null) job.error = "Quellenbericht konnte nicht gespeichert werden: " + reportError.getMessage();
+                job.log("FEHLER: Quellenbericht konnte nicht gespeichert werden: " + reportError.getMessage());
+            }
+            job.finishedAt = finishedAt;
             job.currentStage = null;
         }
     }
@@ -516,6 +614,10 @@ public class GenerationService {
      * zwischen den Stufen), muss aber vor den Attraktivitäten laufen (Private_* hängen davon ab).
      */
     private void preparePopulationDistribution(PipelineContext ctx) throws IOException {
+        if(ctx.scenario.dataPlan!=null&&ctx.scenario.dataPlan.enabled
+                &&(ctx.scenario.dataPlan.policy("population.distribution").source.equals("builtins")||ctx.sourceInputs.chains().containsKey("population.distribution")||ctx.sourceInputs.datasets().containsKey("population.distribution")&&ctx.sourceInputs.datasets().get("population.distribution").data().schemaId().equals(de.synthesis.data.MaskedCells.POP))){
+            preparePopulationProviders(ctx);return;
+        }
         Scenario scenario = ctx.scenario;
         GenerationJob job = ctx.job;
         // Zusätzliche Fernsiedlungen sind Diagnosedaten. Für Bevölkerung und Verteilung
@@ -528,7 +630,21 @@ public class GenerationService {
         double gridPopulation = 0;
         String gridSource = null;
         Path gridFile = scenarios.uploadsDir(scenario.id).resolve("population-grid.csv");
-        if (Files.exists(gridFile)) {
+        var populationDataset=ctx.sourceInputs.datasets().get("population.distribution");
+        if(populationDataset!=null){
+            gridWeights=new double[ctx.zones.size()];
+            for(var row:populationDataset.data().rows()){
+                var values=row.values();
+                int index=GridZoning.zoneIndexOf(ctx.zones,((Number)values.get("lat")).doubleValue(),((Number)values.get("lon")).doubleValue());
+                if(index>=0){double amount=((Number)values.get("value")).doubleValue();gridWeights[index]+=amount;gridPopulation+=amount;}
+            }
+            if(gridPopulation<=0)throw new IllegalArgumentException("Ausgewähltes Bevölkerungsraster enthält keine positive Bevölkerung in den Modellzonen");
+            gridSource="dataset:"+populationDataset.id();
+            var meta=populationDataset.data().metadata();
+            ctx.populationProvenance=new PopulationProvenance(gridSource,meta.label(),populationDataset.data().contract(),meta.referenceDate(),"",populationDataset.data().sourceHash(),"",meta.source());
+            job.log("Bevölkerungsrevision "+populationDataset.id().substring(0,12)+": "+gridPopulation+" Personen auf Modellzonen zugeordnet");
+        }
+        if (gridWeights == null && Files.exists(gridFile)) {
             PopulationGridParser.ParseResult grid = PopulationGridParser.parse(gridFile, scenario.region);
             gridWeights = new double[ctx.zones.size()];
             for (PopulationGridParser.GridPoint point : grid.points()) {
@@ -585,7 +701,7 @@ public class GenerationService {
         } else if (gridWeights != null) {
             ctx.totalPersons = (int) Math.round(gridPopulation);
             ctx.populationSource = gridSource;
-            ctx.populationSourceLabel = "upload-grid".equals(gridSource)
+            ctx.populationSourceLabel = populationDataset!=null ? populationDataset.data().metadata().label() : "upload-grid".equals(gridSource)
                     ? "Hochgeladenes Bevölkerungsraster" : "Destatis Zensus 2022";
         } else if (!populationPlaces.isEmpty()) {
             ctx.totalPersons = (int) PopulationEstimator.estimateForRegion(scenario.region, populationPlaces);
@@ -616,6 +732,39 @@ public class GenerationService {
         if (gridWeights != null) job.log("Bevölkerungsraster ohne zusätzliche Glättung: bekannte 1–10-km-Zellen gleichmäßig auf 100-m-Zuordnungspunkte verteilt; unbekannte Auflösung bleibt punktbasiert");
     }
 
+    /** First migrated native provider family; legacy execution above remains byte compatible. */
+    private void preparePopulationProviders(PipelineContext ctx)throws IOException {
+        var s=ctx.scenario;var policy=s.dataPlan.policy("population.distribution");
+        var osmInfo=new de.synthesis.data.PopulationSources.Info(ctx.osmDataSource,"OSM-basierte Verteilung","osm-population-v1","",properties.getOverpass().getEndpoint(),ctx.osmDataSha256,"ODbL","OpenStreetMap contributors");
+        final de.synthesis.data.PopulationSources.Resolution resolution;
+        try{
+            var providers=de.synthesis.data.PopulationSources.builtins(s,ctx.zones,ctx.pois,ctx.places,osmInfo,
+                    scenarios.uploadsDir(s.id).resolve("population-grid.csv"),ctx.sourceInputs.populationUploadHash(),
+                    ctx.artifacts.resolve("sources/population-grid.csv"),census,censusCacheDir(),ctx.job::log);
+            var mixed=ctx.sourceInputs.chains().get("population.distribution");
+            var dataset=ctx.sourceInputs.datasets().get("population.distribution");
+            resolution=mixed!=null?de.synthesis.data.PopulationSources.resolveMixed(mixed,providers,ctx.zones,s)
+                    :dataset!=null?de.synthesis.data.PopulationSources.resolveRevision(dataset,s,ctx.zones,providers):de.synthesis.data.PopulationSources.resolve(policy.providers,providers);
+        }catch(de.synthesis.data.PopulationSources.ResolutionException failure){
+            mapper.writerWithDefaultPrettyPrinter().writeValue(ctx.artifacts.resolve("sources/population-failure.json").toFile(),
+                    Map.of("status",failure.candidates().stream().anyMatch(c->"invalid".equals(c.get("status")))?"invalid":"insufficient-input","message",failure.getMessage(),"candidates",failure.candidates()));
+            throw failure;
+        }
+        var value=resolution.value();var info=value.info();
+        ctx.totalPersons=s.population.totalPersons!=null?s.population.totalPersons:(int)Math.round(value.estimatedTotal());
+        if(ctx.totalPersons<=0)throw new IllegalArgumentException("Bevölkerungsquelle liefert keine positive Gesamtzahl");
+        ctx.populationSource=s.population.totalPersons!=null?"user-defined":value.totalSource();
+        ctx.populationSourceLabel=s.population.totalPersons!=null?"Manuelle Einwohnerzahl":value.totalSource().equals("density-estimate")?"Dichteannahme":info.label();
+        ctx.populationProvenance=new PopulationProvenance(info.source(),info.label(),info.version(),info.referenceDate(),info.url(),info.sha256(),info.license(),info.attribution());
+        ctx.distributionSource=value.distribution();
+        ctx.populationGenerator=new PopulationGenerator(ctx.zones,ctx.random,s.population.seed,s.referenceYear);
+        int[] counts=value.distribution().equals("poi-density")?countPoisPerZone(ctx.zones,ctx.pois):null;
+        ctx.populationGenerator.distributePopulation(ctx.totalPersons,counts,value.weights(),value.smooth());
+        var report=de.synthesis.data.PopulationSources.report(resolution,s,ctx.zones,ctx.totalPersons);
+        ctx.job.summary.put("populationSources",report);
+        ctx.job.log("Bevölkerungsquellen: "+ctx.distributionSource+" für die Verteilung; "+ctx.populationSource+" für "+ctx.totalPersons+" Personen");
+    }
+
     // --- Stufe 3: Attraktivitäten -------------------------------------------------
 
     /** Zell-Attraktivitäten (OSM oder synthetisch) + externe Zielzonen; schreibt zone-repository/. */
@@ -628,6 +777,19 @@ public class GenerationService {
         } else {
             AttractivityCalculator.fromPois(ctx.zones, ctx.pois);
         }
+        Map<String,Object> workplaceReport;
+        if(ctx.scenario.dataPlan!=null&&ctx.scenario.dataPlan.enabled&&(ctx.scenario.dataPlan.policy("opportunities.work").source.equals("builtins")||ctx.sourceInputs.chains().containsKey("opportunities.work")||ctx.scenario.dataPlan.policy("opportunities.work").gaps.equals("providers"))){
+            try{
+                workplaceReport=ctx.scenario.dataPlan.policy("opportunities.work").source.equals("builtins")
+                    ?de.synthesis.data.WorkplaceSources.apply(ctx.scenario.dataPlan.policy("opportunities.work").providers,ctx.zones,ctx.pois,ctx.scenario.population.seed,ctx.osmDataSource,ctx.osmDataSha256)
+                    :de.synthesis.data.WorkplaceComposition.apply(ctx.sourceInputs,ctx.scenario.dataPlan,ctx.zones,ctx.pois,ctx.scenario.population.seed,ctx.osmDataSource,ctx.osmDataSha256);
+            }catch(de.synthesis.data.ProviderChain.Failure failure){
+                mapper.writerWithDefaultPrettyPrinter().writeValue(ctx.artifacts.resolve("sources/workplace-failure.json").toFile(),
+                    Map.of("status",failure.candidates().stream().anyMatch(c->"invalid".equals(c.get("status")))?"invalid":"insufficient-input","message",failure.getMessage(),"candidates",failure.candidates()));
+                throw failure;
+            }
+        }else workplaceReport=de.synthesis.data.SourceResolver.applyWorkplaces(ctx.sourceInputs,ctx.scenario.dataPlan,ctx.zones);
+        if(!workplaceReport.isEmpty())ctx.job.summary.put("workplaceDataset",workplaceReport);
         // Außenbeziehungen: externe Zielzonen anhängen (ohne Einwohner, nur Attraktivität)
         if (ctx.scenario.population.externalTrips) {
             Double surroundingBuffer = ctx.scenario.mobileCity.regionalExport
@@ -791,8 +953,9 @@ public class GenerationService {
                     ctx.scenario.region, ctx.zones, censusCacheDir().resolve("structure"), ctx.job::log);
             ctx.populationGenerator.useCensusStructure(structure);
         }
-        PopulationGenerator.Result result =
-                ctx.populationGenerator.generate(ctx.artifacts.resolve("population"), ctx.scenario);
+        PopulationGenerator.Result result;
+        try { result=ctx.populationGenerator.useRoadLocations(ctx.roadLocations).generate(ctx.artifacts.resolve("population"),ctx.scenario); }
+        finally { if(ctx.roadLocations!=null)ctx.roadLocations.write(ctx.artifacts.resolve(RoadLocations.FILE)); }
         if (ctx.scenario.population.useCensusStructure) {
             var report = ctx.populationGenerator.censusStructureReport();
             ctx.job.summary.put("censusStructureStatus", report.get("status"));
@@ -898,6 +1061,13 @@ public class GenerationService {
     private void stageMatrices(PipelineContext ctx) throws IOException {
         MatrixGenerator.Impedance routing = buildRouting(ctx);
         try {
+            if(ctx.scenario.population.roadLocatedActivities) {
+                if(!(routing instanceof RoutingEngine engine))throw new IOException("Straßennahe Orte benötigen einen erfolgreich aufgebauten Straßengraphen");
+                ctx.roadLocations=engine.roadLocations(ctx.zones);
+                ctx.roadLocations.write(ctx.artifacts.resolve(RoadLocations.FILE));
+                ctx.job.summary.put("roadLocatedActivities",true);
+                ctx.job.log("Straßenmodell für synthetische interne Wohn- und Aktivitätsorte vorbereitet; Zonen und Zufallsfolge bleiben erhalten");
+            }
             MatrixGenerator generator = new MatrixGenerator();
             List<String> files = generator.generate(ctx.artifacts.resolve("matrix"), ctx.zones, routing);
             ctx.carTravelTimeMin = generator.carTravelTimeMin();
@@ -946,10 +1116,41 @@ public class GenerationService {
         }
     }
 
+    /** Compose once before exports, refresh only when a current logiTopp result exists. */
+    private void publishTrafficDemand(PipelineContext ctx, boolean personResultsAvailable) throws IOException {
+        Path results = ctx.artifacts.resolve("simulation/results");
+        var persons = personResultsAvailable ? new LogitoppDemandAdapter().read(results.resolve("demandsimulationResult.csv"))
+                : new TravelDemand(List.of(), 0);
+        var parcels = personResultsAvailable ? ParcelTourAdapter.readAll(results.resolve("planned-tours.csv")) : List.<ParcelTourAdapter.Leg>of();
+        ctx.trafficDemand = new TrafficDemand(TrafficDemand.CONTRACT, personResultsAvailable ? "available" : "not-generated",
+                persons, ctx.scenario.freight.day, ctx.freightTrips, parcels, ctx.companyTours, ctx.vehicles.resolved(),
+                ctx.scenario.vehicleOperations.enabled() ? ctx.scenario.vehicleOperations.bindings() : List.of(),
+                personResultsAvailable && Files.exists(results.resolve("planned-tours.csv")) ? "available" : "not-generated");
+        TrafficDemandArtifacts.write(ctx.artifacts, ctx.trafficDemand, mapper);
+        ctx.job.summary.put("trafficDemand", mapper.readTree(ctx.artifacts.resolve(TrafficDemandArtifacts.SUMMARY).toFile()));
+        ctx.job.log("Gemeinsame Nachfrage: " + ctx.trafficDemand.movements().size() + " Bewegungen; Personenstatus "
+                + ctx.trafficDemand.personDemandStatus() + "; exportunabhängig unter demand/");
+    }
+    private void updateTrafficManifest(PipelineContext ctx) throws IOException {
+        Path path = ctx.artifacts.resolve("manifest.json");
+        ObjectNode manifest = (ObjectNode)mapper.readTree(path.toFile());
+        ObjectNode traffic = manifest.putObject("trafficDemand");
+        traffic.put("contract", TrafficDemand.CONTRACT); traffic.put("input", TrafficDemandArtifacts.INPUT);
+        traffic.put("movements", "demand/movements.csv"); traffic.put("tours", "demand/tours.json");
+        traffic.put("plannedConnections", "demand/planned-connections.geojson");
+        traffic.set("summary", mapper.readTree(ctx.artifacts.resolve(TrafficDemandArtifacts.SUMMARY).toFile()));
+        VehicleArtifacts.write(path, manifest);
+    }
+
     // --- Stufe 7: Logistik ------------------------------------------------------------
 
     /** Verteilzentren/Packstationen/Paketparameter. Befüllt ctx.logisticsGenerator/logistics. */
     private LogisticsGenerator.Result stageLogistics(PipelineContext ctx) throws IOException {
+        ctx.freightTrips = FreightDemandGenerator.generate(ctx.scenario);
+        FreightDemandGenerator.write(ctx.artifacts, ctx.scenario, mapper, ctx.freightTrips);
+        if(ctx.scenario.dataPlan!=null&&ctx.scenario.dataPlan.enabled)
+            ctx.job.summary.put("freightSources",de.synthesis.data.FreightSources.report(ctx.sourceInputs,ctx.scenario,ctx.freightTrips));
+        publishTrafficDemand(ctx, false);
         ctx.logisticsGenerator = new LogisticsGenerator(ctx.zones, ctx.random);
         LogisticsGenerator.Result result = ctx.logisticsGenerator.generate(
                 ctx.artifacts.resolve("logistics"), ctx.scenario,
@@ -966,7 +1167,9 @@ public class GenerationService {
 
     /** mobiTopp-0.3.x-/logiTopp-Layout unter legacy/. */
     private void stageLegacyExport(PipelineContext ctx) throws IOException {
-        int files = new LegacyExportGenerator(ctx.zones, ctx.random).generate(ctx.artifacts);
+        int files;
+        try { files=new LegacyExportGenerator(ctx.zones,ctx.random).useRoadLocations(ctx.roadLocations).generate(ctx.artifacts); }
+        finally { if(ctx.roadLocations!=null)ctx.roadLocations.write(ctx.artifacts.resolve(RoadLocations.FILE)); }
         ctx.job.log(files + " Dateien im Legacy-Layout (mobiTopp 0.3.x/logiTopp) unter legacy/ geschrieben");
     }
 
@@ -1127,13 +1330,48 @@ public class GenerationService {
                 ctx.populationProvenance);
         Path manifestPath = ctx.artifacts.resolve("manifest.json");
         ObjectNode manifest = (ObjectNode) mapper.readTree(manifestPath.toFile());
+        if(ctx.scenario.dataPlan!=null&&ctx.scenario.dataPlan.enabled){
+            var sourceReport=manifest.putObject("sources");sourceReport.put("plan","sources/plan.json");sourceReport.put("lock","sources/lock.json");sourceReport.put("resolution","sources/resolution.json");
+            SourceRunReport.write(ctx.artifacts, mapper, ctx.scenario, ctx.job, ctx.sourceInputs, null);
+            sourceReport.set("decisions",mapper.valueToTree(ctx.sourceInputs.decisions()));
+        }
+        if (ctx.job.summary.containsKey("energyInfrastructure")) {
+            ObjectNode energy = manifest.putObject("energyInfrastructure");
+            energy.put("contract", EnergyInfrastructure.CONTRACT);
+            energy.put("inventory", "energy/stations.geojson");
+            energy.put("quality", "energy/quality.json");
+            energy.put("networkAccessRequested", ctx.scenario.energyInfrastructure.verifyNetworkAccess);
+            if (ctx.scenario.energyInfrastructure.verifyNetworkAccess) energy.put("networkAccessReport", "energy/network-access.json");
+            energy.set("summary", mapper.valueToTree(ctx.job.summary.get("energyInfrastructure")));
+        }
         ObjectNode vehicles = manifest.putObject("vehicles");
         vehicles.put("schemaVersion", VehicleConfiguration.CONTRACT);
         vehicles.put("sha256", ctx.vehicles.sha256());
         vehicles.put("application", ctx.scenario.vehicleConfiguration.application());
         vehicles.put("snapshot", "vehicles/resolved.json");
         vehicles.put("compatibility", "vehicles/compatibility.json");
+        if (ctx.scenario.vehicleOperations.enabled()) {
+            var operations = vehicles.putObject("operations");
+            operations.put("contract", de.synthesis.vehicle.VehicleOperationsConfiguration.CONTRACT);
+            operations.put("configurationSha256", de.synthesis.vehicle.VehicleJson.hash(ctx.scenario.vehicleOperations));
+            operations.put("identities", "vehicles/trip-identities.json"); operations.put("ledger", "vehicles/energy-ledger.json");
+            if (ctx.scenario.vehicleOperations.chainTrips()) operations.put("nativeChains", "vehicles/native-chains.json");
+            operations.put("executionStatus", "not-run-at-manifest-stage");
+        }
+        if (ctx.companyTours.active()) {
+            var company = manifest.putObject("companyTours");
+            company.put("contract", de.synthesis.companytour.CompanyTourExecution.CONTRACT);
+            company.put("input", "company-tours/input.json");
+            company.put("routing", "company-tours/routing.json");
+            company.put("regionalProjection", "company-tours/regional-projection.json");
+            company.put("networkPaths", "company-tours/network-paths.json");
+            company.put("execution", "company-tours/execution.json");
+            company.put("additionalLegs", ctx.companyTours.legs().size());
+            company.set("selections", mapper.valueToTree(ctx.companyTours.imports().stream()
+                    .map(i -> new de.synthesis.companytour.CompanyTourExecution.Selection(i.importId(), i.executionHash())).toList()));
+        }
         VehicleArtifacts.write(manifestPath, manifest);
+        updateTrafficManifest(ctx);
     }
 
     // --- Stufe 12: Simulation logiTopp (Achse B) ----------------------------------------------
@@ -1360,36 +1598,35 @@ public class GenerationService {
             job.log("SUMO übersprungen (Verkehrssimulation nicht ausgewählt)");
             return;
         }
-        SumoRunner runner = new SumoRunner(properties.getSumo(), ctx.vehicles.resolved(), scenario.population.seed)
-                    .useSharedRoadRoutes(scenario.population.sharedRoadRoutes);
-        Path demandResult = artifacts.resolve("simulation").resolve("results")
-                .resolve("demandsimulationResult.csv");
+        SumoRunner runner = new SumoRunner(properties.getSumo(), ctx.vehicles.resolved(), scenario.population.seed);
         if (!properties.getSumo().isEnabled() || !runner.isAvailable()) {
             job.stage("SUMO (Verkehr)").status = "SKIPPED";
             job.log("SUMO übersprungen (nicht verfügbar – SUMO_HOME/Binaries prüfen)");
             return;
         }
-        if (!Files.exists(demandResult)) {
+        if (ctx.trafficDemand == null || (ctx.trafficDemand.personDemandStatus().equals("not-generated")
+                && ctx.trafficDemand.freight().isEmpty() && ctx.trafficDemand.parcels().isEmpty() && !ctx.trafficDemand.companies().active())) {
             job.stage("SUMO (Verkehr)").status = "SKIPPED";
-            job.log("SUMO übersprungen (benötigte logiTopp-Trips fehlen)");
+            job.log("SUMO übersprungen (keine vorbereitete Nachfrage verfügbar)");
             return;
         }
         try {
+            runner.useSharedRoadRoutes(scenario.population.sharedRoadRoutes).useFreight(scenario).useEnergyAndOperations(scenario);
             String osmXml = roadNetworkOsm(ctx);
             job.log("Baue SUMO-Netz und simuliere Verkehr…");
-            Path plannedTours = artifacts.resolve("simulation").resolve("results")
-                    .resolve("planned-tours.csv");
             SumoRunner.PtProvider ptProvider = buildPtProvider(ctx);
-            SumoRunner.Result sumo = runner.run(artifacts, osmXml, demandResult,
-                    plannedTours, ptProvider, job::log);
+            SumoRunner.Result sumo = runner.run(artifacts, osmXml,
+                    TrafficDemandArtifacts.read(artifacts, mapper), ptProvider, job::log);
             writeSumoSummary(artifacts.resolve("sumo").resolve("summary.json"), sumo);
-            job.log(String.format("SUMO: %d Fahrzeuge (%d PKW, %d Rad, %d Lieferverkehr) + %d Fuß "
+            job.log(String.format("SUMO: %d Fahrzeuge (%d PKW, %d Rad, %d Lieferverkehr, %d schwere Güterfahrten) + %d Fuß "
                             + "+ %d ÖV-Fahrgäste, Ø %.1f min / %.1f km / %.0f km/h, CO₂ %.1f kg (%d s)",
-                    sumo.vehicles(), sumo.carTrips(), sumo.bikeTrips(), sumo.deliveryTrips(),
+                    sumo.vehicles(), sumo.carTrips(), sumo.bikeTrips(), sumo.deliveryTrips(), sumo.heavyFreightTrips(),
                     sumo.walkTrips(), sumo.ptRiders(), sumo.meanDurationSec() / 60,
                     sumo.meanRouteLengthM() / 1000, sumo.meanSpeedMs() * 3.6, sumo.co2Kg(),
                     sumo.durationSeconds()));
             job.summary.put("sumoVehicles", sumo.vehicles());
+            job.summary.put("heavyFreightTrips", sumo.heavyFreightTrips());
+            job.summary.put("companyTourLegs", sumo.companyTourLegs());
             if (scenario.population.sharedRoadRoutes) {
                 var routes = mapper.readTree(artifacts.resolve("sumo/shared-road-routes-summary.json").toFile());
                 job.summary.put("sharedRoadRoutesMapped", routes.path("mapped").asInt());
@@ -1432,7 +1669,7 @@ public class GenerationService {
                 && !ctx.scenario.population.gtfsUploadPath.isBlank()
                 ? Path.of(ctx.scenario.population.gtfsUploadPath) : null;
         String date = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
-        return net -> {
+        SumoRunner.PtProvider provider = net -> {
             Files.createDirectories(transitDir);
             GtfsSource.Resolved resolved = gtfs.resolve(ctx.scenario.region, uploaded, rawCache,
                     croppedFeed, job::log);
@@ -1441,6 +1678,10 @@ public class GenerationService {
             }
             return transit.build(net, resolved.croppedFeed(), date, transitDir, job::log);
         };
+        String modes=properties.getTransit().getModes();
+        if(modes!=null && java.util.Arrays.stream(modes.split(",",-1)).allMatch(m->"bus".equals(m.trim())))
+            return SumoRunner.PtProvider.roadOnly(provider);
+        return provider;
     }
 
     // --- Stufe 14: Netz-Feedback (Nachfrage ↔ Netz) --------------------------------------------
@@ -1482,7 +1723,7 @@ public class GenerationService {
         }
         try {
             SumoRunner runner = new SumoRunner(properties.getSumo(), ctx.vehicles.resolved(), scenario.population.seed)
-                    .useSharedRoadRoutes(scenario.population.sharedRoadRoutes);
+                    .useSharedRoadRoutes(scenario.population.sharedRoadRoutes).useFreight(scenario).useEnergyAndOperations(scenario);
             SimulationRunner simRunner = new SimulationRunner(properties.getSimulation());
             Path simulationDir = artifacts.resolve("simulation");
             Path modeChoiceOverride = modeChoiceCalibrationOverride(scenario, simulationDir);
@@ -1547,13 +1788,16 @@ public class GenerationService {
                 new SimulationResultIngestor(mapper)
                         .ingest(run.resultsDir(), artifacts, run.durationSeconds(),
                                 scenario.logistics.returns);
+                publishTrafficDemand(ctx, true);
+                updateTrafficManifest(ctx);
                 // SUMO auf der neuen Nachfrage – liefert die Faktoren der nächsten Iteration
                 // und hält CO₂/Netzlast-Artefakte konsistent zur finalen Nachfrage
                 String osmXml = roadNetworkOsm(ctx);
-                SumoRunner.Result sumo = runner.run(artifacts, osmXml, demandResult,
-                        plannedTours, job::log);
+                SumoRunner.Result sumo = runner.run(artifacts, osmXml,
+                        TrafficDemandArtifacts.read(artifacts, mapper), null, job::log);
                 writeSumoSummary(artifacts.resolve("sumo").resolve("summary.json"), sumo);
                 job.summary.put("sumoVehicles", sumo.vehicles());
+                job.summary.put("heavyFreightTrips", sumo.heavyFreightTrips());
                 if (scenario.population.sharedRoadRoutes) {
                     var routes = mapper.readTree(artifacts.resolve("sumo/shared-road-routes-summary.json").toFile());
                     job.summary.put("sharedRoadRoutesMapped", routes.path("mapped").asInt());
@@ -1692,16 +1936,17 @@ public class GenerationService {
      * {@code null} when routing is disabled or the network cannot be fetched/built
      * (the matrix generator then falls back to beeline estimates).
      */
-    private MatrixGenerator.Impedance buildRouting(PipelineContext ctx) {
+    private MatrixGenerator.Impedance buildRouting(PipelineContext ctx) throws IOException {
         if (!ctx.scenario.population.useRealRouting) {
             return null;
         }
         try {
             String osmXml = roadNetworkOsm(ctx);
-            RoutingEngine engine = RoutingEngine.fromOsmXml(osmXml);
+            RoutingEngine engine = RoutingEngine.fromOsmXml(osmXml,ctx.scenario.population.roadLocatedActivities);
             ctx.job.log("GraphHopper-Graph aufgebaut – Matrizen werden geroutet");
             return engine;
         } catch (Exception e) {
+            if(ctx.scenario.population.roadLocatedActivities)throw new IOException("Straßennahe Orte: Straßengraph nicht verfügbar; kein Orts-Fallback",e);
             ctx.job.log("Routing nicht verfügbar (" + e.getMessage() + ") – Fallback auf Luftlinie");
             return null;
         }
@@ -1769,10 +2014,22 @@ public class GenerationService {
         node.put("bikeTrips", sumo.bikeTrips());
         node.put("walkTrips", sumo.walkTrips());
         node.put("deliveryTrips", sumo.deliveryTrips());
+        node.put("heavyFreightTrips", sumo.heavyFreightTrips());
+        node.put("companyTourLegs", sumo.companyTourLegs());
+        Path companyReport = file.getParent().getParent().resolve("company-tours/execution.json");
+        if (Files.exists(companyReport)) node.set("companyTours", mapper.readTree(companyReport.toFile()));
         node.put("ptRiders", sumo.ptRiders());
         node.put("ptVehicles", sumo.ptVehicles());
         node.put("co2Kg", sumo.co2Kg());
         node.set("co2KgByType", mapper.valueToTree(sumo.co2KgByType()));
+        node.put("vehicleCountScope", "inserted-including-bicycles");
+        node.put("meanStatisticsScope", "motor-vehicle-trip-statistics");
+        Path execution=file.resolveSibling("traffic-execution.json");
+        if(Files.exists(execution)) {
+            var accounting = mapper.readTree(execution.toFile()); node.set("accounting", accounting);
+            if (accounting.path("vehicleCountBasis").asText().equals("selected-road-trip-segments"))
+                node.put("meanStatisticsScope", "motor-vehicle-journeys-including-duty-stops");
+        }
         mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), node);
     }
 
@@ -1862,6 +2119,10 @@ public class GenerationService {
             info.status = "FAILED";
             info.message = e.getMessage();
             throw e;
+        } catch (Error error) {
+            info.status = "FAILED";
+            info.message = error.toString();
+            throw error;
         } finally {
             info.durationMs = System.currentTimeMillis() - start;
         }
@@ -1923,6 +2184,14 @@ public class GenerationService {
         }
         quality.put("matrices", matrixSource);
         quality.put("roadNetwork", roadNetworkSource);
+        quality.put("syntheticLocations",scenario.population.roadLocatedActivities?"experimental-common-public-roads":"uniform-zone-points-and-anchors");
+        if(scenario.population.roadLocatedActivities)quality.put("syntheticLocationsReport",RoadLocations.FILE);
+        quality.put("heavyFreight", scenario.freight.enabled ? FreightDemandGenerator.sourceQuality(scenario) : "disabled");
+        quality.put("heavyFreightSources", "freight/sources.json");
+        quality.put("freightProfileChecks", scenario.freight.profileChecksEnabled ? "standard-full-load-assumption" : "disabled");
+        quality.put("freightProfileReport", "freight/route-checks.json");
+        quality.put("sevasRestrictions", scenario.freight.sevasEnabled ? "user-uploaded-unverified" : "disabled");
+        quality.put("trafficCategories", "sumo/traffic-categories.json");
         quality.put("commuters", commuterSource);
         quality.put("workplaceMargins", workplaceMarginSource);
         quality.put("depots", !scenario.logistics.depots.isEmpty() ? "user-defined"

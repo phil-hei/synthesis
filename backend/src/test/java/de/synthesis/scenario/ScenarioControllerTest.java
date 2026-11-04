@@ -86,6 +86,7 @@ class ScenarioControllerTest {
 
         assertEquals("epsg3035", defaults.zoning.mode);
         assertFalse(defaults.population.sharedRoadRoutes);
+        assertFalse(defaults.population.roadLocatedActivities);
         assertEquals(100.0, defaults.zoning.cellSizeMeters);
         assertEquals(600, defaults.zoning.maxZones);
         assertFalse(defaults.population.correctDistanceDecay,
@@ -308,6 +309,26 @@ class ScenarioControllerTest {
     }
 
     @Test
+    void importsFreightAndPreservesPreviousInputOnInvalidUpload(@TempDir Path tempDir) {
+        SynthesisProperties properties = new SynthesisProperties();
+        properties.setDataDir(tempDir.toString());
+        ScenarioRepository repository = new ScenarioRepository(new ObjectMapper().findAndRegisterModules(), properties);
+        ScenarioController api = new ScenarioController(repository, properties);
+        Scenario created = api.create(validScenario()).getBody();
+        var region = created.region;
+        String header = de.synthesis.generation.pipeline.FreightDemandGenerator.HEADER;
+        String row = "test;truck;through;" + region.minLon + ";" + region.minLat + ";"
+                + region.maxLon + ";" + region.maxLat + ";3;6;8;Test;2026-10-10";
+        var csv = new org.springframework.mock.web.MockMultipartFile("file", "freight.csv", "text/csv", (header+"\n"+row).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        assertEquals(3,api.uploadFreight(created.id,csv).relations.getFirst().trips());
+        assertEquals(1,repository.findById(created.id).orElseThrow().freight.relations.size());
+        var invalid = new org.springframework.mock.web.MockMultipartFile("file", "bad.csv", "text/csv", (header+"\n"+row.replace("truck","passenger")).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        assertEquals(HttpStatus.BAD_REQUEST,assertThrows(ResponseStatusException.class,()->api.uploadFreight(created.id,invalid)).getStatusCode());
+        assertEquals("truck",repository.findById(created.id).orElseThrow().freight.relations.getFirst().vehicleClass());
+        assertFalse(api.defaults().freight.enabled);
+    }
+
+    @Test
     void acceptsAndPersistsValidEnabledReturns(@TempDir Path tempDir) {
         SynthesisProperties properties = new SynthesisProperties();
         properties.setDataDir(tempDir.toString());
@@ -337,6 +358,10 @@ class ScenarioControllerTest {
         scenario.population.useRealRouting = false;
         assertBadRequest(scenario, "Gemeinsame Straßenrouten benötigen reales Routing");
     }
+    @Test void roadLocatedActivitiesRequireRealRouting() {
+        Scenario scenario=validScenario();scenario.population.roadLocatedActivities=true;scenario.population.useRealRouting=false;
+        assertBadRequest(scenario,"Straßennahe Wohn- und Aktivitätsorte benötigen reales Routing");
+    }
 
     @Test
     void sumoAutomaticallyAddsAndPersistsLogitoppDependency(@TempDir Path tempDir) {
@@ -354,6 +379,23 @@ class ScenarioControllerTest {
         assertEquals(List.of("logitopp", "sumo"), created.targetModels);
         assertEquals(List.of("logitopp", "sumo"),
                 repository.findById(created.id).orElseThrow().targetModels);
+    }
+
+    @Test
+    void sevasUploadPersistsSnapshotAndRejectsInvalidReplacement(@TempDir Path tempDir) throws Exception {
+        var config = new SynthesisProperties(); config.setDataDir(tempDir.toString());
+        var repository = new ScenarioRepository(new ObjectMapper().findAndRegisterModules(), config);
+        var api = new ScenarioController(repository, config);
+        var created = api.create(validScenario()).getBody();
+        assertNotNull(created);
+        byte[] bytes = getClass().getResourceAsStream("/sevas-simple.json").readAllBytes();
+        api.uploadSevas(created.id, new org.springframework.mock.web.MockMultipartFile("file", "sevas.geojson", "application/geo+json", bytes));
+        var before = repository.findById(created.id).orElseThrow().freight.sevasSnapshot;
+        assertNotNull(before);
+        assertFalse(repository.findById(created.id).orElseThrow().freight.sevasEnabled);
+        var invalid = new org.springframework.mock.web.MockMultipartFile("file", "sevas.geojson", "application/geo+json", "{}".getBytes());
+        assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ResponseStatusException.class, () -> api.uploadSevas(created.id, invalid)).getStatusCode());
+        assertEquals(before, repository.findById(created.id).orElseThrow().freight.sevasSnapshot);
     }
 
     private void assertBadRequest(Scenario scenario, String reason) {

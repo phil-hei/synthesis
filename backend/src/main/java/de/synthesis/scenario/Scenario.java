@@ -23,10 +23,45 @@ public class Scenario {
     public Region region;
     public Zoning zoning = new Zoning();
     public Population population = new Population();
+    /** Experimental typed sources; disabled preserves the legacy source selection. */
+    public de.synthesis.data.SourcePlan dataPlan = new de.synthesis.data.SourcePlan();
     public Logistics logistics = new Logistics();
+    public Freight freight = new Freight();
+    /** Explicit selected company-tour execution revisions; importing alone creates no traffic. */
+    public CompanyTours companyTours = new CompanyTours();
+    public static class CompanyTours {
+        public boolean enabled = false;
+        public List<de.synthesis.companytour.CompanyTourExecution.Selection> imports = new ArrayList<>();
+    }
+    /** Experimental public energy-infrastructure inventory; does not alter traffic or energy states. */
+    public EnergyInfrastructure energyInfrastructure = new EnergyInfrastructure();
+
+    public static class EnergyInfrastructure {
+        public boolean enabled = false;
+        public boolean useBnetza = true;
+        public boolean useOsm = true;
+        /** Experimental directed native network and vehicle-profile audit. */
+        public boolean verifyNetworkAccess = false;
+        public double maxSnapDistanceM = 50;
+    }
+
+    /** Explicit daily heavy vehicle OD demand; separate from parcel logistics and population sampling. */
+    public static class Freight {
+        public boolean enabled = false;
+        /** Experimental standard 26/40-t full-load profile checks and source-rule audit. */
+        public boolean profileChecksEnabled = false;
+        public boolean sevasEnabled = false;
+        public com.fasterxml.jackson.databind.JsonNode sevasSnapshot;
+        /** Monday=0; input quantities represent this day, not every day of a week. */
+        public int day = 0;
+        public List<de.synthesis.generation.pipeline.FreightDemandGenerator.Relation> relations = new ArrayList<>();
+    }
     /** Versioned vehicle catalogue; only explicit sumoTraffic allocations affect traffic. */
     @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = de.synthesis.vehicle.VehicleJson.Deserializer.class)
     public de.synthesis.vehicle.VehicleConfiguration vehicleConfiguration = de.synthesis.vehicle.VehicleConfiguration.empty();
+    /** Opt-in identity/energy ledger; never schedules charging or creates extra transport demand. */
+    @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = de.synthesis.vehicle.VehicleOperationsConfiguration.Deserializer.class)
+    public de.synthesis.vehicle.VehicleOperationsConfiguration vehicleOperations = de.synthesis.vehicle.VehicleOperationsConfiguration.empty();
     /** Common year for population and MobileCity contributions. */
     public int referenceYear = 2026;
     public MobileCity mobileCity = new MobileCity();
@@ -188,6 +223,8 @@ public class Scenario {
         public boolean sumoFeedback = false;
         /** Experimental: preserve concrete GraphHopper street paths in SUMO. */
         public boolean sharedRoadRoutes = false;
+        /** Experimental synthetic internal homes/fixed destinations/opportunities on common public roads. */
+        public boolean roadLocatedActivities = false;
         /**
          * @deprecated Kompatibilitätsfeld. Bei SUMO wird ÖV automatisch versucht, sobald ein
          * regionaler GTFS-Feed und die Transit-Werkzeuge verfügbar sind.

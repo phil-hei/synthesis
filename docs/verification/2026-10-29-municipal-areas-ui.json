@@ -1,0 +1,1009 @@
+{
+  "scenarioId": "b28fb980",
+  "passed": true,
+  "frontend": "production build",
+  "viewportWidths": [
+    1440,
+    390
+  ],
+  "flow": [
+    "import versioned GeoJSON municipality geometries without activation",
+    "import AGS aggregates and bind exact edition/reference",
+    "block unacknowledged demonstration",
+    "block demonstration for analysis",
+    "save explicit exploration plan",
+    "offline generation",
+    "verify polygon holes, partial quantities, outside mass and frozen reference"
+  ],
+  "allocation": "34cd471b35cd4608d3a85609d75d29ad9ffee1e41cd53e70e1d3bf032b0b9fa1",
+  "freightTrips": 3,
+  "resolution": {
+    "decisions": [
+      {
+        "aspect": "freight.vehicleOd",
+        "assumptionStatement": "Technischer Test mit drei synthetischen Binnenfahrten",
+        "evidence": "assumed",
+        "gaps": "legacy",
+        "qualityMode": "exploration",
+        "scientificUse": "not-approved",
+        "selectionRole": "explicit-fallback",
+        "skipped": [],
+        "source": "model",
+        "status": "resolved-with-fallback"
+      },
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "opportunities.work",
+        "attribution": "",
+        "coverage": {
+          "minLat": 48.7,
+          "minLon": 8.1,
+          "maxLat": 49.1,
+          "maxLon": 8.4
+        },
+        "coverageDeclaration": {
+          "kind": "municipality-aggregate",
+          "completeness": "complete",
+          "statement": "Vollständige synthetische Summen für die enthaltenen Gemeindeschlüssel"
+        },
+        "evidence": "user-provided-unverified",
+        "gaps": "legacy",
+        "geography": {
+          "codeSystem": "de:AGS",
+          "edition": "2025-01-01",
+          "allocationRevision": "34cd471b35cd4608d3a85609d75d29ad9ffee1e41cd53e70e1d3bf032b0b9fa1",
+          "allocationMethod": "uniform-area-v1"
+        },
+        "label": "municipal.csv",
+        "licence": "unknown",
+        "qualityMode": "exploration",
+        "referenceDate": "2026-01-01",
+        "references": [
+          {
+            "revision": "34cd471b35cd4608d3a85609d75d29ad9ffee1e41cd53e70e1d3bf032b0b9fa1",
+            "label": "areas.geojson",
+            "schema": "municipality-areas-v1",
+            "sourceHash": "f0317020fd9a86e69ea95240db637dac6ab30f1748f834ab0bd080a062ec1c96"
+          }
+        ],
+        "revision": "fe0f7a00fe10cc0c72159ee83c5dc59d4a09a251119494dd7b6c5c0a692da545",
+        "selectionRole": "explicit-selection",
+        "skipped": [
+          {
+            "source": "legacy",
+            "reason": "replaced-by-explicit-dataset-in-covered-area"
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "f2cacfcfa14e4a73786fea1266a9e41aa464af17daef14f1327ffc654f0822f9",
+        "status": "resolved",
+        "temporalTransfer": false
+      },
+      {
+        "aspect": "population.distribution",
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "qualityMode": "exploration",
+        "selectionRole": "legacy-delegation",
+        "skipped": [],
+        "source": "legacy",
+        "status": "legacy"
+      }
+    ],
+    "workplaces": {
+      "allocation": "uniform-area-v1; uniform density assumption within each full municipality; no normalization to study region",
+      "allocationRevision": "34cd471b35cd4608d3a85609d75d29ad9ffee1e41cd53e70e1d3bf032b0b9fa1",
+      "appliedJobs": 29.373188522306307,
+      "contract": "synthesis-municipal-area-allocation-v1",
+      "coverageDenominator": "internal model zones; polygon intersection area divided by true zone area in EPSG:3035",
+      "coverageRule": "full containment after 1 cm numerical buffer; all quantities use unbuffered polygons",
+      "coverageToleranceMeters": 0.01,
+      "coveredZones": 21,
+      "fallbackZones": 4,
+      "geography": {
+        "codeSystem": "de:AGS",
+        "edition": "2025-01-01",
+        "allocationRevision": "34cd471b35cd4608d3a85609d75d29ad9ffee1e41cd53e70e1d3bf032b0b9fa1",
+        "allocationMethod": "uniform-area-v1"
+      },
+      "inputJobs": 100,
+      "municipalities": [
+        {
+          "representedJobs": 35.38453217383041,
+          "inputJobs": 100,
+          "ags": "01001000",
+          "outsideJobs": 64.61546782616959,
+          "municipalitySquareMeters": 53029417.86435939
+        },
+        {
+          "representedJobs": 0,
+          "inputJobs": 0,
+          "ags": "02000000",
+          "outsideJobs": 0,
+          "municipalitySquareMeters": 9790064.466259275
+        }
+      ],
+      "outsideJobs": 64.61546782616959,
+      "partialZones": 4,
+      "provenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "opportunities.work",
+        "root": "work-weights",
+        "nodes": [
+          {
+            "id": "municipal-totals",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "fe0f7a00fe10cc0c72159ee83c5dc59d4a09a251119494dd7b6c5c0a692da545",
+              "sourceHash": "f2cacfcfa14e4a73786fea1266a9e41aa464af17daef14f1327ffc654f0822f9",
+              "label": "municipal.csv",
+              "origin": "Synthetische Gemeindeaggregate und explizite Verteilungsgewichte",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "geography": {
+                "codeSystem": "de:AGS",
+                "edition": "2025-01-01",
+                "allocationRevision": "34cd471b35cd4608d3a85609d75d29ad9ffee1e41cd53e70e1d3bf032b0b9fa1",
+                "allocationMethod": "uniform-area-v1"
+              },
+              "mapping": {
+                "tableId": "csv",
+                "headerRow": 1,
+                "columns": {
+                  "ags": 1,
+                  "id": 0,
+                  "value": 2
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "municipal-workplaces-v1"
+            }
+          },
+          {
+            "id": "municipal-geometries",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "34cd471b35cd4608d3a85609d75d29ad9ffee1e41cd53e70e1d3bf032b0b9fa1",
+              "sourceHash": "f0317020fd9a86e69ea95240db637dac6ab30f1748f834ab0bd080a062ec1c96",
+              "label": "areas.geojson",
+              "origin": "Synthetische Gemeindeaggregate und explizite Verteilungsgewichte",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "geography": {
+                "codeSystem": "de:AGS",
+                "edition": "2025-01-01",
+                "allocationMethod": "uniform-area-v1"
+              },
+              "mapping": {
+                "tableId": "geojson",
+                "headerRow": 1,
+                "columns": {
+                  "ags": 1,
+                  "geometry": 2,
+                  "id": 0
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "municipality-areas-v1"
+            }
+          },
+          {
+            "id": "municipal-allocation",
+            "operation": "uniform-area-v1",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [
+              "municipal-totals",
+              "municipal-geometries"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "geography": {
+                "codeSystem": "de:AGS",
+                "edition": "2025-01-01",
+                "allocationRevision": "34cd471b35cd4608d3a85609d75d29ad9ffee1e41cd53e70e1d3bf032b0b9fa1",
+                "allocationMethod": "uniform-area-v1"
+              },
+              "normalization": "full municipality polygon area in EPSG:3035",
+              "unit": "jobs"
+            }
+          },
+          {
+            "id": "legacy-work",
+            "operation": "legacy-delegation",
+            "evidence": "unknown",
+            "selectionRole": "fallback",
+            "source": {
+              "kind": "legacy",
+              "label": "Bisherige Arbeitsplatzgewichte",
+              "origin": "legacy-delegation",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                }
+              ]
+            },
+            "parameters": {
+              "unit": "model-weight"
+            }
+          },
+          {
+            "id": "work-weights",
+            "operation": "fill-gaps",
+            "evidence": "derived",
+            "selectionRole": "composition",
+            "inputs": [
+              "municipal-allocation",
+              "legacy-work"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                }
+              ]
+            },
+            "parameters": {
+              "quantitiesComparable": false,
+              "semantics": "model weights; no observed point locations inferred"
+            }
+          }
+        ]
+      },
+      "revision": "fe0f7a00fe10cc0c72159ee83c5dc59d4a09a251119494dd7b6c5c0a692da545",
+      "rowAssignments": [
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.018879923519518123,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1001191.3535636733,
+          "quantity": 1.8879923519518123,
+          "status": "applied",
+          "zone": {
+            "externalId": 100001,
+            "modelIndex": 0
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.018879923519507846,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1001191.3535631284,
+          "quantity": 1.8879923519507846,
+          "status": "applied",
+          "zone": {
+            "externalId": 100002,
+            "modelIndex": 1
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.01887992351951635,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1001191.3535635794,
+          "quantity": 1.887992351951635,
+          "status": "applied",
+          "zone": {
+            "externalId": 100003,
+            "modelIndex": 2
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.018879923519514976,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1001191.3535635066,
+          "quantity": 1.8879923519514976,
+          "status": "applied",
+          "zone": {
+            "externalId": 100004,
+            "modelIndex": 3
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.007426899714983343,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 393844.1684225434,
+          "quantity": 0.7426899714983343,
+          "status": "applied",
+          "zone": {
+            "externalId": 100005,
+            "modelIndex": 4
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.014394189556323026,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 763315.4928010517,
+          "quantity": 1.4394189556323025,
+          "status": "partial-zone-not-applied",
+          "zone": {
+            "externalId": 100006,
+            "modelIndex": 5
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.01110168361248557,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 588715.8192844082,
+          "quantity": 1.1101683612485571,
+          "status": "partial-zone-not-applied",
+          "zone": {
+            "externalId": 100007,
+            "modelIndex": 6
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.01887657492782285,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1001013.7796954077,
+          "quantity": 1.887657492782285,
+          "status": "applied",
+          "zone": {
+            "externalId": 100008,
+            "modelIndex": 7
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.01887657492783486,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1001013.7796960446,
+          "quantity": 1.8876574927834862,
+          "status": "applied",
+          "zone": {
+            "externalId": 100009,
+            "modelIndex": 8
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.0074255824609884905,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 393774.31521001685,
+          "quantity": 0.742558246098849,
+          "status": "applied",
+          "zone": {
+            "externalId": 100010,
+            "modelIndex": 9
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.017729007051810398,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 940158.923270628,
+          "quantity": 1.7729007051810397,
+          "status": "partial-zone-not-applied",
+          "zone": {
+            "externalId": 100011,
+            "modelIndex": 10
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.016888556294621944,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 895590.3088732642,
+          "quantity": 1.6888556294621944,
+          "status": "partial-zone-not-applied",
+          "zone": {
+            "externalId": 100012,
+            "modelIndex": 11
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.018873225856337533,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1000836.1803841551,
+          "quantity": 1.8873225856337532,
+          "status": "applied",
+          "zone": {
+            "externalId": 100013,
+            "modelIndex": 12
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.018873225856344863,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1000836.180384544,
+          "quantity": 1.8873225856344864,
+          "status": "applied",
+          "zone": {
+            "externalId": 100014,
+            "modelIndex": 13
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.007424265018260026,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 393704.4519890567,
+          "quantity": 0.7424265018260026,
+          "status": "applied",
+          "zone": {
+            "externalId": 100015,
+            "modelIndex": 14
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.018869876305364325,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1000658.555645939,
+          "quantity": 1.8869876305364324,
+          "status": "applied",
+          "zone": {
+            "externalId": 100016,
+            "modelIndex": 15
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.018869876305358857,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1000658.5556456491,
+          "quantity": 1.8869876305358857,
+          "status": "applied",
+          "zone": {
+            "externalId": 100017,
+            "modelIndex": 16
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.01886987630537559,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1000658.5556465364,
+          "quantity": 1.886987630537559,
+          "status": "applied",
+          "zone": {
+            "externalId": 100018,
+            "modelIndex": 17
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.018869876305369147,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 1000658.5556461947,
+          "quantity": 1.8869876305369147,
+          "status": "applied",
+          "zone": {
+            "externalId": 100019,
+            "modelIndex": 18
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.0074229473869146315,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 393634.57876585063,
+          "quantity": 0.7422947386914631,
+          "status": "applied",
+          "zone": {
+            "externalId": 100020,
+            "modelIndex": 19
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.008543178157863995,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 453039.7644230379,
+          "quantity": 0.8543178157863994,
+          "status": "applied",
+          "zone": {
+            "externalId": 100021,
+            "modelIndex": 20
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.008543178157866342,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 453039.7644231624,
+          "quantity": 0.8543178157866341,
+          "status": "applied",
+          "zone": {
+            "externalId": 100022,
+            "modelIndex": 21
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.008543178157866552,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 453039.7644231735,
+          "quantity": 0.8543178157866551,
+          "status": "applied",
+          "zone": {
+            "externalId": 100023,
+            "modelIndex": 22
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.008543178157867384,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 453039.7644232176,
+          "quantity": 0.8543178157867384,
+          "status": "applied",
+          "zone": {
+            "externalId": 100024,
+            "modelIndex": 23
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "areaShare": 0.0033606771425870323,
+          "geometryRow": 2,
+          "intersectionSquareMeters": 178214.75250144905,
+          "quantity": 0.33606771425870324,
+          "status": "applied",
+          "zone": {
+            "externalId": 100025,
+            "modelIndex": 24
+          }
+        }
+      ],
+      "unappliedPartialJobs": 6.0113436515241006,
+      "unresolvedJobs": 0
+    },
+    "populationSource": "user-defined",
+    "populationDistribution": "uniform-noise"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "contract": "synthesis-source-profile-v1",
+  "name": "Regionale Daten mit nativen Ersatzquellen (synthetisch)",
+  "aspects": {
+    "population.distribution": {
+      "candidates": [
+        {
+          "provider": "builtin:census-2022",
+          "excluded": false,
+          "onUnavailable": "next"
+        },
+        {
+          "provider": "pack:667afe7fe7b659a12e982157511bcf52576f4783c35f505088503f52d4b6dd03:population",
+          "excluded": false,
+          "onUnavailable": "next"
+        },
+        {
+          "provider": "builtin:uniform",
+          "excluded": false,
+          "onUnavailable": "next"
+        }
+      ],
+      "fallback": "none"
+    },
+    "opportunities.work": {
+      "candidates": [
+        {
+          "provider": "pack:667afe7fe7b659a12e982157511bcf52576f4783c35f505088503f52d4b6dd03:work",
+          "excluded": false,
+          "onUnavailable": "next"
+        },
+        {
+          "provider": "builtin:synthetic",
+          "excluded": false,
+          "onUnavailable": "next"
+        }
+      ],
+      "fallback": "none"
+    }
+  }
+}

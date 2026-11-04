@@ -1,0 +1,36 @@
+{
+  "contract": "synthesis-source-profile-v1",
+  "name": "Gemeinsame Rasterquellen V2",
+  "aspects": {
+    "population.distribution": {
+      "candidates": [
+        {
+          "provider": "builtin:uniform",
+          "excluded": false,
+          "onUnavailable": "next"
+        },
+        {
+          "provider": "pack:fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978:population",
+          "excluded": false,
+          "onUnavailable": "fail"
+        }
+      ],
+      "fallback": "none"
+    },
+    "opportunities.work": {
+      "candidates": [
+        {
+          "provider": "builtin:synthetic",
+          "excluded": false,
+          "onUnavailable": "next"
+        },
+        {
+          "provider": "pack:fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978:work",
+          "excluded": false,
+          "onUnavailable": "fail"
+        }
+      ],
+      "fallback": "none"
+    }
+  }
+}

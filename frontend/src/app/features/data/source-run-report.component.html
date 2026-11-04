@@ -1,0 +1,79 @@
+<section aria-label="Quellenbericht des Laufs">
+  <div class="heading"><h3>Tatsächlich verwendete Quellen</h3><button (click)="refresh()" [disabled]="loading">Laufbericht aktualisieren</button></div>
+  @if (loading) { <p role="status">Quellenlaufbericht wird geladen …</p> }
+  @if (message) { <p role="status">{{ message }}</p> }
+  @if (error) { <p class="error" role="alert">{{ error }}</p> }
+  @if (report; as r) {
+    <p><strong>{{ state(r.run.state) }}</strong> · Beginn {{ r.run.startedAt | date:'dd.MM.yyyy HH:mm:ss' }}@if (r.run.finishedAt) { · Ende {{ r.run.finishedAt | date:'dd.MM.yyyy HH:mm:ss' }} }</p>
+    <p class="hint">Dieser Bericht gehört zum angegebenen Lauf. Aktuelle Änderungen am Szenario sind erst nach einer erneuten Generierung enthalten. Eine erfolgreiche technische Auflösung ist keine empirische Qualitätsfreigabe.</p>
+    @if (r.run.error) { <p class="error" role="alert">{{ r.run.error }}</p><p>Bereits ermittelte Teilbeiträge bleiben sichtbar. Sie belegen keinen vollständig erfolgreichen Lauf.</p> }
+    @for (f of failures; track f.aspect) {
+      <div class="failure"><strong>Quellenfehler: {{ f.aspect }}</strong><p>{{ f.message || f.error }}</p>
+        <ol>@for (c of f.candidates ?? []; track $index) { <li>{{ provider(c.provider) }} · {{ candidate(c.status) }} · {{ reason(c.reason) }}</li> }</ol>
+      </div>
+    }
+    @for (a of aspects; track a.title) {
+      <article>
+        <h4>{{ a.title }}</h4>
+        @if (a.report; as data) {
+          @if (data.status) { <p>{{ state(data.status) }}</p> }
+          @if (data.geography; as g) { <p>Schlüsselraum {{ g.codeSystem }} · Gebietsstand {{ g.edition }}</p> }
+          @if (data.scientificUse === 'not-approved') { <p class="notice">Technische Demonstration; für fachliche Auswertungen gesperrt.</p><p>{{ data.assumptionStatement }}</p> }
+          @if (a.title === 'Arbeitsplätze') { <p class="hint">Quellmengen und Modellgewichte bleiben getrennt. Es wird keine gemeinsame beobachtete Arbeitsplatzsumme aus unterschiedlichen Beiträgen gebildet.</p> }
+        } @else { <p>Für diesen Aspekt liegt keine aufgeschlüsselte Quellenbilanz vor. Ein gewählter Bestandspfad oder eine abgeschlossene Eingangsprüfung belegt noch keine Anwendung.</p> }
+          @for (l of a.ledgers; track $index) {
+            <h5>{{ l.title }}</h5>@if (l.revision) { <p class="identifier">Revision {{ l.revision }}</p> }
+            <dl>@for (b of l.balances; track b.label) { <div><dt>{{ b.label }}</dt><dd>{{ b.value | number:'1.0-6' }}</dd></div> }</dl>
+          }
+        @if (a.report; as data) {
+          @if (a.candidates.length) {
+            <details open><summary>Quellenreihenfolge im Lauf</summary><ol>@for (c of a.candidates; track $index) { <li><strong>{{ provider(c.provider) }}</strong> · {{ candidate(c.status) }}<p>{{ reason(c.reason) }}</p></li> }</ol></details>
+          }
+          @if (a.gapCandidates.length) {
+            <details open><summary>Quellenreihenfolge für Lücken im Lauf</summary><ol>@for (c of a.gapCandidates; track $index) { <li><strong>{{ provider(c.provider) }}</strong> · {{ candidate(c.status) }}<p>{{ reason(c.reason) }}</p></li> }</ol></details>
+          }
+          @for (g of a.graphs; track g.title) {
+            <details><summary>{{ g.title }}: {{ g.graph.nodes.length }} Verarbeitungsschritte</summary>
+              @for (n of g.graph.nodes; track n.id) {
+                <div class="node"><strong>{{ n.source?.label || n.operation }}</strong><p>{{ evidence(n.evidence) }} · {{ role(n.selectionRole) }} · {{ n.scope.zones.length }} Zonen</p>
+                  @if (n.source; as s) {
+                    <p>{{ s.origin }}@if (s.referenceDate) { · Stand {{ s.referenceDate }} }</p>
+                    @if (s.revision) { <p class="identifier">Revision {{ s.revision }}</p> }
+                    <p>Lizenz: {{ !s.licence || s.licence === 'unknown' ? 'nicht angegeben' : s.licence }}@if (s.attribution) { · {{ s.attribution }} }</p>
+                  }
+                  <details><summary>Zuordnung und Annahmen</summary><p>Schritt {{ n.id }} · {{ n.operation }} · Eingänge: {{ n.inputs.join(', ') || 'keine' }}</p>
+                    <p>Zonen: @for (z of n.scope.zones.slice(0, 20); track z.modelIndex) { {{ z.externalId }} (Index {{ z.modelIndex }}) }@if (n.scope.zones.length > 20) { … vollständige Liste im JSON-Bericht. }</p>
+                    @if (n.source?.sourceHash) { <p class="identifier">Quell-SHA-256 {{ n.source!.sourceHash }}</p> }
+                    <pre>{{ parameters(n.parameters) }}</pre>
+                  </details>
+                </div>
+              }
+            </details>
+          }
+          @if (data.contributions?.length) {
+            <details><summary>Schwerlastrelationen: {{ data.contributions!.length }} Quellbeiträge</summary><div class="table-scroll"><table><thead><tr><th>Relation / Quellzeile</th><th>Quelle / Evidenz</th><th>Eingang (Fahrten/Tag)</th><th>Erzeugt (Fahrten/Tag)</th></tr></thead><tbody>
+              @for (c of data.contributions!.slice(0, 50); track c.relationId) { <tr><td>{{ c.relationId }} · {{ c.sourceRow ?? 'keine Quellzeile' }}</td><td>{{ c.source.label }} · {{ evidence(c.evidence) }}<p class="identifier">{{ c.source.revision }}</p><p>Stand {{ c.source.referenceDate }} · Lizenz: {{ !c.source.licence || c.source.licence === 'unknown' ? 'nicht angegeben' : c.source.licence }} · {{ c.source.attribution }}</p></td><td>{{ c.inputVehicleTrips }}</td><td>{{ c.generatedVehicleTrips }}</td></tr> }
+            </tbody></table></div>@if (data.contributions!.length > 50) { <p>Die ersten 50 Relationen sind dargestellt; alle stehen im JSON-Bericht.</p> }</details>
+          }
+          @if (a.title === 'Schwerlastbeziehungen') { <p class="hint">Die Abfahrten innerhalb des Quellenzeitfensters folgen einem angenommenen Profil. Erzeugte Fahrten belegen noch kein erfolgreiches Routing oder eine abgeschlossene Fahrt. Unternehmens-, Paket- und private Nachfrage sind eigenständige Beiträge.</p> }
+        }
+      </article>
+    }
+    <article><h4>Zielausführung</h4><p>logiTopp: {{ state(r.targets.logitopp.stageStatus) }} · SUMO: {{ state(r.targets.sumo.stageStatus) }}</p>
+      @if (r.targets.sumo.execution; as e) {
+        <p>SUMO-Ausführung: {{ state(e.status) }} · Routing geprüft: {{ e.routingVerified ? 'ja' : 'nein' }} · Nachfrage erhalten: {{ e.demandRetained ? 'ja' : 'nein' }}</p>
+        <div class="table-scroll"><table><thead><tr><th>Bewegungen</th><th>Angefordert</th><th>Geroutet</th><th>Gestartet</th><th>Abgeschlossen</th></tr></thead><tbody>
+          <tr><th>Fahrzeugbewegungen</th><td>{{ e.vehicles.requested }}</td><td>{{ e.vehicles.routed }}</td><td>{{ e.vehicles.departed }}</td><td>{{ e.vehicles.completed }}</td></tr>
+          <tr><th>Personenbewegungen</th><td>{{ e.persons.requested }}</td><td>{{ e.persons.routed }}</td><td>{{ e.persons.departed }}</td><td>{{ e.persons.completed }}</td></tr>
+        </tbody></table></div><p>Native Fahrzeugteleports: {{ e.nativeVehicleTeleports }}</p><p class="hint">Bewegungen sind Fahrten beziehungsweise Etappen. Mehrere Etappen können dasselbe physische Fahrzeug verwenden.</p>
+        <p><a [href]="artifactBase + 'sumo/traffic-execution.json'" target="_blank" rel="noopener">Vollständige SUMO-Ausführungsbilanz</a></p>
+        @if (r.targets.sumo.executionSha256) { <p class="identifier">Ausführungsbericht-SHA-256 {{ r.targets.sumo.executionSha256 }}</p> }
+      } @else { <p>Für diesen Lauf ist keine erfolgreich gelesene SUMO-Ausführungsbilanz gebunden.</p> }
+    </article>
+    <details><summary>Laufbindung und Originalberichte</summary><p class="identifier">Lauf {{ r.run.id }}</p><p>Seed {{ r.run.seed }} · Bezugsjahr {{ r.run.referenceYear }}</p><p class="identifier">Plan-SHA-256 {{ r.run.planSha256 }}<br>Quellenbindung-SHA-256 {{ r.run.lockSha256 }}</p>
+      <p><a [href]="artifactBase + 'sources/resolution.json'" target="_blank" rel="noopener">Vollständiger Quellenbericht</a> · <a [href]="artifactBase + 'sources/plan.json'" target="_blank" rel="noopener">Quellenplan dieses Laufs</a> · <a [href]="artifactBase + 'sources/lock.json'" target="_blank" rel="noopener">Gebundene Quellenversionen</a></p>
+      <p class="hint">Die Dateien enthalten den zuletzt gestarteten Quellenlauf und werden beim nächsten Lauf ersetzt.</p>
+      <details><summary>Eingangsprüfung vor dem Lauf</summary>@for (d of r.decisions; track d.aspect) { <p>{{ d.aspect }} · {{ d.label || d.source }} · {{ d.status }}</p>@if (d.revision) { <p class="identifier">Revision {{ d.revision }}</p> }<ol>@for (c of d.candidates ?? []; track $index) { <li>{{ provider(c.provider) }} · {{ candidate(c.status) }} · {{ reason(c.reason) }}</li> }</ol> }</details>
+    </details>
+  }
+</section>

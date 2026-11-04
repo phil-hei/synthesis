@@ -1,0 +1,429 @@
+{
+  "scenarioId": "d4547f46",
+  "passed": true,
+  "frontend": "production build",
+  "viewportWidths": [
+    1440,
+    390
+  ],
+  "flow": [
+    "install CSV and JSON packs without activation",
+    "publish ordered profile without activation",
+    "select immutable profile version",
+    "preview skips German pack for French region",
+    "save plan",
+    "offline generation",
+    "verify candidate order and workplace provenance"
+  ],
+  "profile": "b2d9eef1a61e3fa80010b7b5b9dfcf18067b64fbdd65437e01d595182b834e5d",
+  "appliedJobs": 12,
+  "resolution": {
+    "decisions": [
+      {
+        "aspect": "freight.vehicleOd",
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "selectionRole": "legacy-delegation",
+        "skipped": [],
+        "source": "legacy",
+        "status": "legacy"
+      },
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "opportunities.work",
+        "attribution": "SyntheSis-Testfixture",
+        "candidates": [
+          {
+            "onUnavailable": "fail",
+            "provider": "pack:55c8eb14d23c444a460d8aa57c580e9099298e9a11a5cfb6676359d3436930ae:work",
+            "reason": "Datenabdeckung liegt außerhalb der Szenarioregion",
+            "status": "not-applicable",
+            "rank": 1
+          },
+          {
+            "onUnavailable": "fail",
+            "provider": "pack:b1a7caebdbcbec8e60a445d44e5190496f6c94fa06442f9371ad44e215900458:work",
+            "reason": "first-applicable-candidate",
+            "status": "selected",
+            "rank": 2
+          }
+        ],
+        "coverage": {
+          "minLat": 48.7,
+          "minLon": 2.1,
+          "maxLat": 49.1,
+          "maxLon": 2.5
+        },
+        "coverageDeclaration": {
+          "kind": "point-register",
+          "completeness": "complete",
+          "statement": "Vollständiger künstlicher Testbestand für das deklarierte Beispielgebiet; keine empirische Vollständigkeitsbehauptung"
+        },
+        "evidence": "user-provided-unverified",
+        "gaps": "legacy",
+        "label": "Synthetische Arbeitsplatzpunkte workplaces-fr-json",
+        "licence": "unknown",
+        "profile": "b2d9eef1a61e3fa80010b7b5b9dfcf18067b64fbdd65437e01d595182b834e5d",
+        "profileDefinition": {
+          "contract": "synthesis-source-profile-v1",
+          "name": "DE zuerst, FR als passende Quelle",
+          "aspects": {
+            "opportunities.work": {
+              "candidates": [
+                {
+                  "provider": "pack:55c8eb14d23c444a460d8aa57c580e9099298e9a11a5cfb6676359d3436930ae:work",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                },
+                {
+                  "provider": "pack:b1a7caebdbcbec8e60a445d44e5190496f6c94fa06442f9371ad44e215900458:work",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                }
+              ],
+              "fallback": "none"
+            }
+          }
+        },
+        "referenceDate": "2026-01-01",
+        "revision": "47c3d8aba60204b8aed2af5627a25b194344a1864464c29ca13578b47ce50768",
+        "selectionRole": "profile-fallback",
+        "skipped": [
+          {
+            "onUnavailable": "fail",
+            "provider": "pack:55c8eb14d23c444a460d8aa57c580e9099298e9a11a5cfb6676359d3436930ae:work",
+            "reason": "Datenabdeckung liegt außerhalb der Szenarioregion",
+            "status": "not-applicable",
+            "rank": 1
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "21328cddc00255b5d1be555da1b8392dd6cb842520630187ec90371b6a7825c0",
+        "status": "resolved-with-fallback",
+        "temporalTransfer": false
+      },
+      {
+        "aspect": "population.distribution",
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "selectionRole": "legacy-delegation",
+        "skipped": [],
+        "source": "legacy",
+        "status": "legacy"
+      }
+    ],
+    "workplaces": {
+      "allocation": "point-to-zone; declared workplace counts used as Work weights",
+      "appliedJobs": 12,
+      "coverageBasis": "source-owner-declaration; not independently verified",
+      "coverageDeclaration": {
+        "kind": "point-register",
+        "completeness": "complete",
+        "statement": "Vollständiger künstlicher Testbestand für das deklarierte Beispielgebiet; keine empirische Vollständigkeitsbehauptung"
+      },
+      "coverageDenominator": "internal model zones fully covered by declared source bbox",
+      "coveredZones": 15,
+      "fallbackZones": 0,
+      "jobsInPartiallyCoveredZonesNotApplied": 0,
+      "mappedJobs": 12,
+      "mappedRows": 2,
+      "outsideRows": 0,
+      "provenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "opportunities.work",
+        "root": "work-weights",
+        "nodes": [
+          {
+            "id": "register",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "47c3d8aba60204b8aed2af5627a25b194344a1864464c29ca13578b47ce50768",
+              "sourceHash": "21328cddc00255b5d1be555da1b8392dd6cb842520630187ec90371b6a7825c0",
+              "label": "Synthetische Arbeitsplatzpunkte workplaces-fr-json",
+              "origin": "Künstliche Testdaten; kein reales Betriebsregister",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": "SyntheSis-Testfixture"
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                }
+              ]
+            },
+            "parameters": {
+              "coverageDeclaration": {
+                "kind": "point-register",
+                "completeness": "complete",
+                "statement": "Vollständiger künstlicher Testbestand für das deklarierte Beispielgebiet; keine empirische Vollständigkeitsbehauptung"
+              },
+              "declaredCoverage": {
+                "minLat": 48.7,
+                "minLon": 2.1,
+                "maxLat": 49.1,
+                "maxLon": 2.5
+              },
+              "mapping": {
+                "tableId": "json-0",
+                "headerRow": 1,
+                "columns": {
+                  "id": 0,
+                  "lon": 1,
+                  "lat": 2,
+                  "value": 3
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "workplaces-v1"
+            }
+          },
+          {
+            "id": "point-allocation",
+            "operation": "point-to-zone-sum",
+            "evidence": "derived",
+            "selectionRole": "primary",
+            "inputs": [
+              "register"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                }
+              ]
+            },
+            "parameters": {
+              "emptyZonePolicy": "zero-by-completeness-declaration",
+              "modelIndexBase": 0,
+              "unit": "jobs"
+            }
+          },
+          {
+            "id": "work-weights",
+            "operation": "choose",
+            "evidence": "derived",
+            "selectionRole": "composition",
+            "inputs": [
+              "point-allocation"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                }
+              ]
+            },
+            "parameters": {
+              "quantitiesComparable": true,
+              "semantics": "purpose-specific weights; no observed total inferred"
+            }
+          }
+        ]
+      },
+      "revision": "47c3d8aba60204b8aed2af5627a25b194344a1864464c29ca13578b47ce50768",
+      "rowAssignments": [
+        {
+          "sourceRow": 2,
+          "sourceId": "a",
+          "zone": {
+            "externalId": 100004,
+            "modelIndex": 3
+          },
+          "status": "applied",
+          "quantity": 12
+        },
+        {
+          "sourceRow": 3,
+          "sourceId": "b",
+          "zone": {
+            "externalId": 100008,
+            "modelIndex": 7
+          },
+          "status": "applied",
+          "quantity": 0
+        }
+      ]
+    },
+    "populationSource": "user-defined",
+    "populationDistribution": "uniform-noise"
+  }
+}

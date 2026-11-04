@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-04",
+  "backend": {
+    "command": "mvn -o -Daether.syncContext.named.factory=noop test",
+    "tests": 485,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 4,
+    "optionalSkips": [
+      {
+        "class": "de.synthesis.generation.pipeline.MobileCityRastattSourcesTest",
+        "test": "exportsObservedRastattSourcesWithoutSilentFallback"
+      },
+      {
+        "class": "de.synthesis.generation.pipeline.ActitoppIntegrationTest",
+        "test": "pinnedRunnerProducesValidWeeklySchedules"
+      },
+      {
+        "class": "de.synthesis.generation.pipeline.PtIntegrationTest",
+        "test": "fullTransitChainRidesBuses"
+      },
+      {
+        "class": "de.synthesis.generation.pipeline.MobileCityCrossMunicipalitySourcesTest",
+        "test": "exportsObservedCrossMunicipalitySourcesWithPerZoneEvidence"
+      }
+    ],
+    "sourceRunReportCases": 2,
+    "nativeSourcePlanCases": 2,
+    "nativeRuns": 18
+  },
+  "frontend": {
+    "tests": 130,
+    "failures": 0,
+    "productionAot": "passed",
+    "reportComponentCases": 8
+  },
+  "browser": {
+    "successAndFailureVerified": true,
+    "productionBuild": true,
+    "isolatedSyntheticData": true,
+    "additionalNativeHeavyTripsCompleted": 8,
+    "consoleErrors": 0,
+    "testServersStopped": true
+  },
+  "initialFullSuite": {
+    "failures": 3,
+    "cause": "Old failure-path assertions required resolution.json to be absent. Updated to require own FAILED report, own diagnostics and no old successful parts."
+  },
+  "proofs": [
+    "2026-11-04-source-run-report-plan.json",
+    "2026-11-04-source-run-report-backend.json",
+    "2026-11-04-source-run-report-ui.json"
+  ],
+  "limits": [
+    "Latest run only; no archive",
+    "No automatic equivalence check against all later scenario edits or live source changes",
+    "No empirical regional acceptance, new source families, private/parcel migration or full MobileCity acceptance"
+  ],
+  "evidenceHashes": {
+    "2026-11-04-source-run-report-plan.json": "6f278fca22d960df6a78603b3069deb0fed0c10dcf9e0e9b3154470a797840d9",
+    "2026-11-04-source-run-report-backend.json": "534443304c379ab3242040de93705e79bc4efa3bca3511a0f674f748aab02985",
+    "2026-11-04-source-run-report-ui.json": "9aed1635b1a292d5aeab583aff37507828190a088a1bce18495d9c959df0a939"
+  }
+}

@@ -5,6 +5,95 @@ dateibasierter Artefakt-Store, externe Toolchain als Prozesse), aber die Generie
 **explizite Pipeline aus Stufen mit definierten Artefakten** modellieren – jede Stufe einzeln
 ausführbar, cachebar und durch andere Implementierungen ersetzbar.
 
+## Konfigurierbare Datenquellen je fachlichem Aspekt — Konzept (2026-10-28)
+
+Die aktuelle Quellenwahl ist über Orchestrator, Generatoren, Uploads und Zieladapter
+verteilt. Der [Architekturvorschlag mit Quelleninventar](22-datenquellen-adapter-und-fallbackkonzept.md)
+trennt Quelladapter, typisierte fachliche Beiträge, Auswahl-/Fallbackregeln,
+Nachfragemodule und Zieladapter. Quellen sollen je Aspekt auswählbar sein, etwa
+kommunale Arbeitsplätze statt OSM-Gewichten bei weiterhin aktivem OSM-Straßennetz.
+Der Vorschlag umfasst Teilabdeckung, explizite Ersatzannahmen für Schwerlastverkehr,
+Herkunft und eine verhaltensgleiche erste Migrationsstufe. Der experimentelle Importkern
+und Quellenplan für Bevölkerung, Arbeitsplatzgewichte und schwere Fahrzeug-OD sind
+inzwischen umgesetzt; [Umfang und Verifikation](22-datenquellen-adapter-und-fallbackkonzept.md#19-erste-experimentelle-umsetzung-und-verifikation) grenzen sie vom weiteren Zielbild ab.
+
+Das nachgeschärfte Konzept begrenzt M0 auf drei Aspekte. Geordnete Providerprofile
+und Datenpakete bilden M1 und sind für diese drei Verträge szenariolokal verfügbar; die übrigen Aspekte sind Erweiterungskatalog. Teileherkunft
+ist verpflichtend, `mixed` nur eine mögliche Anzeige. Punktdaten und kommunale
+Gebietsaggregate haben unterschiedliche Raumverträge. Die technische Lkw-
+Mengendemonstration erfüllt den vorgesehenen strukturellen Ersatz noch nicht.
+[Entscheidungen und offene Gates](22-datenquellen-adapter-und-fallbackkonzept.md).
+
+Der Gemeindeimport erhält Aggregate auf AGS-/Gebietsstandsebene und referenziert
+separate räumliche Gewichtsdaten. Ein begrenzter, typgeprüfter Revisionsgraph friert
+Referenzen vor dem Queueing ein; die Verteilung bleibt eine Modellannahme mit
+Mengenbilanz einschließlich Außenanteilen. Ein zusätzlicher Laufzweck sperrt die
+technische Lkw-Demonstration für fachliche Auswertungen. Zusätzlich kann der Import versionierte GeoJSON-Polygone mit Flächenverschneidung nutzen; die Verteilung bleibt modelliert. Amtliche
+Gebietsgeometrieprüfung und der fachliche Güterfallback sind weiterhin offen.
+
+Die nativen Providerfamilien Bevölkerung und Work sind separat auflösbar: Für Bevölkerung kann der
+Quellenplan Upload, Zensus, OSM-Siedlungen, POI-Ersatz und Ersatz ohne Ortsdaten
+ordnen und abwählen. `PopulationSources` lädt nur benötigte Kandidaten und trennt
+Gesamtzahl-/Verteilungsherkunft. Die bisherige Standardauswahl bleibt verfügbar.
+[Bedienung, Eingabelock und Grenzen](examples/population-sources/README.md).
+
+`ProviderChain<T>` liefert die gemeinsame typisierte Auswahllogik. Für Work sind
+OSM-Ableitung und explizites synthetisches Modell getrennt konfigurierbar; die
+anderen Aktivitätszwecke bleiben erhalten. Gemischte Profile kombinieren native und importierte Kandidaten; explizite native
+Lückenfüller ergänzen nur nicht übernommene Registerzonen. Die gesamte Work-Komposition
+wird vor ihrer Anwendung auf Zonenkopien geprüft.
+[Work-Provider und Grenzen](examples/workplace-sources/README.md).
+
+Die explizite Profilstrategie `fill-gaps` ergänzt mehrere Work-Register nach Vorrang.
+Registerbeiträge haben disjunkte tatsächliche Scopes; verdeckte Mengen bleiben pro
+Quelle bilanziert. Native Modelle füllen nur Restlücken. Die Berechnung ist atomar.
+[Regionaler Vertrag und Grenzen](examples/regional-registers/README.md).
+
+Typisierte EPSG:3035-Zellverträge unterscheiden bekannte Null, fehlend, nicht erhoben
+und unterdrückt. Nur vollständig bekannte Zonen werden übernommen. Population
+modelliert bei explizitem Mengenanker ausschließlich die unbekannte Restmenge;
+Work ergänzt offene Zonen über die vorhandene atomare Komposition. Der gemeinsame
+Import normalisiert domänenspezifisch vor Validierung und Revisionshash.
+[Zellvertrag und Grenzen](examples/masked-cells/README.md).
+
+`DataPackLibrary` verwaltet installationsweit portable Pakete unter `source-library/`.
+`DataPacks` prüft vor Veröffentlichung auch deren interne Referenzen. Szenarien
+übernehmen konkrete Kopien, deren Versions- und Revisionshashes erhalten bleiben;
+Quellenauswahl und Laufresolver lesen weiterhin nur den Szenariobestand. Die
+Bibliothek wird nicht zur neuen Laufzeitabhängigkeit der Generierung.
+[Vertrag und Betriebsgrenzen](examples/source-library/README.md).
+
+`SourceProfileLibrary` ergänzt versionierte Auswahlregeln unter `source-library/profiles/`.
+Die vorhandene kanonische Profilserialisierung wird wiederverwendet. Vor Übernahme
+werden alle aktiven Paketversionen geprüft/eingelesen; das Ziel erhält eigene Kopien
+mit identischen Hashes. Es gibt keine automatische Aktivierung oder neue zentrale
+Laufzeitabhängigkeit. Native Provider bleiben Regeln zur Auflösung im Zielscenario.
+[Portable Profile und Grenzen](examples/shared-source-profiles/README.md).
+
+`FreightSources` bilanziert gebundene Schwerlastrelationen gegen erzeugte Fahrten
+unter `sources/resolution.json.freight`. Die Zuordnung verweist auf das vollständige
+Fahrtenledger; Quellenevidenz, modellierte Abfahrten und native Routing-/
+Ausführungsevidenz bleiben getrennt. Unternehmensbeiträge werden dadurch nicht
+ersetzt. [Vertrag und begrenzte native Abnahme](examples/source-plan-traffic/README.md).
+
+`SourceRunReport` bindet die bestehenden Teilberichte an Laufstatus, Zeitpunkte und
+Plan-/Quellenhashes. Er publiziert auch frühe Teilfehler atomar; Zielberichte werden
+nur für die erfolgreich beendete Stufe gebunden. `SourceRunReportComponent` zeigt
+die Laufbilanz im Datenarbeitsbereich, getrennt von der Eingangsprüfung.
+[Vertrag und Grenzen](examples/source-run-report/README.md).
+
+## Globale Werkzeugkonfiguration
+
+Die eigene Angular-Route `/einstellungen` erreicht über `GET/PUT /api/settings/tools` ein
+begrenztes Settings-DTO. `ToolSettingsController` speichert außerhalb der Szenarien atomar
+`<synthesis.data-dir>/tool-settings.json`. `ToolSettingsConfiguration` lädt die Datei nach
+Spring-Binding in `SynthesisProperties`, bevor Konsumenten die Bean erhalten. Eine Änderung
+über die API verändert die aktive Konfiguration nicht; die Antwort unterscheidet gespeicherte
+und aktive Werte und meldet `restartRequired`. So kann ein Job nicht zwischen zwei
+Werkzeugkonfigurationen wechseln. Szenariofelder und nicht angebotene Betriebs-Properties
+bleiben in ihren bisherigen Verträgen. Bedienung, Vorrang und Verifikation stehen in
+[docs/06, Phase 4](06-gta-integration-konzept.md#phase-4--produktiv-härtung-querschnittlich).
+
 ## Überblick
 
 ```mermaid
@@ -522,3 +611,497 @@ SUMO-Kanten. `SharedRoadRoutes` schreibt Herkunft, Zuordnungen, Ersatzrouten
 und Zeiten und prüft die Straßenfolge nach dem Router. KIT-Kerne bleiben
 unverändert; das Routing innerhalb ihrer Tourplanung wird hiermit nicht ersetzt.
 [Artefaktvertrag und Grenzen](20-erweiterungen-routenkonsistenz-und-zeitfeedback.md#experimenteller-adapter-umgesetzt-07102026).
+
+## Import von Unternehmenstouren (14.10.2026, erste Stufe)
+
+Ein vorgeschalteter Importdienst soll Unternehmensdateien über Parser und ein
+lokal vorgeschlagenes, bestätigtes LLM-Mapping in einen versionierten Tourenvertrag
+überführen. Die bestehende Logistik-/SUMO-Vorbereitung nutzt freigegebene Revisionen
+als zusätzlichen Beitrag mit eigener Herkunft und durchgängiger Fahrzeugidentität.
+Die Erweiterung bleibt opt-in und benötigt keine neue parallele Pipeline-Stufe.
+CSV-/XLSX-Parser, Mappingvorschau, opt-in lokaler LLM-Regelvorschlag und atomar
+gespeicherte Importentwürfe sind implementiert. Speichervertrag:
+`uploads/company-tours/<source-sha256>.json` enthält die interne Originaltabelle und
+das bestätigte Mapping. Unbekannte Kundenfelder gelangen nicht in den kanonischen
+Entwurf. Seit 21.10.2026 ergänzt ein separat bestätigter Ausführungskontext Depot,
+Fahrzeugidentität, Datum, Zeiten und Koordinaten. Exakt ausgewählte Revisionen werden
+vor dem Einreihen als Batch eingefroren und in der bestehenden SUMO-Stufe zusätzlich
+über native Fahrzeugketten ausgeführt. `companyTours.enabled=false` ist der Default;
+`company-tours/{input,routing,execution}.json` dokumentieren Eingang, Netzprüfung und
+Abschluss. Der Quellentwurf bleibt unverändert. Kein neuer Executor, keine neue Stufe.
+[Ausführungsvertrag und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#28-unternehmenstouren-kontext-lokale-ortszuordnung-und-zusätzliche-sumo-ausführung-2026-10-21).
+[Erster Implementierungsstand und API](21-gueterverkehr-konzept-und-datenquellen.md#16-unternehmenstouren-csv-excel-importentwurf--2026-10-14-experimentell).
+[Datenvertrag, regionale Grenzen und Umsetzungspakete](21-gueterverkehr-konzept-und-datenquellen.md#15-unternehmenstouren-quellenstand-und-llm-gestützter-import-konzept-2026-10-13).
+
+### Optionale Güterverkehrsprüfung in SUMO (2026-10-15)
+
+`freight.profileChecksEnabled=false` ergänzt die bestehende SUMO-Stufe ohne neue
+Pipeline-Stufe oder externe Laufzeit. `FreightProfileChecks` überträgt eindeutig
+verletzte statische Standardprofilregeln vor dem Routing und schreibt danach
+`freight/route-checks.json`, auch vor einem Fehler durch verworfene Fahrten.
+Unbekannte Quellregeln werden nicht als erfüllt angenommen. Standortanbindung
+erfolgt an Straßen; separate Betriebseinfahrten sind nicht Teil dieses Modells.
+Der Overpass-Netzabruf enthält jetzt auch Abbiegerelationen samt Mitgliedern.
+[Vertrag, Voraussetzungen und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#20-rückfahrten-abbiegerelationen-und-optionale-profilprüfung-2026-10-15).
+
+
+### SUMO-Nachfragebilanz und Netzvorprüfung (2026-10-17)
+
+Innerhalb der vorhandenen SUMO-Stufe prüft `TrafficEndpointMapper` klassenbezogene
+Endpunkte und notwendige gerichtete Verbindungen. `TrafficExecutionAudit` verknüpft
+Anfrage-, Routen- und Abschluss-IDs. Die additiven Verträge
+`synthesis-network-coverage-v1`, `synthesis-traffic-routing-v1` und
+`synthesis-traffic-execution-v1` liegen als `network-coverage.json`,
+`traffic-routing.json` und `traffic-execution.json` unter `sumo/`.
+`summary.json.accounting` übernimmt die Ausführungsbilanz; eingesetzte Fahrzeuge
+schließen Fahrräder ein, mittlere Tripstatistiken bleiben motorisiert.
+Im bestehenden vollständigen Gütermodus sind nicht zuordenbare Endpunkte,
+nachweislich fehlende gerichtete Verbindungen und verlorene Anfragen Stufenfehler.
+Berichte existieren jeweils erst nach Erreichen der zugehörigen Prüfung.
+Unfertige Wege am festen Tagesende und Teleports werden separat bilanziert.
+Keine neue Pipeline-Stufe, Abhängigkeit oder Nebenläufigkeit; explizite Kanten und
+Quellrestriktionen bleiben verbindlich.
+[Aussagegrenzen und Regionalnachweis](21-gueterverkehr-konzept-und-datenquellen.md#24-routingverluste-vorprüfung-und-vollständige-ausführungsbilanz-2026-10-17).
+
+
+Der SUMO-Netzbericht enthält seit 2026-10-19 additive `endpointOrigins`-Metadaten
+und `coordinateSources` an problematischen Endpunkten. `TrafficEndpointOrigins`
+liest ausschließlich native Eingaben dieses Laufs, verbindet exakte numerische
+Koordinaten und kennzeichnet mehrere mögliche Quellen sowie Lesefehler. Dies
+ändert weder Geometrie noch Routing. Der Populations-/Legacy-Pkw-Vertrag verwendet
+konsistent den Haushaltswohnort als Initialposition; OID/External-ID bleiben getrennt.
+[Detailvertrag](21-gueterverkehr-konzept-und-datenquellen.md#25-quellorte-der-restfälle-und-konsistente-pkw-initialisierung-2026-10-19).
+
+
+### Synthetische Orte an gemeinsamen Straßen (2026-10-19, experimentell)
+
+`population.roadLocatedActivities=false` ergänzt die bestehende Matrizen-/
+Bevölkerungs-/Legacy-Kette. Der bereits aufgebaute `RoutingEngine`-Graph liefert
+kopierte Straßenabschnitte an `RoadLocations`, bevor er geschlossen wird. Es wird
+kein zusätzlicher Graph importiert und keine Pipeline-Stufe oder Abhängigkeit
+eingeführt. Kandidaten benötigen Pkw-, Fahrrad- und Fußfreigaben außerhalb der
+jeweils markierten GraphHopper-Teilnetze; öffentliche gewöhnliche OSM-Straßen
+werden zusätzlich konservativ anhand ihrer Tags gefiltert. Beschränkte oder
+bedingte Zugänge sowie Brücken-/Tunnel-/höhergelegte Straßen sind als Ortskandidaten
+ausgeschlossen. `service` und `track` sind ebenfalls ausgeschlossen: GraphHopper
+und die native SUMO-Typmap unterscheiden sich hier bei Pkw-Freigaben.
+
+Zusätzlich dürfen Kandidaten nur in den nach Straßenlänge jeweils größten
+schwach zusammenhängenden Pkw- und Fußkomponenten liegen. Die Pkw-Verbinder sind konservativ auf
+gewöhnliche Pkw-Straßentypen einschließlich Autobahnen, Brücken und Tunneln
+beschränkt; `service`-/`track`-Verbinder zählen nicht. GraphHopper-Pkw-Zugang bleibt
+zusätzlich erforderlich. Die Auswahl berücksichtigt das gesamte importierte Netz.
+Die Fußkomponente verwendet begehbare Wege sowie Straßen innerhalb der nativen
+Gehweg-Temposchwelle; schnelle Straßen verbinden keine Fußinseln. `service` und
+`track` dürfen dabei Fußverbinder sein, bleiben aber als gemeinsame Orte ausgeschlossen.
+Beide Hauptkomponenten werden unabhängig über das gesamte importierte Netz gewählt;
+ihre Schnittmenge kann in getrennten Netzen leer sein.
+Dadurch können isolierte Ortsteile oder zulässige lokale Inseln verworfen werden,
+auch bei ausdrücklich freigegebenen `service`-Zufahrten. Ohne geeigneten Abschnitt
+in einer Zone bricht die aktivierte Ortswahl ab. Diese konservative Modellpolitik
+beweist weder Einbahn-/Abbiege-Erreichbarkeit noch native Gehwegverbindungen;
+SUMO bleibt für diese Prüfung maßgeblich.
+
+Die gemeinsame Ortswahl berücksichtigt zusätzlich die native Gehwegschätzung:
+explizite numerische Höchstgeschwindigkeit höchstens 50 km/h, einschließlich
+beider Richtungsangaben; ohne `maxspeed` nur `residential`, `living_street` und
+`unclassified`, deren native Defaults die Gehwegschätzung zulassen. Unbekannte
+Geschwindigkeitsformate und schnellere Straßen werden konservativ als Orte
+verworfen. Für die Pkw-Komponenten bleiben schnelle Straßen als Verbinder
+zugelassen. Diese Regel ändert keine SUMO-Berechtigung oder Gehwegoption.
+
+Die bisherigen Ortsziehungen bleiben bestehen. Ohne weiteren Zufallszug wird der
+nächste geeignete Abschnitt innerhalb derselben Zone gewählt. Abschnitte werden
+im jeweiligen Zonenraum geschnitten; ein 1-m-Innenabstand und eine Prüfung mit
+`Zone.contains` nach sechsstelliger WGS84-Serialisierung sichern insbesondere die
+LAEA-Zugehörigkeit. Bevölkerung, Haushalte, Pkw-Zahl und Zielzonen bleiben erhalten;
+externe Anker und Depotorte werden nicht verschoben. Ein fehlender Kandidat ist
+ein Fehler mit Bericht; bei aktivierter Option gibt es keinen Luftlinien-/Ortsfallback.
+
+Der additive Vertrag `synthesis-road-locations-v4` liegt unter
+`population/road-locations.json`: Quellenhash des tatsächlich importierten OSM,
+Kandidaten je Zone, schwache Pkw-/Fußkomponenten und je Filter verworfene Kandidaten,
+ursprünglicher und gewählter Punkt, OSM-Weg, Verschiebung,
+Verwendungszahlen und begrenzte Datensatzbeispiele. Der Bericht beschreibt
+synthetische Straßenpunkte, keine beobachteten Adressen oder Betriebseinfahrten.
+Die bestehende SUMO-Klassen-/Richtungs-/300-m-Prüfung bleibt nachgelagert verbindlich.
+
+## Signalimport für reine Straßennachfrage (2026-10-20)
+
+`SumoRunner` bestimmt vor dem ersten OSM-Import, ob die native Nachfrage
+nachweislich nur Straßenfahrzeuge enthält. Ohne ÖV-Provider gilt dies direkt;
+`GenerationService` deklariert seinen Provider nur bei ausschließlich `bus`
+als `PtProvider.roadOnly`. Andere oder unbekannte Provider erhalten die bisherige
+Bahnsignalsteuerung. Dies erweitert die Bus-Integration nicht um Schienenverkehr.
+
+`RoadSignalPolicy` verwirft bei reiner Straßennachfrage importierte Bahnsignale
+mit `--railway.signals.discard`. Die dadurch erhaltenen Teilkantenkennungen
+vermeiden eine Umdeutung vorhandener Kantenbindungen. Quellenknoten mit
+`highway=traffic_signals` und gleichzeitig `railway=signal` oder den nativen
+Default-Regeln `railway:signal:main`/`:combined` werden, ausgenommen explizite
+Bahnübergänge, beim selben Import über
+`--tls.set` als Straßenampeln gesetzt. Bahnübergänge und gewöhnliche Straßenampeln
+behalten ihre bisherige Importbehandlung. Es gibt keinen zweiten Netzimport mit
+abweichender Signalpolitik und keine Änderung an Fahrberechtigungen,
+Abbiegeverboten, Teleport-Einstellungen oder Tageslänge.
+
+Der additive Bericht `sumo/road-signals.json` mit Vertrag
+`synthesis-road-signal-import-v1` nennt Quellenhash, Geltungsbereich,
+Importargumente, betroffene Quellenknoten, tatsächlich erhaltene Knotentypen und
+nicht mehr unter ihrer Quellen-ID auffindbare Knoten. Verbliebene `rail_signal`
+oder ein erhaltener dualer Knoten ohne Straßenampelsteuerung führen zum Fehler.
+Bei nativer Übertragung eines Signals auf die folgende Kreuzung werden die
+kurzen direkten Zufahrten zu deren tatsächlichen Ampelknoten geprüft und
+protokolliert; eine entfernte beliebige Straßenampel genügt nicht.
+Entfernte oder zusammengefasste Quellenknoten bleiben im Bericht und Job-Log
+prüfpflichtig; ihre Ampelwirkung ist durch eine fehlende ID nicht nachgewiesen.
+Der Bericht wird vor einem erneuten Lauf entfernt.
+
+Eine `roadOnly`-Deklaration wird nach Erzeugung der ÖV-Infrastruktur und vor
+Routing/Simulation anhand aller drei zusätzlichen XML-Artefakte geprüft.
+Fahrzeugtypen müssen eindeutig im VType-Artefakt als bekannte Straßenklassen
+definiert sein; jede Fahrzeug-/Trip-/Flow-Referenz muss auf einen geprüften Typ
+oder den bekannten Straßen-Default zeigen. Typdefinitionen in Halte-/Fahrzeug-
+Dateien, Typverteilungen und Includes werden abgewiesen, auch verschachtelt.
+Unbekannte oder schienengebundene Typen dürfen keine Ausführung ohne Bahnsignale
+erhalten. Die native Routen- und Ausführungsbilanz bleibt anschließend verbindlich.
+
+## Öffentlicher Stationsbestand (2026-10-20, experimentell)
+
+`energyInfrastructure` ist eine additive Szenariokonfiguration mit
+`enabled=false`, `useBnetza=true`, `useOsm=true`. Bei Aktivierung muss mindestens
+eine Quelle gewählt sein. `EnergyInfrastructure.generate` läuft innerhalb der
+vorhandenen Stufe „OSM-Daten (POIs)“ nach den allgemeinen Ortsdaten; eine
+stationäre Quelle darf auch ohne allgemeine Live-POIs verwendet werden. Ohne
+OSM-Snapshot und bei abgeschalteten Live-Daten scheitert die gewählte
+OSM-Stationsquelle sichtbar. Es gibt keine zusätzliche Pipeline-Stufe,
+Nebenläufigkeit oder Änderung der Zufallsfolge/Nachfrage.
+
+| Datei relativ zum Szenario | Rolle |
+|---|---|
+| `uploads/energy-stations.json` | Eingefrorene OSM-Eingabe, Vertrag `synthesis-energy-osm-snapshot-v1`, Region, Abrufzeit, Endpunkt und unveränderte Antwortdaten. |
+| `artifacts/energy/osm-source.json` | Exakte Kopie des im Lauf konsumierten OSM-Eingabestands; SHA-256 wird auf diese Datei bezogen. |
+| `artifacts/energy/stations.geojson` | Stationsmeldungen mit Vertrag `synthesis-energy-infrastructure-v1`, Region, Bezugsjahr und Quellenkonfiguration. |
+| `artifacts/energy/quality.json` | Quellen-/Lizenz-/Hashangaben, Meldungen je Energieträger/Zugangsart, Ausschlüsse, Qualitätskennzeichen und Quellenfehler. |
+| `artifacts/manifest.json` | Verweis auf Bestand und Qualitätsbericht sowie Quellenzusammenfassung bei erfolgreicher Quellenstufe. |
+
+Stations-IDs sind `bnetza:<facilityId>` bzw. `osm:<node|way|relation>:<id>`.
+Einrichtungen, Ladepunkte und alternative Anschlüsse werden getrennt geführt.
+BNetzA-Anschlussdetails stammen aus demselben Rohsnapshot wie die bisherige
+MobileCity-Quelle; der Import verifiziert Basisreferenz, Detailhash und globale
+Einrichtungs-/Punktzahlen. Einrichtungsleistung und Anschlussleistung bleiben
+getrennt, gemeinsame Leistungsbegrenzung unbekannt. MobileCity wird in dieser
+Stufe noch nicht auf einen neuen GeoJSON-Leser umgestellt.
+
+OSM wird mit `nwr["amenity"~"^(charging_station|fuel)$"](...);out meta center;`
+abgerufen. Nodes behalten Originalkoordinaten, Ways/Relationen ihren ausdrücklich
+als repräsentativ gekennzeichneten Mittelpunkt. Kraftstoff-/Socket-Tags und
+bekannte Beschränkungen bleiben getrennt von einer Fahrzeugeignungsfreigabe.
+Private/gesperrte und ausdrücklich inaktive Meldungen werden ausgeschlossen;
+fehlender öffentlicher Zugang bleibt `unknown`, Kunden-/Genehmigungszugang
+`restricted`. Die Karte zeigt standardmäßig nur `public`. Quelleninhalte werden
+über DOM-Textknoten dargestellt, nicht als HTML ausgewertet.
+
+Mögliche quellenübergreifende Dubletten werden anhand identischer EVSE-Referenz
+oder höchstens 50 m Entfernung markiert, nicht automatisch zusammengeführt.
+`stationRecords` zählt Quellenmeldungen, keine zertifizierten eindeutigen Orte.
+`observedRegisterChargingPoints` zählt ausschließlich erfolgreich geladene
+BNetzA-Punkte; bei abgewählter/fehlgeschlagener Registerquelle ist es `null`,
+keine angenommene Nullversorgung. Geprüfte Netz-/Fahrzeugeignung,
+Flächenabdeckung und simulierte Energiezustände bleiben ausdrücklich `false`.
+
+`POST /api/scenarios/{id}/energy-infrastructure/osm-snapshot` akzeptiert als
+Multipart-Feld `file` eine Overpass-JSON-Antwort oder einen exportierten
+Stationssnapshot (höchstens 20 MB / 100.000 Objekte). Fehlerhinweise einer
+Teilantwort, doppelte Objektidentitäten und falsche Snapshot-Region werden
+abgewiesen, bevor eine gültige Eingabe ersetzt wird. `DELETE` am selben Pfad
+gibt den Stand für den nächsten Abruf frei. Während eines als `QUEUED/RUNNING`
+geführten Jobs antworten beide mit 409. Geschrieben wird atomar; der Lauf
+konsumiert und prüft seine eigene Kopie. Bei jeder Generierung werden alte
+Stationsausgaben entfernt; Abschalten entfernt sie ebenfalls. Die Karte verwirft
+verspätete Antworten und Ergebnisse mit anderem Szenario, Jahr, Gebiet oder
+Quellenauswahl. Fehlende Ergebnisdateien bedeuten keine beobachtete Nullversorgung.
+
+Bei Quellenfehlern wird ein als `failed` gekennzeichneter Teilbestand samt
+Qualitätsbericht geschrieben und anschließend die Quellenstufe abgebrochen.
+Es gibt keinen synthetischen Infrastruktur-Fallback. Der Vertrag beweist weder
+Zufahrt/Erreichbarkeit noch Live-Verfügbarkeit, HGV-Eignung oder historische
+Vollständigkeit. H₂ stammt zunächst aus OSM; die Register-API und operative
+Energieplanung sind [weitere Schritte](19-fahrzeugimport-und-modellbegriffe.md#konkrete-umsetzungsreihenfolge).
+
+## Stations-Netzprüfung und Fahrzeugzustände (2026-10-20, erste Stufe)
+
+Die beiden unabhängigen Opt-ins `energyInfrastructure.verifyNetworkAccess=false`
+und `vehicleOperations.enabled=false` erweitern die bestehende SUMO-Stufe.
+Die Netzprüfung benötigt außerdem einen aktiven Stationsbestand und das Ziel
+SUMO. Der Suchradius `energyInfrastructure.maxSnapDistanceM` beträgt zunächst
+50 m und ist auf 1–300 m begrenzt. Es gibt keine neue Pipeline-Stufe und keine
+Änderung an Pool, Nachfrageziehung, Seed oder Teleportregeln.
+
+`EnergyNetworkAccess` ordnet jeder Stationsmeldung und jedem geprüften
+Fahrzeugtyp bis zu vier nahe, klassenzulässige gerichtete Kanten zu. Native
+Fahrspurberechtigungen bestimmen die Fahrspur; eine geografische Projektion
+liefert eine relative Position auf der Kante, die auf die native Spurlänge
+übertragen wird. Originalkoordinate und projizierter Punkt bleiben getrennt.
+Referenzprofile für Pkw, Lieferwagen, Lkw und Sattelzug sowie konfigurierte
+Fahrzeugtypen behalten ihre Herkunft und Maße. Masse wird konservativ über die
+zulässige Gesamtmasse geprüft; fehlende Werte bleiben unbekannt.
+
+Bis zu acht Nachbarkanten je Richtung liefern separate native `duarouter`-Proben
+für Zu- und Abfahrt. Sie verwenden den Szenario-Seed und werden niemals in
+`sumo/routes.rou.xml` oder die Verkehrsnachfrage übernommen. Zusätzlich zum
+nativen Klassenrouting werden bekannte Maß-/Zugangsregeln auf sämtlichen
+Kanten des getesteten Pfads und passenden Quellknoten geprüft. Quellknoten
+werden nur innerhalb 10 m der jeweiligen nativen Kantengeometrie berücksichtigt.
+Bedingte Regeln, Schranken, unbekannte Quellenzuordnung und fehlende
+Fahrzeugeigenschaften bleiben Prüfhinweise. Eine Verletzung verhindert einen
+positiven Profilpfad-Nachweis; alternative Pfade jenseits der begrenzten Suche
+werden damit nicht ausgeschlossen.
+
+`energy/network-access.json` verwendet den Vertrag
+`synthesis-energy-network-access-v1`. Er enthält Quellen-/Netz-/Inventar-/
+Fahrzeughashes, Eingabekonfiguration, Profile, Kandidaten mit Kante/Spur/Position,
+Routing-Proben, Regelbefunde und getrennte Mengen für zugeordnete, gesperrte
+und nicht bestätigte Profilprüfungen. Proben und Routerausgaben bleiben als
+`energy/access-probes.*.xml` erhalten. `mapped-review-required` bedeutet einen
+lokalen gerichteten Routennachweis. Es bescheinigt weder eine physische Einfahrt
+noch globale Erreichbarkeit, Live-Verfügbarkeit, Lkw-Bedienbarkeit oder nutzbare
+Stationskapazität. Ein passender Elektrostecker ist gesondert als
+`connector-match-only` gekennzeichnet. Bei Fehlern bleibt ein `failed`-Bericht;
+die SUMO-Stufe meldet den Fehler nach ihrem bestehenden Statusvertrag.
+
+### Explizite Fahrzeugzuordnungen und fortgeschriebene Referenzbilanz
+
+`VehicleOperationsConfiguration` führt den additiven Vertrag
+`synthesis-vehicle-operations-input-v1` ein. Der bestehende Fahrzeugkatalog v1
+und dessen Einheiten bleiben erhalten. Felder: `enabled`, `reserveFraction`
+(Default 0,1; 0–1) und `bindings` mit `sourceTripKey`/`vehicleId`. Fahrzeug-IDs
+müssen in `vehicleConfiguration.initialVehicles` existieren; eine Fahrt darf
+nur einmal zugeordnet sein. Aktive Zuordnungen benötigen `sumoTraffic` und
+einen zur Verkehrsrolle passenden Fahrzeugtyp. Keine Zuordnung erzeugt einen
+zusätzlichen Weg oder einen neuen Flottenbestand.
+
+Quellschlüssel bleiben unabhängig von der laufenden SUMO-ID:
+
+- Personen: `person:<base64url(personOid)>:<base64url(tripId)>`.
+- Paketverkehr: `parcel:<base64url(tourId)>:<Quellzeilenordinal|return>`.
+- Schwerer Güterverkehr: `freight:<base64url(tripId)>`.
+
+Native Segmente erhalten `synthesis.sourceTripKey` und
+`synthesis.physicalVehicleId` als XML-Parameter; der native Router erhält sie.
+Eine explizite Zuordnung fixiert den Fahrzeugtyp über die gebundenen Fahrten.
+Ungebundene Fahrten behalten ihre bisherige Typwahl. `VehicleContinuity` wird
+pro SUMO-Lauf neu aufgebaut, auch bei Wiederholung/Netz-Feedback.
+
+| Artefakt | Rolle |
+|---|---|
+| `vehicles/operations-input.json` | Verwendete Zuordnungen und Hash des aufgelösten Fahrzeugkatalogs. |
+| `vehicles/trip-identities.json` | Ausgewählte Fahrtsegmente, native IDs, Quellschlüssel, physische IDs und Koordinaten; Grundlage für explizite Zuordnungen. |
+| `vehicles/energy-ledger.json` | Vertrag `synthesis-vehicle-continuity-v1`, Beobachtungen, fortgeschriebene Bilanz je Fahrzeug, Einheiten, Reserve und Prüfhinweise. |
+
+Die Bilanz verwendet den ausdrücklich hinterlegten `kwhPerKm`- bzw.
+`litresPerKm`-Wert und die native `tripinfo.routeLength`. Anfangsenergie stammt
+vom Fahrzeug, danach wird der vorherige Bilanzwert weitergeführt. Fehlende
+Verbrauchswerte, fehlende/unvollständige Fahrten und Teleports führen zu
+unbekannter Folgebilanz, nicht zu Nullverbrauch oder einem neuen vollen Akku.
+Nicht endliche Rechenergebnisse werden ebenfalls unbekannt. Negative Werte
+bleiben als **Bilanzdefizit** sichtbar; sie sind kein physisch negativer Tank.
+Reserveunterschreitungen, zeitliche Überschneidungen und Ortsbrüche über 25 m
+invalidieren die Kette. Ein nicht aufgelöster Anfangsort wird gemeldet;
+`first-assigned-trip-origin` (Alias `first-trip-origin`) erlaubt ausdrücklich
+den Start am Ursprung der ersten zugeordneten Fahrt ohne Gebäudeeinfahrtsmodell.
+
+Dies ist eine Referenzbilanz über native Fahrtsegmente, keine native Batterie-,
+Flotten- oder Dispositionssimulation. Dieselben physischen IDs teilen einen
+externen Zustand; SUMO verwendet weiterhin einzelne native Fahrzeuge je
+Fahrtsegment. `nativeFleetIdentitySimulated=false`, `energyConstrainsTraffic=false`
+und `chargingSimulated=false` bleiben ausdrücklich gesetzt. Weder kWh noch Liter
+werden als Gas-/H₂-Mengen umgedeutet. Lade-/Tankhalte, dynamische Energiegrenzen,
+Beladungsänderungen und Folgeabfahrten bleiben der nächsten Stufe vorbehalten.
+
+Im Studio können die beiden Prüfungen unabhängig aktiviert werden. Eine erste
+Generierung ohne Bindungen liefert die Fahrtschlüssel. Ein JSON-Paket mit
+`vehicleConfiguration` und `vehicleOperations` wird vor Übernahme über
+`POST /api/vehicle-operations/validate` streng geprüft; das Beispiel liegt unter
+`GET /api/vehicle-operations/example`. Gespeichert wird weiterhin über die
+Szenario-API. Veraltete Berichte mit anderen Konfigurationshashes, Region oder
+Bezugsjahr werden ausgeblendet; Szenariowechsel verwirft verspätete Antworten.
+Beim Abschalten, erneuten Start oder übersprungener SUMO-Stufe bleiben keine
+alten Netz-/Fahrzeugbilanzen als aktuelle Ergebnisse stehen. Das Manifest nennt
+angeforderte Berichte mit `not-run-at-manifest-stage`, nicht als bereits ausgeführt.
+
+## Native Fahrzeugketten für den Güterverkehr (2026-10-21)
+
+`vehicleOperations.chainTrips=false` ergänzt die bestehenden expliziten
+Fahrtzuordnungen um einen unabhängigen, abschaltbaren Ausführungsmodus. Er benötigt
+`vehicleOperations.enabled`, SUMO und passende `initialVehicles`; alte Szenarien
+behalten einzelne native Fahrtsegmente. Im Studio stehen Fahrzeugzuordnung und
+Fahrzeugketten getrennt von der Stationsprüfung. Das validierte Lieferwagenbeispiel
+kommt über `GET /api/vehicle-operations/freight-example`. Die vorhandene
+Validierungs-API akzeptiert das zusätzliche boolesche Feld.
+
+`NativeVehicleChains` gruppiert ausschließlich ausgewählte, explizit zugeordnete
+Fahrten nach Fahrzeug-ID und geplanter Abfahrt. Ein Fahrzeugtypwechsel, fehlende
+Route, nicht aufgelöster Startort oder Ortsbruch über 25 m führt mit Bericht zum
+Fehler. Es werden weder zusätzliche Fahrzeuge noch automatische Leerfahrten
+abgeleitet. Der erste Startort liegt auf der zulässigen Straßenkante der ersten
+Fahrt. Jede Folgeetappe beginnt am vorherigen Halt, auch bei einer Rückfahrt.
+Die Zielkante bleibt die ursprünglich geroutete Zielkante; die tatsächliche
+Kantenfolge wird nativ neu geroutet und erneut der vorhandenen Güterprofilprüfung
+zugeführt. Explizite Kettenfahrten verwenden keine vorgeschriebene GraphHopper-
+Kantenfolge; nicht zugeordnete Fahrten behalten den bisherigen Routenpfad.
+
+Ein Fahrzeug erhält eine kollisionsgeprüfte native ID `physical.<base64url(ID)>`.
+`duarouter` routet die gesamte Kette mit geordneten Straßenhalten; diese liegen
+auf einer für die Fahrzeugklasse zulässigen Spur. Der Halt dauert mindestens
+eine Sekunde, bei Zustelltouren mindestens die übernommene Bedienzeit,
+und bis zur geplanten nächsten Abfahrt. Verspätungen werden dadurch nativ
+weitergegeben. `parking=true` modelliert unbegrenztes Parken neben der Straße;
+Gebäudeeinfahrten, Parkkapazitäten, dynamische Ladung und Fahrerdisposition sind
+nicht modelliert. Router und SUMO verwenden für Ketten den Szenario-Seed.
+
+`sumo/routes.rou.xml` enthält weiterhin die logisch getrennten, nun auf die native
+Kette abgestimmten Etappenrouten für Karte und Restriktionsprüfung. Die Simulation
+lädt `sumo/simulation.rou.xml` mit einem Fahrzeug je Kette und den unveränderten
+übrigen Fahrzeugen/Personen. `sumo/native-chains.trips.xml` und
+`sumo/native-chains.rou.xml` bewahren die Routing-Eingaben/-Ergebnisse;
+`sumo/chain-stops.xml` liefert tatsächliche Haltezeiten. Der versionierte Bericht
+`vehicles/native-chains.json` (`synthesis-native-vehicle-chains-v1`) verknüpft
+Quellfahrtschlüssel, logische Anfrage-ID und native Fahrzeug-ID, Zielspur/-position,
+Soll-/Ist-Zeiten, Verspätung, Tagesende und Teleports. Das Manifest referenziert ihn.
+Eigene Kettenartefakte werden auch bei späterer Abwahl vor einem neuen Lauf entfernt.
+
+Die Ausführungsbilanz bewahrt die angeforderten Fahrtsegmente in `vehicles` und
+zählt native Straßenfahrzeuge separat in `nativeVehicles`. Ein am Tagesende noch
+parkendes Fahrzeug darf keine spätere Etappe als gestartet ausweisen. SUMOs
+`vaporized="end"` ist ein Tagesabschluss, kein tatsächlicher Verlust des Fahrzeugs.
+Zusätzliche Bus-Halte gehören nicht zur Kettenauswertung. Mittelwerte der nativen
+Fahrzeuge umfassen ganze Ketten einschließlich Halten und werden entsprechend
+beschriftet. Karte und Bilanz verknüpfen Etappen mit derselben nativen ID.
+
+Die externe Energiebilanz bleibt getrennt: Für native Ketten wird keine
+Etappendistanz aus der gesamten `tripinfo.routeLength` erfunden; Etappenverbrauch
+und fortgeführte Energie bleiben unbekannt. Laden, Tanken und Energiegrenzen
+beeinflussen diese Verkehrsausführung nicht. Deren Ausbau ist zurückgestellt;
+Priorität haben Güternachfrage, Touren und Simulationsintegration.
+
+
+## Gemeinsame Nachfrage vor den Zieladaptern (2026-10-21)
+
+`TrafficDemand` (`synthesis-traffic-demand-v1`) vereinigt Personenwege, normalisierte
+Pakettouren, allgemeine schwere Fahrten und bestätigte Unternehmenstouren vor der
+Zielausführung. Die Logistikstufe erzeugt den verfügbaren Anfangsbestand; nach
+logiTopp und bei Netz-Feedback wird derselbe Vertrag um aktuelle Ergebnisse ergänzt.
+`demand/traffic-demand.json` ist die typisierte Schnittstelle; Bewegungen, Touren,
+Herkunfts-/Verfügbarkeitsbilanz und als ungeroutet gekennzeichnete OD-Verbindungen
+stehen daneben als neutrale Exporte. Der bestehende Personenvertrag bleibt erhalten.
+Keine zusätzliche Pipeline-Stufe und keine Änderung des seriellen Executors.
+
+SUMO liest den gemeinsamen Eingang und übernimmt nur noch seine Tagesauswahl,
+Routen-/Netzregeln und Ausführung. Güter- und Unternehmensnachfrage verlangen kein
+SUMO-Ziel mehr; fehlende Personen-/Paketquellen bleiben ausdrücklich unbekannt.
+Andere Modelladapter können den Vertrag nutzen, unterstützen dadurch aber nicht
+automatisch native individuelle Gütertouren.
+[Verträge und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#30-gemeinsame-nachfrage-vor-den-zieladaptern-2026-10-21).
+
+### Formatübergreifende Quellen für Unternehmenstouren (2026-10-22)
+
+Vor dem bestehenden Tourenentwurf liegt der Vertrag `synthesis-tour-source-v1`:
+Dateiadapter extrahieren Tabellen, Textblöcke und Quellreferenzen; anschließend
+liefert die optionale lokale LLM-Analyse einen kontrollierten Mappingplan oder
+belegte Dokumentzeilen (`synthesis-tour-analysis-v1`). Nur feste Feldzuordnungen,
+Weiterführung leerer Zellen, Spaltenverbindungen und bekannte Datum-/Zeitformate
+sind ausführbar. Dokumentwerte werden aus geprüften Quellzitaten materialisiert.
+Vorschläge und bestätigte Mappings bleiben getrennt. Profile speichern Regeln,
+keine alten Kundendaten; Dokumentprofile verlangen neue Belege. Kontextprüfung,
+Aktivierung und die gemeinsame Verkehrsnachfrage bleiben nachgelagert.
+Details, Grenzen und API: [Güterverkehr, Abschnitt 31](21-gueterverkehr-konzept-und-datenquellen.md#31-formatübergreifender-tourenimport--umgesetzt-2026-10-22).
+
+### Eindeutige ausgewählte Unternehmensplanungen (2026-10-23)
+
+`CompanyTourImportService.loadForGeneration` prüft vor der Batch-Bildung neben
+Revisionen/Hashes und physischen Fahrzeugen auch die fachliche Eindeutigkeit:
+Unternehmenskennung, tatsächliches Simulationsdatum und Quell-Tourkennung dürfen
+für ausgewählte Touren nur einmal vorkommen. `CompanyTourRevisions` verwendet die
+wirklich vorbereiteten Etappen zur Auswahl der relevanten Touren; ausgeschlossene
+Touren bleiben unberücksichtigt. Dieselbe Prüfung läuft vor dem Speichern der
+Aktivierung und schützt damit auch direkt eingereichte Generierungsauswahlen.
+Dateiinhalte, Salts der Quell-IDs und Fahrzeugwechsel verändern diese fachliche
+Identität nicht. [Bedienung und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#32-schutz-vor-mehrfach-ausgewählten-planrevisionen--umgesetzt-2026-10-23).
+
+### Externe Originaltouren und regionale Projektion (2026-10-23)
+
+Der Tourenkontext enthält das opt-in Feld `regionalProjectionConfirmed=false`.
+Bei Freigabe bleiben externe Koordinaten und alle Originaletappen im gemeinsamen
+Nachfragevertrag erhalten; `Prepared.regionalScope` fixiert die dafür bestätigte
+Region. `CompanyTourRegion` erstellt separat die geometrische und zeitliche
+Näherung der regionalen Etappen und schreibt den Projektionsbericht schon vor
+den Zieladaptern. Der SUMO-Adapter konsumiert diese Projektion. Aus- und spätere
+Wiedereinfahrten teilen native Ketten explizit in Gebietsbesuche; Quell- und
+physische Fahrzeugidentität bleiben erhalten, externe Abschnitte werden nicht
+als Netzfahrten erfunden. Regionale und vollständige Tourabschlüsse werden
+getrennt bilanziert. [Vertrag, Bedienung und Näherungsgrenzen](21-gueterverkehr-konzept-und-datenquellen.md#34-touren-mit-externem-start-ende-und-zwischenhalten--erster-adapter-2026-10-23).
+
+
+### Netzbasierte regionale Projektion (2026-10-23)
+
+Das zusätzliche Kontext-Opt-in `networkProjectionRequested=false` verändert den
+zielunabhängigen Nachfragebestand nicht. Vor dem Zielnetz steht die Projektion
+auf `pending-network`. Innerhalb des SUMO-Adapters routet `CompanyTourNetwork`
+die vollständigen Originaletappen mit dem vorhandenen `duarouter`, erzeugt alle
+regionalen Besuche aus den gerichteten Polylinien und legt ihre Straßenfolgen
+für Endpunktzuordnung und native Fahrzeugketten fest. Netzabdeckung und fehlende
+Verbindungen werden vor Simulation abgewiesen. Keine neue Pipeline-Stufe,
+kein eigener Executor, keine zusätzliche externe Laufzeit. Der zusätzliche
+Bericht `company-tours/network-paths.json` enthält den verwendeten Netz-Hash.
+Planzeiten werden nach freien Fahrzeitanteilen gewichtet; externe Ausführung
+bleibt ungemessen. [Vertrag und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#35-netzbasierte-regionale-touren--umgesetzt-2026-10-23-experimentell).
+
+
+### Betriebsantworten im Tourenimport (2026-10-24)
+
+`CompanyTourExecution.Context.depotAddresses` speichert optionale Start-/Endadressen
+je stabiler Tour-ID getrennt von den routbaren Koordinaten. Leere Antworten bleiben
+abwärtskompatibel; vorhandene Antworten gehören zur ausgewählten Revision.
+Die Frontendfunktion `tourContextQuestions` leitet Rückfragen aus dem bearbeiteten
+Kontext ab. Sie benötigt keinen neuen LLM-Endpunkt und ersetzt nicht die bestehende
+serverseitige Freigabeprüfung. [Fachlicher Vertrag](21-gueterverkehr-konzept-und-datenquellen.md#37-fehlende-betriebsangaben-als-rückfragen--umgesetzt-2026-10-24).
+
+
+### Optionale lokale Ortsvorschläge (2026-10-24)
+
+`CompanyTourGeocoder` ergänzt die Importschnittstelle um
+`POST /api/scenarios/{id}/company-tours/{hash}/geocode`. Vorschläge ändern den
+Ausführungskontext nicht. Nur konfigurierte Loopback-HTTP(S)-Endpunkte ohne
+Weiterleitungen sind erlaubt; begrenzte Antwortgröße, Timeout und Batchgröße.
+Der optionale Cache liegt unter `uploads/company-tour-geocoding/`, adressiert über
+SHA-256 aus Endpunkt und Suchtext. Auch leere Antworten werden gecacht; eine
+automatische Aktualisierung ist nicht implementiert. Netzaufrufe erfolgen außerhalb
+der globalen Importsperre. `ImportView` enthält zusätzlich optionale Provider-
+und Vorprüfungsinformationen; Netzabdeckung wird erst im Ausführungspfad geprüft.
+Lokale NRW-Indexvorbereitung und Indexserver sind separate optionale Hilfsprogramme.
+Keine neue Pipeline-Stufe und keine automatische Übernahme von Koordinaten.
+[Fachlicher Vertrag](21-gueterverkehr-konzept-und-datenquellen.md#38-lokale-ortsvorschläge-und-regionaler-modellpilot--umgesetzt-2026-10-24).
+
+
+### Fortsetzbare Geokodierungsanfragen (2026-10-26)
+
+Der optionale Geokodierungsrequest ergänzt `targets` um `refresh=false`.
+Explizites Aktualisieren umgeht für die gewählten Ziele den Dateicache und ersetzt
+Antworten atomar, sobald die neue Anfrage erfolgreich ist; ein Prozessfehler
+verwirft vorhandene Antworten nicht. Gleiche Suchtexte werden auch beim Aktualisieren
+innerhalb eines Pakets dedupliziert. Die UI führt einen sitzungsbezogenen Suchstand
+je Zielkennung und Suchtext. Dadurch blockieren erfolglose Adressen nachfolgende
+Pakete nicht. Kontext-/Importspeicherung übernimmt weiterhin nur ausdrücklich
+gewählte Punkte. Lokale NRW-/OSM-Vorbereitung bleibt außerhalb der Pipeline.
+[Bedienung und Quellenvertrag](21-gueterverkehr-konzept-und-datenquellen.md#39-fortsetzbare-ortssuche-und-ergänzende-lokale-quellen--umgesetzt-2026-10-26).
+
+
+### Kompakte Netzmetadaten für Unternehmenstouren (2026-10-26)
+
+`CompanyTourNetwork` hält Länge und die drei klassenspezifischen Maximalgeschwindigkeiten
+in einem primitiven Datensatz je Kante. Dadurch entfallen getrennte Maps mit
+zusammengesetzten Kante/Klasse-Strings und geboxten Zahlen. Die Ermittlung aus
+zulässigen Fahrstreifen sowie die nachfolgende Zeit- und Positionsberechnung bleiben
+für die validierten Unternehmensklassen unverändert. Keine neue Cache-, Artefakt-
+oder Pipeline-Schnittstelle.

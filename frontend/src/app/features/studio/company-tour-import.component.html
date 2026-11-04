@@ -1,0 +1,335 @@
+<h2>Unternehmenstouren importieren</h2>
+<p class="hint">CSV, TSV, XLSX, JSON, XML, TXT, DOCX oder PDF mit Text, bis 5 MB. Der Import erstellt einen prüfbaren Entwurf.
+  Touren werden beim Hochladen noch nicht zur Simulation hinzugefügt. Nach der Kontextprüfung können sie zusätzlich ausgewählt werden.</p>
+@if (!scenarioId) {
+  <p class="hint">Szenario zuerst speichern.</p>
+}
+<label title="Bestehende Tourenplanung hochladen und als Importentwurf prüfen; unterstützt Tabellen, strukturierte Daten und Textdokumente bis 5 MB; Scans benötigen vorher OCR">Tourenplanung auswählen
+  <input type="file" accept=".csv,.tsv,.xlsx,.json,.xml,.txt,.docx,.pdf" [disabled]="busy || !scenarioId" (change)="upload($event)">
+</label>
+@if (error) { <p class="error" role="alert">{{ error }}</p> }
+@if (busy) { <p role="status">Tourenimport wird geprüft…</p> }
+@if (imports.length > 0) {
+  <label title="Einen bereits gespeicherten Importentwurf dieses Szenarios auswählen">Gespeicherter Import
+    <select [ngModel]="current?.importId ?? ''" [disabled]="busy" (ngModelChange)="selectImport($event)">
+      @for (item of imports; track item.importId) {
+        <option [ngValue]="item.importId">{{ item.importId.slice(0, 12) }} · {{ item.draft.inputRows }} Zeilen{{ item.mappingConfirmed ? ' · Mapping bestätigt' : '' }}</option>
+      }
+    </select>
+  </label>
+}
+@if (current && mapping) {
+  @if (current.source; as source) {
+    <p>Erkanntes Quellformat: {{ source.format.toUpperCase() }}.</p>
+    <div class="actions">
+      <label title="Automatisch Tabellen analysieren oder bei Dokumenten den gesamten extrahierten Text verwenden">Analysegrundlage
+        <select [(ngModel)]="analysisMode" [disabled]="busy">
+          <option value="auto">Tabellen bevorzugen</option>
+          @if (source.blocks.length) { <option value="document">Dokumenttext mit Quellbelegen</option> }
+        </select>
+      </label>
+      <button (click)="analyzeSource()" [disabled]="busy || !current.sourceAnalysisEnabled">Quellstruktur mit lokalem LLM analysieren</button>
+    </div>
+    <p class="hint">Die Quellinhaltsanalyse verarbeitet Originalüberschriften und Beispieldaten bzw. Dokumenttext ausschließlich mit dem konfigurierten lokalen LLM. Der Vorschlag erzeugt keine zusätzlichen Fahrten, bevor Mapping und Kontext bestätigt wurden. Scans/Bilddateien benötigen zuerst OCR.</p>
+    @if (!current.sourceAnalysisEnabled) { <p class="hint">Lokale Quellinhaltsanalyse ist serverseitig deaktiviert. Tabellen können weiterhin manuell zugeordnet werden.</p> }
+    @if (source.blocks.length) {
+      <details><summary>Extrahierten Dokumenttext prüfen ({{ source.blocks.length }} Blöcke)</summary>
+        @for (block of source.blocks; track block.id) { <p><strong>Block {{ block.id }} · {{ block.reference }}</strong></p><pre>{{ block.text }}</pre> }
+      </details>
+    }
+  }
+  <details>
+    <summary>Wiederverwendbare Unternehmensprofile</summary>
+    <button (click)="loadProfiles()" [disabled]="busy">Gespeicherte Profile laden</button>
+    <label title="Bestätigte Spaltenregeln desselben Quellformats wiederverwenden; Dokumentprofile analysieren neue Inhalte erneut">Mappingprofil
+      <select [(ngModel)]="selectedProfile" [disabled]="busy"><option value="">Profil auswählen</option>
+        @for (profile of profiles; track profile.id) { <option [value]="profile.id">{{ profile.name }} · {{ profile.format }}</option> }
+      </select>
+    </label>
+    <button (click)="applyProfile()" [disabled]="busy || !selectedProfile">Profil als Vorschlag anwenden</button>
+    <label title="Bezeichnung für das bestätigte Mapping, beispielsweise Unternehmen und Exportvariante">Neuer Profilname
+      <input type="text" maxlength="100" [(ngModel)]="profileName" [disabled]="busy">
+    </label>
+    <button (click)="saveProfile()" [disabled]="busy || dirty || !current.mappingConfirmed || !profileName.trim()">Bestätigtes Mapping als Profil speichern</button>
+    <p class="hint">Profile gelten für dieses Szenario. Geänderte Tabellenstrukturen werden abgewiesen. Dokumente werden erneut analysiert; alte Kundenwerte oder Zeichenpositionen werden nicht auf neue Dateien übertragen.</p>
+  </details>
+
+  <label title="Nur dieses Tabellenblatt wird in Touren umgewandelt; andere Blätter bleiben im Upload erhalten">Tabellenblatt
+    <select [ngModel]="mapping.tableId" [disabled]="busy" (ngModelChange)="selectTable($event)">
+      @for (item of current.tables; track item.id) {
+        <option [ngValue]="item.id">{{ item.name }} · {{ item.dataRows }} Zeilen nach Kopfzeile</option>
+      }
+    </select>
+  </label>
+  <p class="hint">Es wird ausschließlich das gewählte Blatt verarbeitet. Andere Blätter bleiben im Upload erhalten.</p>
+  <div class="fields">
+    <label title="Zeilennummer der Spaltenüberschriften; nach Änderung Vorschau aktualisieren">Kopfzeile (Zeilennummer)
+      <input type="number" min="1" [(ngModel)]="mapping.headerRow" [disabled]="busy" (ngModelChange)="changed()">
+    </label>
+    <label title="Datumsformat für Textwerte; typisierte Excel-Daten werden als ISO-Datum gelesen">Datum in Textspalten
+      <select [(ngModel)]="mapping.dateFormat" [disabled]="busy" (ngModelChange)="changed()">
+        <option value="yyyyMMdd">20260929</option><option value="dd.MM.yyyy">29.09.2026</option>
+        <option value="yyyy-MM-dd">2026-09-29</option><option value="dd/MM/yyyy">29/09/2026</option>
+      </select>
+    </label>
+    <label title="Zeitzone der geplanten Ankunfts- und Abfahrtszeiten">Zeitzone
+      <select [(ngModel)]="mapping.timezone" [disabled]="busy" (ngModelChange)="changed()">
+        <option value="Europe/Berlin">Europe/Berlin</option><option value="UTC">UTC</option>
+      </select>
+    </label>
+    <label title="Schreibweise der Uhrzeiten in der Quelle; Umwandlung erfolgt nach festen Regeln">Uhrzeitformat
+      <select [(ngModel)]="mapping.timeFormat" [disabled]="busy" (ngModelChange)="changed()">
+        <option value="HH:mm">08:30</option><option value="HH.mm">08.30</option><option value="HHmm">0830</option>
+      </select>
+    </label>
+    <app-mapping-editor [mapping]="mapping" [fields]="fields" [columns]="table?.columns ?? []"
+      [allowComposition]="true" [disabled]="busy" (changed)="changed()" />
+  </div>
+  <label title="Mehrere Auftragszeilen nur bei gleicher Tour, Adresse und geplanten Zeiten zu einem Halt gruppieren; Standzeit einmal zählen">
+    <span><input type="checkbox" [(ngModel)]="mapping.groupStops" [disabled]="busy" (ngModelChange)="changed()">
+      Aufträge derselben Tour an gleicher Adresse mit identischer Ankunft/Abfahrt zu einem Halt zusammenfassen</span>
+  </label>
+  <p class="hint">Uhrzeiten werden gemäß dem ausgewählten Format gelesen. Arbeitswerte bleiben Rohwerte; ihre Einheit wird nicht angenommen.
+    Zusammenfassung und chronologische Haltreihenfolge bitte vor dem Speichern prüfen.</p>
+  <div class="actions">
+    <button [disabled]="busy" (click)="run('preview')">Vorschau aktualisieren</button>
+    <button [disabled]="busy || !current.llmEnabled" (click)="run('suggest')">Lokalen LLM-Vorschlag erstellen</button>
+    <button [disabled]="busy || dirty || current.draft.status === 'invalid' || (evidenceNeedsReview && !sourceReviewed)" (click)="run('confirm')">Mapping bestätigen und speichern</button>
+    <button [disabled]="busy" (click)="remove()">Import entfernen</button>
+  </div>
+  @if (!current.llmEnabled) { <p class="hint">LLM-Vorschläge sind serverseitig deaktiviert. Manuelle Zuordnung ist verfügbar.</p> }
+  @if (dirty) { <p class="hint">Zuordnung geändert. Die folgende Vorschau zeigt noch den vorherigen Stand.</p> }
+  <p>{{ current.draft.mappedRows }} von {{ current.draft.inputRows }} Zeilen zugeordnet,
+    {{ current.draft.rejectedRows }} fehlerhaft, {{ current.draft.blankRows }} leer.
+    {{ current.draft.tours.length }} Tourgruppen und {{ stopCount }} Halte {{ mapping.groupStops ? '(Gruppierung prüfen)' : '' }}.</p>
+  <p class="hint">{{ current.draft.unmappedColumns.length }} Spalten bleiben ohne fachliche Zuordnung im geschützten Entwurf erhalten.</p>
+  <table>
+    <thead><tr><th>Tour</th><th>Liefertag</th><th>Halte</th><th>Auftragszeilen</th></tr></thead>
+    <tbody>
+      @for (tour of current.draft.tours.slice(0, 10); track tour.tourId) {
+        <tr><td>{{ tour.tourId.slice(0, 15) }}</td><td>{{ tour.serviceDate }}</td><td>{{ tour.stops.length }}</td>
+          <td>{{ orderCount(tour.stops) }}</td></tr>
+      }
+    </tbody>
+  </table>
+  <h3>Halte und Aufträge prüfen</h3>
+  @for (tour of current.draft.tours.slice(0, previewLimit); track tour.tourId) {
+    <details>
+      <summary>{{ tour.tourId.slice(0, 15) }} · {{ tour.serviceDate }} · {{ tour.stops.length }} Halte</summary>
+      @for (stop of tour.stops; track stop.sequence) {
+        <p><strong>Halt {{ stop.sequence }}:</strong> {{ stop.location.street }}, {{ stop.location.postalCode }} {{ stop.location.city }}<br>
+          Ankunft {{ stop.plannedArrival }} · Abfahrt {{ stop.plannedDeparture }}<br>
+          Geplante Standzeit {{ stop.plannedDwellSec / 60 }} Minuten · Quellzeilen {{ stop.sourceRows.join(', ') }}</p>
+        <ul>
+          @for (order of stop.orders; track order.sourceRow) {
+            <li>Auftragszeile {{ order.sourceRow }} · {{ order.transactionId }}
+              @if (order.windowStart || order.windowEnd) { · Kundenfenster {{ order.windowStart || '?' }} bis {{ order.windowEnd || '?' }} }
+            </li>
+          }
+        </ul>
+      }
+    </details>
+  }
+  @if (current.draft.tours.length > previewLimit) {
+    <button (click)="previewLimit = previewLimit + 10" [disabled]="busy">Weitere Touren anzeigen</button>
+  }
+  <ul>
+    @for (issue of current.draft.issues.slice(0, 20); track $index) {
+      <li>{{ issueLabel(issue.code) }}{{ issue.sourceRow > 0 ? ' (Zeile ' + issue.sourceRow + ')' : '' }}{{ issue.field ? ' · ' + issue.field : '' }}</li>
+    }
+  </ul>
+  @if (current.draft.issues.length > 20) { <p>Weitere {{ current.draft.issues.length - 20 }} Prüffälle im JSON-Entwurf.</p> }
+  @if (current.analysis; as analysis) {
+    @if (analysis.evidence.length) {
+      <details><summary>Quellbelege der {{ analysis.evidence.length }} extrahierten Zeilen</summary>
+        @for (row of analysis.evidence; track row.row) { <p>Zwischenzeile {{ row.row }}</p><ul>
+          @for (field of row.fields | keyvalue; track field.key) { <li>{{ field.key }}: Block {{ field.value.block }}, Zeichen {{ field.value.start }}–{{ field.value.end }} · {{ sourceBlock(field.value.block).slice(field.value.start,field.value.end) }}</li> }
+        </ul> }
+      </details>
+    }
+    @if (analysis.ignoredBlocks.length) {
+      <details><summary>{{ analysis.ignoredBlocks.length }} ausgelassene Textblöcke prüfen</summary>
+        @for (block of analysis.ignoredBlocks; track block.block) { <p>Block {{ block.block }} · {{ block.reason }}</p><pre>{{ sourceBlock(block.block) }}</pre> }
+      </details>
+    }
+    @if (evidenceNeedsReview) {
+      <label title="Vollständigkeit der extrahierten Touren und bewusst ausgelassene Textblöcke vor Mappingbestätigung fachlich prüfen"><span>
+        <input type="checkbox" [(ngModel)]="sourceReviewed" [disabled]="busy">Quellbelege, alle Tourenzeilen und ausgelassene Inhalte geprüft</span>
+      </label>
+    }
+  }
+  @if (notice) { <p role="status">{{ notice }}</p> }
+  @if (current.mappingConfirmed && !dirty) { <a [href]="exportUrl">Bestätigten Importentwurf als JSON herunterladen</a> }
+  @if (current.mappingConfirmed && !dirty && context) {
+    <h3>Touren für die gemeinsame Nachfrage vervollständigen</h3>
+    <section aria-label="Rückfragen zum Tourenimport">
+      <h4>Was fehlt noch für diese Touren?</h4>
+      @if (contextQuestions.length) {
+        <p class="hint">Bitte die Antworten in den Feldern unten ergänzen. Die Rückfragen aktualisieren sich bei jeder Änderung und funktionieren auch ohne LLM.</p>
+        <ol>@for (question of contextQuestions; track question.id) {
+          <li><strong>{{ question.text }}</strong><p class="hint">{{ question.hint }}</p></li>
+        }</ol>
+      } @else { <p class="hint">Die Rückfragen sind beantwortet. Kontext speichern und prüfen; weitere fachliche oder Netzprobleme werden weiterhin ausgewiesen.</p> }
+    </section>
+    <p class="hint">Fahrzeugkatalog mit expliziten Tourenfahrzeugen laden, 100 % Personennachfrage wählen und das Szenario speichern.
+      Danach Importliste neu laden. Die Übernahme in die gemeinsame Nachfrage benötigt kein SUMO.</p>
+    <button (click)="reload()" [disabled]="busy">Gespeicherte Fahrzeuge und Importliste neu laden</button>
+    <div class="fields">
+      <label title="Eindeutige Unternehmenskennung aus Buchstaben, Ziffern, Bindestrich oder Unterstrich">Unternehmenskennung
+        <input [(ngModel)]="context.companyId" [disabled]="busy" (ngModelChange)="contextChanged()" maxlength="80">
+      </label>
+      <label title="Bezugsdatum der Touren; ein SUMO-Export prüft zusätzlich seinen ausgewählten Wochentag">Bezugsdatum
+        <input type="date" [(ngModel)]="context.simulationDate" [disabled]="busy" (ngModelChange)="contextChanged()">
+      </label>
+      <label title="Kundenfenster nur auswerten oder als Ankunfts-/Bedienfenster prüfen">Bedeutung der Kundenfenster
+        <select [(ngModel)]="context.windowPolicy" [disabled]="busy" (ngModelChange)="contextChanged()">
+          <option value="report-only">Abweichungen nur berichten</option><option value="arrival">Ankunft im Fenster</option>
+          <option value="service">Gesamte Bedienung im Fenster</option>
+        </select>
+      </label>
+    </div>
+    <label title="Eine Abweichung vom ursprünglichen Liefertag ist eine ausdrückliche Szenarioannahme">
+      <span><input type="checkbox" [(ngModel)]="context.dateShiftConfirmed" [disabled]="busy" (ngModelChange)="contextChanged()">Abweichendes Quelldatum bewusst auf das Bezugsdatum verschieben</span>
+    </label>
+    <label title="Experimentell: Externe Originalorte beibehalten. Grenzübergänge wahlweise aus geraden Verbindungen oder gerichteten Straßenrouten bestimmen. Eintrittszeiten bleiben Schätzungen aus Planzeiten.">
+      <span><input type="checkbox" [(ngModel)]="context.regionalProjectionConfirmed" [disabled]="busy" (ngModelChange)="regionalProjectionChanged($event)">Tourorte außerhalb der Region zulassen und regionale Schätzung bestätigen (experimentell)</span>
+    </label>
+    @if(context.regionalProjectionConfirmed){
+      <label title="Das lokale SUMO-Netz muss alle Originalorte abdecken. Die gerichtete Route berücksichtigt die Fahrzeugklasse; fehlende Abdeckung bricht den Lauf mit Bericht ab.">
+        <span><input type="checkbox" [(ngModel)]="context.networkProjectionRequested" [disabled]="busy" (ngModelChange)="contextChanged()">Grenzübergänge auf zulässigen Straßenrouten bestimmen (experimentell)</span>
+      </label>
+      @if(context.networkProjectionRequested){<p class="hint">Originalrouten bestimmen die Ein- und Ausfahrten. Das lokale Netz muss auch externe Tourorte abdecken. Eintrittszeiten werden aus Planzeiten und den freien Fahrzeiten der Straßenabschnitte geschätzt; externe Ausführung bleibt ungemessen. Der Routenbericht zeigt Übergänge und vorgeschriebene regionale Straßenfolgen.</p>}
+      @else{<p class="hint">Die vollständige Tour bleibt in der Nachfrage erhalten. Nur die geschätzten Gebietsabschnitte werden in SUMO ausgeführt; externe Bedienung und Fahrten werden nicht als abgeschlossen gewertet. Aus- und Wiedereinfahrten erzeugen getrennte Gebietsbesuche desselben Fahrzeugs.</p>}
+    }
+
+    @if (current.preflight; as check) {
+      <h4>Gespeicherte Region und Betriebsangaben</h4>
+      @if (check.region; as r) { <p class="hint">Region: {{ r.minLat }}, {{ r.minLon }} bis {{ r.maxLat }}, {{ r.maxLon }}. Gebiet im Szenario ändern, speichern und Importliste neu laden.</p> }
+      <p class="hint">{{ check.locatedPoints }} Orte verortet, davon {{ check.externalPoints }} außerhalb der Region; {{ check.unlocatedPoints }} Ortszuordnungen offen.
+        {{ check.missingVehicles }} Fahrzeugzuordnungen und {{ check.missingDepotTimes }} Depotzeitpaare fehlen. Werte gelten für den gespeicherten Kontext.</p>
+      <p class="hint">Externe Orte bleiben Teil der Originaltour. Die vollständige Netzabdeckung wird im Zielmodell geprüft; ein Regionsrechteck allein belegt keine zulässige Straßenverbindung.</p>
+    }
+    <h4>Adressen lokal verorten</h4>
+    <p class="hint">{{ current.geocoding?.message ?? 'Lokale Ortstabelle oder manuelle Koordinaten verwenden.' }}</p>
+    @if (current.geocoding?.enabled) {
+      <p class="hint">Dienst: {{ current.geocoding?.endpoint }}. Pro Anfrage höchstens {{ current.geocoding?.maxBatch }} noch offene Adressziele.
+        Antworten werden lokal zwischengespeichert. Treffer sind Vorschläge; Gebäudepunkte sind keine geprüften LKW-Zufahrten.</p>
+      <p class="hint">{{ pendingGeocodingTargets.length }} noch nicht geprüfte Adressziele. Auch nach leeren oder mehrdeutigen Antworten wird mit den nächsten Adressen fortgefahren.</p>
+      <button (click)="geocode()" [disabled]="busy || contextDirty || !pendingGeocodingTargets.length">Nächste Adressen lokal suchen</button>
+      <button (click)="restartGeocoding()" [disabled]="busy || contextDirty || !(current.preflight?.pendingAddresses)">Offene Adressen erneut beim lokalen Dienst prüfen</button>
+      @if (contextDirty) { <p class="hint">Adressänderungen zuerst im Kontext speichern und prüfen.</p> }
+    }
+    @if (geocoding; as lookup) {
+      <p class="hint">{{ lookup.answers.length }} Adressziele geprüft; im letzten Paket {{ lookup.cachedQueries }} Antworten aus dem Cache. Depotvorschläge gelten bei Übernahme für dieselbe Adresse aller ausgewählten Touren.</p>
+      <button (click)="applyUniqueGeocoding()" [disabled]="busy">Eindeutige Vorschläge übernehmen</button>
+      @for (answer of lookup.answers; track answer.targetId) {
+        <details><summary>{{ answer.query }} · {{ answer.candidates.length }} Vorschläge</summary>
+          @if (!answer.candidates.length) { <p class="hint">Kein Treffer. Adresse prüfen oder lokalen Datenbestand ergänzen; keine Ersatzkoordinate gesetzt.</p> }
+          @for (candidate of answer.candidates; track $index; let i = $index) {
+            <p>{{ candidate.label }} · {{ candidate.point.lon }}, {{ candidate.point.lat }}</p>
+            <p class="hint">{{ candidate.reference }} · {{ candidate.attribution }}</p>
+            <button (click)="applyGeocoding(answer, i)" [disabled]="busy">Diesen Ortsvorschlag übernehmen</button>
+          }
+        </details>
+      }
+    }
+    <h4>Gemeinsames Start- und Enddepot (optional)</h4>
+    <label title="Eine gemeinsame Adresse für Start und Ende aller ausgewählten Touren. Ohne Koordinaten bleibt die Ortszuordnung offen.">Depotadresse
+      <input type="text" maxlength="500" [(ngModel)]="commonDepotAddress" (ngModelChange)="commonDepotAddressChanged($event)" [disabled]="busy" placeholder="Straße und Hausnummer, Postleitzahl Ort">
+    </label>
+    <p class="hint">Adresse und Koordinaten bewusst auf alle ausgewählten Touren übernehmen. Unterschiedliche Start- und Endadressen können in den Tourdetails ergänzt werden. Neue Adressen benötigen anschließend eine bestätigte Ortszuordnung.</p>
+    <div class="fields">
+      <label title="Längengrad des vom Unternehmen bestätigten Start-/Endortes">Längengrad
+        <input type="number" step="any" [(ngModel)]="commonDepot.lon" [disabled]="busy">
+      </label>
+      <label title="Breitengrad des vom Unternehmen bestätigten Start-/Endortes">Breitengrad
+        <input type="number" step="any" [(ngModel)]="commonDepot.lat" [disabled]="busy">
+      </label>
+    </div>
+    <button (click)="applyDepot()" [disabled]="busy || !canApplyDepot">Als Start- und Rückkehrdepot aller ausgewählten Touren übernehmen</button>
+    <label title="Lokale Adresstabelle mit street;postalCode;city;lon;lat; eindeutige Treffer werden vorgeschlagen, mehrere Treffer bleiben zur Auswahl">Haltorte aus lokaler Adress-/Koordinatentabelle zuordnen
+      <input type="file" accept=".csv,.tsv,.xlsx" (change)="locate($event)" [disabled]="busy">
+    </label>
+    @if (locationNotice) { <p class="hint">{{ locationNotice }}</p> }
+    <p class="hint">Koordinaten werden lokal zugeordnet. Keine automatische Übertragung der Kundenadressen an externe Dienste.
+      Touren bleiben auf einen 24-Stunden-Tag begrenzt. Externe Tourorte benötigen die ausdrückliche Freigabe der regionalen Projektion.</p>
+    @for (tour of context.tours; track tour.tourId) {
+      <details>
+        <summary>Tour {{ tourName(tour.tourId) }} · {{ tour.included ? 'ausgewählt' : 'ausgeschlossen' }}</summary>
+        <label title="Diese Tour ausdrücklich einschließen oder aus dem zusätzlichen Verkehr ausschließen">
+          <span><input type="checkbox" [(ngModel)]="tour.included" [disabled]="busy" (ngModelChange)="contextChanged()">Tour übernehmen</span>
+        </label>
+        @if (tour.included) {
+          <label title="Physisches Fahrzeug aus der gespeicherten Szenario-Fahrzeugkonfiguration; keine automatische Flottenannahme">Fahrzeug
+            <select [(ngModel)]="tour.vehicleId" [disabled]="busy" (ngModelChange)="contextChanged()">
+              <option value="">Bitte auswählen</option>
+              @for (vehicle of current.vehicles ?? []; track vehicle.vehicleId) {
+                <option [ngValue]="vehicle.vehicleId">{{ vehicle.vehicleId }} · {{ vehicle.vehicleClass }}</option>
+              }
+            </select>
+          </label>
+          <div class="fields">
+            <label title="Gespeicherte Startadresse; Adressänderungen setzen die bisherige Position zurück">Adresse Startdepot
+              <input type="text" maxlength="500" [(ngModel)]="context.depotAddresses![tour.tourId].start" [disabled]="busy" (ngModelChange)="depotAddressChanged(tour, 'start')">
+            </label>
+            <label title="Gespeicherte Endadresse; Start und Ende dürfen verschieden sein">Adresse Enddepot
+              <input type="text" maxlength="500" [(ngModel)]="context.depotAddresses![tour.tourId].end" [disabled]="busy" (ngModelChange)="depotAddressChanged(tour, 'end')">
+            </label>
+            <label title="Geplante Abfahrt am festgelegten Startort am ausgewählten Tag">Tourbeginn
+              <input type="time" step="1" [(ngModel)]="tour.startTime" [disabled]="busy" (ngModelChange)="contextChanged()">
+            </label>
+            <label title="Geplante Ankunft am festgelegten Endort innerhalb desselben Tages">Tourende
+              <input type="time" step="1" [(ngModel)]="tour.returnTime" [disabled]="busy" (ngModelChange)="contextChanged()">
+            </label>
+            <label title="Längengrad des Startdepots">Startdepot Längengrad<input type="number" step="any" [(ngModel)]="tour.start.lon" [disabled]="busy" (ngModelChange)="setPoint(tour.start)"></label>
+            <label title="Breitengrad des Startdepots">Startdepot Breitengrad<input type="number" step="any" [(ngModel)]="tour.start.lat" [disabled]="busy" (ngModelChange)="setPoint(tour.start)"></label>
+            <label title="Längengrad des ausdrücklich festgelegten Endortes">Ende Längengrad<input type="number" step="any" [(ngModel)]="tour.end.lon" [disabled]="busy" (ngModelChange)="setPoint(tour.end)"></label>
+            <label title="Breitengrad des ausdrücklich festgelegten Endortes">Ende Breitengrad<input type="number" step="any" [(ngModel)]="tour.end.lat" [disabled]="busy" (ngModelChange)="setPoint(tour.end)"></label>
+          </div>
+          @for (stopId of tour.stopOrder; track stopId; let i = $index) {
+            @if (stopFor(tour.tourId, stopId); as stop) {
+              <p><strong>Halt {{ i + 1 }}</strong>: {{ stop.location.street }}, {{ stop.location.postalCode }} {{ stop.location.city }}<br>
+                {{ stop.plannedArrival }} bis {{ stop.plannedDeparture }} · {{ stop.plannedDwellSec / 60 }} Minuten</p>
+              <button (click)="moveStop(tour, i, -1)" [disabled]="busy || i === 0">Halt nach oben</button>
+              <button (click)="moveStop(tour, i, 1)" [disabled]="busy || i === tour.stopOrder.length - 1">Halt nach unten</button>
+              @if ((locationCandidates[stopId] ?? []).length > 1) {
+                <label title="Mehrere lokale Adresstreffer; einen fachlich passenden Punkt wählen">Koordinatenkandidat
+                  <select [disabled]="busy" (change)="chooseLocation(stopId, $any($event.target).value)">
+                    <option value="-1">Bitte auswählen</option>
+                    @for (candidate of locationCandidates[stopId]; track $index) { <option [value]="$index">{{ candidate.lon }}, {{ candidate.lat }}</option> }
+                  </select>
+                </label>
+              }
+              <div class="fields">
+                <label title="Längengrad des bestätigten Halts; Netzzuordnung folgt bei der Generierung">Längengrad
+                  <input type="number" step="any" [(ngModel)]="context.locations[stopId].lon" [disabled]="busy" (ngModelChange)="setPoint(context.locations[stopId])">
+                </label>
+                <label title="Breitengrad des bestätigten Halts; keine automatische Einfahrtsannahme">Breitengrad
+                  <input type="number" step="any" [(ngModel)]="context.locations[stopId].lat" [disabled]="busy" (ngModelChange)="setPoint(context.locations[stopId])">
+                </label>
+              </div>
+              <p class="hint">Herkunft: {{ context.locations[stopId].provenance }}</p>
+            }
+          }
+        }
+      </details>
+    }
+    <label title="Haltreihenfolge und Planzeiten aller ausgewählten Touren fachlich bestätigen"><span>
+      <input type="checkbox" [(ngModel)]="context.sequenceConfirmed" [disabled]="busy" (ngModelChange)="contextChanged()">Haltreihenfolge und Planzeiten geprüft</span></label>
+    <label title="Bedeutung der Kundenfenster und gewählte Behandlung von Abweichungen bestätigen"><span>
+      <input type="checkbox" [(ngModel)]="context.windowsConfirmed" [disabled]="busy" (ngModelChange)="contextChanged()">Fensterregel und bekannte Abweichungen geprüft</span></label>
+    <label title="Zuordnung aller benötigten Halt- und Depotkoordinaten fachlich bestätigen"><span>
+      <input type="checkbox" [(ngModel)]="context.locationsConfirmed" [disabled]="busy" (ngModelChange)="contextChanged()">Haltorte und Depots geprüft</span></label>
+    <div class="actions">
+      <button (click)="saveContext()" [disabled]="busy">Kontext speichern und prüfen</button>
+      <button (click)="activate(true)" [disabled]="busy || contextDirty || !current.execution?.ready">Zur Nachfrage hinzufügen</button>
+      @if (current.active) { <button (click)="activate(false)" [disabled]="busy">Aus Nachfrageauswahl entfernen</button> }
+    </div>
+    @if (contextDirty) { <p class="hint">Kontext geändert; erneut speichern und prüfen. Bei aktiven Touren ist die Generierung bis zum Speichern oder Verwerfen der Änderungen gesperrt.</p> }
+    @if (current.active) { <p role="status">Für den nächsten Lauf zusätzlich ausgewählt. Die gemeinsame Nachfrage wird unabhängig von SUMO exportiert. Netz- und Ausführungsprüfungen gehören zum jeweiligen Zielmodell.</p> }
+    @if (current.execution; as execution) {
+      <p>{{ execution.selectedTours }} Touren ausgewählt · {{ execution.legs }} zusätzliche Fahrtetappen einschließlich Abschlussfahrten.</p>
+      <ul>@for (problem of execution.problems; track $index) { <li>{{ problem.message }}{{ problem.tourId ? ' · ' + tourName(problem.tourId) : '' }}</li> }</ul>
+    }
+  }
+}

@@ -3797,3 +3797,2107 @@ festgelegt. Die Nachprüfung erkennt jede verlorene oder veränderte Zuordnung.
 Gebietsabdeckung, Fallbackquote, Rechenkosten und getrennte unbelastete/belastete
 Läufe sind nächste Abnahmen. Aus der technischen Kette folgt weder eine
 kalibrierte Reisezeitmatrix noch eine Netzzeit-basierte logiTopp-Tourplanung.
+
+
+## Schwere LKW: OSM-Sperrübertragung (2026-10-12) — ursprünglicher Nachweis korrigiert
+
+**Befund:** Native `netconvert`-Versuche mit SUMO 1.27.1 lassen bei `hgv=no`
+`truck`/`trailer` auf den Lanes der Testkante 20 zunächst zu, auch mit
+`--osm.lane-access`. Das Fixture vom 10.10.2026 konnte durch zusammengeführte
+Start-/Zielkanten einen Umweg erzeugen, ohne die Sperrwirkung unabhängig nachzuweisen.
+Die damalige Formulierung als Nachweis für die OSM-HGV-Sperre war deshalb zu weitgehend.
+
+**Konsequenz:** Unbedingte und richtungsbezogene HGV-Sperren werden jetzt vor Routing
+explizit übertragen. `SumoFreightIntegrationTest` fordert sowohl die PKW-Nutzung der
+Abkürzung als auch deren Ausschluss für schwere Fahrzeuge. Ein Unit-Test prüft die
+richtungsbezogene Ausnahme und das Ausweisen nicht unterstützter bedingter Regeln.
+Die generierten Netzkanten und ihre Berechtigungen sind als GeoJSON prüfbar.
+Details und verbliebene Grenzen: [Güterverkehrskonzept, Abschnitt 9](21-gueterverkehr-konzept-und-datenquellen.md#9-gerichtete-zugänge-und-erster-kba-datenadapter-2026-10-12).
+
+
+## Güterverkehr: reale Maut-OD-Routingprobe (2026-10-13)
+
+**Befund:** Zwei gerichtete Dortmund/Unna-Mautbeziehungen lassen sich mit expliziten
+Zugangs-/Klassen-/Tagesannahmen über die produktiven Gütergenerator-/Kantenprüfungen
+und die native SUMO-Kette ausführen: 359 erzeugte und abgeschlossene Güterfahrten,
+keine Verluste oder Teleports. Zwei PKW sind ausschließlich synthetische Kontrollen.
+Ein voller regionaler Mischverkehrslauf ist damit nicht belegt.
+
+**Evidenz:** `.runtime/freight-routing-pilot-2026-10-13/pilot-report.json` mit Hashes,
+`tripinfo.xml`, `statistics.xml`, ausgeführte Routen und unabhängiger Review.
+17 Offline-Aufbereitungstests erfolgreich. Der SGV-Teilvergleich an der vorläufig
+geometrisch zugeordneten automatischen Station Berghofen ist von den gewählten
+Zugängen abhängig; zwei weitere Stations-IDs widersprechen sich in Monatsbericht
+und amtlicher Geodatensatz-Klassifikation. Randkanten und Teleports werden im
+Vergleich zurückgewiesen, damit geplante Kanten keine falsche Passage beweisen.
+
+**Konsequenz:** Routingmechanik bestätigt; regionale Realitäts-/Kalibrierbehauptung
+weiter offen. Erst weitere begründete Zugänge, vollständige OD/Transit und
+Stations-/Zeitkompatibilität absichern. Quellen, Grenzfälle und reproduzierbare
+Befehle: [Güterverkehrskonzept, Abschnitt 13](21-gueterverkehr-konzept-und-datenquellen.md#13-native-maut-od-routingprobe-dortmundunna-2026-10-13).
+
+## Regionale Güter-OD: Zugangssensitivität (2026-10-13)
+
+**Befund:** 28 veröffentlichte Gemeinde-OD mit neun geografisch geprüften Mautknoten
+lassen sich zu 2.336 Tagesfahrten aufteilen und nativ abschließen. Drei ausschließlich
+in Dortmunder Knotengewichten verschiedene Varianten halten Mengen und Netz konstant;
+Berghofen-Passagen variieren von 331 bis 704. Null Teleports/Restfahrzeuge in allen
+Varianten; noch keine volle Personen-/Paket-/Hintergrundbelastung.
+
+**Negativbefund:** Die vorher festgelegte Wirkung „Nordost-Betonung erhöht, Süd-Betonung
+senkt um 20–150 Passagen/Tag“ ist in Richtung und Größenordnung widerlegt. Statt die
+Vorhersage umzuschreiben, wird sie in `sensitivity-plan.json` samt Beobachtung erhalten.
+
+**Evidenz:** `.runtime/freight-regional-pilot-2026-10-13/` mit Rohquellenhashes,
+Mengenbilanz, nativen Tripinfos/Statistiken, drei Vergleichsberichten und unabhängiger
+Reproduktion; 25 Offline-Aufbereitungstests grün. **Konsequenz:** keine Kalibrierung
+gegen angenommene Einzelzugänge. Zugangsmarginalen/joint-OD fehlen; Transit und
+innergemeindliche Verteilung bleiben unvollständig. Ausführliche Quellen und Verfahren:
+[Güterverkehrskonzept, Abschnitt 14](21-gueterverkehr-konzept-und-datenquellen.md#14-mehrere-mautknotenzugänge-und-regionale-od-erweiterung-2026-10-13).
+
+## Overture-Standortkoordinaten (2026-10-15) — exakte Geometrie erforderlich
+
+**Befund:** Die Bounding-Box eines Overture-Places-Punkts kann wegen Rundung eine
+positive Breite/Höhe haben. Im geprüften Release `2026-09-23.1` lieferte die Auswahl
+über ausschließlich innerhalb der Regionsgrenzen liegende Bbox-Minimalwerte drei
+Datensätze weniger als ein Bbox-Schnittfilter mit nachfolgendem exaktem Point-Test.
+Eine positive Bbox-Ausdehnung belegt deshalb keine ungültige Point-Geometrie.
+
+**Konsequenz:** Der Forschungsadapter liest die echten WKB-Point-Koordinaten.
+Die Bounding-Box dient nur zum Vorfiltern. Tests sichern Punktkoordinaten gegen
+nach außen gerundete Bbox-Werte und beide WKB-Bytefolgen ab. Kein Einfluss auf die
+bisherige Produktivpipeline. Quellen, Datenbilanz und lokale Belege:
+[Güterverkehrskonzept, Abschnitt 17](21-gueterverkehr-konzept-und-datenquellen.md#17-regionale-betriebsstandorte-aus-overture-2026-10-15-offline-pilot).
+
+## Regionale LKW-Routingprobe (2026-10-15) — native Route ist keine Zugangsfreigabe
+
+**Befund:** Der native Import eines vollständigen lokalen Straßenausschnitts berechnet
+alle angeforderten Klassenrouten, übernimmt aber nicht automatisch sämtliche
+OSM-HGV-Verbote und Restriktionsrelationen. Der Offline-Prüfer erkennt ausdrücklich
+verbotene Wege und weitere ungeklärte Quellregeln auf ansonsten erfolgreichen Routen.
+
+**Konsequenz:** Eindeutige gerichtete HGV-Verbote zusätzlich übertragen und die
+Originalprobe als Negativbeleg erhalten. Fahrzeugmaße, Zeitpunkt, Fahrtzweck und reale
+Zufahrten benötigen eigene Nachweise. Die Trennung entspricht der zusätzlichen
+`OsmFreightPermissions`-Übertragung im Produktivpfad; es wurde kein Produktivcode
+geändert. Quellen, Mengen und Wiederholungsprobe stehen im
+[Güterverkehrskonzept, Abschnitt 18](21-gueterverkehr-konzept-und-datenquellen.md#18-lokaler-osm-abgleich-und-lkw-kantenprüfung-2026-10-15-offline-pilot).
+
+## LKW-Profile statt reiner Verkehrsklasse (2026-10-15) — numerische Regeln werden wirksam
+
+**Befund:** Eine erfolgreiche native `truck`-/`trailer`-Route belegt keine Einhaltung
+expliziter Breiten-, Höhen- und Massegrenzen. Der vorhandene Fahrzeugkatalog liefert
+versionsgebundene Maße; eine Betriebsannahme ergänzt die tatsächliche Beladungsmasse.
+Eine native 30-t-Vergleichsstrecke trennt 26-t-Solo-LKW und 40-t-Sattelzug erst nach
+profilabhängiger Sperrübertragung zuverlässig.
+
+**Konsequenz:** Tatsächliche und zulässige Masse getrennt prüfen, Achslasten nicht
+erfinden, nicht mehr berechenbare Proben erhalten. Numerische Prüfung und globale
+Zufahrtsfreigabe bleiben getrennt. Detaillierte regionale Vorher-/Nachher-Bilanz:
+[Güterverkehrskonzept, Abschnitt 19](21-gueterverkehr-konzept-und-datenquellen.md#19-fahrzeugprofile-und-numerische-restriktionen-2026-10-15-offline-pilot).
+
+## Gerichtete LKW-Rückfahrten und Abbiegeübertragung (2026-10-15)
+
+**Befund:** Die zwei nicht routbaren Rückfahrten der Profilprobe starten auf einer
+Kante, deren einziger Nachfolger auf 3,8 m Höhe begrenzt ist. Die angenommenen Profile
+sind 4 m hoch. Die ausdrücklich alternative Gegenrichtung derselben Straße routet
+beide Klassen; feste OD-Endpunkte werden deshalb nicht automatisch umgeschrieben.
+Der Abgleich aller 1.798 Quellrelationen für zwei Klassen zeigt eine native
+Abbiegeabweichung in beiden Klassen und zahlreiche ungeklärte Zuordnungen. Keine
+der 54 vorhandenen Routen nutzt die abweichende Verbindung.
+
+**Konsequenz:** Standortanbindung bleibt gemäß Modellvorgabe auf Straßen beschränkt.
+Der neue optionale Produktivprüfer erhält Fehl-/Unklarheitsbilanzen; er erteilt keine
+pauschale Zugangsfreigabe. Der bisherige Overpass-Netzquery ließ Abbiegerelationen aus
+und wurde ergänzt. Referenzsatz, Quelle, Rückfahrtdiagnose und Einschränkungen:
+[Güterverkehrskonzept, Abschnitt 20](21-gueterverkehr-konzept-und-datenquellen.md#20-rückfahrten-abbiegerelationen-und-optionale-profilprüfung-2026-10-15).
+
+## Regionales SUMO-Netz: DOM-Speichergrenze und terminaler Fehlerstatus (2026-10-16)
+
+**Befund:** Der regionale Szenariogesamttest mit 2.336 schweren Modellfahrten erreicht
+die native logiTopp-Simulation und eine erfolgreiche vollständige Netzkonvertierung.
+Das resultierende 1,28-GB-Netz sprengt beim DOM-Zugriff in `OsmFreightPermissions.apply`
+das vorab begrenzte 6-GiB-Heapbudget. Eine direkte Kopienprobe reproduziert den
+Stacktrace. Profilübertragung, Güterrouting und SUMO-Ausführung werden nicht erreicht;
+Routen-/Abschluss-/Teleportwerte sind unbekannt, nicht null.
+
+**Konsequenz:** Die regionale Abnahme ist negativ; vor der nächsten Wiederholung sind
+die großen XML-Verbraucher stromweise auszulegen. Zugleich war `Error` an den
+Job-/Stufengrenzen nicht behandelt: Der Executor fing ihn im unbeobachteten Future,
+der Status blieb RUNNING. Die Korrektur veröffentlicht FAILED und wirft weiter.
+Ein injizierter Ressourcenfehler samt erneut startbarem Job und die wirkliche
+Regionalwiederholung prüfen diesen Statusvertrag. Eingaben, Wochen-/Tageshorizont,
+Modellpopulation, Budget, Ausgaben und Einschränkungen:
+[Güterverkehrskonzept, Abschnitt 21](21-gueterverkehr-konzept-und-datenquellen.md#21-regionaler-gesamttest-mit-profilprüfung-2026-10-16-negativer-abnahmebefund).
+
+## Regionales SUMO-Netz: Streaming und freigelegte Netzlücken (2026-10-16)
+
+Die unveränderte Wiederholung aus Abschnitt 21 des Güterverkehrskonzepts verarbeitet
+nach dem Streaming-Umbau das 1,28-GB-Netz innerhalb desselben 6-GiB-Heapbudgets.
+HGV-/Profilübertragung, Straßenbindung aller 2.336 Güterfahrten und Netzexport sind
+belegt. Die vollständige Backend-Suite ist grün: 275 Fälle, vier explizite Skips.
+Der neue Speicherbeweis verarbeitet 150.000 Kanten in einer eigenen 64-MiB-JVM.
+
+**Abnahme weiterhin negativ:** Das Personenrouting bricht bei einem Ziel mit rund
+3,08 km Abstand zur nächsten vorhandenen Kante ab. Die isolierte Güterroutingprobe
+liefert 2.197 Routen, 139 fehlen zu derselben am Netzrand abgeschnittenen A45-
+Zufahrtskette. Die echte SUMO-Ausführung wird nicht erreicht; Abschluss-/Teleport-
+werte bleiben unbekannt. Diese Fehler werden durch die behobene Speichergrenze
+sichtbar. Der unveränderte Fall bleibt archiviert; eine größere räumliche
+Quellabdeckung wird separat geprüft.
+[Umsetzung, Messmethode und Ergebnis](21-gueterverkehr-konzept-und-datenquellen.md#22-streaming-der-regionalen-sumo-netze-2026-10-16).
+
+## Regionaler Güterpfad mit erweitertem Straßenabzug (2026-10-16)
+
+Ein separat eingefrorener NRW-Netzfall desselben Quellenstichtags mit größerem
+Straßenpuffer beseitigt die zuvor nachgewiesenen Abdeckungs-/Zufahrtslücken.
+Modellregion, Population, Güter-Trips, Profile, Seed und Java-Heap bleiben gleich;
+alle 125 Güter-Kantenbindungen sind unverändert. Das 2,62-GB-Netz durchläuft die
+native Kette: 2.336 Güterfahrten geroutet, eingesetzt und beendet, keine fehlende,
+unfertige oder teleportierte schwere Fahrt und keine expliziten Quellverstöße.
+Alle Güterrouten bleiben wegen ungeklärter Regeln `review-required`.
+
+**Begrenzte Abnahme:** Der schwere Güterpfad ist bestanden; die Gesamtnachfrage bleibt
+unvollständig. 217 Pkw-/Radfahrten, 91 Paket-Legs und acht Fußrouten fehlen im
+Routing. Ein weiterer Fußweg ist am Tagesende offen; ein Fahrrad teleportiert.
+Quell-/Codehashes und Abschluss-IDs sind separat geprüft. Der unveränderte frühere
+Negativfall bleibt erhalten.
+[Bilanz, Zählereinheiten und nächste Arbeit](21-gueterverkehr-konzept-und-datenquellen.md#231-native-ausführung-und-getrennte-abnahme).
+
+
+## Regionales Routing: gerichtete Zuordnung und ehrliche Nachfragebilanz (2026-10-17)
+
+Im eingefrorenen Regionalfall fehlen ursprünglich 316 Anfragen. Die alleinige
+Freigabe erlaubten Sackgassenwendens reduziert dies auf 18. Ein nativer OSM-Test
+belegt zugleich, dass ein explizites Wendeverbot erhalten bleibt. Die Vorprüfung
+findet 145 Endpunkte außerhalb der nächsten klassenberechtigten Straße innerhalb
+300 m. Ein vollständiger Kantenvergleich bestätigt alle 51 eindeutigen
+Klassen-/Koordinatenpaare (nächste Straßenmittellinie etwa 304–814 m).
+
+Die zusätzliche gerichtete Prüfung korrigiert elf Richtungen desselben Segments,
+findet sechs Anfragen ohne möglichen Fahrzeugpfad und bewahrt alle 125 HGV-
+Kantenbindungen. Eine positive Vorprüfung ersetzt keine native Routenzertifizierung;
+Fußwege bleiben nativ geprüft. Der produktive vollständige Modus stoppt bei den
+nicht zuordenbaren Endpunkten mit Bericht. Der ursprüngliche Regionalfall und der
+negative Zwischenversuch der reinen Klassenabbildung bleiben erhalten.
+
+Die Fahrzeugstatistik zählt eingesetzte Fahrräder mit (im historischen Regionalfall
+3.316 statt 3.255). Anfrage-/Routing-/Start-/Abschlusszahlen, Tagesrand und Teleports
+werden ID-genau getrennt bilanziert. Unvollständige Router-/Teleportlogs erzeugen
+keine erfundenen Nullverluste. Lokale Archiv-Regressionen und echte kleine native
+Netztests werden als unterschiedliche Evidenz behandelt.
+[Versuchsaufbau und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#24-routingverluste-vorprüfung-und-vollständige-ausführungsbilanz-2026-10-17).
+
+**Verifiziert (2026-10-17):** Vollständige Backend-Suite: 286 Fälle, keine Fehler,
+vier ausgewiesene Skips. Frontend: 62 Tests grün und Produktionsbuild erfolgreich.
+Die 17 gezielten Routing-/Bilanz-/Güterfälle laufen ohne Skip; darunter echte
+native Sackgassen-/Wendeverbotsfälle und die lokale regionale Archiv-Regression.
+
+
+**Produktiver Regionalnachweis (2026-10-17):** Die unveränderte vollständige
+`GenerationService`-Kette mit eingefrorenen Produktionsklassen prüft alle 3.839
+Anfragen und stoppt die SUMO-Stufe mit FAILED: 145 nicht zuordenbare Endpunkte und
+sechs Anfragen ohne gerichteten Pfad, elf korrigierte Richtungen. Es werden keine
+Routen-/Statistik-/Abschlussdateien oder Success-Summary vorgetäuscht. Der Job
+bleibt gemäß bestehender Optionalstufen-Politik DONE; der konkrete SUMO-Fehler ist
+sichtbar. Eingaben, Quell-/Klassenhashes und Ergebnis liegen separat unter
+`.runtime/traffic-routing-regional-2026-10-17-final/verified-result.json`.
+
+
+**Frische native Güterkontrolle (2026-10-17):** Auf dem abschließenden Netz werden
+alle 2.336 schweren Fahrten mit ihren neuen nativen Routen separat bis zum
+Tagesende ausgeführt: 2.336 angefordert, geroutet, gestartet und beendet; keine
+fehlende/unfertige Fahrt, null Teleports. Die Kontrolle isoliert den Güterpfad und
+ersetzt keine Gesamtabnahme oder Zugangsfreigabe. Kommando, Abschluss-IDs,
+Tripinfo, Statistik und Ladehinweise sind unter
+`.runtime/traffic-routing-2026-10-16/heavy-control/` archiviert.
+
+
+## Ortsherkunft der SUMO-Restfälle und Pkw-Initialorte (2026-10-19)
+
+**Befund:** Die 145 nicht zuordenbaren Endpunkte des eingefrorenen Regionalfalls
+vom 17.10. lassen sich ohne Distanztoleranz zu den tatsächlich exportierten
+logiTopp-Eingaben zurückverfolgen:
+
+| Quellort | Endpunktvorkommen | Bedeutung |
+|---|---:|---|
+| `legacy/demand-data/household.csv` | 92 | synthetisch erzeugte Wohnorte |
+| `legacy/demand-data/opportunity.csv` | 35 | synthetisch erzeugte Aktivitätsorte |
+| `legacy/demand-data/fixedDestination.csv` | 18 | feste Ziele; zugleich Koordinaten der Zonenanker |
+
+Die zusätzlichen 18 Treffer in `zones.csv` sind dieselben Fixziel-Vorkommen,
+keine weiteren Endpunkte. Unter Einschluss beider Enden der sechs getrennten
+Verbindungsfehler werden 157 Endpunkte geprüft, alle mit mindestens einer
+Quellreferenz. Mehrere Datensätze können dieselbe Koordinate teilen. Ein exakter
+Koordinatentreffer belegt den Quellort, aber ohne semantischen Wegschlüssel keine
+eindeutige Verursachung durch eine bestimmte Quellzeile.
+
+**Separater Ortsfehler:** `PopulationGenerator` und `LegacyExportGenerator` setzen
+Pkw bislang an den Zonenmittelpunkt, während der zugehörige Haushaltswohnort bereits
+vorliegt. Im unveränderten Regionalexport betrifft dies **515 von 515 Pkw**;
+Abstand zum Wohnort im Mittel **1.981 m**, maximal **3.599 m** (lokale metrische
+Näherung). Der korrigierte Export verwendet den jeweiligen Haushaltswohnort.
+Fahrzeugzahl, Besitzer, Nummerierung und sämtliche anderen Legacy-Pkw-Attribute
+sind im regionalen Vergleich identisch. Die Population behält externe Zonen-IDs,
+der Legacy-Pkw-Export weiterhin `matrixColumn`/OID. Ein fehlender Wohnhaushalt oder
+eine unbekannte Wohnzone führt zum Fehler und nicht zum stillen Fahrzeugverlust.
+
+**Evidenz:** `.runtime/traffic-origins-2026-10-19/replay-summary.json` und
+`network-coverage.json` entstehen durch erneutes Einlesen der eingefrorenen
+Regionalartefakte mit dem aktuellen Java-Code. `car.csv` ist der getrennt neu
+exportierte Pkw-Vertrag. Der archivierte Lauf wird nicht verändert. Die Herkunft
+wird zusätzlich im produktiven Netzbericht ausgewiesen: Datei, Zeile, Datensatz,
+Zonen-ID-Raum, Quellenhash und mehrere mögliche Referenzen. Beispiele sind je
+Koordinate begrenzt; Gesamtzahlen bleiben vollständig. Fehlende/fehlerhafte
+CSV-Quellen werden sichtbar als fehlend/unlesbar ausgewiesen; fehlerhafte Dateien
+hinterlassen keine scheinbar verifizierten Teiltreffer.
+
+**Konsequenz:** Dies ist eine Ortskorrektur samt Quellendiagnose, keine neue
+regionale Routingabnahme. Die 145 bekannten Endpunkte werden hierdurch nicht
+nachträglich als behoben ausgegeben. Für ihre Behebung ist die Erzeugung
+synthetischer Wohn-/Aktivitätsorte fachlich weiterzuentwickeln; eine Vergrößerung
+des 300-m-Radius oder ein Wechsel auf weiter entfernte Straßen ersetzt diesen
+Schritt nicht. Keine separaten Betriebseinfahrten, keine neuen Zufallsziehungen.
+
+
+**Verifiziert (2026-10-19):** 290 Backend-Testfälle, keine Fehler, vier ausgewiesene
+Skips; 19 gezielte Fälle ohne Skip. Neue Regressionen prüfen Haushalts-/Pkw-Orts-
+konsistenz einschließlich Zonen-ID-Räumen und fehlendem Haushalt sowie exakte,
+mehrdeutige und fehlgeschlagene Quellzuordnungen. Die regionale Artefaktwiederholung
+prüft Fahrzeugzahl und alle übrigen Pkw-Attribute unverändert; sie führt keine
+neue Verkehrssimulation aus. Befehlslogs und Quell-/Eingabehashes:
+`.runtime/traffic-origins-2026-10-19/verification.json`.
+
+
+## Straßennahe Orte: negativer Erstlauf und native Netzberechtigungen (2026-10-19)
+
+**Befund:** Die vorab notierte Prognose, alle 145 nicht zuordenbaren Endpunkte
+zu beseitigen, wurde im ersten Regionalversuch widerlegt. Die unveränderte
+`GenerationService`-Kette mit aktivierter Option prüft 3.839 Anfragen und meldet
+**20 nicht zuordenbare Endpunkte sowie acht gerichtete Verbindungsfehler**.
+Die SUMO-Stufe endet mit FAILED vor Routing und Ausführung. Demografie,
+Zielzonen und alle nicht räumlichen Populationsattribute bleiben gleich;
+515 Wohnorte, 2.002 reguläre Fixziele, 3.003 logiTopp-Fixziele und 500 Opportunities
+liegen nach tatsächlicher CSV-Serialisierung in ihren ursprünglichen LAEA-Zonen.
+
+**Mechanismus:** Alle 20 Endpunktfehler sind Pkw-Enden auf sieben `service`-Wegen.
+GraphHopper lässt dort Pkw zu, die native SUMO-1.28-Standardtypmap erlaubt nur
+`delivery pedestrian bicycle`. Die acht getrennten Verbindungen betreffen zwei
+`residential`-/`living_street`-Straßen, deren Verbindungen zum Hauptnetz über
+`service`-Straßen führen. Der tatsächliche OSM-Quellgraph und die nativen
+Lane-Berechtigungen bestätigen diesen Unterschied. Die öffentliche Zugänglichkeit
+und GraphHopper-Teilnetzprüfung allein reichen daher nicht aus.
+
+**Evidenz:** Der negative Erstlauf bleibt unverändert unter
+`.runtime/road-locations-regional-2026-10-19/` mit Quell-/Klassenhashes,
+`generation-job.json`, Ortsbericht und `sumo/network-coverage.json` erhalten.
+Der native Kleinfall unter `.runtime/road-locations-2026-10-19/service-spike/`
+reproduziert zwei Wohnstraßennetze, die nur durch eine öffentliche
+`service`-Straße verbunden sind: die Wohnstraßen erlauben Pkw, der Verbinder nicht.
+
+**Konsequenz:** Version 2 schließt `service` als Ortskandidaten aus und prüft die
+nach Straßenlänge größte schwache Pkw-Komponente ohne `service`-/`track`-Verbinder.
+Reguläre Straßenbrücken bleiben als Verbinder erhalten. Ein neuer Regionalversuch
+hat unveränderte Quellen, Nachfrage und Seed 42; die neue Vorab-Prognose bleibt
+null Endpunkt- und null Verbindungsfehler. Die 300-m-Zuordnung und alle nativen
+Berechtigungen bleiben unverändert. Das schwache Teilnetz ist ein konservativer
+Ortsfilter, kein gerichtetes Erreichbarkeitszertifikat. Isolierte lokale Netze
+können dadurch aus dem Ortsmodell ausgeschlossen werden.
+
+
+**Zweiter Negativbefund (Version 2):** Die Regionalvorprüfung erreicht alle
+**3.839 Anfragen mit null nicht zuordenbaren Endpunkten und null nachweislich
+fehlenden Verbindungen**. Alle 2.336 schweren Anfragen behalten unveränderte IDs,
+Koordinaten und 125 verschiedene Klassen-/Koordinaten-/Kantenbindungen.
+Das tatsächliche native Routing verwirft dennoch drei Fußwege (`p31`, `p38`,
+`p75`; letzterer ist der Rückweg der ersten Verbindung): **3.836 von 3.839
+Anfragen geroutet**, keine Koordinatenwarnung bei behaltenen Routen. Die
+SUMO-Stufe endet vor Ausführung mit FAILED. Damit ist die native Vollabnahme
+weiterhin nicht erreicht. Archiv: `.runtime/road-locations-regional-2026-10-19-v2/`.
+
+Die vier gewählten Quellwege dieser Fußverbindungen sind `secondary` mit
+`maxspeed=70` beziehungsweise `100`. GraphHopper erlaubt Fußverkehr, SUMOs
+`--sidewalks.guess` ergänzt Gehwege nur bis 13,89 m/s. Auf den tatsächlichen
+nativen Fahrstreifen fehlt dort die Fußfreigabe; die nächstgelegenen begehbaren
+Kanten bilden keine vollständige Verbindung. Der native Kleinfall
+`.runtime/road-locations-2026-10-19/sidewalk-spike/` bestätigt: `secondary` ohne
+Tempoangabe oder mit 70/100 km/h erlaubt keinen Fußverkehr, mit 50 km/h dagegen
+schon. Die Standardgeschwindigkeit von `secondary` ist in dieser Typmap höher
+als die Gehwegschwelle.
+
+**Korrektur in Version 3:** Gemeinsame Ortskandidaten benötigen explizit numerisch
+höchstens 50 km/h in beiden Richtungen oder einen langsamen nativen Default
+(`residential`, `living_street`, `unclassified`). Unbekannte Geschwindigkeitsformate
+werden konservativ verworfen. Schnelle Pkw-Verbinder bleiben erhalten. Der
+Schritt verschiebt synthetische Orte innerhalb ihrer Zone; er ändert keine native
+Berechtigung und schaltet keine Gehwegprüfung aus. Die neue Vorab-Prognose
+verlangt zusätzlich null native Routingverluste und null Koordinatenwarnungen
+bei behaltenen Routen. Tagesende-Fälle und Teleports werden getrennt bilanziert.
+
+
+**Widerlegungsversuch und Parserkorrektur:** Die zweite Session findet einen
+zusätzlichen Randfall: Java akzeptiert `50d` und Leerzeichen als Zahl, der native
+Importer verwirft diese Tempoangaben und verwendet den schnellen Straßendefault.
+Der korrigierte Parser prüft deshalb den unveränderten Originalstring auf eine
+einfache ASCII-Dezimalzahl. Unit- und native Regressionen sichern die Abweichung
+ab; die erneute Gegenprüfung findet keine Umgehung. Unbekannte Einheiten,
+Exponenten und Länder-/Zonenformate bleiben konservativ ausgeschlossen.
+
+Der letzte Parserguard wurde nach Einfrieren des Version-3-Regionallaufs ergänzt.
+Ein vollständiger Vergleich beider isoliert geladener Produktionsklassifikatoren
+über **423.263 tatsächliche OSM-Wege** findet **null Kandidaten- und null
+Verbinderunterschiede**; beide wählen 72.140 Kandidatenwege. Alle anderen 99
+Produktionsquellen sind unverändert. Quellen-/Klassenhashes und GraphHopper-
+Abhängigkeit stehen in
+`.runtime/road-locations-regional-2026-10-19-v3/final-policy-equivalence.json`.
+Dies belegt die Äquivalenz der Ortsauswahl für diese Eingabe, ist ausdrücklich
+kein erneut ausgeführter vollständiger Lauf des letzten Binärstands.
+
+
+**Dritter Negativbefund (Version 3):** Zulässige begehbare Endpunktstraßen genügen
+noch nicht. Der native Lauf routet **3.833 von 3.839 Anfragen**; sechs Fußwege
+(`p31`, `p52`, `p58`, `p75`, `p100`, `p196`) fehlen, ohne Koordinatenwarnungen bei
+behaltenen Routen. Die SUMO-Stufe bleibt vor Ausführung auf FAILED. Der Lauf und
+der damalige Parser-Äquivalenznachweis bleiben unter
+`.runtime/road-locations-regional-2026-10-19-v3/` erhalten.
+
+Der zusätzliche Mechanismus sind **begehbare Inseln hinter schnelleren
+Pkw-Verbindern**. Auch deren begehbare Standortstraßen liegen in der Pkw-
+Hauptkomponente. Der native Gegenfall unter
+`.runtime/road-locations-2026-10-19/walk-island-spike/` verbindet zwei Wohnstraßen-
+netze mit `secondary, maxspeed=70`: Pkw geroutet, Fußweg verworfen. Der neue
+gepaarte native Test bestätigt den Verlust vor der Ortskorrektur und erfolgreiche
+Pkw-, Rad- und Fußabschlüsse danach.
+
+**Version 4:** Kandidaten müssen zusätzlich zur Pkw-Komponente in der größten
+schwachen Fußkomponente liegen. Sie verbindet begehbare Straßen innerhalb der
+nativen Tempogrenze und öffentliche Fußwege; `service`/`track` können Fußverbinder
+sein, bleiben aber als gemeinsame Standorte ausgeschlossen. Beide Klassen nutzen
+ihre GraphHopper-Zugangsflags. Straßenbrücken bleiben bei klassenkompatiblen
+Bedingungen als Verbinder erhalten. Der Ortsbericht weist beide Filter aus.
+Der neue Vorab-Lauf verlangt erneut null Endpunkt-/Verbindungsfehler, null native
+Routingverluste und null Koordinatenwarnungen bei behaltenen Routen.
+
+**Grenze:** Beide schwachen Hauptkomponenten werden unabhängig global nach Länge
+gewählt. Ihre Schnittmenge kann leer sein, obwohl lokal Straßen nutzbar wären;
+die Ortswahl scheitert dann ausdrücklich. Gehseiten, Querungen, Radzugänge,
+Barrieren und Abbiegebeziehungen bleiben native Prüfgegenstände. Die erneute
+Widerlegungsprüfung findet keinen materiellen Codefehler, benennt diese
+konservativen Fehlfilter aber ausdrücklich. Es gibt keine neue Pipeline-Stufe,
+keine native Freigabenerweiterung und keine Änderung des 300-m-Radius.
+
+
+### Abschluss Version 4: Routing und Mengenerhalt bestätigt (2026-10-19)
+
+Der vollständige `GenerationService`-Lauf mit eingefrorenem Version-4-Code
+endet mit DONE ohne fehlgeschlagene Stufe. Alle 100 Produktionsquellen stimmen
+weiterhin mit dem eingefrorenen Stand überein. Unverändert: Quell-OSM (SHA-256
+`0a08658bb86eb0aa2f209189f60c639d98745d0b4d3d9fff407f53782b2dc163`),
+Seed 42, 54 Zonen, 1.001 synthetische Personen und die Tag-0-Auswahl ohne Trip-Cap.
+
+| Stand | Nicht zuordenbare Endpunkte | Nachgewiesene getrennte Verbindungen | Native geroutete SUMO-Anfragen |
+|---|---:|---:|---:|
+| Referenz 17.10. | 145 | 6 | vor Routing abgebrochen |
+| Ortswahl Version 1 | 20 | 8 | vor Routing abgebrochen |
+| Version 2: Pkw-Hauptkomponente | 0 | 0 | 3.836 / 3.839 |
+| Version 3: begehbare Standortstraßen | 0 | 0 | 3.833 / 3.839 |
+| Version 4: zusätzliche Fuß-Hauptkomponente | **0** | **0** | **3.839 / 3.839** |
+
+**Routing:** Null verlorene Anfragen und null Koordinatenwarnungen bei behaltenen
+Routen. Alle 3.839 exportierten Anfragen sind über IDs zwischen Netzvorprüfung,
+Routen- und Ausführungsbericht abgeglichen. Der Radius bleibt 300 m. Die 2.336
+schweren Anfragen behalten ihre IDs, Koordinaten und 125 verschiedene native
+Klassen-/Koordinaten-/Kantenbindungen; `freight-trips.xml` ist bytegleich zur
+Referenz. Alle sechs zuvor verlorenen Fußverbindungen erhalten durch den
+Fußkomponentenfilter mindestens einen korrigierten Endpunkt in derselben Zone.
+
+**Erhaltene Modelldaten:** Personen- und Aktivitäten-Dateien, Güterfahrten und
+Zonen sind bytegleich zur Referenz. Haushalts-/Pkw-Zahl, sämtliche nicht räumlichen
+Attribute sowie Zielzonen bleiben erhalten. Alle 515 Pkw stehen am eigenen
+Haushaltswohnort. Tatsächlich serialisierte 515 Wohnorte, 2.002 reguläre Fixziele,
+3.003 logiTopp-Fixziele und 500 Opportunities liegen in ihren ursprünglichen
+LAEA-Zonen. Die Quellenprüfung bestätigt alle 953 gewählten OSM-Wege ohne
+Kandidatenregel-Verletzung. Der Fußfilter verwirft zusätzlich 825 Kanten nach
+dem Pkw-Filter; alle 54 Zonen haben weiterhin Kandidaten.
+
+**Ausführung bleibt `review-required`:** Alle 3.624 Fahrzeuge wurden gestartet
+und beendet, darunter sämtliche 2.336 schweren Fahrzeuge. Alle 215 Fußgänger
+starteten; 214 beendeten ihren Weg, einer war am festen Tagesende noch unterwegs.
+Es gibt keine ungerouteten, nicht gestarteten oder verworfenen Anfragen. Zwei
+Teleports betreffen ein Fahrrad (`v166`) und einen Pkw (`v185`); keine schwere
+Güterfahrt hat einen Teleport. Die Fahrzeugabschlüsse sind deshalb keine
+Behauptung einer vollständig teleportfreien mikroskopischen Ausführung.
+
+Beide Teleports entstehen nach langem Warten (`yield`) auf `57383418#1_1` vor
+Knoten `13959855585`, der als `rail_signal` auf einer gemeinsam genutzten
+`highway.secondary|railway.tram`-Straße importiert ist. Das ist ein konkreter
+Prüfort, kein bereits bewiesener Signalfehler. Native Signal-, Freigabe- und
+Teleport-Einstellungen wurden nicht verändert. Der Fußweg `p214` startet um
+23:49 Uhr und benötigt mindestens 2.201,1 m begehbare Kanten; bei seiner nativen
+Maximalgeschwindigkeit von 1,30 m/s sind bis Mitternacht höchstens 858 m möglich.
+Er kann den festen Tagesabschluss daher nicht erreichen; native Wartezeit und
+Zeitverlust sind null. Dieser Tagesende-Fall wird separat ausgewiesen.
+
+**Evidenz:** `.runtime/road-locations-regional-2026-10-19-v4/verified-result.json`,
+`execution-review.json`, `population-comparison.json`, `location-verification.json`,
+`selected-source-ways.json`, `previous-foot-loss-origin-changes.json`,
+`counter-review.json` und die nativen Artefakte desselben Laufs. Das Studio zeigt
+neben Mengen, Teleports und Tagesende-Fällen den Status der Ausführungsprüfung
+explizit an. Die Implementierung bleibt opt-in (`roadLocatedActivities=false`);
+belegt sind Routing/Mengenerhalt dieser Region und dieses Seeds, keine reale
+Adresszuordnung, vollständige Gebietsnachfrage oder allgemeine native
+Querungs-/Zugangsfreigabe. Die Signalstelle bleibt als separater Prüfpunkt offen.
+
+## Gemeinsame Tram-/Straßen-Signale: nativer Gegenversuch und Importkorrektur (2026-10-20)
+
+**Befund:** Die zwei Teleports des Version-4-Laufs lassen sich in einem nativen
+Kleinfall mit geteilter Straßen-/Tramkante und importiertem `rail_signal`
+reproduzieren. Fahrrad und Pkw warten jeweils bis zum Yield-Teleport. Im
+vollständigen `SumoRunner`-Pfad beendet reine Straßennachfrage nach der
+Importkorrektur beide Fahrten ohne Teleport; ein zusätzlicher Fußweg bleibt
+vollständig. Ein opaker ÖV-Provider erhält die Signalsteuerung und reproduziert
+den negativen Kontrollfall. Das ist ein mechanischer Nachweis unter SUMO 1.28,
+keine Behauptung über einen bestimmten upstream behobenen Fehler.
+
+**Verworfene Ansätze:** Leere `--osm.railsignals`-Regeln entfernen zusätzlich
+Signal-Teilkanten und ändern Kantenkennungen; globales Verwerfen ohne Erhalt
+kombiniert erfasster Straßenampeln verliert deren Steuerung. Die Korrektur
+verwendet deshalb `--railway.signals.discard` zusammen mit gezieltem `--tls.set`
+für duale Straßen-/Bahnsignalquellen, ausschließlich ohne mögliche Schienennachfrage.
+Ein echter beschrankter Bahnübergang bleibt nativ `rail_crossing`; gewöhnliche
+Straßenampeln und die Teilkanten `11#0`, `11#1` bleiben im Kontrollnetz erhalten.
+
+**Erster regionaler Gegenbefund:** Der erste neue Regionallauf bricht vor dem
+Nachfrage-Routing an der Signalprüfung ab. Zwei Quellenknoten sind nativ
+`priority`, weil `--tls.guess-signals` ihre Ampelwirkung an einen nachgelagerten
+Kreuzungscluster überträgt. Die Prüfung darf deren Wirkung nicht allein am
+Quellen-Knotentyp beurteilen. Version 2 protokolliert deshalb direkte kurze
+Zufahrtskanten zu tatsächlich als `traffic_light` importierten Zielknoten;
+alle ausgehenden Zufahrten eines akzeptierten Quellenknotens müssen innerhalb
+von 25 m in einer solchen Ampel enden. Weiter entfernte oder unkontrollierte
+Ziele bleiben Fehler. Eine fehlende Quellen-ID bleibt gesondert prüfpflichtig.
+Der Erstlauf ist als negativer Nachweis unter
+`.runtime/rail-signal-regional-2026-10-20/` erhalten; er belegt keine ausgeführten
+Fahrten. Prognose und Vergleichsregeln für den Folgeversuch stehen vorab in
+`.runtime/rail-signal-regional-2026-10-20-v2/preregister.json`.
+
+**Widerlegung:** Die separate Prüfung weist nach, dass native XML-Includes eine
+auf ausgewählte ÖV-Records beschränkte Typprüfung umgehen können. Der Guard
+prüft nun jedes Element aller drei ÖV-Zusatzdateien; auch verschachtelte Includes,
+Typverteilungen und verschobene Typdefinitionen werden abgewiesen. Ein
+`roadOnly`-Provider mit tatsächlichen Schienen-/unbekannten Typen scheitert vor
+Routing und Simulation. Kontrollfälle stehen in `RoadSignalPolicyTest` und
+`RoadSignalIntegrationTest`; die bestehende native Abbiegeverbotsprüfung bleibt
+unverändert grün. Mechanik- und Gegenversuchsartefakte:
+`.runtime/rail-signal-2026-10-20/`.
+
+### Regionaler Folgeversuch: zwei Teleports beseitigt (2026-10-20)
+
+Der unveränderte regionale Nachfragefall mit Seed 42, 54 Zonen und 1.001 Personen
+wurde mit eingefrorenem korrigiertem Signalimport erneut nativ ausgeführt.
+
+| Bilanz | Version 4 vor Signalfix | Mit Signalfix |
+|---|---:|---:|
+| Native geroutete Anfragen | 3.839 / 3.839 | 3.839 / 3.839 |
+| Fahrzeuge gestartet / beendet | 3.624 / 3.624 | 3.624 / 3.624 |
+| Teleports | 2 (Rad/Pkw) | **0** |
+| Schwere Güterfahrten beendet | 2.336 | 2.336 |
+| Fußwege gestartet / beendet | 215 / 214 | 215 / 214 |
+| Nicht geroutet / nicht gestartet / vaporisiert | 0 / 0 / 0 | 0 / 0 / 0 |
+
+Alle Anfragen bestehen die 300-m-Netzvorprüfung ohne Endpunkt- oder
+Verbindungsfehler; auch das native Routing meldet keine Verluste oder
+Koordinatenwarnungen bei behaltenen Routen. Es gibt keinen Güter-Teleport und
+kein am Tagesende offenes Fahrzeug. Der Ausführungsstatus bleibt wegen des
+bekannten Fußwegs `p214` am festen Tagesende `review-required`; das ist kein
+Routingverlust und keine pauschale Vollständigkeitsfreigabe.
+
+**Netzvergleich:** Alle 1.197.429 äußeren Kanten behalten IDs, Start-/Endknoten,
+Typen und vollständige Fahrspurdaten einschließlich Geometrie und Berechtigungen.
+Alle 3.391 vorher vorhandenen Straßenampelknoten behalten ihren Typ. Die 63
+nativen Bahnsignale werden für diesen reinen Straßenlauf entfernt; danach gibt
+es 3.402 Straßenampelknoten und kein `rail_signal`. Im klassenbeschnittenen
+Regionalnetz existierte bereits vorher kein `rail_crossing`; dessen Erhalt wird
+am eigenständigen echten Bahnübergangs-Kontrollnetz geprüft.
+
+Von den 13 dual erfassten Quellenknoten bleiben zehn unmittelbar Straßenampeln;
+zwei steuern nativ den folgenden Ampelcluster über 8,24 bzw. 8,35 m lange
+Zufahrten. Die verbleibende Quellen-ID `5084349658` ist sowohl im alten als auch
+im neuen Netz abwesend. Sie bleibt im Quellenbericht sichtbar prüfpflichtig;
+der Fix hat keinen bisher vorhandenen nativen Ampelknoten entfernt. Eine
+allgemeine Vollständigkeit des importierten Signalbestands wird nicht behauptet.
+
+**Erhaltene Eingaben:** 15 verglichene Personen-/Aktivitäten-/Haushalts-/Pkw-/
+Zonen-/Güter-CSV-Dateien sind bytegleich zum Version-4-Lauf. Der gesamte
+Ortsbericht ist nach JSON-Einlesen wertgleich; lediglich die Reihenfolge von
+Objektschlüsseln unterscheidet sich. Alle 515 Pkw bleiben am eigenen Wohnort;
+die 125 verschiedenen schweren Klassen-/Koordinaten-/Kantenbindungen und
+`freight-trips.xml` bleiben unverändert. Quellenhash, Seed, Mengen, Freigaben,
+Teleportoptionen und Tagesgrenze werden nicht geändert.
+
+**Verifiziert:** Backend-Suite 305 Fälle, null Fehler, vier ausgewiesene Skips;
+sechs gezielte Signal-/Abbiegefälle ohne Skip. Frontend-Code ist gegenüber dem
+bereits geprüften Stand unverändert. Alle 101 Produktionsquellen sowie 366
+Klassen-/Ressourcendateien stimmen mit dem eingefrorenen Lauf überein. Archiv:
+`.runtime/rail-signal-regional-2026-10-20-v2/` mit `verified-result.json`,
+`network-comparison.json`, `execution-review.json`,
+`v4-input-artifacts-comparison.json` und `quality-gates.json`. Die Ortswahl bleibt
+opt-in; dies ist ein technischer Nachweis für einen regionalen Seed, keine
+Kalibrierung oder Vollerfassung realen Personen-/Güterverkehrs.
+
+## Öffentlicher Stationsbestand: Registerdetails und Kartenprüfung (2026-10-20)
+
+**Befund:** Der bisherige BNetzA-Basisbestand enthält Ladeeinrichtungen und
+Ladepunktzahlen, aber keine getrennten Anschlussdetails. Der zusätzliche
+Normalisierer `scripts/prepare-energy-charging.py` verwendet genau denselben
+Originalsnapshot vom 01.09.2026. Der Originalhash ist
+`cdd8e38f1fa7e8512bd97caa8cf77e9f875436be1f8fe3fe1f2bd9789a504c5b`.
+Er akzeptiert nur Einrichtungen der bereits geprüften Basisreferenz; die schon
+dort entfernte ungültige Auslandskoordinate wird nicht wieder eingeführt.
+Damit bleiben **116.422 Einrichtungen / 209.096 Ladepunkte** erhalten statt
+116.423 / 209.098 vor der damaligen Koordinatenbereinigung.
+
+Anschlüsse werden je ursprünglichem Ladepunktslot erhalten; alternative Stecker
+werden nicht zu zusätzlichen Ladepunkten. Bei **110 Ladepunkten** stimmt die Zahl
+der veröffentlichten Steckertypen nicht mit der Zahl der Leistungsangaben überein.
+Deren Leistungszuordnung bleibt unbekannt; der Rohwert wird erhalten. Die
+normalisierten Detaildaten besitzen SHA-256
+`b3832c49eae29596ca97e644689e56bca078d2fad444bfc5199edc01144bab68`.
+Einrichtungsleistung beweist keine gemeinsame Leistungsgrenze und wird keinem
+Stecker ersatzweise zugewiesen.
+
+**Evidenz:** Die vollständige Pipeline wurde über die isolierte REST-Anwendung
+mit eingefrorenen Produktionsklassen ausgeführt (Seed 42, Vorlagenverhalten,
+100 vorgegebene/101 haushaltsbedingt erzeugte Personen, 25 Rasterzonen,
+Simulation und Live-OSM aus). Im Rechteck 7,43–7,49° O / 51,49–51,53° N liefert
+der reale Registerstand **359 Einrichtungen / 487 Ladepunkte**, Job `DONE`,
+keine Quellenfehler. Die Karte zeigt den Bestand samt Attribution; das Popup
+„Parkhaus Westentor“ weist zwei Ladepunkte mit je einem Typ-2-Anschluss und
+22 kW aus.
+Dies ist ein räumlicher Ausschnitt des gespeicherten Registerstands, keine
+aktuelle Vollerfassung Dortmunds und kein Nachweis ausgeführter Ladevorgänge.
+
+Ein getrenntes, im Namen und in den Stationen ausdrücklich als **TESTDATEN**
+gekennzeichnetes OSM-Szenario prüft echten Multipart-Upload → gespeicherte Quelle
+→ vollständige Pipeline → Karte. Vier Eingangsobjekte ergeben drei Meldungen:
+eine öffentliche CNG/LNG/LPG-Station, eine H₂-Fläche mit ungeklärtem Zugang und
+eine Kundenladestation. Die private Station ist ausgeschlossen. Im Browser
+zeigt der Standardfilter genau einen Marker; nach ausdrücklichem Zuschalten
+sind es drei, zwei davon visuell abgeschwächt. Das H₂-Popup zeigt 350/700 bar,
+ungeklärten Zugang, repräsentativen Mittelpunkt und ungeprüfte Fahrzeugeignung.
+Damit ist die Mechanik geprüft, kein realer regionaler Gas-/H₂-Bestand.
+
+**Negativer Quellenbefund:** Die zusätzliche Live-Overpass-Abfrage scheiterte
+an HTTP 406 bei der Hauptinstanz bzw. einer 55-s-Zeitüberschreitung beim
+GET-Versuch an einer Spiegelinstanz. Eine erfolgreiche aktuelle Gas-/H₂-Abfrage
+wird daher nicht behauptet. Netzwerk-/Mirror-Verhalten wird mit lokalem
+HTTP-Server geprüft; Quellenfehler führen in der Pipeline zu `FAILED` mit
+Qualitätsbericht, nie zu einer erfolgreichen behaupteten Nullversorgung.
+
+**Verifiziert:** `EnergyInfrastructureTest` prüft Objektarten, Zugang,
+Druckstufen, getrennte Stecker-/Ladepunktzahlen, echte BNetzA-Details,
+Dublettenmarkierung ohne Mengenaddition, bytegleiche Wiederholung und
+Regionswechsel. `EnergyInfrastructurePipelineTest` prüft die komplette
+Offline-Pipeline und bytegleiche Personen-/Aktivitätendateien beim Abschalten;
+`EnergyInfrastructureControllerTest` schützt gültige Eingaben vor fehlerhaftem
+Ersatz und verweigert Upload/Refresh während aktiver Jobs.
+`EnergyOverpassTest` prüft Abfrageschema und erfolgreichen Spiegelendpunkt.
+Zusammen sechs gezielte Fälle ohne Skip. Backend-Suite: **311 Fälle, null
+Fehler, vier Skips** (zwei regionale MobileCity-Livequellen und die explizit
+freizugebenden actiTopp-/PT-Integrationstests). Frontend: **67 Tests grün**,
+Produktionsbuild ohne Warnung; Quelltext-Injektion, verspätete Antworten,
+Szenario-/Gebiets-/Jahres-/Quellenwechsel und fehlende Bestände sind abgedeckt.
+
+Kommandos: `mvn -o -Daether.syncContext.named.factory=noop -f backend/pom.xml test`
+mit dem vorhandenen SUMO-`PROJ_DATA`; `cd frontend && npm test` sowie
+`npm run build`. Belege unter `.runtime/energy-infrastructure-2026-10-20/`:
+`implementation/*-tests.log`, `implementation/backend-full.log`,
+`implementation/frontend-build.log`, `e2e/source-freeze.json`,
+`e2e/inventory-verification.json`, `e2e/fixture-verification.json` und
+Karten-Screenshots.
+
+**Konsequenz:** Stationsbestand und Datenqualität sind nutzbar. Eine Freigabe
+von Straßenzufahrten, HGV-/Stecker-Kompatibilität, Lade-/Tankstopps oder
+fortgeschriebenen Energiezuständen folgt daraus nicht. H2-Stations-API und
+MobileCity-Ableitung aus dem gemeinsamen Stationsvertrag bleiben weitere
+Integrationsschritte; MobileCity verwendet weiterhin denselben geprüften
+Registerbasisbestand ohne OSM-Kapazitätsaddition.
+
+## Stationszufahrt und Fahrzeugkontinuität: native Abnahme (2026-10-20)
+
+**Befund:** Ein räumlicher Stationspunkt genügt weder als gerichteter
+Zufahrtsnachweis noch als Grundlage für fortlaufende Energiezustände. Die bisherige
+SUMO-Typwahl gilt je Fahrtsegment; dieselbe Typbezeichnung ist keine physische
+Fahrzeugidentität. Deshalb wurden eine getrennte Netzprüfung und eine ausdrücklich
+zugeordnete Referenzbilanz ergänzt, beide standardmäßig aus.
+
+**Vorab-Spike:** Ein minimales natives Netz weist Fahrspur-/Positionsparameter
+für Zu-/Abfahrt sowie den Erhalt von `synthesis.physicalVehicleId` durch
+`duarouter` nach. Alle vier Probe-/Fahrtfahrzeuge werden nativ beendet. Eine
+externe Bilanz mit ausdrücklich angenommenen 0,2 kWh/km setzt den Endwert der
+ersten Fahrt exakt als Anfangswert der zweiten fort. Belege:
+`.runtime/energy-access-continuity-2026-10-20/spike/verified.json`, native Eingaben
+und Logs. Quellenvertrag: [SUMO Fahrzeug-/Fahrtparameter](https://sumo.dlr.de/docs/Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.html),
+[TripInfo mit tatsächlicher Abfahrt/Ankunft und RouteLength](https://sumo.dlr.de/docs/Simulation/Output/TripInfo.html).
+
+**Native Integrationsprüfung:** `EnergyOperationsIntegrationTest` läuft durch
+Netzimport → gesonderte Stations-Routing-Proben → unveränderte Anzahl der
+Verkehrsfahrten → natives Routing → Simulation → Zustandsbilanz. Stationsseitige
+Höhenbegrenzung verhindert positive Profilzuordnungen. Zusätzlich bleibt eine
+native Klassenroute über eine benachbarte Straße mit `maxheight=1 m` zunächst
+auffindbar; die Quellenprüfung verwirft sie für zu hohe Profile. Damit ist
+nachgewiesen, dass Klassenrouting allein diese Maßfreigabe nicht ersetzt.
+Beim Wiederholen bleiben die fachlichen Ledger-Inhalte gleich. Native XML-Kommentare
+enthalten Erstellungszeiten; deren Datei-Hashes bleiben korrekt je Lauf erhalten
+und werden ausdrücklich aus dem fachlichen Gleichheitsvergleich ausgenommen.
+Abschalten entfernt alte Netz- und Zustandsberichte.
+
+**Vollständiger Pipeline-Kleinfall:** Isolierter Datenordner, eingefrorene
+Produktionsklassen, Seed 42, Vorlagenverhalten, sechs Zonen, Live-Dienste und
+logiTopp-Ausführung aus. Zwei ausdrücklich vorbereitete Legacy-Testfahrten
+werden durch den regulären Demand-Adapter und die SUMO-Stufe verarbeitet.
+Dies ist keine gemessene oder neu von logiTopp berechnete Verkehrsnachfrage.
+Job und SUMO-Stufe sind `DONE`.
+
+| Bilanz | Gemessen |
+|---|---:|
+| Native Verkehrssegmente angefordert / geroutet / gestartet / beendet | 2 / 2 / 2 / 2 |
+| Explizite physische IDs in der externen Bilanz | 1 |
+| Zugeordnete / nicht zugeordnete Segmente | 2 / 0 |
+| Teleports / unvollständige Verkehrsfahrten | 0 / 0 |
+| Getrennte Stations-Routing-Proben | 30 |
+| Native Proben mit Route / nach Quellen-Profilprüfung ohne bekannte Verletzung | 30 / 20 |
+| Stationsmeldungen × Fahrzeugprofile | 2 × 5 = 10 |
+| Zugeordnete / gesperrte / nicht bestätigte Profilprüfungen | 5 / 5 / 0 |
+| Fahrzeugbilanz bei 0,2 kWh/km | 30 → 29,913788 → 29,827572 kWh |
+| Energie-/Identitäts-/Zeit-/Orts-Prüfhinweise im Kleinfall | 0 |
+
+Die zweite Teststation besitzt eine 1-m-Höhenbegrenzung; alle fünf geprüften
+Profile überschreiten sie. Die erste Station liefert lokale gerichtete
+Routennachweise, weiterhin mit ungeprüfter physischer Einfahrt. Die 30 Proben
+stehen ausschließlich in `energy/access-probes.*.xml`; `sumo/routes.rou.xml`
+enthält weiterhin nur `v0` und `v1`. In der UI stehen die zehn **Profilprüfungen**
+getrennt von zwei Stationsmeldungen und von zwei Verkehrssegmenten. Der
+Fahrzeugwert wird als Referenzbilanz gerundet angezeigt, nicht als gemessener
+Batteriestand. Screenshot und Daten unter
+`.runtime/energy-access-continuity-2026-10-20/e2e/`.
+
+**Gegenfälle:** `VehicleContinuityTest` prüft fortgeführte Werte ohne Reset,
+negative Bilanz als offen ausgewiesenes Defizit, unbekannten Verbrauch,
+unvollständige Vorgänger, zeitliche Überlappung, Ortsbruch und Zahlenüberlauf.
+Ein eigener Diesel-Fall verifiziert Liter statt kWh (10 → 9,9 → 9,7 L).
+`EnergyAccessRulesTest` schützt Maße, fehlende Masse, bedingte Angaben,
+Schranken und mode-/richtungsabhängige Regeln. `VehicleOperationsContractTest`
+prüft das Beispiel sowie doppelte Fahrten, unbekannte Fahrzeug-IDs/Versionen
+und nicht zugelassene JSON-Felder. Die bestehende vollständige Offline-Pipeline
+prüft zusätzlich die Entfernung alter Berichte bei abgeschalteter/übersprungener
+SUMO-Stufe und unveränderte Personen-/Aktivitätendateien.
+
+**Gates:** Backend 320 Fälle, null Fehler, vier bereits bekannte Skips;
+Frontend 70 Tests und strict Produktionsbuild grün. Kommandos:
+`mvn -o -Daether.syncContext.named.factory=noop -f backend/pom.xml test` mit
+vorhandenem SUMO-`PROJ_DATA`, `cd frontend && npm test`, `npm run build`.
+Frontend-Prüfungen decken unbekannte Energie, unzugeordnete Nachfrage,
+Szenariowechsel, verspätete Antworten, fremde Konfigurationshashes und ungültige
+Importe ohne Überschreiben des bisherigen Entwurfs ab. Logs, Quellenfreeze
+und Abschlusszahlen liegen unter `.runtime/energy-access-continuity-2026-10-20/`.
+
+**Konsequenz und Grenze:** Lokale Netzprüfung und explizite Identitäts-/
+Referenzzustandsführung sind vorhanden. Ein Zugangspunkt kann ein
+Flächenmittelpunkt oder eine Registerkoordinate sein; eine reale Zufahrt,
+Öffnungszeit, Lkw-Bedienbarkeit oder nutzbare Kapazität wird nicht zertifiziert.
+Native Fahrtsegmente bleiben eigenständige SUMO-Fahrzeuge. Die externe Bilanz
+verwendet konstante Nutzerverbräuche und erzwingt weder Energiegrenzen noch
+Lade-/Tankhalte. Deshalb bleiben `nativeFleetIdentitySimulated=false`,
+`energyConstrainsTraffic=false` und `chargingSimulated=false` gesetzt. Gas-/H₂-
+Mengen, native Fahrzeugketten und operative Zeitfolgen sind weitere Schritte.
+
+## Native Güterfahrzeugketten (2026-10-21)
+
+**Befund:** Getrennte SUMO-Fahrzeuge pro Fahrt bewahrten bisher zwar eine externe
+physische ID, aber weder denselben nativen Fahrzeugzustand noch Bedienzeiten und
+Verspätung zwischen Etappen. Der native Spike weist jetzt eine Lieferwagen-ID mit
+Hin-/Rückroute, Straßenhalt und Weiterfahrt nach geplanter Abfahrt nach. Ein zweiter
+Spikelauf hält das Fahrzeug über das Laufende hinaus fest: Der erste Halt ist
+begonnen, aber nicht beendet; eine Folgefahrt darf daraus nicht als gestartet gelten.
+Grundlage ist SUMOs [native Halteausgabe](https://sumo.dlr.de/docs/Simulation/Output/StopOutput.html).
+
+| Prüffall | Beobachtung | Konsequenz |
+|---|---|---|
+| Zustelltour mit Rückfahrt und zusätzlichem Pkw | Drei zugeordnete Etappen werden von einem Lieferwagen gefahren; der Pkw bleibt separat. 120 s Bedienzeit werden vollständig eingehalten; die Folgefahrt übernimmt das tatsächliche Haltende. | Native Fahrzeugzahl und logische Fahrtsegmente getrennt zählen. |
+| Zwei schwere Güterrelationen als Hin-/Rückfahrt | Zwei angeforderte und beendete Güterfahrten, ein natives Fahrzeug; bestehende Güterausführungsbilanz bleibt vollständig. | Keine neuen Gütermengen aus der Fahrzeugzuordnung ableiten. |
+| Unterschiedliche Folgeorte | Ortsbruch über 25 m bricht vor dem SUMO-Lauf mit `vehicles/native-chains.json` ab. | Weder stilles Versetzen noch ungeplante Leerfahrt. |
+| Bedienung dauert über das Tagesende hinaus | Erste Etappe angekommen, zweite noch nicht gestartet; physische Kette unvollständig. SUMOs `vaporized="end"` wird als Tagesabschluss behandelt. | Ankunft einer Etappe, Halteende und Abschluss der Fahrzeugkette unterscheiden. |
+| Zusätzlicher Bus mit zwei Halten | Halte ohne Quellfahrtschlüssel bleiben außerhalb der Güterkettenauswertung. | Gemeinsame Halteausgabe auf zugeordnete native IDs filtern. |
+| Wiederholung und Abwahl | Identische semantische Kettenberichte bei gleichem Seed; native Zeitstempel-Hashes ausgenommen. Abwahl stellt die bisherige Fahrzeugzahl wieder her und entfernt eigene Kettenartefakte, auch bei übersprungener SUMO-Stufe. | Kein Wiederverwenden von Zuständen oder Berichten eines vorherigen Laufs. |
+| Mehrere Fahrzeugtypen im Anwendungsprozess | Der strikte Woodstox-Schreiber verwarf zunächst die zweite `vType`-Definition als zweite XML-Wurzel; getrennte Fragment-Schreiber beheben den Fehler. | Vollständige Anwendungskette zusätzlich zu isolierten nativen Tests prüfen. |
+
+**Vollständiger Pipeline-Prüffall:** Szenario `freight-chains-demo`, Seed 42,
+100 angeforderte Personen, sechs Zonen, lokales kleines OSM-Netz. Nachfrage und
+Zustelltouren sind ausdrücklich vorbereitete Testdateien; die logiTopp-Ausführung
+ist deaktiviert. `GenerationService` und SUMO-Stufe enden beide mit `DONE`.
+Zwei physische Güterfahrzeuge bedienen fünf Etappen; ein nicht zugeordneter Pkw
+bleibt erhalten. Bilanz: **sechs logische Straßenetappen → sechs beendet; drei
+native Fahrzeuge → drei beendet; null Teleports**, vollständige Teleportzuordnung.
+Der Lieferwagen startet planmäßig um 240 s, erreicht den ersten Halt um 270 s und
+fährt nach 120 s Bedienung um 390 s weiter statt um geplante 300 s. Nach dem zweiten
+Halt beginnt die Rückfahrt um 482 s statt um geplante 420 s. Der Lkw wartet zwischen
+seinen beiden Etappen bis zum geplanten zweiten Start um 365 s.
+
+Das Studio zeigt fünf Güteretappen mit zwei Fahrzeugen und daneben die vollständige
+Sechs-/Drei-Bilanz; Energiezustände werden in diesem Modus nicht als berechnet
+angezeigt. Ausführungsbericht, tatsächliche Etappenzeiten und Beispielkonfiguration
+sind zugänglich. Screenshot und Eingabe-/Ergebnisnachweise liegen unter
+`.runtime/vehicle-chains-2026-10-21/`; 124 Hauptquell-/Ressourcendateien stimmen mit
+speziell eingefrorenen E2E-Klassen überein.
+
+**Grenzen:** Explizite Fahrt-/Fahrzeugzuordnung für den ausgewählten Betriebstag,
+keine automatische Disposition, keine regionale Güterverkehrskalibrierung. Parken
+neben der Straße hat keine Kapazitätsbegrenzung; dynamische Beladung, Gebäudezufahrt,
+Fahrerregeln und Energiegrenzen bleiben unmodelliert. Etappendistanzen und -verbrauch
+werden bei nativen Ketten nicht aus der gesamten Fahrzeugdistanz geschätzt. Verbrauchs-,
+Lade- und Tankausbau sind nach Nutzerentscheidung zurückgestellt; weitere Arbeit gilt
+der Güterverkehrsnachfrage und ihrer Integration.
+
+**Abschließende Gates (2026-10-21):** 327 Backend-Testfälle ohne Fehler, davon vier
+übersprungen; 71 Frontend-Tests und Produktions-AOT-Build erfolgreich. Native Laufzeit:
+SUMO 1.28.0. Zusätzlich stimmen alle 400 eingefrorenen Laufzeitdateien des
+Pipeline-Prüflaufs mit dem geprüften Build überein.
+
+
+## Zusätzliche Unternehmenstouren: Import bis native Ausführung (2026-10-21)
+
+**Befund:** Der synthetische Import durchläuft echte Upload-/Mapping-/Kontext-/
+Aktivierungsdienste und anschließend natives SUMO 1.28.0. Zwei PKW bleiben trotz
+konfigurierter Trip-Obergrenze 1 erhalten; ein schwerer LKW bedient zwei Kundenhalte
+und kehrt zurück: drei zusätzliche Fahrtetappen, ein physisches Tourenfahrzeug,
+drei Fahrzeuge insgesamt. Je Halt gilt eine Mindestbedienung von 60 Sekunden.
+Wiederholung erzeugt denselben Ausführungsbericht. Ein gezielt fehlender nativer
+Fahrzeugabschluss verhindert eine abgeschlossene Tour trotz beobachteter Halte.
+Ein echter früher Fehler des anschließenden Netzbaus ersetzt den Erfolgsbericht
+durch `not-executed` und entfernt das alte Routingergebnis.
+
+**Evidenz:** `mvn -o test`: 333 Tests, 0 Fehler, 4 Skips (gesondert freizuschaltende
+actiTopp-/PT-/MobileCity-Quellenfälle). Die abschließend ergänzte Abschlussregression
+besteht zusätzlich mit `mvn -o -Dtest=CompanyTourExecutionTest,CompanyTourIntegrationTest test`:
+6 Tests, 0 Fehler/Skips. `npm test`: 74 Tests grün; `npm run build`: Produktions-AOT
+besteht. Isolierte Browserprobe auf 8092/4302 mit synthetischem Kontext: Aktivieren,
+Unternehmenskennung ändern, Generierung und Aktivierung gesperrt, Kontext speichern
+entzieht Auswahl, erneutes Aktivieren erfolgreich. Eingaben, Logs und Screenshot
+unter `.runtime/company-tours-2026-10-21/`; keine Originalkundenadressen verwendet.
+
+**Konsequenz:** Umsetzungspakete Kontext, lokale Ortszuordnung und additive
+Fahrzeugtouren sind technisch abgesichert. Das ist keine regionale Abnahme echter
+Unternehmensmengen oder Garantie individueller LKW-Zulässigkeit. Regeln,
+API und offene Pakete stehen in [docs/21, Abschnitt 28](21-gueterverkehr-konzept-und-datenquellen.md#28-unternehmenstouren-kontext-lokale-ortszuordnung-und-zusätzliche-sumo-ausführung-2026-10-21).
+
+
+## Gemeinsame Nachfrage unabhängig von SUMO (2026-10-21)
+
+**Befund:** Der gemeinsame Vertrag `synthesis-traffic-demand-v1` enthält alle
+verfügbaren Beiträge vor dem Zieladapter. Ein echter Pipeline-Lauf ohne SUMO und
+bei deaktivierter logiTopp-Laufzeit exportiert zwei schwere Güterfahrten plus eine
+Unternehmenstour mit zwei Kundenhalten und Rückfahrt: fünf Bewegungen und eine
+Tour, Personen- und Paketquelle ausdrücklich `not-generated`. Wiederholung ist
+bytegleich. Bei ausgeschalteten Zusatzbeiträgen bleiben synthetische Personen
+bytegleich; frühere rohe Personen-Ergebnisse werden nicht als neuer Eingang gelesen.
+Auch ausgewähltes, betrieblich deaktiviertes SUMO darf seinen abweichenden Wochentag
+nicht vor dem Überspringen gegen den gemeinsamen Bestand validieren.
+
+**Evidenz:** `TrafficDemandTest` prüft die vier Quellen, geplante Ankunft/Bedienung,
+Tourreferenzen, JSON-Roundtrip und ausschließlich als ungeroutet deklarierte
+Start-Ziel-Geometrien. Unbekannte oder unvollständige Pakettabellen werden im
+strengen gemeinsamen Pfad abgewiesen. Eine Schienen-Pakettour bleibt im allgemeinen
+Bestand erhalten, obwohl der Straßen-SUMO-Adapter sie nicht unterstützt.
+
+Der native SUMO-1.28.0-Test liest den gemeinsamen JSON-Export erneut ein: zwei PKW,
+zwei schwere Fahrten, zwei Paketetappen und drei Unternehmensetappen ergeben neun
+Anfragen und sieben Fahrzeuge. Der Unternehmens-LKW behält über Halte und Rückfahrt
+seine Identität; globale Fahrzeugtypverteilung und allgemeine Operations-Ausführung
+sind dabei ausgeschaltet (`catalogOnly`). Das Löschen der ursprünglichen Pakettabelle
+verändert Wiederholung und Tourbericht nicht. Der bekannte frühe Fehlerfall und ein
+gezielt fehlender physischer Abschluss bleiben korrekt ausgewiesen.
+
+**Bedienprobe:** Isolierter Server auf 8092/4302, synthetisches Szenario ohne SUMO,
+vorbereiteter Kontext und Aktivierung über dieselbe Import-API. Generierung aus dem
+Studio erfolgreich; Ergebnisbereich zeigt fünf Bewegungen, eine Tour, Herkunft und
+fehlende Quellen sowie Downloadlinks für JSON, CSV und GeoJSON. Die bestehende
+Studio-Voreinstellung fordert bei der Bedienprobe zusätzlich das Straßennetz für
+Personen-Fahrzeitmatrizen an; dafür lief GraphHopper, kein SUMO. Screenshot und
+Testlogs: `.runtime/common-demand-2026-10-21/`.
+
+**Grenzen:** Kein neuer individueller Gütertourenimport in MobileCity oder im
+nativen Legacy-Modell; diese Adapter brauchen ihre eigene Formatabbildung.
+Personen-KPIs bleiben personenbezogen, der gemeinsame Bestand ist kein Nachweis
+vollständiger regionaler Gütermengen oder zulässiger LKW-Straßenrouten.
+[Vertrag und Ablauf](21-gueterverkehr-konzept-und-datenquellen.md#30-gemeinsame-nachfrage-vor-den-zieladaptern-2026-10-21).
+
+
+**Abschließende Gates:** `mvn -o test`: 339 Tests, 0 Fehler, 4 Skips
+(explizit freizuschaltende actiTopp-/PT-/MobileCity-Quellenfälle).
+Die letzte Adapter-/Skip-Regression besteht zusätzlich mit 15 Tests ohne Skip
+(`TrafficDemandTest,CommonTrafficDemandPipelineTest,CompanyTourIntegrationTest,FreightDemandGeneratorTest,VehicleOperationsContractTest`).
+`npm test`: 75 Tests grün; `npm run build`: Produktions-AOT erfolgreich.
+`git diff --check` ohne Befund. Temporäre Testserver und Browserprüfung beendet.
+
+## Formatübergreifender Tourenimport (2026-10-22)
+
+**Befund:** Unterschiedliche Quellen lassen sich auf einen gemeinsamen,
+prüfbaren Tourenentwurf abbilden. Die Strukturprüfung eines LLM-Ergebnisses
+allein reicht nicht: In den realen Modellproben traten unbekannte Zielfelder,
+ein Feld je Zeile und falsche Vorkommensnummern von Zitaten auf. Diese Vorschläge
+wurden abgewiesen bzw. als ungültiger Entwurf gekennzeichnet und nicht aktiviert.
+
+**Umsetzung:** Der Ausgabevertrag verlangt vollständige Halt-/Auftragsobjekte
+und wörtliche Zitate mit Blockkennung. Zeichenpositionen berechnet der Server.
+Ein vollständiges Formbeispiel, ausdrückliche Trennung verwendeter/ausgelassener
+Blöcke und feste Zielfeldnamen verbessern den lokalen Modellpfad. Die Prüfung
+aller Tourenzeilen bleibt notwendig; es wird keine allgemeine Erkennungsquote
+oder Vollständigkeit beliebiger Dokumente behauptet.
+
+**Evidenz:**
+
+- `TourSourceReaderTest`: verschachtelte JSON-Elternwerte, XML-Attribute,
+  führende Postleitzahl-Nullen, Quellreferenzen, Text/DOCX und Abweisung von
+  XML-Entitäten sowie übertiefen Strukturen. Ein breiterer Titel vor der
+  Kopfzeile darf die Breite der eigentlichen Tabelle nicht verändern.
+  Feste Weiterführung/Adressverbindung und kompakte Uhrzeiten werden gegen den
+  resultierenden Tourenentwurf geprüft.
+- `TourSourceAnalysisTest`: unveränderte Quellzitate, sichtbare ausgelassene
+  Inhalte, keine erfundenen Werte, keine überlaufenden Ganzzahlen, vollständige
+  Blockklassifikation und getrennte Betriebsflags. Tabellenanalyse sendet
+  Rohproben nur im ausdrücklich aktivierten Modus; numerische Spaltenindizes
+  dürfen nicht durch Zeichenketten eingeschleust werden.
+- `TourImportAssistantTest`: Upload → lokaler HTTP-Testserver → Vorschlag →
+  Ablehnung ohne Quellenprüfung → bestätigter Entwurf → Profil → neue Quelle
+  mit neuer Analyse. Kein Fahrzeug-/Depotkontext und keine Aktivierung werden
+  dabei erfunden. Tabellenprofile lehnen geänderte Header ab.
+- Echte lokale PDF-Modellproben mit Python/pypdf **6.10.0** und
+  **qwen2.5:7b-instruct**: ein Halt sowie anschließend zwei Halte mit gegenüber
+  dem Prompt-Beispiel veränderten Tour-/Vorgangskennungen, Adressen, Zeiten und
+  Datum. Zweite Probe: Tour `Z42`, zwei Halte, zwei zugeordnete Zeilen, null
+  verworfene Zeilen, PLZ `07654` unverändert. Reale PDF-Extraktion und echte
+  lokale HTTP-Modellantwort, keine Parser-/LLM-Attrappe.
+- Bedienprobe auf isoliertem Testszenario (Ports 8092/4302): bestätigtes Mapping
+  als Unternehmensprofil gespeichert, Profil erneut als Vorschlag angewendet;
+  Nachfrageaktivierung dabei nicht angeboten. Screenshot und Logs:
+  `.runtime/tour-assistant-2026-10-21/import-profile.png`.
+
+**Prüfstand:** Vollständige Backend-Suite ohne Fehler mit vier bestehenden optionalen
+Skips. Danach gezielte Abschlussregression für die letzten Import-Vertragsänderungen
+und zusätzliche Typprüfung: **27/27 Tests grün, kein Skip**. **81 Frontendtests**
+und Produktionsbuild grün. Logs und ausschließlich synthetische Proben unter
+`.runtime/tour-assistant-2026-10-21/`. Die Abschlussregression ist in `backend-final.log` und den Surefire-Berichten
+dokumentiert.
+
+**Konsequenz:** Unterstützte Formate sind durch Extraktionsadapter begrenzt.
+Scans benötigen externe OCR; übergroße Dokumente werden vollständig abgewiesen.
+Quellbelege verhindern erfundene Feldwerte, beweisen jedoch nicht, dass alle
+Aufträge erkannt oder fachlich richtig gruppiert wurden. Bestätigung und
+nachgelagerte Kontext-/Aktivierungsprüfung bleiben verbindlich.
+
+## Tourenrevisionen vor der gemeinsamen Nachfrage (2026-10-23)
+
+**Befund:** Verschiedene Quelldateien derselben Unternehmensplanung erhalten
+unterschiedliche Quellhashes und gesalzene Tour-/Auftrags-IDs. Selbst die
+bestehende Prüfung physischer Fahrzeuge verhindert eine doppelte Auswahl nicht,
+wenn die neue Datei ein anderes Fahrzeug verwendet.
+
+**Fix:** `CompanyTourRevisions` prüft die ausgewählten Touren auf identische
+Unternehmenskennung, Simulationsdatum und Quell-Tourkennung. Die Prüfung ist
+Teil der Batch-Bildung und läuft sowohl beim Aktivieren als auch beim erneuten
+Einlesen/Einfrieren ausgewählter Eingaben. Der vorhandene Fahrzeugkonfliktschutz
+bleibt bestehen; es gibt keine zusätzliche Mengenanpassung des Personenverkehrs
+oder statistischen Güterverkehrs.
+
+**Evidenz:** Vier Tests in `CompanyTourRevisionsTest`, ohne externe Werkzeuge:
+
+| Fall | Nachweis |
+|---|---|
+| Andere Datei, andere Planzeiten und anderes Fahrzeug, gleiche fachliche Tour | Zweite Aktivierung wird abgewiesen; Meldung nennt Tour und bisherigen Import. Gespeicherte Szenariodatei bleibt bytegleich. |
+| Bewusster Wechsel | Erst alte Auswahl deaktivieren, dann neue Revision auswählen. Beide Quellimporte bleiben vorhanden; ein zuvor eingefrorener Batch bleibt unverändert. |
+| Direkte Auswahl / verschobenes Quelldatum | Batch-Bildung verweigert auch direkt eingereichte doppelte Auswahl. Ein auf den gleichen Szenariotag verschobener Quelltag umgeht den Schutz nicht. |
+| Additive und teilweise ausgewählte Importe | Verschiedene Unternehmen oder Tourkennungen ergeben weiterhin drei Importe/neun Fahrtetappen. Eine ausgeschlossene kollidierende Tour blockiert eine andere ausgewählte Tour derselben Datei nicht: zwei Importe/sechs Etappen. |
+
+**Gates:** Vollständige Backend-Suite: 358 Tests, keine Fehler, vier bestehende
+optionale Skips. Alle vier neuen Revisionsprüfungen ohne Skip bestanden.
+Frontend: 81 Tests und
+Produktionsbuild grün. Die lokale Haltorttabelle bietet wieder ausschließlich
+CSV/TSV/XLSX zur Auswahl; die erweiterten Formate gelten für Tourenplanungen.
+Vollständige Backend-Regression und Aufzeichnungen unter
+`.runtime/tour-revisions-2026-10-23/`.
+
+**Konsequenz:** Schutz gegen gleiche fachliche Kennungen, keine unscharfe
+Revisionserkennung bei umbenannten Unternehmen/Touren. Bei Kollision muss die
+frühere Auswahl bewusst entfernt oder ihre betroffene Tour ausgeschlossen werden.
+Die additive Einspeisung gegenüber bestehender Verkehrsnachfrage bleibt erhalten.
+
+## Regionale Unternehmenstouren mit externen Orten (2026-10-23)
+
+**Befund:** Die bisherige harte Regionsprüfung blockierte auch Touren mit
+externem Start-/Enddepot oder einzelnen externen Kundenhalten. Eine bloße
+Entfernung der Prüfung hätte Koordinaten außerhalb des Netzes an SUMO übergeben
+und bei Wiedereinfahrten eine künstliche Ortsverbindung im regionalen Netz
+verlangt.
+
+**Fix:** Opt-in `Context.regionalProjectionConfirmed` mit Default `false`.
+Originaletappen bleiben im gemeinsamen Nachfragevertrag; ein eigener Bericht
+klassifiziert jede Etappe und erzeugt die ausdrücklich bestätigte regionale
+Näherung. Grenzpunkte werden geometrisch aus geraden Verbindungen, Zeiten aus
+proportionalen Planfahrzeiten bestimmt. SUMO übernimmt nur die regionalen
+Etappen; externe Kundenbedienung wird nicht auf einen Grenzpunkt übertragen.
+Wiedereinfahrten teilen native Fahrzeugketten in getrennte Gebietsbesuche,
+behalten aber die physische Fahrzeugkennung und alle Quellreferenzen.
+
+**Evidenz:**
+
+- Vorabprobe mit echten `netgenerate`, `duarouter` und `sumo`: Zwei native
+  Besuche mit derselben physischen Kennung kommen um 14 und 314 Sekunden an.
+  Kein virtueller Verbindungstrip zwischen den Besuchen.
+- `CompanyTourRegionTest`, vier Fälle: Ein-/Ausfahrt, Durchgang, reine
+  Außenetappe und Tangenten; interpolierte Zeiten; interne/ externe Bedienung;
+  unveränderte Originaletappen; physische Identität; deterministische Projektion;
+  Freigabe erforderlich; unvollständige Koordinaten als Prüfpunkt; JSON-Roundtrip
+  der gemeinsamen Nachfrage; Regionsänderung invalidiert die Freigaberevision;
+  Default-Kontext bleibt mit dem vorherigen Hashaufbau kompatibel.
+- Neuer echter Fall in `CompanyTourIntegrationTest`: LKW mit externem Start
+  und Ende, internem und externem Kundenhalt sowie Durchgang bei der Rückfahrt.
+  Gemeinsame Nachfrage: ein privater Weg plus drei originale Unternehmensetappen,
+  externe Koordinaten unverändert. SUMO: ein privates Fahrzeug und zwei native
+  Gebietsbesuche desselben physischen LKW. Ein physisches Fahrzeug, zwei native
+  Besuchs-IDs, drei regionale Etappen, keine externe Kundenbedienung am Austritt.
+  Nativer Bericht `complete`, Besuchszeiten konsistent; Unternehmensbericht
+  `regional-complete`, ein regional abgeschlossener Touranteil, **null bestätigte
+  vollständige externe Tourabschlüsse**. Wiederholung identisch. Keine optionalen
+  Skips in dieser nativen Prüfung.
+- Bestehender vollständiger interner Tourfall und fünf Tests für native
+  Fahrzeugketten bleiben grün.
+- Bedienprobe mit synthetischen Daten auf isolierten Ports 8092/4302: Externe
+  Planung zunächst gesperrt, Freigabe setzen, Kontext speichern, anschließend
+  erfolgreich zur Nachfrage auswählen. Erklärung der Modellannahme und
+  Standard `false` durch Komponentenprüfung abgesichert. Screenshot:
+  `.runtime/company-boundary-2026-10-23/external-tour-active.png`.
+
+**Gates:** Vollständige Backend-Suite 363 Tests ohne Fehler, vier bestehende
+optionale Skips; vier neue Regionsprüfungen und beide nativen Unternehmenstourfälle
+ohne Skip. 82 Frontendtests und Produktionsbuild grün. Auch die abschließende Gesamtsuite nach Absicherung fehlender Koordinaten
+ist ohne Fehler durchgelaufen (`backend-final.log`).
+Aufzeichnungen und ausschließlich synthetische Eingaben:
+`.runtime/company-boundary-2026-10-23/`.
+
+**Konsequenz und Grenzen:** Der erste Adapter macht externe Touren verwendbar,
+aber keine Aussage über exakte Straßenführung oder echte Eintrittszeiten
+außerhalb des Gebiets. Gerade Verbindungen können reale Netzübergänge verfehlen;
+netzgenaue Gateways und bestätigbare manuelle Grenzübergänge sind weitere Arbeit.
+Reine Außenetappen bleiben ausdrücklich im Originalbestand und Projektionsbericht.
+Externe Fahrten, externe Bedienung und Verzögerungen zwischen Gebietsbesuchen
+werden nicht simuliert. Gleichzeitige native Besuche desselben physischen
+Fahrzeugs führen zur Nachprüfung. Mehrtägigkeit und 24-Stunden-/Zeitumstellungs-
+Regeln bleiben eigenständige offene Aufgaben.
+
+
+## Netzbasierte Unternehmenstouren und Zurbrüggen-Import (2026-10-23)
+
+**Fragestellung:** Können regionale Besuche aus vollständigen Straßenrouten
+anstatt der Verbindungsgeraden erzeugt und bis zur nativen Ausführung erhalten
+werden? Wie weit trägt der Import der tatsächlich bereitgestellten CSV?
+
+**Native Evidenz:** `CompanyTourNetworkIntegrationTest` aktiviert eine synthetische
+LKW-Tour mit externen Originalorten. Eine gekrümmte Straße durchquert das Gebiet,
+obwohl die Verbindungsgerade außerhalb liegt. Alle drei Originaletappen bleiben
+in der gemeinsamen Nachfrage; beide regionalen Besuche werden auf den
+vorgeschriebenen Straßenfolgen als ein physisches Fahrzeug ausgeführt. Der Bericht
+lautet `regional-complete`; die Wiederholung liefert denselben Projektionsbericht.
+Ein absichtlich außerhalb der Netzabdeckung liegender Originalort stoppt den
+Folgelauf mit `network-paths.status=failed` und `execution.status=not-executed`.
+`CompanyTourRegionTest` prüft zusätzlich mehrere getrennte Gebietsbesuche innerhalb
+einer Originaletappe und fehlende Straßenpfade ohne Luftlinienersatz.
+
+**Bedienprobe:** Synthetischer gespeicherter Tourenkontext auf isolierten Ports
+8092/4302. Neue Netzoption setzen, Kontext speichern und den gespeicherten
+Backendwert prüfen. Komponentenprüfung sichert den Standard `false`, die
+Abhängigkeit von der regionalen Freigabe sowie das Löschen der Netzoption bei
+Abwahl. Screenshot `.runtime/company-network-2026-10-23/network-context.png`.
+
+**Realer Import:** Direkt gelesene Zurbrüggen-CSV vom 29.09.2026, unveränderte
+Quellfassung mit SHA-256 `454746df8eb9df41c30cac6d5ddac19e5d9d9b6272f8328af05450ffff5c6bca`.
+Aktuelle Produktions-API: 222/222 Zeilen ohne Zurückweisung, 41 Tourgruppen,
+187 Haltkandidaten; jede Quellzeile genau einmal als Auftrag erhalten. Bestätigtes
+strukturelles Mapping und JSON-Export stimmen überein. Drei Kundenfenster-
+abweichungen und ein Fensterkonflikt bleiben sichtbar. Ohne Unternehmenskontext
+liefert die Aktivierung HTTP 400. Es gibt **keinen realen regionalen SUMO-Lauf**:
+Modellregion, Depots/Zeiten, Fahrzeugzuordnung, lokale Koordinaten und fachliche
+Bestätigungen fehlen. Private Daten ausschließlich im ignorierten Laufverzeichnis,
+keine Kundendaten als versionierte Fixtures.
+
+**Gates:** `mvn -o test`: 365 Tests, keine Fehler, vier bestehende optionale Skips.
+Neue native Integration ohne Skip. `npm test -- --watch=false`: 83 Tests grün;
+`npm run build` grün. Logs und Importaudit unter
+`.runtime/company-network-2026-10-23/`.
+
+**Grenzen:** Gerichtete Klassenberechtigungen des tatsächlich gebauten Netzes
+sind maßgeblich; keine pauschale Zertifizierung individueller Abmessungen oder
+Gewichte. Grenzzeiten bleiben aus Planzeiten und freien Fahrzeitanteilen geschätzt;
+externe Bedienung, Verzögerungen und Kreuzungswartezeiten werden damit nicht
+vollständig simuliert. Interaktive Netzvorschau vor Generierung, manuelle
+Gateway-Overrides und Mehrtägigkeit bleiben offen.
+
+
+## Rückfragen und Depotantworten im Tourenimport (2026-10-24)
+
+**Befund:** Fehlende Betriebsangaben werden nun als konkrete Rückfragen neben dem
+bearbeiteten Kontext angezeigt. Eine gespeicherte Adresse beseitigt ausschließlich
+die Frage nach dem Depot, während fehlende Koordinaten, Fahrzeuge und Zeiten offen
+bleiben. Bei Adressänderungen werden alte Positionen und die Ortsbestätigung
+zurückgesetzt. Die Fragenliste verwendet nur ausgewählte Touren und funktioniert
+bei deaktiviertem LLM.
+
+**Evidenz:** `CompanyTourExecutionTest.depotAnswersPersistWhileCoordinatesRemainRequiredAndRevisionsStayExplicit`
+speichert unvollständige Depotantworten über den Importservice und liest sie erneut,
+prüft leere Koordinaten und die Aktivierungssperre, geänderte Revisionen bei
+Adressantworten, unveränderte Revisionen bei leeren Antworten sowie die Ablehnung
+fremder Tour-IDs. Frontend-Komponentenprüfungen sichern verbleibende Rückfragen,
+Übernahme ausschließlich ausgewählter Touren, getrennte Start-/Endadressen,
+Zurücksetzen alter Punkte und keinen Antwortübertrag auf andere Szenarien.
+
+Die UI-Probe auf isolierten lokalen Ports 8092/4302 übernimmt und speichert die
+vom Nutzer bestätigte gemeinsame Depotadresse für alle 41 Zurbrüggen-Tourgruppen.
+Der erneut gelesene Backendkontext enthält genau 41 Adressantworten, leere
+Depotkoordinaten und `ready=false`, `active=false`. Die Depotfrage ist beantwortet;
+die Fragen nach Koordinaten, Fahrzeugen und Zeiten bleiben sichtbar. Das verwendete
+Testszenario bleibt eine synthetische Prüfregion, kein tatsächlicher Betriebsraum.
+Screenshot und private Antworten unter
+`.runtime/company-import-questions-2026-10-24/`.
+
+**Konsequenz:** Unvollständige Antworten können gespeichert und später ergänzt
+werden. Die Aktivierung bleibt von der bestehenden Backendprüfung abhängig.
+Adressgeokodierung, freie LLM-Antwortdialoge und reale regionale Ausführungsabnahme
+sind mit dieser Bedienänderung nicht nachgewiesen.
+
+
+**Gates für den Stand 2026-10-24:** Vollständiges `mvn -o test`: 366 Tests,
+keine Fehler, vier bestehende optionale Skips. `npm test -- --watch=false`:
+85 Tests grün. `npm run build`: grün. Logs unter
+`.runtime/company-import-questions-2026-10-24/`.
+
+
+## Lokale Geokodierung und regionaler Zurbrüggen-Pilot (2026-10-24)
+
+**Befund:** Ortsvorschläge können lokal eingelesen und bewusst übernommen werden.
+Ein nativer regionaler Lauf mit einer real importierten Unternehmenstour zusätzlich
+zu privaten Kontrollfahrten ist erfolgreich. Dies ist eine begrenzte Modellabnahme.
+
+**Evidenz:** Aus 222 Quellzeilen entstehen 41 Tourgruppen mit 187 Halten. Der lokale
+Abgleich gegen 4.509.543 amtliche NRW-Referenzen verortet nach Normalisierung von
+Ortszusätzen wie „Westf“ 155 Halte; 32 bleiben unverortet. 19 Tourgruppen sind
+vollständig verortet. Mehrdeutigkeiten werden erhalten. Qualität A belegt weder
+Postleitzahlen noch geeignete LKW-Einfahrten. Quellen:
+[NRW-Gebäudereferenzen](https://www.bezreg-koeln.nrw.de/geobasis-nrw/produkte-und-dienste/liegenschaftskataster/aktuelles-liegenschaftskataster/gebaeudereferenzen),
+[Downloadbestand](https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt/gebref_txt/).
+Verwendete ZIP vom 01.07.2026, SHA-256
+`8f3cc3398799c2e6358f22e1272e435c8dcc3375de1597da1b3339251d4692a8`.
+Quelltag 29.09.2026 und lokaler Straßensnapshot vom 15.10.2026 stimmen zeitlich
+nicht exakt überein; keine historische Rekonstruktion zugesichert.
+
+**Modellannahmen:** Auf ausdrückliche Nutzerdelegation wird pro Quelltour ein
+eigenes generisches Fahrzeug `standard.heavyTruck.diesel:1` vorgeschlagen.
+Depotabfahrt eine Stunde vor erster Ankunft, Rückkehr eine Stunde nach letzter
+Abfahrt; Fensterregel `report-only`. Keine Aussage über die tatsächliche Flotte.
+Die Nutzeradresse ist gemeinsames Start-/Enddepot. Das Pilotgebiet ist ein rund
+3,5 × 4,4 km großes Rechteck um das Depot. Zwei Kundenhalte der ausgewählten Tour
+liegen außerhalb. Der vollständige Kontext bleibt wegen fehlender Punkte unbestätigt.
+
+**Native Messung:** Genau eine der 41 Quelltouren wurde aktiviert. Gemeinsame
+Nachfrage: drei private synthetische Kontrollfahrten plus drei originale
+Unternehmensetappen. Regionale Projektion: drei → zwei Unternehmensetappen,
+eine außerhalb liegende Etappe nicht regional ausgeführt. Ein physischer LKW,
+zwei native Gebietsbesuche, beide abgeschlossen; null Teleports. Bericht
+`regional-complete`, ein regionaler Abschluss, null vollständige Tourabschlüsse,
+`outsideExecutionSimulated=false`. Laufzeit rund 236 s. Die drei privaten
+Kontrollfahrten bilden keine kalibrierte regionale Privatnachfrage ab.
+Der Scratch-Aufruf meldet nativen Seed 0; Szenariovorlage 42. Daher keine
+durchgängige Seed-42-Reproduzierbarkeit behauptet.
+
+Das Netz wurde aus einem vorhandenen lokalen OSM-Ausschnitt gewonnen. Es wurde
+keine Tourengebiets-Anfrage an Overpass versendet. Netz-Hash:
+`d3688a122faa0a32d951e8faa0fc6e17cdd019b53c7d0f7535487b13e08e80b5`.
+Private Kontexte, Kandidatenindex, Berichte und Logs liegen ausschließlich unter
+`.runtime/company-geocoding-2026-10-24/`; Originaladressen gehören nicht in Fixtures.
+Die erste Pilotkontextdatei hält ihren damaligen Stand fest; der vollständige
+Modellkontext enthält den später verbesserten Abgleich mit 155 Halten.
+
+**Gates:** 371 Backendtests, null Fehler, vier bestehende optionale Skips;
+86 Frontendtests, Produktionsbuild und zwei Pythonprüfungen grün. HTTP-Fixtures
+prüfen Ambiguität, Cache, ungültige Punkte und Redirect-Ablehnung. Komponentenprüfungen
+sichern gespeicherten Kontext, bewusste Auswahl und veraltete Adressantworten.
+Ein Integrationstest führt Geocoder-Auswahl bis zur nativen Ausführung durch.
+Manueller Browser-Gegentest blieb offen: Die automatische Freigabeprüfung konnte
+den lokalen Frontendstart wegen ihres Nutzungslimits nicht freigeben.
+
+**Konsequenz:** Die technische Kette und erste regionale Abnahme sind belegt.
+Vor Gesamtbestands-Abnahme verbleiben 32 Ortszuordnungen, Bestätigung/Verfeinerung
+der Modellannahmen und Ausführung aller ausgewählten Touren. Externe Bedienung,
+reale Fahrzeugdimensionen und Betriebszeiten sind gesondert zu validieren.
+
+
+<!-- BEGIN_COMPANY_COMPLETION_2026_10_26 -->
+
+## Tourenbestand und fortsetzbare Ortssuche (2026-10-26)
+
+**Befund:** Lokale Zuordnung steigt von 155 → 185 der 187 Quellhalte. Die regionale
+native Bestandsprüfung umfasst 38 der 41 Quelltouren; drei Touren bleiben
+mit konkretem Daten-/Netzgrund ausgeschlossen. Der vollständige Originalimport
+bleibt unverändert. Das ist eine technische Teilabnahme mit Modellannahmen.
+
+**Adress-Evidenz:** Erweiterte Formatnormalisierung und ausdrücklich geprüfte
+Gemeinde-Aliasse, amtliche NRW-Gebäudereferenzen sowie ergänzende lokale OSM-Abzüge.
+OSM-Standardabgleich: Straße, Hausnummer und Postleitzahl; bei ausschließlich
+fehlender OSM-Postleitzahl optional Gemeindeabgleich (hier zwei zusätzliche Treffer).
+Drei Schreibkorrekturen, ein gewählter Qualität-B-Flurstückspunkt und ein Gebäude
+als Repräsentant einer Quell-Hausnummernspanne sind ausdrücklich dokumentiert.
+Keine automatische unscharfe Ersetzung und keine bestätigten LKW-Einfahrten.
+Die zwei verbleibenden Punkte betreffen zwei Touren; serverseitige Prüfung aller
+41 Touren verweigert die Aktivierung. Private Adressen und Kontexte ausschließlich
+unter `.runtime/company-completion-2026-10-25/` (Arbeitsbeginn 25., Abschluss 26.10.).
+
+**Negative Netzbefunde:** Der erste geometrische Bestandsversuch stoppt bei zehn
+nicht zuordenbaren Endpunkten und vier nicht gerichteten Verbindungen. Danach
+wird ein größerer lokaler Straßenabzug erstellt. Prüfung aller 216 Originaletappen
+der 39 ortsvollständigen Touren: zwei nicht verbundene Etappen derselben Tour,
+keine verbundene Straßenalternative innerhalb 150 m. Der betroffene gemappte Halt
+ist im verwendeten Netz nicht mit der LKW-Klasse verbunden; keine Aussage über ein
+tatsächliches Fahrverbot. Diese Tour wird für die abschließende Teilabnahme zusätzlich
+ausgeschlossen; eine überprüfte Zufahrt bzw. belegte Netz-/Fahrzeugkorrektur
+bleibt erforderlich. Beide Fehlversuche und der vollständige Audit sind erhalten. Ein weiterer Versuch
+wurde bei nahezu gefülltem 6-GB-Java-Heap unterbrochen. Die anschließende kompakte
+Haltung von Kantenlänge und Geschwindigkeiten ersetzt zusammengesetzte String-Keys
+und geboxte Map-Werte, bei unveränderten Berechtigungs- und Zeitregeln.
+
+**Native Evidenz:** 210 ursprüngliche Unternehmensetappen und drei
+synthetische private Kontrollfahrten in der gemeinsamen Nachfrage. Daraus
+85 regionale Unternehmensetappen; 38 physische LKW,
+84 native Gebietsbesuche und 38 regionale Abschlüsse,
+0 Teleports. `regional-complete`, `outsideExecutionSimulated=false`;
+0 vollständige Tourabschlüsse. Projektionsmethode
+`directed-network-edge-free-flow-plan-time-scaling`. Netz-Hash
+`6c5da172e480879a8300ffa2e800b1934d4cecdc7bbd09f2db683f805c8126d8`. Nativer Seed 42; keine Behauptung eines durch vollständigen
+Zweitlauf bewiesenen identischen Ergebnisses. Externe Bedienung bleibt ungemessen.
+Private Kontrollfahrten sind keine kalibrierte regionale Nachfrage; Flotte und
+Depotzeiten bleiben delegierte Modellannahmen. Der pauschale Ein-Stunden-Puffer
+war bei neun regionalen Etappen aus sieben Touren selbst unter optimistischen
+freien Fahrzeiten zu kurz. Er wird je Richtung durch mindestens eine Stunde bzw.
+das 1,35-Fache der freien Originalrouten-Fahrzeit plus 15 Minuten, auf volle Minuten
+aufgerundet, ersetzt. Kundenhalte und ihre Quellzeiten bleiben unverändert. Ampelknoten-
+Zusammenfassungen und teilweise nicht interpretierte Abbiegerestriktionen bleiben
+prüfpflichtig; Zulässigkeit ist nur im importierten Modell geprüft. Fahrzeugdimensionen nicht individuell
+zertifiziert. Quelltag September und Netzauszug Oktober sind keine genaue historische
+Rekonstruktion.
+
+**Quellen:** Vollständige öffentliche
+[NRW-](https://download.geofabrik.de/europe/germany/nordrhein-westfalen.html) und
+[Niedersachsen-OSM-Abzüge](https://download.geofabrik.de/europe/germany/niedersachsen.html),
+OSM/Geofabrik, Stand 24.10.2026, ausschließlich lokal abgeglichen. Keine einzelnen
+Kundenadressen oder Tourengebiete an einen öffentlichen Geocoder gesendet.
+NRW-PBF SHA-256 `b10c630076a39c56aa6546843df760e6b88678ff8ea65621cf7b2afc46ab54db`,
+NI-PBF SHA-256 `c90ba810aca20a44c4d2f27f93f070616ce4840ac5840b48fbef20a186791f55`.
+Amtlicher NRW-Adressbestand wie im Befund vom 24.10.; Index-, Entscheidungs- und
+Netzauswahlberichte enthalten Herkunft und Abgleichsregeln. Hauptverbindungen und
+unclassified-Straßen innerhalb der dokumentierten Außen-Bbox sowie alle Straßen
+im Umfeld der Quellorte und Modellregion; keine Vollständigkeitszertifizierung.
+
+**Bedienung und Gates:** Browserprobe im isolierten Ein-Tour-Prüfszenario: lokale
+Neusuche umgeht alte Cache-Antworten, bewusste Auswahl und Ortsbestätigung,
+Kontextspeicherung und zusätzliche Nachfrageaktivierung erfolgreich; serverseitige
+Auswahl erneut aus Datei geprüft. Screenshot `ui-activation.png`; der frühere
+Browser-Prüfblocker ist erledigt. 372 Backendtests ohne Fehler, vier bestehende
+optionale Skips; 87 Frontendtests, Produktionsbuild und sechs Pythonprüfungen grün.
+Neue Regressionen schützen Fortsetzung nach leeren Antworten, Ergebnisbewahrung
+bei Speicherung, explizite Cache-Aktualisierung sowie getrennte Hausnummern,
+Mehrdeutigkeiten und Gemeindeabgleich ohne widersprechende Postleitzahlen.
+
+**Konsequenz:** Die Technik und die geprüfte Teilmenge sind abgenommen. Für den
+Gesamtbestand bleiben zwei Ortszuordnungen und ein Netz-/Zufahrtsfall zu klären;
+keine dieser Touren wird stillschweigend ersetzt oder verworfen. Eine tatsächliche
+Betriebsabnahme benötigt weiterhin beobachtete/überprüfte Betriebsangaben.
+
+<!-- END_COMPANY_COMPLETION_2026_10_26 -->
+
+
+## Regionale Nachfrage mit Unternehmenstouren (2026-10-26)
+
+**Fragestellung und vorab fixierter Vergleich:** Unverändertes Bönen-Untersuchungsrechteck
+wie bei der Tourenbestandsprüfung; Seed 42, volle Bevölkerungsstichprobe. Nachfrage
+über die Produktionskette Zensus → KIT-Haushalte → actiTopp → logiTopp einmal erzeugen.
+Alle Pkw-Fahrerfahrten mit Dienstagabfahrt identisch in A (ohne Unternehmenstouren)
+und B (mit den zuvor geprüften 38 Touren) übernehmen. Kein Trip-Cap, keine weiteren
+statistischen Schwerverkehrs- oder Paketfahrten. Andere Personenmodi bleiben in
+der vollständigen vorgelagerten Nachfrage dokumentiert, sind kein Teil des nativen
+Pkw/LKW-Vergleichs. Drei ausgeschlossene Quelltouren bleiben ausgeschlossen.
+Keine Überschneidungskorrektur. Protokoll, Quellenkopien und personenbezogene
+Artefakte ausschließlich lokal unter `.runtime/freight-regional-validation-2026-10-26/`.
+
+**Nachfragegrundlage:** Amtliches Zensusziel 8.718 Personen; vollständige
+KIT-Haushalte ergeben 8.719 Personen in 4.242 Haushalten (+1 durch Haushaltsrundung).
+Alters-/Haushaltsstruktur hier aus dem KIT-Sample, keine Zensus-Strukturkalibrierung.
+actiTopp tatsächlich ausgeführt, kein Template-Ersatz. 213.527 Personenwege in der
+Woche; Dienstag 32.707 Wege: 6.961 Pkw-Fahrer, 3.586 Mitfahrer, 13.205 Fuß-,
+2.026 Rad- und 6.929 ÖV-Wege. 2.090 zusätzlich im logiTopp-Ergebnis vorhandene
+Paketetappen werden ausdrücklich nicht in den A/B-Vergleich übernommen.
+1.205 der Dienstag-Pkw-Wege haben einen externen Endpunkt; 23 geplante Ankünfte
+liegen nach Mitternacht. Die private Eingabe wird unverändert eingefroren und
+über `sourceTripKey` verglichen; native `vN`-IDs verschieben sich beim Hinzufügen
+von Unternehmenstouren und sind kein geeigneter Paarungsschlüssel.
+
+**Zonen- und Matrixgrenzen:** 500-m- und 1.000-m-Raster scheitern konservativ an
+geeigneten öffentlichen Straßen in dünnen nördlichen Randzellen, auch wenn die
+Zielwahl dort eine Aktivität auswählt. Beide Fehlversuche bleiben erhalten.
+Das 1.500-m-Raster vermeidet diesen schmalen Reststreifen: neun interne und acht
+externe Zonen, unverändertes Gebiet und Einwohnerziel. Keine entfernten Personen,
+keine erfundenen Straßenpunkte, keine automatische zonenübergreifende Verlagerung.
+Alle 72 internen gerichteten Zonenpaare je Pkw/Rad/Fuß sind mit GraphHopper routbar;
+sechs interne Distanz-/Zeitmatrixblöcke stimmen im Wiederholungstest exakt auf
+Dateigenauigkeit überein. Je Modus sind neun intrazonale und 208 externe
+Matrixeinträge bewusst Schätzwerte. ÖV-Zeit/Kosten sind abgeleitete Schätzungen,
+kein GTFS-basierter ÖV-Nachweis. Die Wochen-Wege sind durchschnittlich 4,03 km
+lang, Dienstag 4,97 km; die nationale MiD-Referenz ist kein regionales Kalibrierziel.
+Die bestehende Distanz-/Moduswahl ist damit nicht regional empirisch validiert.
+
+**Native Importkorrekturen:** Der Erstlauf scheitert vor dem Nachfrage-Routing an
+zwei über mehrere kurze Split-Kanten übertragenen Ampelwirkungen. Gemessene Wege
+zur echten nativen Ampel: 9,51 und 10,87 m. Der Guard verfolgt nun alle Verzweigungen
+innerhalb derselben kumulierten 25-m-Grenze, ohne Steuerungen umzuschreiben.
+Ein nicht mehr vorhandener Quellenknoten bleibt gesondert prüfpflichtig.
+Der feste Mitternachtsabbruch wird um einen aus geplanten Ankünften/ausgewählten
+Abfahrten bestimmten Nachlauf ergänzt. Die Auswahl bleibt auf Dienstagabfahrten
+beschränkt; Nachlauf, unvollständige Fahrten und Teleports werden ausgewiesen.
+Regressionen: komplette Backend-Suite 374 Tests ohne Fehler, vier optionale Skips;
+zusätzlich drei native Signal-/Tagesgrenzentests ohne Fehler. Die beiden Abbrüche
+bei feineren Rastern und der ursprüngliche Importfehler sind keine positiven
+Ausführungsnachweise.
+
+**Native A/B-Auswertung — ❌ GESAMTABNAHME NICHT BESTANDEN:** A meldet
+6.960 geroutete, eingesetzte und abgeschlossene von 6.961 angeforderten Pkw-Fahrten,
+null Teleports und null verbliebene Fahrzeuge. 13 tatsächliche Ankünfte liegen
+nach Mitternacht, die letzte bei Sekunde 87.372 (00:16:12 am Folgetag); der
+Simulationshorizont beträgt 92.280 s. Der Runner kehrt im bisherigen Privatnachfrage-
+Teilbetrieb regulär zurück, aber `traffic-execution.json` ist ausdrücklich
+`incomplete`. Ein regulärer Prozessabschluss ist hier kein Abnahmenachweis.
+
+Die Netzvorprüfung findet 76 nicht zugeordnete Endpunkt-Vorkommen in 75 Pkw-Anfragen,
+verteilt auf fünf Koordinaten: ein innerer Zonenmittelpunkt (21 Vorkommen) und vier
+synthetische Außenpunkte (55 Vorkommen). Null Anfragen ohne gerichtete Verbindung
+unter den zugeordneten Punkten. Bei 41 behaltenen nativen Routen protokolliert SUMO
+Koordinatenwarnungen. Eine vollständig außerhalb liegende Anfrage mit gleichem
+Start-/Zielpunkt erhält keine Route. Diese Fahrt wird weder entfernt noch durch eine
+erfundene Unternehmensadresse ersetzt. Ankunftszahlen allein beweisen keine korrekte
+Ortsabbildung. Die Auswahl enthält 5.756 Innen→Innen-, 490 Innen→Außen-,
+482 Außen→Innen- und 233 Außen→Außen-Fahrten der erzeugten Einwohnernachfrage.
+
+B übernimmt dieselben 6.961 privaten Eingaben unverändert und zusätzlich 38
+Unternehmenstouren mit 210 ursprünglichen bzw. 85 regional projizierten Etappen.
+Unternehmensrouten und Projektion sind vorbereitet; der strenge gemeinsame Lauf
+bricht vor dem Hauptrouting und der Simulation an denselben 76 privaten
+Endpunkt-Vorkommen ab. Alle 75 nicht vollständig zugeordneten Anfragen sind
+`person-demand`, keine `company-tours`. Das ist **kein** gemeinsamer nativer
+Ausführungsnachweis. Fahrzeit-, Stau- und Emissionsdifferenzen A/B sind deshalb
+nicht ermittelt und dürfen nicht als Wirkung der LKW ausgegeben werden.
+Die zuvor erfolgreiche Unternehmens-Teilabnahme bleibt als eigener Nachweis bestehen.
+
+**Vergleichbarkeit:** Private Eingabe inklusive Reihenfolge, Fahrzeugkonfiguration,
+Seed 42 und OSM-Quelle sind gleich. Auch der native Graph ist nach Entfernung
+lediglich des generierten XML-Kommentarheaders bytegleich (SHA-256
+`a133eb4fb78959e1a5a5dffedb660c1c2f41a35b17010c585ce83fcef7c36b40`).
+Die OSM-Quelle hat SHA-256
+`788d891dd8ab09f777f45a3ce84724e662ee95f8a853e015ebae05f7c5624a45`.
+Maschinenlesbare Abnahme: `regional-validation.json`; Herkunfts-/Ortsbefunde:
+`private-endpoint-findings.json`, `internal-centroid-findings.json`; negative
+Erstversuche und native A/B-Artefakte im oben genannten lokalen Laufverzeichnis.
+Keine einzelnen Kundenadressen an einen öffentlichen Dienst übermittelt.
+
+**Nächste Umsetzung:** (1) Koordinatenübergabe typisierter Bildungsziele prüfen:
+21 betroffene Innen-Endpunkte gehören zu `EDUCATION_TERTIARY`-Wegen, obwohl die
+exportierten festen Ziele bereits Straßenpunkte enthalten. Die verwendete Legacy-
+Personenlogik behandelt nur den generischen Typ `EDUCATION` als feste Aktivität;
+ohne passende Opportunity fällt sie auf den Zonenmittelpunkt zurück. Korrektur
+im eigenen Adapter nachweisen, nicht in `validation/`. (2) Synthetische
+Außen-Opportunities an geeignete Straßen anbinden, mit expliziter Provenienz und
+Grenzen; Außenbeziehungen erhalten. (3) Neue gemeinsame Nachfrage einmal einfrieren
+und A/B vollständig wiederholen, einschließlich Ortsdeckung, Mengenerhalt,
+Teleports und Tagesnachlauf. Erst danach empirische regionale Kalibrierung sowie
+Zählstellen-/Durchgangsverkehrsabgleich. Drei gesperrte Quelltouren, Flotten-/Depotzeit-
+Annahmen, fehlende externe Kundenbedienung und Signal-/Abbiegerestriktionsprüfpunkte
+bleiben gesonderte Grenzen. Dies ist ein abgeschlossener technischer Prüfversuch
+mit negativem Ergebnis, keine empirische regionale Gesamtvalidierung.
+
+
+## Korrigierte Ortsübergabe: regionaler Wiederholungslauf (2026-10-26)
+
+**Hypothese:** Die fünf im ersten Vergleich nicht zugeordneten Koordinaten werden
+an ihrer Quelle korrigiert; die gemeinsame Nachfrage muss danach ohne Ortslücken,
+Verluste oder Teleports mit und ohne Unternehmenstouren nativ ausgeführt werden.
+Vorheriger Fehlversuch bleibt als Negativbefund erhalten. Neues lokales Verzeichnis:
+`.runtime/freight-regional-validation-2026-10-26-v2/`.
+
+**Gegenproben vor Großlauf:** Die tatsächliche Legacy-Klasse fällt bei allen drei
+typisierten Bildungszwecken auf den Zonenmittelpunkt zurück. Eigene Unterklasse
+liefert das exportierte feste Ziel nur bei passender fester Zone; gleicher
+Zufallsverbrauch gegen die Originalklasse nachgewiesen. Anders gewählte Zonen und
+nicht feste Ziele bleiben im bestehenden Pfad. Außen-Opportunities verwenden
+bestehende konservative Straßenkandidaten und bleiben innerhalb derselben Zone
+sowie 1.500 m; fehlende/zu entfernte Kandidaten scheitern sichtbar. Feste Außenanker
+und getrennte Cache-Einträge bleiben erhalten. Backend 377 Tests ohne Fehler,
+vier optionale Skips; sieben Adaptertests grün. Keine KIT-Quellen geändert.
+
+**Echte Produktions-Neuerzeugung:** Zensusziel, Haushalte, Gebiet, Raster, Seed,
+POIs und Straßenquelle unverändert. Alle 213.527 Personenwege stimmen bei
+Identität, Modus, geplanten Abfahrten/Ankünften, Zonen, Distanzen und Legs exakt
+mit dem ersten Lauf überein. Es ändern sich ausschließlich Koordinaten. 88 externe
+Opportunity-Zuordnungen, maximale Verschiebung 688,66 m. Alle fünf zuvor
+problematischen Koordinaten sind aus den 6.961 Dienstag-Pkw-Anfragen verschwunden.
+`location-correction-proof.json` enthält den maschinenlesbaren Nachweis;
+`population/road-locations.json` enthält Einzelzuordnungen und Grenzen.
+
+**Empirische Kalibrierbereitschaft:** Vorhandene Straßen.NRW-Beobachtungen sind
+Juli-2026-Mittel über Montag bis Sonntag. Die Unternehmenspläne beziehen sich
+auf einen Dienstag im September; ältere Zählstellen-Kantenzuordnungen gehören
+zu einem anderen Netz. Ohne passende Zeitbasis und geometrisch geprüfte
+Zuordnung an dieses Netz wird kein Kalibrierwert abgeleitet. Der isolierte
+A/B-Vergleich enthält außerdem keinen vollständigen regionalen Hintergrund-/
+Durchgangsgüterverkehr und keine vollständige Nachfrage Nichtansässiger.
+Die zusätzliche Unternehmensnachfrage darf nicht auf den gesamten SGV hochskaliert
+werden. `calibration-readiness.json` hält die nötigen Daten und Abnahmekriterien fest.
+
+**Prüfung der tatsächlichen Seeds (2026-10-27):** Der native Konfigurationsexport
+belegt den SUMO-Standardseed 23.423. Der erste vollständig ausgeführte korrigierte
+Pkw-Kontrolllauf hat diesen Standard verwendet, während physische Lkw-Ketten den
+Szenarioseed 42 explizit übergeben. Dessen Ankunftszahlen belegen die Ortskorrektur,
+aber seine Kennzahlen sind keine geeignete A/B-Vergleichsbasis. Der Runner
+übernimmt den Konstruktorseed und übergibt ihn nun immer an SUMO, unabhängig von
+Fahrzeugketten. Nativer Test ohne Ketten: angeforderter Seed 777 erscheint im
+von SUMO selbst geschriebenen Konfigurationsheader. Backend-Suite weiterhin
+377 Tests ohne Fehler, vier optionale Skips.
+
+Die getrennten nativen Importe sind zudem nicht bytegleich; der erste beobachtete
+Unterschied betrifft eine interne Fahrstreifenlänge (3,64 gegenüber 3,56 m bei
+gleicher Shape). Daraus wird keine allgemeine Ursachenbehauptung abgeleitet.
+Für die Abnahme wird das vollständig ausgeführte B-Netz als ein einziges kanonisches
+Netz für beide Simulationen verwendet. Der erste A-Import und dessen Resultate
+bleiben separat aufbewahrt und werden aus Vergleichskennzahlen ausgeschlossen.
+
+A übernimmt die tatsächlich geprüften privaten B-Endpunktzuordnungen für identische
+Quellschlüssel, Koordinaten, Typen und Abfahrten; native IDs werden eindeutig auf A
+übersetzt. Der Herkunfts-Hash der B-Vorprüfung wird im abgeleiteten A-Ortsbericht
+festgehalten; das ist keine behauptete unabhängige zweite Ortszuordnung. A wird
+anschließend auf dem gemeinsamen Netz **nativ neu geroutet und simuliert**.
+Eingabe-Hashes werden davor/danach geprüft. Ausführungsprüfung, Energie-Ledger,
+Emissionen, Kennzahlen und Routengeometrien werden mit den Produktionsprozessoren
+neu aus den nativen Ausgaben aufgebaut; die Staukarte verwendet ebenfalls die
+kanonischen Netzgeometrien. Die tatsächlichen nativen Header belegen in beiden
+Simulationen Seed 42. Das Hauptrouting verwendet in A explizit und in B implizit
+denselben duarouter-Seed 23.423 (installierter Standardwert geprüft); die
+Unternehmensprojektion benutzt explizit 42. Keine Änderung der Router-Seed-Policy
+in dieser Korrektur.
+
+**Native Auswertung — ✅ TECHNISCHE ABNAHME BESTANDEN (2026-10-27):**
+Alle 14 Kriterien in `regional-validation.json` bestehen. 6.961 Pkw-Anfragen
+in A und in B jeweils geroutet, eingesetzt und abgeschlossen. In beiden Fällen
+null Ortslücken, nicht gerichtete Anfragen, Koordinatenwarnungen, Teleports und
+unvollendete Fahrzeuge. A/B haben dieselbe private Eingabe und Fahrzeugkonfiguration,
+dieselben Quellschlüssel, effektiven Router-/Simulationsseeds und dasselbe native Netz.
+Alle 6.961 privaten Routenkantenfolgen stimmen überein. Aktuell verwendetes kanonisches
+Netz: `network-comparison.json`; der verworfene separate Importvergleich bleibt
+als `network-comparison-before-canonical.json` erhalten.
+
+B führt zusätzlich 85 regionale Unternehmensetappen und 38 regionale Tourabschlüsse
+aus. 84 native Lkw-Gebietsbesuche mit 38 physischen Lkw; zusammen mit den Pkw
+7.045 vollständig abgeschlossene native Fahrzeuge/Gebietsbesuche. Alle 7.046
+logischen Etappen bleiben erhalten; eine Fahrzeugkette fasst Etappen zusammen.
+210 Originaletappen im gemeinsamen Bedarf, `outsideExecutionSimulated=false`,
+null vollständige Unternehmens-Tourabschlüsse. Die drei zuvor ausgeschlossenen
+Quelltouren bleiben ausgeschlossen. 13 Pkw-Ankünfte nach Mitternacht in A, elf
+in B, beide vollständig; effektiver Simulationshorizont 92.280 s.
+
+**Deskriptive Pkw-Kennzahlen:** Fahrtdauer A 410.04 → B 410.69 s
+(Δ +0.65 s); Zeitverlust 66.77 → 67.39 s
+(Δ +0.62 s); CO₂ je Pkw-Fahrt 970.74 → 972.28 g
+(Δ +1.54 g). Jeweils 6.961 vollständig gepaarte Anfragen über
+`sourceTripKey`. Ein einzelnes Seed-Paar und das Einfügen zusätzlicher Fahrzeuge
+ändern den globalen Zufallsverbrauch; das ist kein allgemeiner kausaler Wirkungs-
+oder beobachteter Kalibrierungsnachweis. Prozesslaufzeiten werden wegen
+wiederverwendeter Vorbereitung nicht verglichen.
+
+**Abschlussgrenze:** Ortskorrekturen und technische A/B-Abnahme sind umgesetzt und
+belegt. Empirische regionale Kalibrierung ist mit den vorhandenen Teilnachfragen,
+Zeitbezügen und Netzzuordnungen nicht belegt. Die Datenvoraussetzungen wurden geprüft
+und explizit in `calibration-readiness.json` festgehalten; keine Hochskalierung der
+38 Unternehmenspläne auf den gesamten SGV. Fahrzeug-/Depotzeitannahmen, externe
+Bedienung sowie Signal-/Abbiegerestriktionsprüfpunkte bleiben wie dokumentiert.
+Lesbarer lokaler Abschlussbericht: `abnahme.md` im v2-Laufverzeichnis.
+
+## Datenquellenimport und Quellenplan (2026-10-28) — technischer Schnitt bestanden
+
+**Befund:** Der aus dem Tourenimport abgeleitete gemeinsame Reader-/Mappingkern
+versorgt weitere Fachverträge. Quellenprüfung vor dem Queueing und im Studio
+verwenden dieselbe Backendregel. Fehlende Ersatzmengen blockieren einen aktiven
+Schwerlastannahmenpfad; eine veröffentlichte Datenrevision ist zunächst inaktiv.
+
+**Evidenz:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| Gesamtes Backend | 389 Tests, 0 Fehler, 4 Skips (externe MobileCity-Quellen, actiTopp und ÖV); Offline-Maven mit deaktiviertem Named-Lock und erlaubten lokalen Testservern |
+| Abschließende `DataSourcesTest` | 10 Tests ohne Fehler oder Skips; ein Bytevergleich wurde nach der Gesamtsuite zusätzlich aufgenommen |
+| Kompatibilität | Im eingefrorenen Offlinefall sind `population/`, `matrix/`, `zone-repository/`, `legacy/` und `logistics/` bei ausgeschaltetem Plan und bei reiner Legacy-Auswahl bytegleich |
+| Importverträge | CSV/JSON/XML/XLSX liefern gleiche Fachwerte; Einheit, Dezimalzeichen, Nullwerte, fehlerhafte Zeilen, Profilstruktur und manipulierte Revisionen geprüft |
+| Frontend | 92 Tests in 11 Dateien grün; Produktions-AOT-Build erfolgreich |
+| Echter Browser | JSON-Import → vollständige Prüfung → Revision ohne Aktivierung → Auswahl → Mengenblocker → gespeicherter Plan → Offlinegenerierung mit drei schweren Fahrten; keine JS-Laufzeitfehler |
+
+Der Browserfall lief mit eigenem temporärem Datenverzeichnis auf Port 8091,
+ohne Livequellen, actiTopp, logiTopp, SUMO oder Realrouting. Der neue Dialog wurde
+bei 1.440 und 390 Pixeln geprüft; dies ist keine Aussage über die gesamte
+Mobilansicht des bisherigen Studios. Der Bytevergleich gilt für den geprüften
+Offlinefall und ersetzt keine Mehrregionenabnahme der noch nicht migrierten Quellen.
+
+**Konsequenz:** Der Import-/Auswahlpfad ist als erster, standardmäßig ausgeschalteter
+Schnitt nutzbar. Sein explizites Ersatzmengenprofil ist eine Modellannahme und
+belegt keine regionale Güterverkehrsmenge. Vollständige Providerketten,
+Dienstconnectoren und Datenpakete bleiben weitere Ausbauschritte.
+[Maschinenlesbarer Browsernachweis](verification/2026-10-28-data-source-ui.json),
+[Desktopbild](figures/data-source-ui/desktop.png),
+[Dialog bei 390 Pixeln](figures/data-source-ui/mobile.png) und
+[Vertrag/Umfang](22-datenquellen-adapter-und-fallbackkonzept.md#19-erste-experimentelle-umsetzung-und-verifikation).
+
+### Nachgeschärfte Beweisgrenze nach Konzeptreview (2026-10-28)
+
+Der Kompatibilitätstest schaltet den Quellenplan im **selben neuen Code** aus
+bzw. auf reine Legacy-Auswahl. Er sichert diesen Vergleich, aber keinen vollständigen
+Vorher-/Nachherbeweis gegen die Version vor der Readerextraktion. Die Mehrregionen-
+und Zweigmatrix wurde nicht ausgeführt; vorhandene frühere regionale Gütertests
+belegen nicht automatisch die neue Quellenmigration.
+
+Der Punktimport setzt bislang in vollständig abgedeckten Boxzonen ohne Punkt den
+Arbeitswert null. Ohne expliziten Erhebungs-/Vollständigkeitsvertrag ist das für
+lückenhafte Register nicht abgesichert. Ein AGS-/Gebietsstandsjoin für kommunale
+Aggregate und ein vollständiger Provenienzvertrag für kombinierte Teile fehlen.
+Die Lkw-Demonstration bestätigt technische Mengenerzeugung, nicht die Erfüllung
+der vier fachlichen Ersatzprobleme. Hierfür gibt es noch keinen eigenständigen
+Qualitätspolicy-Blocker im Code.
+
+**Konsequenz:** Die Bezeichnung „technischer Schnitt bestanden“ gilt ausschließlich
+für die genannten Prüfungen. Sie ist keine allgemeine Fachfreigabe des Quellenplans
+oder des Schwerlastfallbacks. Die [Fallmatrix G1–G12](22-datenquellen-adapter-und-fallbackkonzept.md#131-verbindliche-fallmenge)
+benennt bestandene Teilprüfungen und offene Nachweise getrennt. In dieser
+Dokumentrevision wurden diese Läufe nicht nachgeholt und keine neuen Codeprüfungen
+behauptet.
+
+## Datenquellen M0: Vollständigkeit und Teileherkunft (2026-10-28)
+
+**Befund:** Der Arbeitsplatzpunktimport verlangt nun eine mit der Datenrevision
+unveränderlich gespeicherte Vollständigkeitsangabe und einen beschriebenen
+Erhebungsumfang. Unbekannte oder lückenhafte Bestände und Gemeindeaggregate werden
+vor Veröffentlichung bzw. Auswahl abgelehnt. Fehlende Metadaten alter Revisionen
+werden nicht ergänzt; deren Inhaltshashes bleiben lesbar, die Auswahl blockiert
+vor dem Queueing. Ein bestätigter leerer Teil eines vollständigen Registers ist
+hingegen ein erlaubter Nullbereich.
+
+Der neue Herkunftsvertrag `synthesis-source-provenance-v1` bewahrt Quellrevision,
+Rohhash, Quellzeilen/-IDs, Punktzuordnung und räumliche Ergänzung je Zone.
+Der alte Teil bleibt ausdrücklich `unknown`; keine erfundene Auflösung in OSM
+oder synthetische Provider. Ein Fehler der Lückenregel verändert keine Zonen.
+
+| Prüfung | Ergebnis und Reichweite |
+|---|---|
+| Backend komplett | `mvn -o -Daether.syncContext.named.factory=noop test`: 394 Tests, 0 Fehler, 4 optionale Skips; 27:40 Minuten inklusive externer Bestandsprüfungen |
+| `DataSourcesTest` | 14 Tests ohne Fehler/Skips; darunter vier neue Fälle für Vollständigkeit, unveränderte alte Revisionshashes, fehlende Queue bei Blocker, atomare Teilabdeckung, Quellzeilenbilanz und deklarierte Nullbereiche |
+| Persistierter Bericht | Offline-Pipeline schreibt Vollständigkeitsangabe, `rowAssignments` und typisierten Herkunftsgraph nach `sources/resolution.json`; wiederholte Ausführung und Legacy-Vergleich bleiben geprüft |
+| Frontend | 95 Tests in 11 Dateien grün; drei neue Fälle prüfen ungeklärte/partielle/kommunale Eingaben, Metadatenweitergabe, Invalidierung nach Änderungen und Anzeige der noch ausstehenden Zuordnung |
+| Produktions-AOT | Erfolgreich |
+| Echte Browserkette dieses Schritts | Nicht ausgeführt: automatische Freigabe des isolierten Testservers wegen Kontingentlimit nicht verfügbar; der Server wurde nicht gestartet |
+
+**Konsequenz:** Die gefährliche Annahme „Box bedeutet automatisch Vollständigkeit“
+ist für neue Arbeitsplatzimporte durch einen expliziten Vertrag ersetzt. Die
+Erklärung bleibt eine Quellenangabe, keine unabhängig gemessene Vollständigkeit.
+Die Abweisung kommunaler Aggregate implementiert noch keinen AGS-Adapter.
+Die gesamte regionale Fallmatrix, Vor-Umbau-Baseline und fachliche Lkw-Abnahme
+bleiben offen. Der frühere Browsernachweis bleibt historisch und wird nicht als
+Nachweis der neuen Eingaben ausgegeben.
+
+[Maschinenlesbarer Prüfstand](verification/2026-10-28-data-source-m0.json).
+
+## Datenquellen M1: Pakete, Profile und Gebietswechsel (2026-10-28)
+
+**Befund:** Szenariolokale ZIP-Pakete lassen sich ohne Kerncodeänderung installieren
+und über versionierte Profile priorisieren. Installation und Profilspeicherung
+aktivieren keine Quelle und verändern bestehende Profilbindungen nicht. Identische
+Paketbytes sind idempotent; andere Inhalte bei gleicher Edition erhalten andere
+IDs. Fehlende Dateien fallen nur nach expliziter Regel durch, beschädigte Daten
+bleiben Fehler. Die Entscheidung einschließlich übersprungener und nicht geprüfter
+Kandidaten stimmt zwischen Vorschau, Eingabelock und Generierungsbericht überein.
+
+| Prüfung | Ergebnis und Reichweite |
+|---|---|
+| Backend-Gesamtsuite | 401 Tests, 0 Fehler, 4 optionale Skips; Offline-Maven mit Named-Lock-Umgehung, 3:05 Minuten |
+| Abschließende Quellenfälle | 22 Tests, keine Fehler/Skips: 14 bestehende Import-/Pipelinefälle plus acht Paket-/Profilfälle; der achte Profilfall wurde nach der Gesamtsuite ergänzt |
+| Fremdgebiet | Künstliche französische Box: deutsches CSV-Paket ungeeignet, französisches JSON-Paket ausgewählt; Arbeitswerte und Teileherkunft in Offline-Pipeline geprüft |
+| Weitere Verbraucher | Dasselbe Profil versorgt Bevölkerungsverteilung und schwere Fahrzeug-OD; 43 Personen und drei schwere Fahrten im Offlinefall, kein Simulation-/Kalibrierungsnachweis |
+| Fehler-/Integritätsfälle | Profiländerung, Paketmanipulation, falscher Hash, Pfad im ZIP, übergroßer entpackter Inhalt, nicht deklarierter Download, ungültige Einheit und fehlende Revisionen; bei fachlich fehlerhaftem Mehrquellenpaket keine Revision veröffentlicht |
+| Frontend | 99 Tests in 11 Dateien und Produktions-AOT grün; Reihenfolge, Abwahl, getrennte Profilentwürfe, fehlende Aktivierung und Fehlerdiagnosen geprüft |
+| Echter Browser | Zwei dokumentierte Pakete per UI installiert, Profil angelegt und ausdrücklich ausgewählt; geografische Auswahl erklärt, Plan gespeichert, Offlinegenerierung mit zwölf angewendeten Arbeitsgewichten und Teileherkunft; keine JS-Laufzeitfehler |
+
+Der Browserlauf verwendete einen isolierten Server auf Port 8093 mit eigenem
+Datenverzeichnis. Livequellen, actiTopp, logiTopp und Realrouting waren ausgeschaltet.
+Desktop und Dialog bei 390 Pixeln geprüft; keine Aussage zur gesamten bestehenden
+mobilen Studioansicht. Die Beispielpakete enthalten künstliche Werte, keine
+beobachteten Arbeitsplatzregister. Auswahl einer Ersatzquelle wird getrennt von
+einer Modellannahme bezeichnet.
+
+**Konsequenz:** Lokaler M1-Schnitt für die drei vorhandenen Verträge technisch
+nachgewiesen. Kein allgemeiner Beweis für nationale Großbestände, alle Provider,
+alle Gebiets-/Zeitkonstellationen oder empirische Gütermengen. Die vollständige
+Freigabematrix bleibt teilweise offen; allgemeine Providerabhängigkeiten wurden
+nicht als vorhanden ausgegeben.
+
+[Browsernachweis](verification/2026-10-28-data-source-m1-ui.json),
+[Desktopbild](figures/data-source-m1/desktop.png),
+[Dialog bei 390 Pixeln](figures/data-source-m1/mobile.png),
+[Beispielpakete](examples/data-packs/README.md).
+
+## Gemeindeaggregate und Qualitätsmodus (2026-10-29)
+
+**Befund:** Gemeindeaggregate bleiben als Schlüssel-/Gebietsstandssummen erhalten.
+Ihre räumliche Verteilung verwendet eine eigene unveränderliche Gewichtsrevision,
+die mit den übrigen Eingaben eingefroren wird. Der Nenner enthält auch außerhalb
+liegende Gewichtspunkte. Der Bericht dokumentiert deshalb einen regionalen Teil,
+keine still auf die Region hochskalierte Gemeindesumme.
+
+| Prüfung | Ergebnis und Reichweite |
+|---|---|
+| Backend-Gesamtsuite | 411 Tests, 0 Fehler, 4 optionale Skips; Offline-Maven mit Named-Lock-Umgehung, 2:55 Minuten |
+| Fokussierte Quellenfälle | 31 Fälle ohne Fehler/Skips: neun neue Gemeindevertrags-/Qualitätsfälle sowie 22 vorhandene Import-, Paket- und Profilfälle |
+| Mengen-/Raumprobe | Künstliche Gemeindesumme 100, Gewichte 3:1, ein Punkt außerhalb: 75 angewendet, 25 außerhalb. Explizite Null erhalten, nicht zugeordnete Zonen gemäß Lückenregel; keine Mengenhochrechnung |
+| Ganz außerhalb | 0 angewendet, 100 außerhalb; bisherige Gewichte nur bei erlaubtem Legacy-Fallback erhalten, sonst atomarer Abbruch |
+| Schlüssel/Referenzen | Führende Nullen, doppelte/falsch formatierte AGS, falscher Gebietsstand/Fachvertrag, fehlende Zuordnung, manipulierte Revision und zyklische Abhängigkeit geprüft |
+| Persistierte Pipeline | Anwendungsbericht mit Gemeindemengen und Teileherkunft, Eingabelock mit der referenzierten Gewichtsrevision geprüft |
+| Qualitätsmodus | Fehlende Explorationsfreigabe/-beschreibung und fachlicher Auswertungsmodus blockieren die technische Lkw-Demonstration; expliziter Ausschluss bleibt möglich |
+| Frontend | 102 Tests in 11 Dateien und Produktions-AOT grün; unterstützende Referenzen bleiben aus der Aspektauswahl, Importinitialisierung und Qualitätsanzeigen geprüft |
+
+**Prüfgrenze:** Die künstlichen Gemeindeschlüssel und Ortskoordinaten sind keine
+realen administrativen Referenzen. Die Verteilung ist ein explizites Modell und
+keine beobachtete Betriebsgeografie. Ein Hash belegt Unverändertheit, nicht die
+amtliche Gültigkeit eines Schlüssels oder die räumliche Vollständigkeit der Quelle.
+Der bisherige verhaltensgleiche Legacy-Vergleich bleibt ein Vergleich im aktuellen
+Code; eine allgemeine Vor-Umbau-Baseline ist weiterhin offen.
+
+**Konsequenz:** Nutzbare Gemeindeimporte benötigen passende, ausdrücklich bereitgestellte
+Gewichte. Amtliche Geometrieprüfung, Polygonallokation, Schlüsselüberleitung und
+fachlich geprüfter Güterfallback werden nicht als fertig ausgegeben. Die Auswahl
+„Fachliche Auswertung“ allein ist keine wissenschaftliche Freigabe.
+
+Die neue Browserkette ist gegen Produktionsfrontend und isoliertes Backend auf
+Port 8094 bestanden: Gewichtsrevision veröffentlichen, AGS-/Gebietsstand binden,
+Aggregate auswählen, fehlende Demonstrationsfreigabe und Auswertungsmodus blockieren,
+ausdrücklich erlaubten Explorationslauf speichern und offline generieren.
+Bestätigt sind Originalsumme 100, angewendet 75, außerhalb 25, drei schwere
+Demonstrationsfahrten und die eingefrorene Referenzrevision. Keine JS-Laufzeitfehler.
+Livequellen, actiTopp, logiTopp und Realrouting waren deaktiviert. Ansichten bei
+1.440 und 390 Pixeln geprüft; die gesamte bestehende mobile Studioansicht wird
+hierdurch nicht abgenommen.
+
+[Browsernachweis](verification/2026-10-29-municipal-sources-ui.json),
+[Desktopbild](figures/municipal-sources/desktop.png),
+[Dialog bei 390 Pixeln](figures/municipal-sources/mobile.png),
+[Importdateien und Modellgrenzen](examples/municipal-workplaces/README.md).
+
+## Gemeindegeometrien und Flächenverteilung (2026-10-29)
+
+**Befund:** Ein Geometriereader erhält Polygon-/MultiPolygon-Objekte und ihre
+Featurebelege. Der normalisierte Geometriewert bleibt strukturiert; Revisionshashes
+sind nach Speicherung und Wiederlesen stabil. Der Aggregateimport bindet eine
+bestimmte Geometrierevision desselben Schlüssel-/Gebietsstands und verwendet ein
+explizites Dichtemodell über die vollständige Gemeindefläche.
+
+Die finale Backend-Gesamtsuite bestand mit **418 Tests ohne Fehler und vier
+optionalen Skips** (Offline-Maven mit Named-Lock-Umgehung, 3:23 Minuten). Die
+fokussierten Quellenfälle umfassen 38 Tests ohne Fehler/Skips; Frontend 103 Tests
+in elf Dateien und Produktions-AOT grün.
+
+Sieben gezielte Flächenfälle prüfen Geometrie-/Hash-Roundtrip, lokale GeoJSON-Pakete,
+wahre EPSG:3035-Zellen, deckungsgleiche Ränder, Löcher, disjunkte MultiPolygone,
+Überlappungen, ungültige Ringe und CRS-Konflikte. Mengen werden nicht auf die innerhalb
+liegenden Zonen renormalisiert. Die Abdeckung toleriert nur einen dokumentierten
+1-cm-Randpuffer; echte größere Löcher bleiben offen. Mengen sind ungepuffert.
+
+Die echte Browserkette importierte das künstliche Lochpolygon, band es an zwei
+Gemeindeaggregate, prüfte die Analysesperre und generierte offline. Aus der Summe
+100 wurden rund 29,373 angewendet, 6,011 wegen Teilzonen nicht angewendet und 64,615
+außerhalb dargestellt. Die ungerundete Bilanz im JSON ergibt 100. Keine JS-Fehler;
+Ansichten bei 1.440 und 390 Pixeln geprüft. Livequellen, actiTopp, logiTopp und
+Realrouting waren deaktiviert, Serverport 8095 mit eigenem Datenverzeichnis.
+
+**Konsequenz:** Flächenzuordnung ist ein technisch nachgewiesenes Modell mit
+konstanter innergemeindlicher Dichte, keine beobachtete Betriebsverteilung. Die
+synthetischen Schlüssel/Geometrien sind keine realen Verwaltungsreferenzen.
+Amtliche Datenqualität, Schlüsselüberleitungen und der fachliche Güterfallback
+sind weiterhin nicht belegt.
+
+[Browsernachweis](verification/2026-10-29-municipal-areas-ui.json),
+[Desktopbild](figures/municipal-areas/desktop.png),
+[Dialog bei 390 Pixeln](figures/municipal-areas/mobile.png) und
+[GeoJSON-Beispiel](examples/municipal-workplaces/areas.geojson).
+
+## Konfigurierbare Bevölkerungsprovider (2026-10-29)
+
+**Befund:** Die bisherige Bevölkerungskette kann als explizite Reihenfolge ihrer
+fünf nativen Provider ausgeführt werden. `PopulationSourcesTest` prüft verzögertes
+Einlesen, Abwahl, Vorrang, Ausfallregeln, erschöpfte Ketten, Integritätsfehler,
+Unterbrechung, Planvorprüfung, Uploadbindung, getrennte Herkunft für manuelle
+Gesamtzahl und Verteilung sowie Entfernung alter Berichte.
+
+Fünf getrennte synthetische Offlinefälle decken Uploadraster, gecachtes Zensusarchiv,
+OSM-Siedlungen, POIs ohne Siedlungen und Ersatz ohne Ortsdaten ab. Jeder Fall vergleicht
+Plan aus → Plan an mit Legacy-Auswahl → explizite native Standardreihenfolge.
+Alle Dateien unter `population/`, `matrix/`, `zone-repository/`, `legacy/`, `logistics/`
+und die gemeinsame `demand/traffic-demand.json` müssen bytegleich bleiben. Seed 42,
+WGS84-Testbox 8,20/48,85–8,24/48,89, 1-km-Zonierung, externe Ziele und externe
+Simulation aus. Die Zensus-ZIP ist eine künstliche lokale Testquelle, keine amtliche
+Datei. Das sind Vergleiche der Pfade im aktuellen Code; kein unabhängiger Vergleich
+mit einem isoliert ausgeführten alten Commit und keine realregionale Abnahme.
+
+**Konsequenz:** Die erste native Providerfamilie ist technisch auswählbar und ihre
+Standardreihenfolge abgesichert. Weitere Familien, gemeinsame native/importierte
+Profilketten und empirische Freigaben sind offen. Raster mit unterdrückten Werten
+werden im expliziten Pfad abgelehnt; eine NoData-Maske wird nicht vorgetäuscht.
+[Bedienung und Beispielplan](examples/population-sources/README.md).
+
+**Ausgeführt:** `mvn -o -Daether.syncContext.named.factory=noop test` mit lokalen
+Testports: 429 Tests, 0 Fehler, 4 optionale Skips; elf neue Providerfälle.
+`npm test`: 105 Tests grün; `npm run build`: Produktions-AOT grün.
+Die vollständige Suite lief abschließend ohne parallele Backendkompilierung.
+Ein vorheriger Lauf war durch gleichzeitiges Kompilieren gestört; ein weiterer
+Sandboxlauf konnte bestehende lokale HTTP-Testports nicht öffnen. Diese Läufe
+sind keine grünen Nachweise.
+
+Die echte Browserkette speicherte Reihenfolge und Uploadabwahl, erzeugte 50 manuell
+vorgegebene Personen mit Ersatzverteilung, wählte danach den Upload an erster Stelle
+und erzeugte 80 Personen aus dem Raster. Der Eingabelock enthält dessen Hash;
+keine JavaScriptfehler, Dialogbreite bei 1.440/390 Pixeln geprüft. Isolierter
+Backendport 8096, Simulation/Live-OSM/Zensusabruf/Realrouting aus.
+[Browsernachweis](verification/2026-10-29-population-sources-ui.json),
+[Desktopbild](figures/population-sources/desktop.png),
+[Dialog bei 390 Pixeln](figures/population-sources/mobile.png).
+
+## Gemeinsame Providerauflösung und Arbeitsplatzquellen (2026-10-29)
+
+**Befund:** `WorkplaceSourcesTest` prüft fünf Fälle: Der gemeinsame generische Kern
+löst einen unabhängigen Integer-Vertrag auf und verwirft ungültige Werte; OSM-Work
+bleibt zur bisherigen Tag-Ableitung identisch; explizite synthetische Auswahl ist
+seedabhängig und wiederholbar, ohne andere Kategorien zu ändern; unpassende/defekte
+Quellen überschreiben keine Teilmenge; die Offlinepipeline persistiert Teileherkunft,
+Fehlerbericht und entfernt diesen beim Abschalten. Die bisherigen elf
+Bevölkerungsfälle laufen nun über denselben Kern, einschließlich der fünf
+Bytevergleiche gegen die Bestandspfade.
+
+Eine synthetische OSM-Fixture mit einem Shop-/Office-POI liefert Gewicht 48,
+keine gemessenen 48 Arbeitsplätze. Die neue Browserkette wählt zuerst bei weiterhin
+aktivem OSM die synthetische Work-Quelle und schließt OSM-Work aus. Danach werden
+OSM-Work und Uploadbevölkerung gewählt. Der Bericht muss die jeweiligen Beiträge,
+die Rastermenge 80 und Work-Gewichtssumme 48 erhalten; andere Zwecke bleiben OSM-basiert.
+
+**Konsequenz:** Gemeinsame Auswahlregeln sind technisch wiederverwendet, und die
+zweite native Providerfamilie ist im Studio auswählbar. Ein globaler Plugin-Lader,
+gemeinsame native/Revision-/Paketketten, frei konfigurierbare Registerlücken und
+empirische Arbeitsplatzmodellfreigabe sind damit nicht umgesetzt.
+[Bedienung und Beispielplan](examples/workplace-sources/README.md).
+
+**Ausgeführt:** Finale vollständige Backend-Suite
+`mvn -o -Daether.syncContext.named.factory=noop test`: 434 Tests, keine Fehler,
+vier optionale Skips (ActitoppIntegrationTest, PtIntegrationTest,
+MobileCityRastattSourcesTest, MobileCityCrossMunicipalitySourcesTest).
+54 gezielte Quellenfälle ohne Fehler/Skips. `npm test`: 106 Tests grün;
+`npm run build`: Produktions-AOT grün. Der finale Backendlauf wurde nach Abschluss
+aller Kompilierungen gestartet.
+
+Die echte Browserkette bestand mit der finalen Produktionsoberfläche: 50 manuell
+vorgegebene Personen mit unabhängiger Verteilung, anschließend 80 aus dem
+hashgebundenen Upload; synthetische Work-Auswahl mit abgewähltem OSM-Work,
+anschließend OSM-Work mit Gewichtssumme 48. Keine JavaScriptfehler; der Dialog
+wurde bei 1.440 und 390 Pixeln geprüft. Serverport 8097 und eigenes Testverzeichnis;
+externe Simulation, Realrouting, Live-OSM und Live-Zensus waren deaktiviert.
+Die mobile Aufnahme zeigt den Dialog; eine vollständige mobile Studioabnahme
+ist damit nicht behauptet.
+[Browsernachweis](verification/2026-10-29-provider-chains-ui.json),
+[Desktopbild](figures/provider-chains/desktop.png),
+[Dialog bei 390 Pixeln](figures/provider-chains/mobile.png).
+
+## Gemischte Profile und explizite Registerlücken (2026-10-29)
+
+**Befund:** Zehn neue Fälle in `MixedSourcesTest` prüfen native Fachverträge,
+Ausschluss impliziter Legacy-Rückwege, gebundene Revisionsdaten nach Entfernen ihrer
+Datei, potenzielle/abgewählte/nachrangige Kandidaten, echte Nullwerte, disjunkte
+Register-/Modellscopes, atomaren Abbruch bei fehlendem Ersatz, Nichtausführung unnötiger
+Lückenfüller, ausschließlich partielle Punktabdeckung, Gemeindeaußenmengen und
+Polygon-Teilzonen. Ein Paket-/Native-Fall und die vollständige Offlinepipeline mit
+Population/Work-Profilen ergänzen die Vertragsfälle. Gleicher Input/Seed muss
+bytegleiche gemeinsame Verkehrsnachfrage liefern; Quellenfehler bleiben sichtbar.
+
+**Konsequenz:** Die gemeinsame Kette und explizite native Registerlücken sind für
+Bevölkerung/Work technisch implementiert. Vergleichbare Registermengen bleiben
+getrennt von heuristischen Modellgewichten. Die Vorprüfung darf defekte potenzielle
+Importdateien vor dem Lauf ablehnen; sie behauptet für native Kandidaten noch keine
+räumliche Verfügbarkeit. Dieser Nachweis ist keine empirische Modellkalibrierung
+oder vollständige Abnahme aller Regionen/Zielmodelle.
+[Beispielpaket und genaue Regeln](examples/mixed-sources/README.md).
+
+**Ausgeführt:** Finale vollständige Backend-Suite
+`mvn -o -Daether.syncContext.named.factory=noop test`: 444 Tests, keine Fehler,
+vier optionale Skips (ActitoppIntegrationTest, PtIntegrationTest,
+MobileCityRastattSourcesTest, MobileCityCrossMunicipalitySourcesTest).
+64 gezielte Quellenfälle ohne Fehler/Skips; `npm test`: 108 Tests grün;
+`npm run build`: Produktions-AOT grün. Bestehende Bevölkerungspfade bleiben in den
+fünf enthaltenen Bytevergleichsfällen gleich.
+
+Die echte Browserkette importierte Bevölkerungsdaten und ein vollständiges künstliches
+Teilregister mit 12/0-Werten, erstellte beide gemischten Profile über die UI und
+konfigurierte synthetische Registerlücken bei abgewähltem OSM-Lückenfüller. Nach
+Speichern und Generierung enthielt der Lauf 80 Personen, 12 angewendete Register-
+arbeitsplätze und getrennte Modellgewichte für die anderen Zonen. Der echte Nullwert
+wurde zusätzlich in `zone-repository/attractivities.csv` über die externe Zonen-ID
+geprüft. Beide Profilbindungen und Revisionsdaten sind im Lock erhalten. Keine
+JavaScriptfehler; Dialog bei 1.440/390 Pixeln geprüft. Isolierter Backendport 8098,
+Livequellen, Realrouting und externe Simulation deaktiviert.
+
+Das mitgelieferte ZIP und die gemeinsame Profildefinition wurden zusätzlich über
+REST installiert, geprüft und generiert: Paketpopulation 80, Registermenge 12 und
+separate synthetische Modellgewichte. Die künstlichen Datensätze bleiben technische
+Fixtures; diese Ergebnisse belegen keine regionale oder empirische Modellgüte.
+[Browsernachweis](verification/2026-10-29-mixed-sources-ui.json),
+[Beispielpaketnachweis](verification/2026-10-29-mixed-sources-example.json),
+[Desktopbild](figures/mixed-sources/desktop.png),
+[Dialog bei 390 Pixeln](figures/mixed-sources/mobile.png).
+
+## Mehrere Register regional ergänzen (2026-10-29)
+
+**Befund:** Acht neue `RegionalWorkplacesTest`-Fälle prüfen den vorab erfassten alten
+Profilhash, überlappende Register mit echtem Nullwert und Prioritätsumkehr, atomaren
+Abbruch bei Restlücken, expliziten Modellgebrauch bei fehlenden Daten, gefrorene
+Revisionen nach Dateientfernung, kommunale Außenmengen unter Vorrang, unabhängige
+Punkt-/Polygonreferenzen mit echten EPSG:3035-Zellen, unzulässige Strategien/Provider,
+Vorprüfung aller potenziellen Quellen und bytegleiche wiederholte Offlinegenerierung.
+
+Der künstliche Referenzfall A vor B erhält 12 und 0 aus A. B liefert zusätzlich 7;
+seine 99 im Überlappungsbereich werden verdeckt. Die Quellenmengen sind pro Register
+bilanziert. Für die kombinierte Registerabdeckung wird kein unnötiges natives Modell
+aufgelöst. Die Gegenreihenfolge darf andere Gewichte erzeugen; sie ist explizite Policy.
+
+**Konsequenz:** Der regionale Mehrregisterfall ist technisch implementiert. Diese
+Belege bescheinigen keine reale Registervollständigkeit oder gemeinsame Definition
+verschiedener Beschäftigtenbestände. Die bisherige nicht-regionale Quellenwahl und
+alte Profilhashes bleiben abgesichert.
+[Beispiel, Bericht und Grenzen](examples/regional-registers/README.md).
+
+**Ausgeführt:** Finale vollständige Backend-Suite
+`mvn -o -Daether.syncContext.named.factory=noop test`: 452 Tests, keine Fehler,
+neun optionale Skips. Gegenüber dem vorherigen Lauf wurden zusätzlich vier
+Live-LLM-Fälle in `GtaBehaviorTest` und ein Fall in `LlmModeChoiceTest` übersprungen;
+die übrigen vier sind die bekannten optionalen MobileCity-/actiTopp-/PT-Fälle.
+72 gezielte Quellenfälle ohne Fehler/Skips. `npm test`: 110 Tests grün;
+`npm run build`: Produktions-AOT grün.
+
+Die echte Browserkette importierte beide Register, wählte die regionale Strategie
+und ihre Reihenfolge im Profileditor, konfigurierte die getrennte Lückenliste,
+prüfte/speicherte den Plan und generierte offline. A lieferte 12 und den erhaltenen
+Nullwert; B lieferte 7 bei verdeckten 99. Kein natives Ersatzmodell wurde benötigt,
+obwohl die Lückenliste konfiguriert war. Der Nullwert wurde zusätzlich über die
+externe Zonen-ID im Export geprüft. Keine JavaScriptfehler; der Dialog wurde bei
+1.440 und 390 Pixeln geprüft. Backendport 8099 mit eigenem Datenverzeichnis,
+Livequellen, Realrouting und externe Simulation deaktiviert.
+
+Das mitgelieferte Beispiel-ZIP und seine konkrete Profildefinition wurden zusätzlich
+installiert und tatsächlich generiert; dieselben Mengen-/Vorrangregeln bestanden.
+Die Zahlen sind synthetische Vertragsbelege, keine empirischen Regionalergebnisse.
+[Browsernachweis](verification/2026-10-29-regional-registers-ui.json),
+[Beispielpaketnachweis](verification/2026-10-29-regional-registers-example.json),
+[Desktopbild](figures/regional-registers/desktop.png),
+[Dialog bei 390 Pixeln](figures/regional-registers/mobile.png).
+
+## Rasterzellen mit expliziten Masken (2026-10-30)
+
+**Befund:** Zehn `MaskedCellsTest`-Fälle prüfen Normalisierung und erhaltene
+Rohmarker, echte Null, fehlend/nicht erhoben/unterdrückt, widersprüchliche Werte,
+Rasterüberlappung, Flächenanteile ohne regionale Hochskalierung, atomare Work-Fehler,
+regionale Ergänzung ohne Überschreiben einer Null, Bevölkerungsmengenanker und
+widersprüchliche Gesamtsummen, Restmenge null, vollständig unbekannte Quellen,
+Teilzonen und bytegleiche wiederholte Offlinegenerierung mit gefrorenen Eingaben.
+
+Im künstlichen Fall liefern die zwei bekannten 1-km-Zellen 30 und 0; drei weitere
+Zellen enthalten `missing: NA`, `suppressed: -1` und `not-collected: leer`.
+Zielzahl 60 erlaubt eine modellierte Restmenge 30. Unbekannte Zellwerte sind keine
+Nullmengen und bilden keine bekannte regionale Gesamtsumme. Bei Work werden
+Registermengen nicht mit Ersatzgewichten als beobachtete Summe verrechnet.
+
+**Ausgeführt:** Vollständige Offline-Backend-Suite vom 29.10.2026:
+`mvn -o -Daether.syncContext.named.factory=noop test`, 462 Tests, keine Fehler,
+neun optionale Skips (zwei MobileCity-Referenzfälle, actiTopp, PT, vier GTA-Live-LLM-
+Fälle und LLM-Moduswahl). 82 gezielte Quellenfälle ohne Fehler/Skips.
+`npm test`: 112 Tests grün; `npm run build`: Produktions-AOT grün.
+[Maschinenlesbarer Abschlussnachweis](verification/2026-10-30-masked-cells-final.json).
+
+Der tatsächliche UI-Ablauf vom 30.10.2026 importierte beide Zellverträge über den
+Mappingeditor, wählte konkrete Revisionen und explizite Lückenmodelle, setzte
+Gesamtzahl 60, prüfte/speicherte den Plan und generierte offline. Population:
+30 bekannte angewendete Personen und 30 modellierte Restmenge; die Nullzone blieb
+im Personenexport mit Ziel/Ergebnis 0 erhalten. Work: 30 und Null aus der Quelle,
+synthetische Gewichte ausschließlich in offenen Zonen; Null zusätzlich im
+Attractivity-Export geprüft. Keine JavaScriptfehler; Dialog bei 1.440/390 Pixeln
+geprüft. Eigener Backendport 8100 und eigenes Datenverzeichnis, Livequellen,
+Realrouting und externe Simulation deaktiviert.
+
+Das Beispiel-ZIP und die konkrete gemeinsame Profildefinition wurden zusätzlich
+installiert, geprüft und generiert. Die gemischten Formate verwenden den gemeinsamen
+Importvertrag; dieser Nachweis prüft konkret CSV im UI und im ZIP.
+[Browsernachweis](verification/2026-10-30-masked-cells-ui.json),
+[Beispielpaketnachweis](verification/2026-10-30-masked-cells-example.json),
+[Desktopbild](figures/masked-cells/desktop.png),
+[Dialog bei 390 Pixeln](figures/masked-cells/mobile.png).
+
+**Konsequenz/Grenzen:** Der typisierte Zellvertrag ist technisch nutzbar, die
+allgemeine Rastermigration bleibt offen. Mengen beziehen sich auf bekannte
+Quellzellen; teilweise bekannte Modellzonen werden ganz ergänzt und ihre bekannten
+nicht angewendeten Mengen bleiben im Bericht. Kein Schluss auf geheime Einzelwerte.
+Die vorhandene Haushaltsrundung erzeugte im Browserfall 63 statt 60 Personen;
+die Restmengenregel gilt vor dieser getrennt ausgewiesenen Rundung. Technische
+Fixtures belegen keine empirische Regional- oder Ersatzmodellgüte.
+
+## Szenarioübergreifende Datenpaketbibliothek (2026-10-30)
+
+**Befund:** Sieben `DataPackLibraryTest`-Fälle prüfen unabhängige Veröffentlichung,
+explizite Kopie ohne Aktivierung, Idempotenz und identische Paket-/Revisionshashes,
+Bereitstellung eines installierten Pakets, Versionswechsel ohne Umbindung, sichtbare
+Integritätsfehler und weiter nutzbare Szenariokopien, portable Gemeindeabhängigkeiten
+und Gebietsstand, ungültige Archive/Pfade, REST-Status sowie wiederholte bytegleiche
+Offlinegenerierung nach Entfernen der zentralen Paketdatei. Gemeindeaggregate ohne
+mitgelieferte Referenzrevision werden vor Bibliotheksspeicherung abgelehnt.
+
+**Ausgeführt:** Vollständige Backend-Suite
+`mvn -o -Daether.syncContext.named.factory=noop test`: 469 Tests ohne Fehler,
+neun optionale Skips (zwei MobileCity-Referenzfälle, actiTopp, PT, vier GTA-Live-LLM-
+Fälle und LLM-Moduswahl). 89 gezielte Quellenfälle ohne Fehler/Skips.
+`npm test`: 116 Tests grün; `npm run build`: Produktions-AOT grün.
+[Maschinenlesbarer Abschlussnachweis](verification/2026-10-30-source-library-final.json).
+
+Der [vor dem Browserlauf festgelegte Prüffall](verification/2026-10-30-source-library-plan.json)
+verwendet zwei feste ZIP-Versionen mit künstlichen EPSG:3035-Zellen. V1 enthält
+bekannte Werte 30/0, V2 50/0; drei weitere Zellwerte bleiben ausdrücklich unbekannt.
+Region, Zonierung, Zielzahl 60, Seed 42 und Vergleichsartefakt sind festgehalten.
+Der tatsächliche Browserlauf installierte V1 in Szenario A und veröffentlichte sie
+bewusst in die Bibliothek. Szenario B übernahm genau V1 mit identischen
+Revisionshashes; sein Quellenplan blieb zunächst unverändert deaktiviert. Erst eine
+separate UI-Auswahl aktivierte Population/Work mit expliziten Lückenmodellen.
+
+V2 wurde anschließend in der UI veröffentlicht. B behielt V1, seine Quellenbindung
+und 30 bekannte Personen plus Restmenge 30. Danach wurde ausschließlich die zentrale
+V1-Testdatei absichtlich beschädigt. Die UI zeigte den Fehler und blockierte ihre
+Übernahme. Die fünf erneut erzeugten, gefüllten CSVs von B blieben bytegleich: Personen,
+Haushalte, Aktivitäten, Zonen und Attraktivitäten. Der ursprüngliche Vergleich des
+im Offlinefall leeren gemeinsamen Nachfragecontainers war dafür zu schwach und
+wurde vor dem finalen frischen Browserlauf entsprechend ersetzt. Der eigene
+Eingabestand von B blieb erhalten. Der
+Browserlauf hatte keine JavaScriptfehler. Dialog bei 1.440/390 Pixeln geprüft;
+kein horizontaler Dialogüberlauf. Isolierter Backendport 8101 mit eigenem
+Datenverzeichnis, Livequellen, Realrouting und externe Simulation deaktiviert.
+[Browsernachweis](verification/2026-10-30-source-library-ui.json),
+[Desktopbild](figures/source-library/desktop.png),
+[Dialog bei 390 Pixeln](figures/source-library/mobile.png).
+
+Im finalen Browservergleich sind die Ausgaben tatsächlich gefüllt: 63 Personen,
+28 Haushalte, 1.814 Aktivitätenzeilen und jeweils 21 Zonen-/Attraktivitätszeilen.
+Die fünf Dateien besitzen vor/nach Zentralbeschädigung identische Bytes/Hashes.
+Der weiterhin separate Haushaltsrundungsbefund (63 statt Ziel 60) wird dadurch nicht
+behoben. **Korrektur der ersten Einordnung:** Die älteren Fünfzweigtests vergleichen über
+`DataSourcesTest.coreArtifacts` bereits sämtliche Dateien unter `population/`,
+`matrix/`, `zone-repository/`, `legacy/` und `logistics/`. Der zusätzliche leere
+Nachfragecontainer war nicht ihre einzige Absicherung. Die gegenteilige Aussage
+war zu weitgehend. Ergänzt wurden nun eine ausdrückliche Mindestmenge gefüllter
+CSV-Dateien sowie maschinenlesbare Fixture-/Ergebnishashes je Zweig. §13/G1 bleibt
+wegen der fehlenden isolierten Vor-Umbau-Baseline teilweise offen.
+
+**Konsequenz/Grenzen:** Die installationsweite Paketwiederverwendung ist technisch
+belegt. Szenarien haben keine neue zentrale Laufzeitabhängigkeit. Der Nachweis
+erstreckt sich auf Paketdaten und ihre notwendigen Referenzen; Quellenprofile
+bleiben szenariolokal. Kein Beleg für automatische Regionalauswahl, entfernte
+Kataloge, vollständige Quellfamilienmigration oder empirische Modellgüte.
+[Bedienung, API und Versionsbeispiele](examples/source-library/README.md).
+
+## Gemeinsame Quellenprofile und Kompatibilitätsnachweise (2026-10-30)
+
+**Befund:** Sieben neue `SourceProfileLibraryTest`-Fälle prüfen identische Profil-/
+Paket-/Revisionshashes und Idempotenz ohne Aktivierung, lokale Revisionskandidaten
+gegen portable Paketbeiträge, native Regeln und Ausschluss ohne Eingabelesezugriff,
+vollständige Vorprüfung aktiver Abhängigkeiten vor der ersten Zielschreiboperation,
+Versionswechsel ohne Umbindung, beschädigte gemeinsame Dateien bei gültigen
+Szenariokopien, REST-Status und wiederholte gefüllte bytegleiche Ausgaben ohne
+zentrale Dateien. Das Ziel wird bei fehlendem nachrangigem Paket nicht teilweise
+materialisiert; es bleibt vor dem Übernahmeversuch unverändert.
+
+**Ausgeführt:** Vollständige Backend-Suite
+`mvn -o -Daether.syncContext.named.factory=noop test`: 476 Tests ohne Fehler,
+neun optionale Skips (zwei MobileCity-Referenzfälle, actiTopp, PT, vier GTA-Live-LLM-
+Fälle und LLM-Moduswahl). 96 gezielte Quellenfälle ohne Fehler/Skips.
+`npm test`: 120 Tests grün; `npm run build`: Produktions-AOT grün.
+[Abschlussnachweis](verification/2026-10-30-shared-source-profiles-final.json).
+
+Der [vorab festgelegte UI-Fall](verification/2026-10-30-shared-source-profiles-plan.json)
+verwendet ein festes Rasterpaket und zwei Profildefinitionen für Population und
+Work. Szenario A stellte sein vorhandenes Profil bereit; B übernahm dessen konkrete
+Version einschließlich einer gemeinsam benötigten Paketversion ohne Aktivierung.
+Erst danach wurden Profil, Lückenregeln und Mengenanker in der UI ausdrücklich
+gewählt und gespeichert. Der anschließende JSON-Import von V2 änderte die Bindung
+von B nicht. Nach absichtlicher Beschädigung ausschließlich zentraler Profil-/
+Pakettestdateien erzeugte B aus eigenen Inputs fünf bytegleiche gefüllte CSV-Dateien:
+63 Personen, 28 Haushalte, 1.814 Aktivitätenzeilen und jeweils 21 Zonen-/
+Attraktivitätszeilen. Die bestehende Haushaltsrundung (Ziel 60, tatsächlich 63)
+bleibt unabhängig davon sichtbar. Keine JavaScriptfehler; Dialog bei 1.440/390 Pixeln
+ohne horizontalen Überlauf geprüft. Isolierter Testserver auf Port 8102, Livequellen,
+Realrouting und externe Simulation aus.
+[UI-Nachweis](verification/2026-10-30-shared-source-profiles-ui.json),
+[Desktopbild](figures/shared-source-profiles/desktop.png),
+[Dialog bei 390 Pixeln](figures/shared-source-profiles/mobile.png).
+
+**Korrektur und Präzisierung von G1:** Die früheren Fünfzweigtests verglichen über
+`DataSourcesTest.coreArtifacts` bereits alle Ausgaben unter `population/`, `matrix/`,
+`zone-repository/`, `legacy/` und `logistics/`; der zusätzlich verglichene leere
+Offline-Nachfragecontainer war nicht ihr einziger Bytevergleich. Die vorige
+gegenteilige Einordnung wurde korrigiert. Jetzt werden Personen-, Haushalts-,
+Aktivitäten-, Zonen- und Attraktivitätsdateien zusätzlich als vorhandene, gefüllte
+Mindestartefakte verlangt. Pro Zweig werden Fixturehashes, Seed, verglichene Modi
+und sämtliche Ergebnishashes festgehalten. Im ausgeführten Stand wurden für jeden
+der fünf nativen Zweige 69 fachliche Dateien über Plan aus, explizites Legacy und
+Standardprovider bytegleich verglichen.
+[Maschinenlesbarer Fünfzweignachweis](verification/2026-10-30-population-compatibility.json).
+Dies schützt die aktuelle Implementierung; eine isolierte Vor-Umbau-Baseline wird
+weiterhin nicht behauptet.
+
+**Konsequenz/Grenzen:** Profile sind innerhalb derselben Installation samt festen
+Datenabhängigkeiten wiederverwendbar. Native Regeln bleiben Aufträge zur Auflösung
+im Ziel, keine eingefrorenen Quellantworten. Keine automatische regionale Auswahl,
+keine vollständige Migration aller Quellfamilien und keine empirische Modellfreigabe.
+[Portabler Vertrag und Beispieldefinitionen](examples/shared-source-profiles/README.md).
+
+## Quellenplan, Schwerlast-/Unternehmensbeiträge und native Zielwirkung (2026-11-02)
+
+**Befund:** Der neue relationale Bericht `synthesis-freight-source-resolution-v1`
+verbindet tatsächliche Schwerlastfahrten mit ihren gebundenen Quellrelationen.
+Die Eingangs-/Ergebnismenge stimmt je Relation überein; `freight/trips.csv` liefert
+sämtliche Einzelidentitäten. Die technische Mengendemonstration ist in diesem
+Bericht, den bisherigen Freight-Berichten und dem Manifest konsistent als Annahme
+gekennzeichnet. Die Zuordnung behauptet keinen Routing-/Abschlussnachweis; dafür
+bleiben native Ergebnisbilanzen zuständig.
+
+Die [vorab festgelegte Prüfmenge](verification/2026-11-02-source-plan-traffic-plan.json)
+verwendet versionierte, gehashte CSV-/OSM-Fixtures, Seeds 7/42/777 und zwei übersetzte
+synthetische Netzlagen. Das sind keine unabhängigen Stadt-/Landreferenzen und keine
+empirische Quellenabnahme. Der vorhandene bestätigte Firmenimport bleibt als
+separater Beitrag aktiv. Der neue Exporttest umfasst Bestand, Revision A, Profil
+mit A zuerst, Revision B und Schwerlastausschluss:
+
+| Fall | Schwere Fahrten | Unternehmensbeine | Gemeinsame Bewegungen |
+|---|---:|---:|---:|
+| Bestand / Revision A / Profil A | 8 | 3 | 11 |
+| Revision B | 9 | 3 | 12 |
+| Schwerlastausschluss | 0 | 3 | 3 |
+
+**Ergebnis:** Die 69 Dateien unter Population, Matrizen, Zonen, Legacy und Logistik
+bleiben in jeder Lage und bei jedem Seed bytegleich. Die gleichwertigen Bestands-/
+Revisionsdaten liefern zudem denselben gefüllten gemeinsamen Nachfragecontainer.
+Unternehmensimport-, Mapping-, Ausführungsidentitäten und Beine bleiben gleich.
+Die Erhöhung einer einzelnen Schwerlastrelation verändert die übrigen Relationen
+und deren Abfahrten nicht. Ein kontrollierter POI-Wartepunkt belegt, dass die bereits
+gebundene Revision trotz später beschädigter Eingabedatei und umgestellter
+Szenarioauswahl im laufenden Job erhalten bleibt.
+
+Die neue native Abnahme läuft durch den echten `GenerationService` mit Profil A,
+Revision B und Schwerlastausschluss: 2 Netzlagen × 3 Seeds × 3 Varianten = **18 echte
+SUMO-Läufe**. Die 11/12/3 angeforderten Bewegungen sind jeweils geroutet, abgefahren
+und abgeschlossen; null Teleports. Die physische Fahrzeugzahl beträgt dabei 9/10/1,
+weil die drei Unternehmensbeine mit einem Fahrzeug ausgeführt werden. Generierte
+Anfragen und physische Fahrzeuge werden nicht gleichgesetzt.
+
+**Wichtige Grenze:** logiTopp und GTFS sind in diesen Fällen ausdrücklich deaktiviert.
+Es gibt keine simulierten privaten Personen- oder Paketfahrten in den nativen
+Nachfragecontainern. Die Population-/Aktivitätsartefakte sind gefüllt und unverändert;
+das ist eine andere Aussage als private Nachfrage bis zur SUMO-Ausführung. G12 ist
+daher nur für den schweren Hintergrund plus Unternehmen teilweise abgedeckt.
+
+**Negativbefund während der Absicherung:** Der erste vollständige Lauf traf im
+neuen Wartepunkttest ein Zeitlimit. Sein Testdouble hatte die einargumentige
+Places-Methode überschrieben, die Pipeline ruft aber die zweistellige Überladung
+auf. Damit war ein externer Abruf möglich. Der Test überschreibt nun beide Methoden;
+zusätzlich sind öffentliche Overpass-Endpunkte/Mirrors abgeschirmt und GTFS ist in
+der Fixture ausdrücklich aus. Die korrigierten sieben Fälle wurden unter denselben
+Ausführungsrechten erneut ohne Fehler geprüft. Es wurde keine Toleranz ausgeweitet.
+
+**Ausgeführt:** Vollständige Backend-Suite
+`mvn -o -Daether.syncContext.named.factory=noop test`: 483 Tests ohne Fehler,
+neun optionale Skips (zwei MobileCity-Referenzfälle, actiTopp, PT, vier GTA-Live-LLM-
+Fälle und LLM-Moduswahl). Die zwei neuen nativen Parameterfälle wurden ausgeführt,
+keiner übersprungen. Der gezielte Quellenlauf umfasste 103 Fälle ohne Fehler/Skips;
+`npm test` 121 Tests grün, `npm run build` Produktions-AOT grün.
+[Abschlussnachweis](verification/2026-11-02-source-plan-traffic-final.json),
+[Export-/Invarianzbelege](verification/2026-11-02-source-plan-traffic-export.json),
+[native Routing-/Ausführungsbelege](verification/2026-11-02-source-plan-traffic-native.json).
+
+**Konsequenz:** G10 ist für den benannten Schwerlast-/Unternehmensschnitt technisch
+abgesichert; G12 ist um echte native Belege erweitert. Der fachliche Schwerlastfallback,
+aktive Paket-/private Ausführung, MobileCity und unabhängige reale Regionalfälle
+bleiben eigene Abnahmen. Die neue UI-Formulierung erklärt diese Trennung; sie ist
+keine zusätzliche Schaltung anderer Nachfragebeiträge.
+[Bericht, Bedienung und reproduzierbare Testbefehle](examples/source-plan-traffic/README.md).
+
+### Quellenlaufbericht und lesbare Teileherkunft (2026-11-04)
+
+**Befund:** Die vorhandene Eingangsprüfung und ein JSON-Link genügten nicht für
+eine lesbare Beurteilung der tatsächlich verwendeten Teilbeiträge. Insbesondere
+fehlte eine persistierte Laufzuordnung, wenn die Pipeline vor dem Manifest abbrach.
+
+**Umgesetzt und geprüft:** `SourceRunReport` bindet den vorhandenen Bericht an
+Laufstatus, Zeitpunkte, Quellenplan und Quellenbindungshashes. Am Start, bei Manifest
+und beim Laufende wird ein vollständiger atomarer Dateistand geschrieben. Ein
+kontrollierter Wartepunkt prüft Erfolg → neuer laufender Stand → früher Work-Fehler:
+Die neue Teilbilanz enthält ihre aufgelöste Bevölkerungsverteilung, aber keine
+früheren Arbeitsgewichte, synthetisierten Personen oder Schwerlastmengen. Bei
+ausgeschaltetem Plan wird der alte Bericht entfernt. Ein absichtlich vorhandener
+SUMO-Dateirest bleibt bei übersprungener Zielstufe ungebunden. Native Migrationsläufe
+prüfen die aktuelle aggregierte Ausführungsbilanz samt Hash der vollständigen Datei.
+
+Die Frontendtests sichern echte Nullwerte, getrennte Maskenzähler, Registermengen
+einschließlich verdrängter Mengen, unbekannte/angenommene/abgeleitete Evidenz,
+Zonenumfang, Haushaltsrundung und die Trennung von Generierung und Abschluss.
+Ladefehler und Szenariowechsel entfernen veraltete Anzeigen; alte/unpassende oder
+unvollständige Berichte werden nicht als aktuelle Laufbilanz interpretiert.
+
+**Browserabnahme:** Isoliertes Backend und Produktionsfrontend, ausschließlich
+künstliche Quellen. Der erfolgreiche Lauf zeigt Zielbevölkerung 12, tatsächlich
+13 Personen und Rundungsdifferenz 1 sowie acht erzeugte, geroutete, gestartete und
+abgeschlossene Schwerlastfahrten bei null Teleports. Ein danach absichtlich erzeugter
+Work-Quellenfehler zeigt den neuen Fehlerstatus und seine Kandidatendiagnose;
+vorherige Freight-/SUMO-Erfolge werden nicht übernommen. Keine Browser-Konsolenfehler
+in dieser Prüfung. Die Nachweise stehen im
+[Browserprotokoll](verification/2026-11-04-source-run-report-ui.json) und in den
+[Ansichten](examples/source-run-report/README.md).
+
+**Vertragsänderung während der Absicherung:** Drei ältere Fehlerpfadtests erwarteten
+nach einem Abbruch überhaupt keine `resolution.json`. Diese Annahme wurde bewusst
+durch den neuen Vertrag ersetzt: Bericht mit `run.state=FAILED`, eigene Fehler und
+ausschließlich eigene Teilbeiträge. Die Tests wurden auf fehlende alte Erfolgsanteile
+verschärft; Fehlerdiagnose und Bereinigung beim Abschalten bleiben abgesichert.
+
+**Ausgeführt:** Backend-Gesamtsuite 485 Fälle ohne Fehler, 4 optionale Skips; 18 native Quellenplan-SUMO-Läufe tatsächlich ausgeführt. Frontend 130 Tests ohne Fehler. [Gesamtsuiten, optionale Skips und Prüfbelege](verification/2026-11-04-source-run-report-final.json).
+`npm run build` prüft den strikten Produktions-AOT. Die Browserabnahme nutzt den
+Produktionsbuild; nachfolgende Änderungen ergänzen nur die Abwehr unvollständiger
+Berichte und die konsistente Herkunft in Teilfehler-Metadaten, jeweils testabgesichert.
+
+**Konsequenz:** Die UI-Lücke des bisherigen Drei-Aspekte-Schnitts ist geschlossen.
+Die technische Beweismenge ersetzt keine fachliche Quellenfreigabe. G1–G12 behalten
+ihre bisherigen, begrenzten Zuständigkeiten; private/Paket-Migration, echte regionale
+Referenzen und MobileCity-Abnahme bleiben offen. Nur letzter Artefaktsatz, kein
+Laufarchiv und kein automatischer Abgleich mit allen später geänderten Eingaben.

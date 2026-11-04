@@ -35,6 +35,8 @@ public class PopulationGenerator {
 
     private final List<Zone> zones;
     private final Random random;
+    private RoadLocations roadLocations;
+    public PopulationGenerator useRoadLocations(RoadLocations locations) { this.roadLocations=locations;return this; }
     private final long destinationSeed;
     private final Map<String, double[]> gravityCache = new HashMap<>();
     private CommuterMatrix.Mapping commuterMapping;
@@ -147,6 +149,7 @@ public class PopulationGenerator {
     }
 
     public Result generate(Path populationDir, Scenario scenario) throws IOException {
+        if(scenario.population.roadLocatedActivities && roadLocations==null)throw new IOException("Straßennahe Orte: Straßenmodell wurde nicht vorbereitet");
         Files.createDirectories(populationDir);
         censusReport.clear();
         householdRoundingReport.clear();
@@ -208,6 +211,10 @@ public class PopulationGenerator {
                     int income = 900 + economicalStatus * 800 + random.nextInt(600);
                     double lat = zone.minLat + random.nextDouble() * (zone.maxLat - zone.minLat);
                     double lon = zone.minLon + random.nextDouble() * (zone.maxLon - zone.minLon);
+                    if(roadLocations!=null) {
+                        var point=roadLocations.locate(zone,lon,lat,"household-home",Long.toString(householdId));
+                        lon=point.lon();lat=point.lat();
+                    }
                     String homeLocation = CsvArtifacts.location(lon, lat);
 
                     households.write(householdId + ";" + householdId + ";" + referenceYear + ";" + zone.id + ";"
@@ -243,7 +250,7 @@ public class PopulationGenerator {
                         String carType = random.nextDouble() < 0.08 ? "bev" : "conventional";
                         cars.write(householdId + ";" + mainUser + ";" + mainUser + ";" + carType
                                 + ";CarId(value=" + carId + ");0;"
-                                + zone.centroidLon + "," + zone.centroidLat + ",ZoneId(value=" + zone.id + ")"
+                                + String.format(java.util.Locale.ROOT, "%f,%f,ZoneId(value=%d)", lon, lat, zone.id)
                                 + ";MIDSIZE;5;0.0;1.0;1000.0\n");
                         carId++;
                         carCount++;
@@ -373,21 +380,27 @@ public class PopulationGenerator {
             throws IOException {
         if (person.workZoneIndex() >= 0) {
             Zone work = zones.get(person.workZoneIndex());
-            String row = person.id() + ";WORK;" + CsvArtifacts.location(work.centroidLon, work.centroidLat)
+            var point=location(work,"fixed-work",person.id());
+            String row = person.id() + ";WORK;" + CsvArtifacts.location(point.lon(), point.lat())
                     + ";" + work.id + "\n";
             w.write(row);
             logitoppVariant.write(row);
         }
         if (person.eduZoneIndex() >= 0) {
             Zone edu = zones.get(person.eduZoneIndex());
+            var point=location(edu,"fixed-education",person.id());
             String row = person.id() + ";" + educationType(person.age()) + ";"
-                    + CsvArtifacts.location(edu.centroidLon, edu.centroidLat) + ";" + edu.id + "\n";
+                    + CsvArtifacts.location(point.lon(), point.lat()) + ";" + edu.id + "\n";
             w.write(row);
             logitoppVariant.write(row);
         }
         // logiTopp (legacy) resolves PICK_UP_PARCEL via a fixed destination, by default the home zone
+        var pickup=location(home,"fixed-pickup",person.id());
         logitoppVariant.write(person.id() + ";PICK_UP_PARCEL;"
-                + CsvArtifacts.location(home.centroidLon, home.centroidLat) + ";" + home.id + "\n");
+                + CsvArtifacts.location(pickup.lon(), pickup.lat()) + ";" + home.id + "\n");
+    }
+    private RoadLocations.Point location(Zone zone,String kind,long person)throws IOException {
+        return roadLocations==null?new RoadLocations.Point(zone.centroidLon,zone.centroidLat):roadLocations.locate(zone,zone.centroidLon,zone.centroidLat,kind,Long.toString(person));
     }
 
     static String educationType(int age) {

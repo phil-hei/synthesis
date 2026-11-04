@@ -6,6 +6,7 @@ import de.synthesis.generation.demand.TravelDemand;
 import de.synthesis.vehicle.SumoVehicleTypes;
 import de.synthesis.vehicle.VehicleConfiguration;
 import de.synthesis.vehicle.VehicleArtifacts;
+import de.synthesis.vehicle.VehicleOperationsConfiguration;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -37,7 +40,7 @@ public class SumoRunner {
 
     public record Result(int vehicles, double meanDurationSec, double meanRouteLengthM,
                          double meanSpeedMs, long durationSeconds, int carTrips, int bikeTrips,
-                         int walkTrips, int deliveryTrips, int ptRiders, int ptVehicles,
+                         int walkTrips, int deliveryTrips, int heavyFreightTrips, int companyTourLegs, int ptRiders, int ptVehicles,
                          double co2Kg, Map<String, Double> co2KgByType) {
     }
 
@@ -49,10 +52,20 @@ public class SumoRunner {
     @FunctionalInterface
     public interface PtProvider {
         TransitRunner.PtInfrastructure provide(Path netFile) throws Exception;
+        /** Opaque providers retain railway signaling unless explicitly declared road-only. */
+        default boolean roadVehiclesOnly(){return false;}
+        static PtProvider roadOnly(PtProvider provider) {
+            java.util.Objects.requireNonNull(provider);
+            return new PtProvider() {
+                public TransitRunner.PtInfrastructure provide(Path net)throws Exception{return provider.provide(net);}
+                public boolean roadVehiclesOnly(){return true;}
+            };
+        }
     }
 
     /** Max. Snapping-Distanz (m) von Geo-Koordinate zu Netzkante in duarouter. */
     private static final int MAPMATCH_DISTANCE_M = 300;
+    static final String TURNAROUND_OPTION = "--no-turnarounds.except-deadend";
 
     private final Path binDir;
     private final String sumoHome;
@@ -61,6 +74,70 @@ public class SumoRunner {
     private final int timeoutMinutes;
     private final SumoVehicleTypes vehicleTypes;
     private boolean sharedRoadRoutes;
+    private boolean fullDemand;
+    private de.synthesis.scenario.Scenario legacyFreightScenario;
+    private boolean profileChecksEnabled;
+    private long freightSeed;
+    private FreightProfileChecks freightChecks;
+    private TrafficEndpointMapper endpointMapper;
+    private List<Double> modelRegion = List.of();
+    private com.fasterxml.jackson.databind.JsonNode sevasSnapshot;
+    private List<FreightDemandGenerator.Trip> freightTrips = List.of();
+    private final Map<String, TrafficRoutes.Category> trafficCategories = new java.util.TreeMap<>();
+
+    public SumoRunner useFreight(de.synthesis.scenario.Scenario scenario) {
+        FreightDemandGenerator.validate(scenario);
+        if (scenario.freight.enabled && scenario.freight.day != day)
+            throw new IllegalArgumentException("Güterverkehrstag stimmt nicht mit dem SUMO-Betriebstag überein (" + day + ")");
+        sevasSnapshot = scenario.freight.sevasEnabled ? scenario.freight.sevasSnapshot : null;
+        if (scenario.freight.sevasEnabled && (sevasSnapshot == null || sevasSnapshot.isNull())) throw new IllegalArgumentException("Bitte SEVAS-Restriktionen hochladen");
+        profileChecksEnabled = scenario.freight.profileChecksEnabled;
+        freightSeed = scenario.population.seed;
+        legacyFreightScenario = scenario;
+        freightTrips = List.of();
+        fullDemand = scenario.freight.enabled;
+        if(scenario.region!=null)modelRegion=List.of(scenario.region.minLon,scenario.region.minLat,scenario.region.maxLon,scenario.region.maxLat);
+        return this;
+    }
+
+
+    private final VehicleConfiguration resolvedVehicles;
+    private de.synthesis.scenario.Scenario.EnergyInfrastructure energyConfiguration;
+    private VehicleContinuity continuity;
+    private CompanyTourRun companyTours;
+    private int companyTourLegs;
+    private VehicleOperationsConfiguration baseOperationsConfiguration = VehicleOperationsConfiguration.empty();
+    public SumoRunner useCompanyTours(de.synthesis.companytour.CompanyTourExecution.Batch input) {
+        return configureCompanyTours(input,de.synthesis.companytour.CompanyTourRegion.project(input),Map.of());
+    }
+    private SumoRunner configureCompanyTours(de.synthesis.companytour.CompanyTourExecution.Batch input,de.synthesis.companytour.CompanyTourRegion.Projection projection,Map<String,List<String>> prescribed) {
+        companyTours = null; companyTourLegs = 0;
+        operationsConfiguration = baseOperationsConfiguration;
+        if (!input.active()) return this;
+        vehicleTypes.includeCompanyPhysicalVehicles();
+        var bindings = new ArrayList<>(operationsConfiguration.enabled() ? operationsConfiguration.bindings() : List.<VehicleOperationsConfiguration.Binding>of());
+        var regionalInput=projection.batch();
+        regionalInput.legs().forEach(l -> bindings.add(new VehicleOperationsConfiguration.Binding(l.sourceKey(), l.vehicleId())));
+        var effective = new VehicleOperationsConfiguration(operationsConfiguration.schemaVersion(), true,
+                operationsConfiguration.reserveFraction(), List.copyOf(bindings), true);
+        operationsConfiguration = effective;
+        continuity = new VehicleContinuity(effective, resolvedVehicles);
+        companyTours = new CompanyTourRun(input,projection);companyTours.prescribed(prescribed);continuity.regionalEntries(companyTours.chainEntries());continuity.prescribedRoutes(prescribed); companyTourLegs = companyTours.legCount(); fullDemand = true;
+        return this;
+    }
+    private VehicleOperationsConfiguration operationsConfiguration = VehicleOperationsConfiguration.empty();
+    public SumoRunner useEnergyAndOperations(de.synthesis.scenario.Scenario scenario) {
+        var errors = VehicleOperationsConfiguration.validate(scenario);
+        if (!errors.isEmpty()) throw new IllegalArgumentException(errors.getFirst().path() + ": " + errors.getFirst().message());
+        energyConfiguration = scenario.energyInfrastructure;
+        operationsConfiguration = scenario.vehicleOperations;
+        baseOperationsConfiguration = scenario.vehicleOperations;
+        if (scenario.vehicleOperations.enabled()) {
+            vehicleTypes.includeCompanyPhysicalVehicles();
+            continuity = new VehicleContinuity(scenario.vehicleOperations, resolvedVehicles);
+        }
+        return this;
+    }
 
     public SumoRunner useSharedRoadRoutes(boolean enabled) {
         sharedRoadRoutes = enabled;
@@ -77,6 +154,8 @@ public class SumoRunner {
         this.day = config.getDay();
         this.maxTrips = config.getMaxTrips();
         this.timeoutMinutes = config.getTimeoutMinutes();
+        this.resolvedVehicles = resolvedVehicles;
+        this.freightSeed = seed;
         this.vehicleTypes = new SumoVehicleTypes(resolvedVehicles, seed);
     }
 
@@ -119,27 +198,88 @@ public class SumoRunner {
     public Result run(Path artifacts, String osmXml, TravelDemand demand, Path plannedTours,
                       PtProvider ptProvider, Consumer<String> log)
             throws IOException, InterruptedException {
+        if (legacyFreightScenario != null) freightTrips = FreightDemandGenerator.generate(legacyFreightScenario);
+        return runPrepared(artifacts, osmXml, demand,
+                plannedTours == null || !Files.exists(plannedTours) ? List.of() : de.synthesis.generation.demand.ParcelTourAdapter.read(plannedTours, day),
+                ptProvider, log);
+    }
+
+    /** Consumes the shared immutable demand. Does not regenerate freight or re-read source plans. */
+    public Result run(Path artifacts, String osmXml, de.synthesis.generation.demand.TrafficDemand demand,
+                      PtProvider ptProvider, Consumer<String> log) throws IOException, InterruptedException {
+        if (!demand.freight().isEmpty() && demand.freightDay() != day)
+            throw new IllegalArgumentException("Güterverkehrstag und SUMO-Tag stimmen nicht überein");
+        for (var input : demand.companies().imports())
+            if (java.time.LocalDate.parse(input.simulationDate()).getDayOfWeek().getValue()-1 != day)
+                throw new IllegalArgumentException("Unternehmenstourendatum passt nicht zum SUMO-Wochentag");
+        useCompanyTours(demand.companies());
+        freightTrips = demand.freight(); fullDemand = !freightTrips.isEmpty() || demand.companies().active();
+        return runPrepared(artifacts, osmXml, demand.persons(), demand.parcels().stream().filter(l -> l.day() == day).toList(), ptProvider, log);
+    }
+    private Result runPrepared(Path artifacts, String osmXml, TravelDemand demand,
+                      List<de.synthesis.generation.demand.ParcelTourAdapter.Leg> parcelLegs,
+                      PtProvider ptProvider, Consumer<String> log) throws IOException, InterruptedException {
         Path dir = artifacts.resolve("sumo");
         Files.createDirectories(dir);
-        for (String report : List.of("shared-road-routes.jsonl", "shared-road-routes-summary.json", "shared-road-times.jsonl"))
+        Files.deleteIfExists(artifacts.resolve("company-tours/execution.json"));
+        Files.deleteIfExists(artifacts.resolve("company-tours/routing.json"));
+        Files.deleteIfExists(artifacts.resolve("company-tours/regional-projection.json"));
+        Files.deleteIfExists(artifacts.resolve("company-tours/network-paths.json"));
+        if (companyTours != null) companyTours.begin(artifacts);
+        else Files.deleteIfExists(artifacts.resolve("company-tours/input.json"));
+        VehicleContinuity.clear(artifacts);
+        continuity = operationsConfiguration.enabled() ? new VehicleContinuity(operationsConfiguration, resolvedVehicles) : null;
+        if(continuity!=null && companyTours!=null){continuity.regionalEntries(companyTours.chainEntries());continuity.prescribedRoutes(companyTours.prescribedRoutes());}
+        EnergyNetworkAccess.clear(artifacts);
+        for (String report : List.of("shared-road-routes.jsonl", "shared-road-routes-summary.json", "shared-road-times.jsonl",
+                "road-signals.json", "traffic-routes.geojson", "traffic-categories.json", "network-coverage.json", "traffic-routing.json", "traffic-execution.json", "summary.json", "sumo.log", "trips.xml", "freight-trips.xml", "persons.xml", "routes.rou.xml", "routes.rou.alt.xml", "native-chains.trips.xml", "native-chains.rou.xml", "native-chains.rou.alt.xml", "simulation.rou.xml", "chain-stops.xml", "scenario.sumocfg", "tripinfo.xml", "statistics.xml", "edgedata.xml", "congestion.geojson", "freight-network.geojson", "freight-permissions.json", "sevas-permissions.json"))
             Files.deleteIfExists(dir.resolve(report));
+        Files.deleteIfExists(artifacts.resolve("freight/execution.json"));
+        Files.deleteIfExists(artifacts.resolve("freight/edge-mapping.json"));
+        Files.deleteIfExists(artifacts.resolve("freight/route-checks.json"));
+        Files.deleteIfExists(artifacts.resolve("freight/profile-permissions.json"));
+        freightChecks = null;
         if (vehicleTypes.active()) VehicleArtifacts.write(artifacts.resolve("vehicles/sumo-execution.json"),
                 Map.of("status", "started", "fleetStateSimulated", false));
 
         Files.writeString(dir.resolve("network.osm"), osmXml, StandardCharsets.UTF_8);
 
         long start = System.currentTimeMillis();
+        boolean roadVehiclesOnly=ptProvider==null || ptProvider.roadVehiclesOnly();
+        var signalPolicy=RoadSignalPolicy.prepare(dir,roadVehiclesOnly);
         // 1. OSM → SUMO-Netz: Auto-/Radkanten + Gehwege/Querungen für die multimodale Simulation
         List<String> netArgs = new ArrayList<>(List.of(binDir.resolve("netconvert").toString(),
                 "--osm-files", "network.osm", "-o", "net.net.xml",
-                "--geometry.remove", String.valueOf(!sharedRoadRoutes),
+                "--geometry.remove", "false",
                 "--junctions.join", String.valueOf(!sharedRoadRoutes),
                 "--ramps.guess", "--tls.guess-signals", "--tls.discard-simple",
-                "--keep-edges.by-vclass", "passenger,bicycle,pedestrian", "--remove-edges.isolated",
-                "--no-turnarounds", "--sidewalks.guess", "--crossings.guess"));
+                "--keep-edges.by-vclass", "passenger,bicycle,pedestrian,delivery,truck,trailer", "--remove-edges.isolated",
+                TURNAROUND_OPTION, "--sidewalks.guess", "--crossings.guess"));
+        netArgs.addAll(signalPolicy.arguments());
         if (sharedRoadRoutes) netArgs.addAll(List.of("--osm.bike-access", "--output.original-names", "--plain-output-prefix",
                 "route-geo", "--proj.plain-geo"));
         exec(dir, log, netArgs.toArray(new String[0]));
+        boolean roadLightsVerified=signalPolicy.verify(dir.resolve("net.net.xml"));
+        log.accept("SUMO-Signalimport: " + (roadVehiclesOnly
+                ? "Straßenverkehr ohne Bahnsignalsteuerung; " + (roadLightsVerified ? "duale Straßenampeln nachgewiesen" : "entfernte oder zusammengefasste Ampelknoten prüfpflichtig; siehe sumo/road-signals.json")
+                : "Bahnsignalsteuerung für nicht als Straßenverkehr deklarierten ÖV erhalten"));
+        OsmFreightPermissions.apply(dir.resolve("network.osm"), dir.resolve("net.net.xml"),
+                dir.resolve("freight-permissions.json"));
+        if (sevasSnapshot != null) {
+            exec(dir, log, binDir.resolve("netconvert").toString(), "-s", "net.net.xml",
+                    "--plain-output-prefix", "sevas-geo", "--proj.plain-geo", "true");
+            int restrictedSevasEdges = SevasFreightPermissions.apply(sevasSnapshot, dir.resolve("net.net.xml"),
+                    dir.resolve("sevas-geo.nod.xml"), dir.resolve("sevas-geo.edg.xml"), dir.resolve("sevas-permissions.json"));
+            log.accept("SEVAS: " + restrictedSevasEdges + " gerichtete Kanten für schwere LKW gesperrt; Zuordnung und übersprungene Regeln in sumo/sevas-permissions.json");
+            if (restrictedSevasEdges == 0) log.accept("SEVAS: keine anwendbaren Sperren im aktuellen Netz gefunden");
+        }
+
+        if (profileChecksEnabled) {
+            freightChecks = new FreightProfileChecks(dir.resolve("network.osm"));
+            Files.createDirectories(artifacts.resolve("freight"));
+            freightChecks.prepare(dir.resolve("net.net.xml"), artifacts.resolve("freight/profile-permissions.json"));
+            log.accept("LKW-Profilprüfung: angenommene Standardprofile mit 26/40 t Volllast; unbekannte Regeln bleiben prüfpflichtig");
+        }
 
         // ÖV-Infrastruktur (gtfs2pt) zum frisch gebauten Netz beschaffen – Ergebnis fließt
         // sowohl in die intermodale Personen-Routung als auch in die Simulation ein
@@ -154,6 +294,8 @@ public class SumoRunner {
             }
         }
 
+        if(roadVehiclesOnly)RoadSignalPolicy.requireRoadVehicles(pt);
+
         // 2. Den gemeinsamen Demand-Vertrag genau einmal nach Tag, Modus und Cap selektieren.
         DemandSelection selection = selectDemand(demand, pt != null);
         List<Trip> trips = new ArrayList<>(selection.cars());
@@ -162,12 +304,32 @@ public class SumoRunner {
         int bikeTrips = bikes.size();
         trips.addAll(bikes);
         int deliveryTrips = 0;
-        if (plannedTours != null && Files.exists(plannedTours)) {
-            List<Trip> delivery = readDeliveryLegs(plannedTours);
-            deliveryTrips = delivery.size();
-            trips.addAll(delivery);
+
+        List<Trip> delivery = parcelLegs.stream().filter(l -> !l.vehicleClass().equals("tram")).map(SumoRunner::parcelTrip).toList();
+        deliveryTrips = delivery.size(); trips.addAll(delivery);
+        trafficCategories.clear();
+        // Explicit class-filtered edge IDs avoid snapping freight onto passenger-only edges.
+        exec(dir, log, binDir.resolve("netconvert").toString(), "-s", "net.net.xml",
+                "--plain-output-prefix", "traffic-geo", "--proj.plain-geo", "true");
+        TrafficRoutes trafficRoutes = new TrafficRoutes(dir.resolve("net.net.xml"),
+                dir.resolve("traffic-geo.nod.xml"), dir.resolve("traffic-geo.edg.xml"));
+        if(companyTours!=null&&companyTours.original().imports().stream().anyMatch(de.synthesis.companytour.CompanyTourExecution.Prepared::networkProjectionRequested)){
+            var source=companyTours.original();
+            var regional=CompanyTourNetwork.prepare(source,trafficRoutes,dir,artifacts,resolvedVehicles,binDir.resolve("duarouter"),freightSeed,args->exec(dir,log,args));
+            configureCompanyTours(source,regional.projection(),regional.regionalEdges());companyTours.begin(artifacts);
         }
+        if(companyTours!=null)trips.addAll(companyTours.trips());
+        if (energyConfiguration != null && energyConfiguration.enabled && energyConfiguration.verifyNetworkAccess)
+            EnergyNetworkAccess.generate(artifacts, dir, trafficRoutes, energyConfiguration, resolvedVehicles, freightSeed,
+                    binDir.resolve("duarouter"), args -> exec(dir, log, args));
+        endpointMapper = new TrafficEndpointMapper(trafficRoutes);
         writeTripsXml(trips, dir.resolve("trips.xml"), osmXml);
+        trafficRoutes.writeNetwork(dir.resolve("freight-network.geojson"));
+        if (!freightTrips.isEmpty()) writeFreightXml(freightTrips, trafficRoutes, dir.resolve("freight-trips.xml"));
+        if (continuity != null) {
+            continuity.annotate(dir.resolve("trips.xml")); continuity.annotate(dir.resolve("freight-trips.xml")); continuity.input(artifacts);
+        }
+        if (fullDemand) log.accept("Güterverkehr: " + freightTrips.size() + " schwere Fahrten; Personenverkehr ohne SUMO-Trip-Cap");
 
         // Personen: Fußgänger (Fußweg) und – falls ÖV verfügbar – ÖV-Nachfrage (intermodal:
         // Fußweg → Ride → Fußweg). Beide sind SUMO-<person>, keine <trip>.
@@ -179,11 +341,12 @@ public class SumoRunner {
             ptRiders = riders.size();
             persons.addAll(riders);
         }
-        String routeFiles = "trips.xml";
+        String routeFiles = freightTrips.isEmpty() ? "trips.xml" : "trips.xml,freight-trips.xml";
         if (!persons.isEmpty()) {
             writePersonsXml(persons, dir.resolve("persons.xml"));
-            routeFiles = "trips.xml,persons.xml";
+            routeFiles += ",persons.xml";
         }
+        endpointMapper.write(dir, dir.resolve("network.osm"), fullDemand, modelRegion);
         int ptVehicles = pt != null ? pt.ptVehicles() : 0;
         log.accept(carTrips + " PKW- + " + bikeTrips + " Rad- + " + walkTrips + " Fuß-Trips (Tag "
                 + day + (maxTrips < 0 ? ", ohne Mengenlimit) + " : ", max " + maxTrips + " je Modus) + ") + deliveryTrips
@@ -201,12 +364,19 @@ public class SumoRunner {
                 "--mapmatch.distance", String.valueOf(MAPMATCH_DISTANCE_M),
                 "--ignore-errors", "--no-step-log"));
         if (sharedRoadRoutes) dua.addAll(List.of("--keep-route-probability", "1"));
+        if (profileChecksEnabled) dua.addAll(List.of("--seed", Long.toString(freightSeed), "--routing-threads", "1"));
         if (pt != null) {
             dua.add("--additional-files");
             dua.add(pt.vtypes().toAbsolutePath() + "," + pt.stops().toAbsolutePath()
                     + "," + pt.vehicles().toAbsolutePath());
         }
-        exec(dir, log, dua.toArray(new String[0]));
+        try { exec(dir, log, dua.toArray(new String[0])); }
+        catch (IOException failure) {
+            try { TrafficExecutionAudit.routing(dir, trafficCategories, false, failure.getMessage()); }
+            catch (IOException auditFailure) { failure.addSuppressed(auditFailure); }
+            throw failure;
+        }
+        TrafficExecutionAudit.routing(dir, trafficCategories, false, null);
         if (sharedRoadRoutes) {
             SharedRoadRoutes.verifyWritten(dir);
             var routeSummary = new com.fasterxml.jackson.databind.ObjectMapper()
@@ -216,6 +386,18 @@ public class SumoRunner {
                     + " Ersatzrouten; Details: sumo/shared-road-routes-summary.json");
         }
 
+        TrafficExecutionAudit.requireRoutingComplete(dir, fullDemand);
+        var routedIds = TrafficRoutes.vehicleIds(dir.resolve("routes.rou.xml"));
+        if (freightTrips.stream().anyMatch(t -> !routedIds.contains(t.id())))
+            throw new IOException("SUMO-Routing hat schwere Güterfahrten verworfen; siehe sumo/sumo.log");
+        NativeVehicleChains nativeChains = continuity != null && continuity.chainsEnabled()
+                ? NativeVehicleChains.prepare(artifacts, dir, continuity, trafficRoutes, binDir.resolve("duarouter"), freightSeed, args -> exec(dir, log, args)) : null;
+        if (companyTours != null) companyTours.auditRoutes(artifacts, dir, resolvedVehicles);
+        if (nativeChains != null) log.accept("SUMO-Fahrzeugketten: explizit zugeordnete Fahrten behalten ein natives Fahrzeug; Haltezeiten und Verspätungen wirken auf Folgefahrten");
+        if (freightChecks != null && !freightTrips.isEmpty()) {
+            freightChecks.audit(dir.resolve("routes.rou.xml"), dir.resolve("freight-trips.xml"), artifacts.resolve("freight/route-checks.json"));
+            log.accept("LKW-Routen geprüft; Status und offene Regeln in freight/route-checks.json");
+        }
         // 4. SUMO-Lauf
         // Kantenscharfe Messung (Netzlast): über den ganzen Tag aggregierte edgeData
         Files.writeString(dir.resolve("additional.xml"), """
@@ -228,18 +410,29 @@ public class SumoRunner {
             additionalFiles += "," + pt.vtypes().toAbsolutePath() + "," + pt.stops().toAbsolutePath()
                     + "," + pt.vehicles().toAbsolutePath();
         }
+        int lastDeparture = Math.max(trips.stream().mapToInt(Trip::departSec).max().orElse(0),
+                freightTrips.stream().mapToInt(de.synthesis.generation.pipeline.FreightDemandGenerator.Trip::departSec).max().orElse(0));
+        int simulationEnd = simulationEndSeconds(demand, day, lastDeparture);
+        log.accept("SUMO-Zeithorizont: " + simulationEnd + " s; Tagesauswahl unverändert, Nachlauf für späte Fahrten");
         Files.writeString(dir.resolve("scenario.sumocfg"), String.format("""
                 <configuration>
-                  <input><net-file value="net.net.xml"/><route-files value="routes.rou.xml"/>
+                  <input><net-file value="net.net.xml"/><route-files value="%s"/>
                     <additional-files value="%s"/></input>
-                  <output><tripinfo-output value="tripinfo.xml"/><statistic-output value="statistics.xml"/></output>
-                  <time><begin value="0"/><end value="86400"/></time>
+                  <output><tripinfo-output value="tripinfo.xml"/><tripinfo-output.write-unfinished value="true"/><statistic-output value="statistics.xml"/>%s</output>
+                  <time><begin value="0"/><end value="%d"/></time>
                   <processing><time-to-teleport value="300"/><ignore-route-errors value="true"/>
                     <device.emissions.probability value="1"/></processing>
                   <report><no-step-log value="true"/><duration-log.statistics value="true"/></report>
                 </configuration>
-                """, additionalFiles));
-        exec(dir, log, binDir.resolve("sumo").toString(), "-c", "scenario.sumocfg");
+                """, nativeChains == null ? "routes.rou.xml" : nativeChains.simulationRoutes(), additionalFiles,
+                nativeChains != null && nativeChains.hasVehicles() ? "<stop-output value=\"chain-stops.xml\"/><stop-output.write-unfinished value=\"true\"/>" : "", simulationEnd));
+        exec(dir, log, binDir.resolve("sumo").toString(), "-c", "scenario.sumocfg", "--seed", Long.toString(freightSeed));
+        if (nativeChains != null && nativeChains.hasVehicles()) nativeChains.finish();
+        if (companyTours != null) companyTours.finish(artifacts);
+        TrafficExecutionAudit.execution(dir, trafficCategories, false);
+        if (continuity != null) continuity.finish(artifacts, dir);
+        writeFreightExecution(artifacts, dir, simulationEnd);
+        TrafficExecutionAudit.requireExecutionComplete(dir, fullDemand);
         if (sharedRoadRoutes) SharedRoadRoutes.writeObservedTimes(dir);
 
         // Kantengeometrien in WGS84 exportieren und mit den Messwerten zur Staukarte verbinden
@@ -254,8 +447,49 @@ public class SumoRunner {
                 walkTrips, deliveryTrips, ptRiders, ptVehicles, co2);
         if (vehicleTypes.active()) VehicleArtifacts.write(artifacts.resolve("vehicles/sumo-execution.json"),
                 Map.of("status", "completed", "simulatedTrips", result.vehicles(), "co2KgByType", co2,
+                        "nativeVehicleChainsSimulated", nativeChains != null && nativeChains.hasVehicles(),
                         "fleetStateSimulated", false));
+        trafficRoutes.write(dir, trafficCategories, freightTrips, ptVehicles);
         return result;
+    }
+
+    /** Keep departures on the selected day, but allow planned arrivals plus an hour of clearance. */
+    static int simulationEndSeconds(TravelDemand demand, int day, int lastSelectedDeparture) {
+        double last = Math.max(0, lastSelectedDeparture);
+        for (var trip : demand.trips()) {
+            if (trip.plannedDepartureMinute() < day * 1440. || trip.plannedDepartureMinute() >= (day + 1) * 1440.
+                    || trip.mode() == TravelDemand.Mode.PASSENGER || trip.mode() == TravelDemand.Mode.OTHER) continue;
+            last = Math.max(last, (Math.max(trip.plannedDepartureMinute(), trip.plannedArrivalMinute()) - day * 1440.) * 60);
+        }
+        if (!Double.isFinite(last) || last > Integer.MAX_VALUE - 3600.)
+            throw new IllegalArgumentException("Ungültiger SUMO-Zeithorizont");
+        return Math.max(86400, (int) Math.ceil(last) + 3600);
+    }
+
+    private void writeFreightExecution(Path artifacts, Path dir, int simulationEnd) throws IOException {
+        if (freightTrips.isEmpty()) return;
+        Map<String, org.w3c.dom.Element> observed = new HashMap<>();
+        XmlRecords.read(dir.resolve("tripinfo.xml"), Set.of("tripinfo"),
+                info -> observed.put(info.getAttribute("id"), info));
+        List<String> completed = new ArrayList<>(), unfinished = new ArrayList<>(), notDeparted = new ArrayList<>();
+        var chains = NativeVehicleChains.observations(artifacts);
+        for (var trip : freightTrips) {
+            var info = observed.get(trip.id());
+            var chain = chains.get(trip.id());
+            double depart = chain != null ? chain.depart() : info == null ? -1 : Double.parseDouble(info.getAttribute("depart"));
+            double arrival = chain != null ? chain.arrival() : info == null ? -1 : Double.parseDouble(info.getAttribute("arrival"));
+            if (depart < 0) notDeparted.add(trip.id());
+            else if (arrival < 0 || chain != null && chain.vaporized()) unfinished.add(trip.id());
+            else completed.add(trip.id());
+        }
+        java.nio.file.Files.createDirectories(artifacts.resolve("freight"));
+        VehicleArtifacts.write(artifacts.resolve("freight/execution.json"), Map.of(
+                "contract", "synthesis-freight-execution-v1", "requested", freightTrips.size(),
+                "completed", completed.size(), "unfinishedAtDayEnd", unfinished,
+                "notDeparted", notDeparted, "simulationEndSeconds", simulationEnd,
+                "teleportsEnabled", true, "nativeVehicleChainsSimulated", !chains.isEmpty(), "fleetStateSimulated", false));
+        if (!notDeparted.isEmpty()) throw new IOException("SUMO hat " + notDeparted.size()
+                + " schwere Güterfahrten nicht eingesetzt; siehe freight/execution.json");
     }
 
     // --- Netz-Feedback: OD-Stau-Faktoren -------------------------------------------
@@ -496,7 +730,13 @@ public class SumoRunner {
     }
 
     record Trip(int departSec, String type, String fromLon, String fromLat,
-                String toLon, String toLat) {
+                String toLon, String toLat, String sourceTripKey, int serviceSeconds) {
+        Trip(int departSec, String type, String fromLon, String fromLat, String toLon, String toLat, String sourceTripKey) {
+            this(departSec, type, fromLon, fromLat, toLon, toLat, sourceTripKey, 0);
+        }
+        Trip(int departSec, String type, String fromLon, String fromLat, String toLon, String toLat) {
+            this(departSec, type, fromLon, fromLat, toLon, toLat, null);
+        }
     }
 
     record DemandSelection(
@@ -511,11 +751,6 @@ public class SumoRunner {
         int emitted() {
             return cars.size() + bikes.size() + walkers.size() + transitRiders.size();
         }
-    }
-
-    private record TourClosure(String type, String depotLon, String depotLat,
-                               String lastLon, String lastLat, int departMinute,
-                               boolean returning) {
     }
 
     /**
@@ -597,7 +832,7 @@ public class SumoRunner {
                         .thenComparing(TravelDemand.PersonTrip::personOid)
                         .thenComparing(TravelDemand.PersonTrip::tripId))
                 .toList();
-        int limit = maxTrips < 0 ? ordered.size() : maxTrips;
+        int limit = fullDemand || maxTrips < 0 ? ordered.size() : maxTrips;
         List<Trip> selected = new ArrayList<>(Math.min(limit, ordered.size()));
         if (ordered.size() <= limit) {
             for (TravelDemand.PersonTrip trip : ordered) {
@@ -622,7 +857,7 @@ public class SumoRunner {
                 Double.toString(personTrip.fromLon()),
                 Double.toString(personTrip.fromLat()),
                 Double.toString(personTrip.toLon()),
-                Double.toString(personTrip.toLat()));
+                Double.toString(personTrip.toLat()), VehicleOperationsConfiguration.personKey(personTrip.personOid(), personTrip.tripId()));
     }
 
     private static long stableTripHash(TravelDemand.PersonTrip trip) {
@@ -647,11 +882,17 @@ public class SumoRunner {
             writer.write("<routes>\n");
             int id = 0;
             for (Trip t : persons) {
-                String modes = "oev".equals(t.type()) ? " modes=\"public\"" : "";
-                writer.write(String.format(
-                        "  <person id=\"p%d\" depart=\"%d\">"
-                        + "<personTrip fromLonLat=\"%s,%s\" toLonLat=\"%s,%s\"%s/></person>%n",
-                        id++, t.departSec(), t.fromLon(), t.fromLat(), t.toLon(), t.toLat(), modes));
+                String personId="p"+id++;
+                var mapping=endpointMapper.map(personId,"person-demand","pedestrian",t.fromLon(),t.fromLat(),t.toLon(),t.toLat());
+                try {
+                    var xml=javax.xml.stream.XMLOutputFactory.newFactory().createXMLStreamWriter(writer);
+                    xml.writeStartElement("person");xml.writeAttribute("id",personId);xml.writeAttribute("depart",Integer.toString(t.departSec()));
+                    xml.writeEmptyElement("personTrip");
+                    if(mapping!=null){xml.writeAttribute("from",mapping.get("from"));xml.writeAttribute("to",mapping.get("to"));}
+                    else{xml.writeAttribute("fromLonLat",t.fromLon()+","+t.fromLat());xml.writeAttribute("toLonLat",t.toLon()+","+t.toLat());}
+                    if("oev".equals(t.type()))xml.writeAttribute("modes","public");
+                    xml.writeEndElement();xml.writeCharacters("\n");xml.flush();
+                }catch(javax.xml.stream.XMLStreamException e){throw new IOException(e);}
             }
             writer.write("</routes>\n");
         }
@@ -669,93 +910,12 @@ public class SumoRunner {
      * markierte Touren und Touren, die am Depot enden, werden nicht doppelt geschlossen.</p>
      */
     List<Trip> readDeliveryLegs(Path plannedTours) throws IOException {
-        int dayStart = day * 1440;
-        int dayEnd = (day + 1) * 1440;
-        List<Trip> legs = new ArrayList<>();
-        Map<String, TourClosure> closures = new java.util.LinkedHashMap<>();
-        try (BufferedReader reader = Files.newBufferedReader(plannedTours, StandardCharsets.UTF_8)) {
-            String headerLine = reader.readLine();
-            if (headerLine == null) {
-                return legs;
-            }
-            List<String> header = List.of(headerLine.split(";", -1));
-            int tourId = header.indexOf("tourId");
-            int returning = header.indexOf("isReturning");
-            int vehicleType = header.indexOf("vehicleType");
-            int fromX = header.indexOf("fromX");
-            int fromY = header.indexOf("fromY");
-            int toX = header.indexOf("toX");
-            int toY = header.indexOf("toY");
-            int planned = header.indexOf("plannedTimeSimMin");
-            int tripDur = header.indexOf("tripDur");
-            int deliveryDur = header.indexOf("deliveryDur");
-            if (tourId < 0 || vehicleType < 0 || fromX < 0 || fromY < 0
-                    || toX < 0 || toY < 0 || planned < 0) {
-                return legs; // unbekanntes Format – Lieferverkehr überspringen
-            }
-            int lastRequiredColumn = java.util.stream.IntStream.of(
-                    tourId, vehicleType, fromX, fromY, toX, toY, planned)
-                    .max().orElse(-1);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                String[] c = line.split(";", -1);
-                if (c.length <= lastRequiredColumn
-                        || c[fromX].isBlank() || c[toX].isBlank()) {
-                    continue;
-                }
-                String type = switch (c[vehicleType].trim()) {
-                    case "1" -> "lastenrad";
-                    case "3" -> null; // TRAM: nicht auf dem Straßennetz
-                    default -> "lkw";
-                };
-                if (type == null) {
-                    continue;
-                }
-                double arrival = Double.parseDouble(c[planned]);
-                double travel = tripDur >= 0 && tripDur < c.length && !c[tripDur].isBlank()
-                        ? Double.parseDouble(c[tripDur]) : 0;
-                int begin = (int) (arrival - travel);
-                if (begin < dayStart || begin >= dayEnd) {
-                    continue;
-                }
-                legs.add(new Trip((begin - dayStart) * 60, type, c[fromX], c[fromY], c[toX], c[toY]));
-                int service = deliveryDur >= 0 && deliveryDur < c.length && !c[deliveryDur].isBlank()
-                        ? (int) Double.parseDouble(c[deliveryDur]) : 0;
-                TourClosure previous = closures.get(c[tourId]);
-                closures.put(c[tourId], new TourClosure(
-                        type,
-                        previous == null ? c[fromX] : previous.depotLon(),
-                        previous == null ? c[fromY] : previous.depotLat(),
-                        c[toX], c[toY], (int) arrival + service,
-                        (previous != null && previous.returning())
-                                || (returning >= 0 && returning < c.length
-                                && Boolean.parseBoolean(c[returning]))));
-            }
-        }
-        for (TourClosure closure : closures.values()) {
-            if (closure.returning() || closure.departMinute() < dayStart
-                    || closure.departMinute() >= dayEnd
-                    || sameCoordinate(closure.depotLon(), closure.depotLat(),
-                    closure.lastLon(), closure.lastLat())) {
-                continue;
-            }
-            legs.add(new Trip((closure.departMinute() - dayStart) * 60, closure.type(),
-                    closure.lastLon(), closure.lastLat(), closure.depotLon(), closure.depotLat()));
-        }
-        return legs;
+        return de.synthesis.generation.demand.ParcelTourAdapter.read(plannedTours, day).stream()
+                .filter(l -> !l.vehicleClass().equals("tram")).map(SumoRunner::parcelTrip).toList();
     }
-
-    private static boolean sameCoordinate(String firstLon, String firstLat,
-                                          String secondLon, String secondLat) {
-        try {
-            return Math.abs(Double.parseDouble(firstLon) - Double.parseDouble(secondLon)) < 1e-9
-                    && Math.abs(Double.parseDouble(firstLat) - Double.parseDouble(secondLat)) < 1e-9;
-        } catch (NumberFormatException e) {
-            return firstLon.equals(secondLon) && firstLat.equals(secondLat);
-        }
+    private static Trip parcelTrip(de.synthesis.generation.demand.ParcelTourAdapter.Leg l) {
+        return new Trip(l.departSec(), l.vehicleClass().equals("bicycle") ? "lastenrad" : "lkw",
+                l.fromLon(), l.fromLat(), l.toLon(), l.toLat(), l.sourceKey(), l.serviceSeconds());
     }
 
     /** Alle Trips (nach Abfahrt sortiert) mit Fahrzeugtypen als trips.xml schreiben. */
@@ -773,38 +933,101 @@ public class SumoRunner {
             vehicleTypes.writeDefinitions(writer);
             int id = 0;
             for (Trip t : trips) {
+                var company = companyTours == null ? null : companyTours.leg(t.sourceTripKey());
                 String type = vehicleTypes.select(t.type(), t.departSec() + "|" + t.fromLon() + "|"
-                        + t.fromLat() + "|" + t.toLon() + "|" + t.toLat());
-                if (shared != null) {
+                        + t.fromLat() + "|" + t.toLon() + "|" + t.toLat(), continuity == null ? null : continuity.typeFor(t.sourceTripKey()));
+                if (continuity != null) continuity.register("v" + id, t.sourceTripKey(), type, t.departSec(), t.fromLon(), t.fromLat(), t.toLon(), t.toLat(), t.serviceSeconds());
+                boolean logistics = company != null || "lkw".equals(t.type()) || "lastenrad".equals(t.type());
+                String source = company != null ? "company-tours" : logistics ? "logitopp-parcels" : "person-demand";
+                trafficCategories.put("v" + id, new TrafficRoutes.Category(logistics ? "logistics" : "private",
+                        source, type, ""));
+                if (company != null) companyTours.register(t.sourceTripKey(), "v" + id);
+                var fixed=companyTours==null?null:companyTours.prescribed(t.sourceTripKey());
+                var mapping=endpointMapper.map("v"+id,source,vehicleTypes.vehicleClass(type),
+                        t.fromLon(),t.fromLat(),t.toLon(),t.toLat(),fixed==null?null:fixed.getFirst(),fixed==null?null:fixed.getLast());
+                if (shared != null && !(continuity != null && continuity.chainsEnabled() && continuity.typeFor(t.sourceTripKey()) != null)) {
                     String explicit = shared.vehicle("v" + id, type, vehicleTypes.vehicleClass(type), t);
                     if (explicit != null) { writer.write(explicit); id++; continue; }
                 }
-                writer.write(String.format(
-                        "  <trip id=\"v%d\" type=\"%s\" depart=\"%d\" fromLonLat=\"%s,%s\" toLonLat=\"%s,%s\"/>%n",
-                        id++, type, t.departSec(), t.fromLon(), t.fromLat(), t.toLon(), t.toLat()));
+                try {
+                    var xml=javax.xml.stream.XMLOutputFactory.newFactory().createXMLStreamWriter(writer);
+                    xml.writeEmptyElement("trip");xml.writeAttribute("id","v"+id++);xml.writeAttribute("type",type);xml.writeAttribute("depart",Integer.toString(t.departSec()));
+                    if(mapping!=null){xml.writeAttribute("from",mapping.get("from"));xml.writeAttribute("to",mapping.get("to"));}
+                    else{xml.writeAttribute("fromLonLat",t.fromLon()+","+t.fromLat());xml.writeAttribute("toLonLat",t.toLon()+","+t.toLat());}
+                    if(fixed!=null&&fixed.size()>2)xml.writeAttribute("via",String.join(" ",fixed.subList(1,fixed.size()-1)));
+                    xml.writeCharacters("\n");xml.flush();
+                }catch(javax.xml.stream.XMLStreamException e){throw new IOException(e);}
             }
             writer.write("</routes>\n");
         }
         vehicleTypes.writeUsage(out.getParent().getParent().resolve("vehicles/sumo-types.json"));
     }
 
-    private static final Pattern STAT_TAG = Pattern.compile("<vehicleTripStatistics\\b[^>]*/>");
-
-    private Result parseStatistics(Path statistics, long durationSeconds, int carTrips, int bikeTrips,
-                                   int walkTrips, int deliveryTrips, int ptRiders, int ptVehicles,
-                                   Map<String, Double> co2ByType) throws IOException {
-        double co2Total = Math.round(co2ByType.values().stream().mapToDouble(Double::doubleValue).sum()
-                * 100) / 100.0;
-        String xml = Files.exists(statistics) ? Files.readString(statistics) : "";
-        Matcher tag = STAT_TAG.matcher(xml);
-        if (tag.find()) {
-            String el = tag.group();
-            return new Result((int) attr(el, "count"), attr(el, "duration"),
-                    attr(el, "routeLength"), attr(el, "speed"), durationSeconds, carTrips, bikeTrips,
-                    walkTrips, deliveryTrips, ptRiders, ptVehicles, co2Total, co2ByType);
+    private void writeFreightXml(List<FreightDemandGenerator.Trip> trips, TrafficRoutes routes, Path file) throws IOException {
+        Map<String, Map<String, String>> mappings = new java.util.TreeMap<>();
+        try (Writer writer = Files.newBufferedWriter(file)) {
+            writer.write("<routes>\n");
+            if (freightChecks == null) {
+            writer.write("<vType id=\"heavyTruck\" vClass=\"truck\" length=\"10\" maxSpeed=\"22.22\" accel=\"1.0\" decel=\"4\" minGap=\"2.5\" tau=\"1.5\" emissionClass=\"HBEFA3/HDV_D_EU6\"/>\n");
+            writer.write("<vType id=\"articulatedTruck\" vClass=\"trailer\" length=\"16.5\" maxSpeed=\"22.22\" accel=\"0.8\" decel=\"4\" minGap=\"2.5\" tau=\"1.5\" emissionClass=\"HBEFA3/HDV_D_EU6\"/>\n");
+            } else {
+                for (String clazz : List.of("truck", "trailer")) {
+                    var p = freightChecks.profile(clazz);
+                    String type = clazz.equals("truck") ? "heavyTruck" : "articulatedTruck";
+                    writer.write("<vType id=\"" + type + "\" vClass=\"" + clazz + "\" length=\"" + p.lengthM()
+                            + "\" width=\"" + p.widthM() + "\" height=\"" + p.heightM() + "\" mass=\"" + p.actualMassKg()
+                            + "\" maxSpeed=\"" + p.maxSpeedKmh()/3.6 + "\" accel=\"1.0\" decel=\"4\" minGap=\"2.5\" tau=\"1.5\" emissionClass=\"HBEFA3/HDV_D_EU6\"/>\n");
+                }
+            }
+            for (var trip : trips) {
+                String legacyType = trip.vehicleClass().equals("truck") ? "heavyTruck" : "articulatedTruck";
+                String sourceKey = VehicleOperationsConfiguration.freightKey(trip.id());
+                String type = vehicleTypes.select(legacyType, trip.id(), continuity == null ? null : continuity.typeFor(sourceKey));
+                if (continuity != null) continuity.register(trip.id(), sourceKey, type, trip.departSec(),
+                        Double.toString(trip.fromLon()), Double.toString(trip.fromLat()), Double.toString(trip.toLon()), Double.toString(trip.toLat()));
+                String clazz = vehicleTypes.vehicleClass(type);
+                String key = trip.relationId() + ":" + clazz;
+                var mapping = mappings.get(key);
+                if (mapping == null) {
+                    mapping = Map.of("relationId", trip.relationId(), "vehicleClass", clazz,
+                            "fromEdge", routes.resolve(trip.fromEdge(), trip.fromLon(), trip.fromLat(), clazz),
+                            "toEdge", routes.resolve(trip.toEdge(), trip.toLon(), trip.toLat(), clazz),
+                            "method", trip.fromEdge() == null ? "nearest-permitted-coordinate" : "explicit-directed-edges");
+                    mappings.put(key, mapping);
+                }
+                String from = mapping.get("fromEdge"), to = mapping.get("toEdge");
+                endpointMapper.map(trip.id(),"heavy-freight",clazz,Double.toString(trip.fromLon()),Double.toString(trip.fromLat()),
+                        Double.toString(trip.toLon()),Double.toString(trip.toLat()),from,to);
+                // Edge IDs may contain XML-special characters; use the XML writer.
+                try {
+                    var xml = javax.xml.stream.XMLOutputFactory.newFactory().createXMLStreamWriter(writer);
+                    xml.writeEmptyElement("trip"); xml.writeAttribute("id", trip.id());
+                    xml.writeAttribute("type", type); xml.writeAttribute("depart", Integer.toString(trip.departSec()));
+                    xml.writeAttribute("from", from); xml.writeAttribute("to", to); xml.writeCharacters("\n"); xml.flush();
+                } catch (javax.xml.stream.XMLStreamException e) { throw new IOException(e); }
+                trafficCategories.put(trip.id(), new TrafficRoutes.Category("logistics", "heavy-freight", type, trip.movement()));
+            }
+            writer.write("</routes>\n");
         }
-        return new Result(0, 0, 0, 0, durationSeconds, carTrips, bikeTrips, walkTrips, deliveryTrips,
-                ptRiders, ptVehicles, co2Total, co2ByType);
+        VehicleArtifacts.write(file.getParent().getParent().resolve("freight/edge-mapping.json"), Map.of(
+                "contract", "synthesis-freight-edge-mapping-v1", "relations", mappings.values()));
+        vehicleTypes.writeUsage(file.getParent().getParent().resolve("vehicles/sumo-types.json"));
+    }
+
+    Result parseStatistics(Path statistics, long durationSeconds, int carTrips, int bikeTrips,
+                           int walkTrips, int deliveryTrips, int ptRiders, int ptVehicles,
+                           Map<String, Double> co2ByType) throws IOException {
+        double co2Total = Math.round(co2ByType.values().stream().mapToDouble(Double::doubleValue).sum() * 100) / 100.0;
+        Map<String,org.w3c.dom.Element> tags=new HashMap<>();
+        if(Files.exists(statistics)) XmlRecords.read(statistics,Set.of("vehicles","vehicleTripStatistics","bikeTripStatistics"),e->tags.put(e.getTagName(),e));
+        var motor=tags.get("vehicleTripStatistics");var bike=tags.get("bikeTripStatistics");var vehicles=tags.get("vehicles");
+        int total=vehicles!=null && vehicles.hasAttribute("inserted")?(int)statistic(vehicles,"inserted")
+                :(int)(statistic(motor,"count")+statistic(bike,"count"));
+        return new Result(total,statistic(motor,"duration"),statistic(motor,"routeLength"),statistic(motor,"speed"),
+                durationSeconds,carTrips,bikeTrips,walkTrips,deliveryTrips,freightTrips.size(),companyTourLegs,ptRiders,ptVehicles,co2Total,co2ByType);
+    }
+    private static double statistic(org.w3c.dom.Element tag,String key) {
+        return tag==null || tag.getAttribute(key).isBlank()?0:Double.parseDouble(tag.getAttribute(key));
     }
 
     /** Liest ein numerisches Attribut aus einem XML-Element (Reihenfolge-unabhängig). */

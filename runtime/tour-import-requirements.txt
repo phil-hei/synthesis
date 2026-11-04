@@ -1,0 +1,2 @@
+# Optional local text-PDF extraction for company-tour imports.
+pypdf==6.10.0

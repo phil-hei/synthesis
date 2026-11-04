@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-28",
+  "scope": "M0 workplace completeness and scoped provenance; not full concept acceptance",
+  "backend": {
+    "tests": 394,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 4,
+    "command": "mvn -o -Daether.syncContext.named.factory=noop test",
+    "skips": [
+      {
+        "suite": "de.synthesis.generation.pipeline.MobileCityRastattSourcesTest",
+        "count": 1
+      },
+      {
+        "suite": "de.synthesis.generation.pipeline.ActitoppIntegrationTest",
+        "count": 1
+      },
+      {
+        "suite": "de.synthesis.generation.pipeline.PtIntegrationTest",
+        "count": 1
+      },
+      {
+        "suite": "de.synthesis.generation.pipeline.MobileCityCrossMunicipalitySourcesTest",
+        "count": 1
+      }
+    ]
+  },
+  "focused": {
+    "name": "de.synthesis.generation.DataSourcesTest",
+    "tests": "14",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "0.389"
+  },
+  "frontend": {
+    "tests": 95,
+    "files": 11,
+    "failures": 0,
+    "productionBuild": "passed"
+  },
+  "browser": {
+    "executed": false,
+    "reason": "Automatic approval review unavailable due to usage limit; isolated server not started"
+  },
+  "contracts": [
+    "synthesis-aspect-dataset-v1",
+    "synthesis-source-provenance-v1"
+  ],
+  "remaining": [
+    "AGS and geography editions",
+    "ordered source profiles and data packs",
+    "full migration gate matrix",
+    "scientifically approved freight fallback"
+  ]
+}

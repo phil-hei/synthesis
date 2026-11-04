@@ -1,0 +1,4 @@
+Tour;Liefertag;Vorgang;Strasse;PLZ;Ort;Ankunft;Abfahrt;Zeitfenster Kunde;Zeitfenster Kunde
+T1;20261019;A1;Beispielweg 1;01234;Teststadt;00:02;00:03;00:01;01:00
+T1;20261019;A2;Beispielweg 1;01234;Teststadt;00:02;00:03;00:01;01:00
+T1;20261019;B1;Beispielweg 2;01234;Teststadt;00:05;00:06;00:04;01:00

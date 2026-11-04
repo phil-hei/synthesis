@@ -1,0 +1,80 @@
+{
+  "contract": "synthesis-data-pack-v1",
+  "id": "regional-registers",
+  "edition": "example-v1",
+  "title": "Zwei regionale Register (synthetisch)",
+  "sources": [
+    {
+      "id": "register-a",
+      "schema": "workplaces-v1",
+      "file": "register-a.csv",
+      "sha256": "358d8e88ce05b5dba10916b550dec3c57c5fc3a6cbaa708de12fb4594f0c49bc",
+      "mapping": {
+        "tableId": "csv",
+        "headerRow": 1,
+        "columns": {
+          "id": 0,
+          "lon": 1,
+          "lat": 2,
+          "value": 3
+        },
+        "decimalSeparator": "."
+      },
+      "metadata": {
+        "label": "Künstliches Register A",
+        "source": "Künstliche Vertragsdaten; keine reale Arbeitsplatzbeobachtung",
+        "referenceDate": "2026-01-01",
+        "unit": "jobs",
+        "coverage": {
+          "minLon": 8.19,
+          "maxLon": 8.23,
+          "minLat": 48.84,
+          "maxLat": 48.9
+        },
+        "licence": "unknown",
+        "attribution": "SyntheSis-Testfixture",
+        "coverageDeclaration": {
+          "kind": "point-register",
+          "completeness": "complete",
+          "statement": "Vollständiger künstlicher Testbestand innerhalb der jeweils deklarierten Teilabdeckung"
+        }
+      }
+    },
+    {
+      "id": "register-b",
+      "schema": "workplaces-v1",
+      "file": "register-b.csv",
+      "sha256": "bc72fef75d02ea86d7b8d2752ab591c7d585d6ba7d4c599dfc6fb293f44c5d9d",
+      "mapping": {
+        "tableId": "csv",
+        "headerRow": 1,
+        "columns": {
+          "id": 0,
+          "lon": 1,
+          "lat": 2,
+          "value": 3
+        },
+        "decimalSeparator": "."
+      },
+      "metadata": {
+        "label": "Künstliches Register B",
+        "source": "Künstliche Vertragsdaten; keine reale Arbeitsplatzbeobachtung",
+        "referenceDate": "2026-01-01",
+        "unit": "jobs",
+        "coverage": {
+          "minLon": 8.21,
+          "maxLon": 8.27,
+          "minLat": 48.84,
+          "maxLat": 48.9
+        },
+        "licence": "unknown",
+        "attribution": "SyntheSis-Testfixture",
+        "coverageDeclaration": {
+          "kind": "point-register",
+          "completeness": "complete",
+          "statement": "Vollständiger künstlicher Testbestand innerhalb der jeweils deklarierten Teilabdeckung"
+        }
+      }
+    }
+  ]
+}

@@ -370,5 +370,97 @@
         "bike"
       ]
     }
+  },
+  {
+    "id": "standard.heavyTruck.diesel",
+    "version": "1",
+    "name": "Schwerer Solo-Lkw",
+    "category": "heavyTruck",
+    "provenance": {
+      "source": "SyntheSis Schwerlast-Referenz v1; SUMO HBEFA3/HDV_D_EU6",
+      "quality": "assumed",
+      "notes": "Generische Annahmen; keine regionale Flottenkalibrierung oder dynamische Beladung."
+    },
+    "physical": {
+      "curbMassKg": 10000,
+      "lengthM": 10,
+      "widthM": 2.55,
+      "heightM": 4.0,
+      "maxSpeedKmh": 80,
+      "maxGrossMassKg": 26000
+    },
+    "capacity": {
+      "passengerSeats": 0,
+      "operatorSeats": 1,
+      "payloadKg": 16000,
+      "cargoVolumeM3": 60
+    },
+    "powertrain": {
+      "kind": "combustion",
+      "fuel": "diesel",
+      "tankCapacityL": 300
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 1.0,
+      "decelerationMps2": 4,
+      "emergencyDecelerationMps2": 7,
+      "minGapM": 2.5,
+      "timeHeadwayS": 1.5
+    },
+    "routing": {
+      "sumoVehicleClass": "truck",
+      "sumoEmissionClass": "HBEFA3/HDV_D_EU6",
+      "allowedNetworks": [
+        "road"
+      ]
+    }
+  },
+  {
+    "id": "standard.articulatedTruck.diesel",
+    "version": "1",
+    "name": "Sattelzug",
+    "category": "articulatedTruck",
+    "provenance": {
+      "source": "SyntheSis Schwerlast-Referenz v1; SUMO HBEFA3/HDV_D_EU6",
+      "quality": "assumed",
+      "notes": "Generische Annahmen; keine regionale Flottenkalibrierung oder dynamische Beladung."
+    },
+    "physical": {
+      "curbMassKg": 15000,
+      "lengthM": 16.5,
+      "widthM": 2.55,
+      "heightM": 4.0,
+      "maxSpeedKmh": 80,
+      "maxGrossMassKg": 40000
+    },
+    "capacity": {
+      "passengerSeats": 0,
+      "operatorSeats": 1,
+      "payloadKg": 25000,
+      "cargoVolumeM3": 90
+    },
+    "powertrain": {
+      "kind": "combustion",
+      "fuel": "diesel",
+      "tankCapacityL": 300
+    },
+    "driving": {
+      "controlMode": "human",
+      "carFollowModel": "Krauss",
+      "accelerationMps2": 0.8,
+      "decelerationMps2": 4,
+      "emergencyDecelerationMps2": 7,
+      "minGapM": 2.5,
+      "timeHeadwayS": 1.5
+    },
+    "routing": {
+      "sumoVehicleClass": "trailer",
+      "sumoEmissionClass": "HBEFA3/HDV_D_EU6",
+      "allowedNetworks": [
+        "road"
+      ]
+    }
   }
 ]

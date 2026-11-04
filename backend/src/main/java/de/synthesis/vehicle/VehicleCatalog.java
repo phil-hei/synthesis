@@ -8,9 +8,9 @@ import java.util.*;
 /** Pure validation and resolution; shared by HTTP, persistence and generation. */
 public final class VehicleCatalog {
     private static final List<VehicleType> STANDARDS = load();
-    public static final Set<String> ROLES = Set.of("car", "bicycle", "deliveryVan", "cargoBike");
+    public static final Set<String> ROLES = Set.of("car", "bicycle", "deliveryVan", "cargoBike", "heavyTruck", "articulatedTruck");
     private static final Set<String> EMISSIONS = Set.of("Zero", "HBEFA3/PC_G_EU4",
-            "HBEFA3/PC_D_EU4", "HBEFA3/LDV_D_EU4", "HBEFA3/LDV_G_EU4");
+            "HBEFA3/PC_D_EU4", "HBEFA3/LDV_D_EU4", "HBEFA3/LDV_G_EU4", "HBEFA3/HDV_D_EU6");
     public record Issue(String path, String message) { }
     public record Capability(String target, String path, String status, String explanation) { }
     public record Report(boolean valid, VehicleConfiguration resolved, String sha256,
@@ -64,6 +64,8 @@ public final class VehicleCatalog {
                 String expected = switch (String.valueOf(a.role())) {
                     case "car" -> "passenger";
                     case "deliveryVan" -> "delivery";
+                    case "heavyTruck" -> "truck";
+                    case "articulatedTruck" -> "trailer";
                     default -> "bicycle";
                 };
                 v.check(expected.equals(type.routing().sumoVehicleClass()), p, "Verkehrsrolle benötigt SUMO-Klasse " + expected);
@@ -136,7 +138,7 @@ public final class VehicleCatalog {
         rows.add(new Capability("logitopp", "*", "metadataOnly", "Fahrzeugparameter verändern weder Nachfrage noch Tourplanung; Legacy-Typen bleiben unverändert."));
         rows.add(new Capability("mobilecity", "*", "metadataOnly", "Exportiert weiterhin aggregierten Pkw-Bestand; kein individueller Fahrzeugparameter-Import."));
         rows.add(new Capability("sumo", "fleetAssignments,initialVehicles,powertrain,operation,emissions,noise,capacity",
-                "metadataOnly", "Gespeicherte Fachparameter; keine Flotten-, Batterie-, Lade-, Servicezeit-, Referenzemissions- oder Lärmsimulation."));
+                "metadataOnly", "Katalog allein simuliert keine Flotte. Explizite Fahrzeugzuordnungen und native Fahrtketten sind separat über vehicleOperations aktivierbar; Batterie, Laden, Ladungsänderungen und Lärm bleiben ungekoppelt."));
         rows.add(new Capability("sumo", "physical.widthM,physical.heightM", "metadataOnly", "Als vType exportiert; im verwendeten Standard-Spurmodell keine zugesicherte Verkehrswirkung."));
         for (VehicleType t : types) {
             boolean used = c.appliesToSumo() && c.trafficAssignments() != null && c.trafficAssignments().stream()
@@ -174,7 +176,7 @@ public final class VehicleCatalog {
         }
         void type(VehicleType t, String p) {
             id(t.id(), p + ".id"); id(t.version(), p + ".version"); text(t.name(), p + ".name");
-            choice(t.category(), Set.of("passengerCar", "deliveryVan", "bicycle", "cargoBike", "lightVehicle"), p + ".category");
+            choice(t.category(), Set.of("passengerCar", "deliveryVan", "bicycle", "cargoBike", "lightVehicle", "heavyTruck", "articulatedTruck"), p + ".category");
             if (t.provenance() == null) error(p + ".provenance", "Quelle und Qualität fehlen");
             else {
                 text(t.provenance().source(), p + ".provenance.source");
@@ -229,7 +231,7 @@ public final class VehicleCatalog {
             var r = t.routing();
             if (r == null) error(p + ".routing", "Routingprofil fehlt");
             else {
-                choice(r.sumoVehicleClass(), Set.of("passenger", "delivery", "bicycle"), p + ".routing.sumoVehicleClass");
+                choice(r.sumoVehicleClass(), Set.of("passenger", "delivery", "bicycle", "truck", "trailer"), p + ".routing.sumoVehicleClass");
                 choice(r.sumoEmissionClass(), EMISSIONS, p + ".routing.sumoEmissionClass");
                 List<String> networks = list(r.allowedNetworks(), p + ".routing.allowedNetworks");
                 check(!networks.isEmpty(), p + ".routing.allowedNetworks", "Mindestens ein Netztyp erforderlich");
@@ -239,7 +241,9 @@ public final class VehicleCatalog {
                 if (power instanceof ElectricPowertrain || power instanceof HumanPowered) check("Zero".equals(r.sumoEmissionClass()), p + ".routing.sumoEmissionClass", "Elektro/Muskelkraft benötigt direkte Emissionsklasse Zero");
                 if (power instanceof CombustionPowertrain engine) {
                     String prefix = "passenger".equals(r.sumoVehicleClass()) ? "HBEFA3/PC_" : "HBEFA3/LDV_";
-                    String expectedClass = prefix + ("diesel".equals(engine.fuel()) ? "D" : "G") + "_EU4";
+                    boolean heavy = Set.of("truck", "trailer").contains(Objects.toString(r.sumoVehicleClass(), ""));
+                    String expectedClass = heavy ? "HBEFA3/HDV_D_EU6" : prefix + ("diesel".equals(engine.fuel()) ? "D" : "G") + "_EU4";
+                    if (heavy) check("diesel".equals(engine.fuel()), p + ".powertrain", "Schwerlast-Referenzmodell benötigt Diesel");
                     check(expectedClass.equals(r.sumoEmissionClass()) && !"bicycle".equals(r.sumoVehicleClass()), p + ".routing.sumoEmissionClass", "Für diese Klasse/Kraftstoff unterstütztes Referenzmodell: " + expectedClass);
                 }
             }

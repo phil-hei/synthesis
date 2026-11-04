@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-02",
+  "scope": "Relation-level freight provenance and bounded source-plan acceptance with company demand; not full concept acceptance",
+  "backend": {
+    "tests": 483,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 9
+  },
+  "skippedCases": [
+    "de.synthesis.generation.pipeline.MobileCityRastattSourcesTest.exportsObservedRastattSourcesWithoutSilentFallback",
+    "de.synthesis.generation.pipeline.ActitoppIntegrationTest.pinnedRunnerProducesValidWeeklySchedules",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.cacheAvoidsRepeatLlmCalls",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.sameSeedIsReproducible",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.liveLlmProducesPersonaPlans",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.whatIfContextYieldsReasons",
+    "de.synthesis.generation.pipeline.PtIntegrationTest.fullTransitChainRidesBuses",
+    "de.synthesis.generation.pipeline.LlmModeChoiceTest.aggregatesValidModalSplitAndIsReproducible",
+    "de.synthesis.generation.pipeline.MobileCityCrossMunicipalitySourcesTest.exportsObservedCrossMunicipalitySourcesWithPerZoneEvidence"
+  ],
+  "focusedSourcesTests": 103,
+  "finalContractNativeTests": {
+    "tests": 7,
+    "skipped": 0,
+    "explicitGtfsDisabled": true
+  },
+  "frontend": {
+    "tests": 121,
+    "productionBuild": "passed"
+  },
+  "nativeSumoRuns": 18,
+  "exportCases": 6,
+  "comparedCoreFilesPerCase": 69,
+  "selectionModes": [
+    "legacy disabled plan",
+    "explicit revision A",
+    "ordered source profile selecting A",
+    "explicit revision B",
+    "excluded heavy background"
+  ],
+  "nativeRequestedRoutedDepartedCompleted": {
+    "revisionA": 11,
+    "revisionB": 12,
+    "excludedHeavy": 3
+  },
+  "nativePhysicalVehicles": {
+    "revisionA": 9,
+    "revisionB": 10,
+    "excludedHeavy": 1
+  },
+  "teleports": 0,
+  "preregisteredPlan": "2026-11-02-source-plan-traffic-plan.json",
+  "exportProof": "2026-11-02-source-plan-traffic-export.json",
+  "nativeProof": "2026-11-02-source-plan-traffic-native.json",
+  "qualityCorrection": "Explicit demonstration is assumed in source resolution, freight source/summary and manifest; unverified input remains unknown",
+  "initialFailedRun": "New test double omitted the two-argument Places overload; corrected, external endpoints isolated, no timeout widening.",
+  "remaining": [
+    "real city/rural/foreign regional reference acceptance",
+    "private and parcel demand through source migration to target execution",
+    "complete MobileCity source-plan acceptance",
+    "empirically validated heavy freight fallback",
+    "further source families and isolated pre-refactor baseline"
+  ]
+}

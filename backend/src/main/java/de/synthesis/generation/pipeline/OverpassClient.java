@@ -199,12 +199,21 @@ public class OverpassClient {
                 + (region.maxLat + latPad) + "," + (region.maxLon + lonPad);
         return """
                 [out:xml][timeout:%d];
-                (
-                  way["highway"](%s);
-                  >;
-                );
+                way["highway"](%s)->.roads;
+                (.roads; relation(bw.roads)["type"~"^restriction"];);
+                (._; >;);
                 out body qt;
                 """.formatted(properties.getOverpass().getRoadNetworkTimeoutSeconds(), bbox);
+    }
+
+    /** Nodes, ways and relations with stable source identities and representative centres. */
+    public record EnergyResponse(JsonNode data, String endpoint) { }
+
+    public EnergyResponse fetchEnergyStations(Scenario.Region region) throws Exception {
+        String query = "[out:json][timeout:" + properties.getOverpass().getTimeoutSeconds()
+                + "];nwr[\"amenity\"~\"^(charging_station|fuel)$\"](" + bbox(region) + ");out meta center;";
+        var response = postResponse(query, properties.getOverpass().getTimeoutSeconds() + 15L);
+        return new EnergyResponse(mapper.readTree(response.body()), response.endpoint());
     }
 
     private JsonNode execute(String query) throws Exception {
@@ -218,6 +227,11 @@ public class OverpassClient {
      * @param clientTimeoutSeconds absolutes HTTP-Timeout je Endpunkt
      */
     private String post(String query, long clientTimeoutSeconds) throws Exception {
+        return postResponse(query, clientTimeoutSeconds).body();
+    }
+
+    private record QueryResponse(String body, String endpoint) { }
+    private QueryResponse postResponse(String query, long clientTimeoutSeconds) throws Exception {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
@@ -235,7 +249,7 @@ public class OverpassClient {
                         .build();
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() == 200) {
-                    return response.body();
+                    return new QueryResponse(response.body(), endpoint);
                 }
                 last = new IllegalStateException("Overpass-Antwort: HTTP " + response.statusCode()
                         + " (" + endpoint + ")");

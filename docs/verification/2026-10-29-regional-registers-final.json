@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-29",
+  "scope": "Ordered regional Work-register composition with disjoint applied scopes; not full concept acceptance",
+  "backend": {
+    "tests": 452,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 9
+  },
+  "skippedCases": [
+    "MobileCityRastattSourcesTest.exportsObservedRastattSourcesWithoutSilentFallback",
+    "ActitoppIntegrationTest.pinnedRunnerProducesValidWeeklySchedules",
+    "GtaBehaviorTest.cacheAvoidsRepeatLlmCalls",
+    "GtaBehaviorTest.sameSeedIsReproducible",
+    "GtaBehaviorTest.liveLlmProducesPersonaPlans",
+    "GtaBehaviorTest.whatIfContextYieldsReasons",
+    "PtIntegrationTest.fullTransitChainRidesBuses",
+    "LlmModeChoiceTest.aggregatesValidModalSplitAndIsReproducible",
+    "MobileCityCrossMunicipalitySourcesTest.exportsObservedCrossMunicipalitySourcesWithPerZoneEvidence"
+  ],
+  "focusedSourcesTests": 72,
+  "frontend": {
+    "tests": 110,
+    "productionBuild": "passed"
+  },
+  "browserProof": "2026-10-29-regional-registers-ui.json",
+  "exampleProof": "2026-10-29-regional-registers-example.json",
+  "remaining": [
+    "full migration of remaining source families",
+    "NoData masks and empirical model/source acceptance",
+    "authoritative municipality key verification and territorial crosswalks",
+    "scientifically validated freight generation fallback",
+    "full real-region and target-model migration acceptance"
+  ]
+}

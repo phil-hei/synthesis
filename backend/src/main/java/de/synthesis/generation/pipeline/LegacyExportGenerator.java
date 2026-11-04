@@ -31,6 +31,8 @@ public class LegacyExportGenerator {
 
     private final List<Zone> zones;
     private final Random random;
+    private RoadLocations roadLocations;
+    public LegacyExportGenerator useRoadLocations(RoadLocations locations) { this.roadLocations=locations;return this; }
     /** Legacy demand files reference zones by OID (= matrix column), not external id. */
     private final Map<Long, Zone> zonesByExternalId = new HashMap<>();
 
@@ -192,26 +194,27 @@ public class LegacyExportGenerator {
      * location; segment; capacity; mileage; fuelLevel; maxRange — unlike the new
      * stack, carId is a bare int and the zone is referenced by its matrix column.
      */
-    private void convertCars(Path population, Path out) throws IOException {
-        Map<Long, Zone> householdToZone = new HashMap<>();
-        forEachRow(population.resolve("household.csv"), cells ->
-                householdToZone.put(Long.parseLong(cells[1]),
-                        zonesByExternalId.get(Long.parseLong(cells[3]))));
+    void convertCars(Path population, Path out) throws IOException {
+        record Home(Zone zone, String location) { }
+        Map<Long, Home> homes = new HashMap<>();
+        forEachRow(population.resolve("household.csv"), cells -> {
+            Zone zone = zonesByExternalId.get(Long.parseLong(cells[3]));
+            if (zone == null) throw new IOException("Pkw-Export: unbekannte Wohnzone für Haushalt " + cells[1]);
+            homes.put(Long.parseLong(cells[1]), new Home(zone, cells[4]));
+        });
 
         try (Writer w = Files.newBufferedWriter(out)) {
             w.write(quoted("ownerId", "mainUserId", "personalUserId", "carType", "car attributes") + "\n");
             long[] carId = {1};
             forEachRow(population.resolve("car.csv"), cells -> {
                 // in: ownerId;mainUserId;personalUserId;carType;CarId(value=N);0;pos;SEGMENT;seats;...
-                Zone zone = householdToZone.get(Long.parseLong(cells[0]));
-                if (zone == null) {
-                    return;
-                }
+                Home home = homes.get(Long.parseLong(cells[0]));
+                if (home == null) throw new IOException("Pkw-Export: Wohnort fehlt für Haushalt " + cells[0]);
                 // immer "conventional": BEV bräuchte im Legacy-Format ein zusätzliches
                 // batteryLevel-Attribut (BevCarFormat); für die Logistik irrelevant
                 write(w, quoted(cells[0], cells[1], cells[2], "conventional",
-                        String.valueOf(carId[0]++), String.valueOf(zone.index),
-                        CsvArtifacts.location(zone.centroidLon, zone.centroidLat),
+                        String.valueOf(carId[0]++), String.valueOf(home.zone().index),
+                        home.location(),
                         cells[7], cells[8], "0.0", "1.0", "1000.0") + "\n");
             });
         }
@@ -357,7 +360,7 @@ public class LegacyExportGenerator {
      * the zonal attractivity as weight. The legacy file references zones by their
      * matrix column (oid), not the external id.
      */
-    private void writeOpportunities(Path out) throws IOException {
+    void writeOpportunities(Path out) throws IOException {
         try (Writer w = Files.newBufferedWriter(out)) {
             w.write(quoted("zoneId", "activityType", "location", "attractivity", "locationX", "locationY") + "\n");
             for (Zone zone : zones) {
@@ -369,6 +372,10 @@ public class LegacyExportGenerator {
                     String type = toLegacyActivityType(category.getKey());
                     double lat = zone.minLat + random.nextDouble() * (zone.maxLat - zone.minLat);
                     double lon = zone.minLon + random.nextDouble() * (zone.maxLon - zone.minLon);
+                    if(roadLocations!=null) {
+                        var point=roadLocations.locateOpportunity(zone,lon,lat,"opportunity:"+category.getKey(),zone.id+":"+category.getKey());
+                        lon=point.lon();lat=point.lat();
+                    }
                     write(w, quoted(String.valueOf(zone.index), type,
                             CsvArtifacts.location(lon, lat), String.valueOf(attractivity),
                             String.valueOf(lon), String.valueOf(lat)) + "\n");

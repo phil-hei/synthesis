@@ -1,0 +1,44 @@
+{
+  "contract": "synthesis-data-pack-v1",
+  "id": "workplaces-de-csv",
+  "edition": "example-v1",
+  "title": "Beispiel workplaces-de-csv (synthetisch)",
+  "sources": [
+    {
+      "id": "work",
+      "schema": "workplaces-v1",
+      "file": "sites.csv",
+      "sha256": "f8348cda9814938e467442cf8f852bf016a786e7c3a0dc2954f58a3c8cd19e8e",
+      "mapping": {
+        "tableId": "csv",
+        "headerRow": 1,
+        "columns": {
+          "id": 0,
+          "lon": 1,
+          "lat": 2,
+          "value": 3
+        },
+        "decimalSeparator": "."
+      },
+      "metadata": {
+        "label": "Synthetische Arbeitsplatzpunkte workplaces-de-csv",
+        "source": "Künstliche Testdaten; kein reales Betriebsregister",
+        "referenceDate": "2026-01-01",
+        "unit": "jobs",
+        "coverage": {
+          "minLon": 8.1,
+          "minLat": 48.7,
+          "maxLon": 8.5,
+          "maxLat": 49.1
+        },
+        "licence": "unknown",
+        "attribution": "SyntheSis-Testfixture",
+        "coverageDeclaration": {
+          "kind": "point-register",
+          "completeness": "complete",
+          "statement": "Vollständiger künstlicher Testbestand für das deklarierte Beispielgebiet; keine empirische Vollständigkeitsbehauptung"
+        }
+      }
+    }
+  ]
+}

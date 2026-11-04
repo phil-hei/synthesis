@@ -1,0 +1,916 @@
+{
+  "date": "2026-11-04",
+  "environment": {
+    "api": "127.0.0.1:8104",
+    "productionFrontend": "127.0.0.1:4314",
+    "dataDir": "isolated temporary directory; synthetic fixtures only"
+  },
+  "completed": {
+    "contract": "synthesis-source-run-resolution-v1",
+    "run": {
+      "id": "8d8b1f56/2026-11-04T10:56:14.521302Z",
+      "scenarioId": "8d8b1f56",
+      "state": "DONE",
+      "startedAt": "2026-11-04T10:56:14.521302Z",
+      "finishedAt": "2026-11-04T10:56:15.312Z",
+      "seed": 42,
+      "referenceYear": 2026,
+      "planSha256": "1848889f230b2e6ceb9139c2dbe56367f2a9266765c0e8bd052ddacb29d049ad",
+      "lockSha256": "5cd34e71d1f072e1f839adc4f802ab53dfd96556cfc6edfcba142573b40916d9"
+    },
+    "plan": {
+      "enabled": true,
+      "qualityMode": "exploration",
+      "aspects": {
+        "population.distribution": {
+          "source": "builtins",
+          "providers": [
+            {
+              "provider": "uniform",
+              "excluded": false,
+              "onUnavailable": "fail"
+            }
+          ],
+          "gapProviders": [],
+          "gaps": "legacy",
+          "internalTrips": 0,
+          "inboundTrips": 0,
+          "outboundTrips": 0,
+          "throughTrips": 0,
+          "vehicleClass": "truck",
+          "demonstrationAccepted": false,
+          "assumptionStatement": ""
+        },
+        "opportunities.work": {
+          "source": "builtins",
+          "providers": [
+            {
+              "provider": "synthetic",
+              "excluded": false,
+              "onUnavailable": "fail"
+            }
+          ],
+          "gapProviders": [],
+          "gaps": "legacy",
+          "internalTrips": 0,
+          "inboundTrips": 0,
+          "outboundTrips": 0,
+          "throughTrips": 0,
+          "vehicleClass": "truck",
+          "demonstrationAccepted": false,
+          "assumptionStatement": ""
+        },
+        "freight.vehicleOd": {
+          "source": "dataset",
+          "providers": [],
+          "gapProviders": [],
+          "revision": "3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+          "gaps": "legacy",
+          "internalTrips": 0,
+          "inboundTrips": 0,
+          "outboundTrips": 0,
+          "throughTrips": 0,
+          "vehicleClass": "truck",
+          "demonstrationAccepted": false,
+          "assumptionStatement": ""
+        }
+      }
+    },
+    "decisions": [
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "freight.vehicleOd",
+        "attribution": "Testfixture",
+        "coverage": {
+          "minLat": 48.848,
+          "minLon": 8.2,
+          "maxLat": 48.852,
+          "maxLon": 8.206
+        },
+        "evidence": "user-provided-unverified",
+        "gaps": "legacy",
+        "label": "Künstliche Schwerlastrevision A",
+        "licence": "unknown",
+        "qualityMode": "exploration",
+        "referenceDate": "2026-10-19",
+        "revision": "3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+        "selectionRole": "explicit-selection",
+        "skipped": [
+          {
+            "reason": "replaced-by-explicit-dataset-in-covered-area",
+            "source": "legacy"
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "2f96c98a6c393419f358d7c0fbcb7a8c14a3b38d50f3e1b3f16267477895bba3",
+        "status": "resolved",
+        "temporalTransfer": false
+      },
+      {
+        "applicationStatus": "pending-runtime-inputs",
+        "aspect": "opportunities.work",
+        "candidates": [
+          {
+            "rank": 1,
+            "status": "pending",
+            "reason": "requires-runtime-inputs",
+            "provider": "synthetic",
+            "onUnavailable": "fail"
+          }
+        ],
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "parameters": {
+          "seed": 42
+        },
+        "qualityMode": "exploration",
+        "selectionRole": "explicit-provider-order",
+        "source": "builtins",
+        "status": "pending-resolution"
+      },
+      {
+        "applicationStatus": "pending-runtime-inputs",
+        "aspect": "population.distribution",
+        "candidates": [
+          {
+            "rank": 1,
+            "status": "pending",
+            "reason": "requires-runtime-inputs",
+            "provider": "uniform",
+            "onUnavailable": "fail"
+          }
+        ],
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "parameters": {
+          "manualTotalPersons": 12,
+          "personsPerKm2": 1500.0,
+          "seed": 42
+        },
+        "qualityMode": "exploration",
+        "selectionRole": "explicit-provider-order",
+        "source": "builtins",
+        "status": "pending-resolution"
+      }
+    ],
+    "workplaces": {
+      "candidates": [
+        {
+          "rank": 1,
+          "status": "selected",
+          "reason": "first-usable-candidate",
+          "provider": "synthetic",
+          "onUnavailable": "fail"
+        }
+      ],
+      "contract": "synthesis-workplace-resolution-v1",
+      "provenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "opportunities.work",
+        "root": "weights",
+        "nodes": [
+          {
+            "id": "input",
+            "operation": "model-profile",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "model",
+              "label": "Synthetische Arbeitsgewichte",
+              "origin": "synthetic-work-weights-v1",
+              "referenceDate": "",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                }
+              ]
+            },
+            "parameters": {
+              "baseWeightPerKm2": 400,
+              "centralitySlope": 0.8,
+              "gaussianSigma": 0.5,
+              "modelVersion": "synthetic-work-weights-v1",
+              "seed": 6291337688135381350,
+              "seedRule": "scenario.population.seed XOR 0x574f524b5f56314c"
+            }
+          },
+          {
+            "id": "weights",
+            "operation": "synthetic-work-weights",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [
+              "input"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                }
+              ]
+            },
+            "parameters": {
+              "observedJobTotalAvailable": false,
+              "unit": "model-weight"
+            }
+          }
+        ]
+      },
+      "provider": "synthetic",
+      "status": "resolved",
+      "sumWeights": 345.11338015876,
+      "unit": "model-weight",
+      "zoneWeights": [
+        {
+          "externalId": 100001,
+          "weight": 345.11338015876,
+          "modelIndex": 0
+        }
+      ]
+    },
+    "populationSource": "user-defined",
+    "populationDistribution": "uniform-noise",
+    "populationSynthesis": {
+      "schemaVersion": 1,
+      "policy": "whole-households-with-zone-rounding-carry-v1",
+      "targetPersons": 12,
+      "actualPersons": 13,
+      "difference": 1,
+      "zones": [
+        {
+          "zoneId": 100001,
+          "actualPersons": 13,
+          "targetPersons": 12,
+          "difference": 1
+        }
+      ]
+    },
+    "population": {
+      "allocatedPersons": 11.999999999999998,
+      "candidates": [
+        {
+          "rank": 1,
+          "status": "selected",
+          "reason": "first-usable-candidate",
+          "provider": "uniform",
+          "onUnavailable": "fail"
+        }
+      ],
+      "contract": "synthesis-population-resolution-v1",
+      "diagnostics": {
+        "personsPerKm2": 1500.0
+      },
+      "distributionProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.distribution",
+        "root": "weights",
+        "nodes": [
+          {
+            "id": "input",
+            "operation": "source",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "builtin",
+              "sourceHash": "",
+              "label": "Dichteannahme",
+              "origin": "density-estimate",
+              "referenceDate": "",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                }
+              ]
+            },
+            "parameters": {
+              "provider": "uniform-noise",
+              "providerVersion": "density-v1"
+            }
+          },
+          {
+            "id": "weights",
+            "operation": "modelled-spatial-weights",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [
+              "input"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                }
+              ]
+            },
+            "parameters": {
+              "diagnostics": {
+                "personsPerKm2": 1500.0
+              },
+              "seed": 42,
+              "smooth": true
+            }
+          }
+        ]
+      },
+      "distributionSource": "uniform-noise",
+      "status": "resolved",
+      "totalPersons": 12,
+      "totalProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.total",
+        "root": "total",
+        "nodes": [
+          {
+            "id": "total",
+            "operation": "manual-total",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                }
+              ]
+            },
+            "parameters": {
+              "persons": 12
+            }
+          }
+        ]
+      },
+      "totalSource": "user-defined"
+    },
+    "freight": {
+      "byMovement": {
+        "inbound": 2,
+        "internal": 2,
+        "outbound": 2,
+        "through": 2
+      },
+      "contract": "synthesis-freight-source-resolution-v1",
+      "contributions": [
+        {
+          "relationId": "inbound",
+          "sourceRow": 3,
+          "source": {
+            "kind": "dataset",
+            "revision": "3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+            "sourceHash": "2f96c98a6c393419f358d7c0fbcb7a8c14a3b38d50f3e1b3f16267477895bba3",
+            "label": "Künstliche Schwerlastrevision A",
+            "origin": "Synthetische UI-Prüffixture; keine Beobachtung",
+            "referenceDate": "2026-10-19",
+            "licence": "unknown",
+            "attribution": "Testfixture"
+          },
+          "evidence": "unknown",
+          "inputVehicleTrips": 2,
+          "generatedVehicleTrips": 2,
+          "relation": {
+            "id": "inbound",
+            "vehicleClass": "trailer",
+            "movement": "inbound",
+            "fromLon": 8.2002,
+            "fromLat": 48.85,
+            "toLon": 8.2058,
+            "toLat": 48.85,
+            "trips": 2,
+            "beginHour": 0.0,
+            "endHour": 0.1,
+            "source": "dataset:3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+            "referenceDate": "2026-10-19"
+          }
+        },
+        {
+          "relationId": "internal",
+          "sourceRow": 2,
+          "source": {
+            "kind": "dataset",
+            "revision": "3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+            "sourceHash": "2f96c98a6c393419f358d7c0fbcb7a8c14a3b38d50f3e1b3f16267477895bba3",
+            "label": "Künstliche Schwerlastrevision A",
+            "origin": "Synthetische UI-Prüffixture; keine Beobachtung",
+            "referenceDate": "2026-10-19",
+            "licence": "unknown",
+            "attribution": "Testfixture"
+          },
+          "evidence": "unknown",
+          "inputVehicleTrips": 2,
+          "generatedVehicleTrips": 2,
+          "relation": {
+            "id": "internal",
+            "vehicleClass": "truck",
+            "movement": "internal",
+            "fromLon": 8.2002,
+            "fromLat": 48.85,
+            "toLon": 8.2058,
+            "toLat": 48.85,
+            "trips": 2,
+            "beginHour": 0.0,
+            "endHour": 0.1,
+            "source": "dataset:3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+            "referenceDate": "2026-10-19"
+          }
+        },
+        {
+          "relationId": "outbound",
+          "sourceRow": 4,
+          "source": {
+            "kind": "dataset",
+            "revision": "3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+            "sourceHash": "2f96c98a6c393419f358d7c0fbcb7a8c14a3b38d50f3e1b3f16267477895bba3",
+            "label": "Künstliche Schwerlastrevision A",
+            "origin": "Synthetische UI-Prüffixture; keine Beobachtung",
+            "referenceDate": "2026-10-19",
+            "licence": "unknown",
+            "attribution": "Testfixture"
+          },
+          "evidence": "unknown",
+          "inputVehicleTrips": 2,
+          "generatedVehicleTrips": 2,
+          "relation": {
+            "id": "outbound",
+            "vehicleClass": "truck",
+            "movement": "outbound",
+            "fromLon": 8.2002,
+            "fromLat": 48.85,
+            "toLon": 8.2058,
+            "toLat": 48.85,
+            "trips": 2,
+            "beginHour": 0.0,
+            "endHour": 0.1,
+            "source": "dataset:3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+            "referenceDate": "2026-10-19"
+          }
+        },
+        {
+          "relationId": "through",
+          "sourceRow": 5,
+          "source": {
+            "kind": "dataset",
+            "revision": "3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+            "sourceHash": "2f96c98a6c393419f358d7c0fbcb7a8c14a3b38d50f3e1b3f16267477895bba3",
+            "label": "Künstliche Schwerlastrevision A",
+            "origin": "Synthetische UI-Prüffixture; keine Beobachtung",
+            "referenceDate": "2026-10-19",
+            "licence": "unknown",
+            "attribution": "Testfixture"
+          },
+          "evidence": "unknown",
+          "inputVehicleTrips": 2,
+          "generatedVehicleTrips": 2,
+          "relation": {
+            "id": "through",
+            "vehicleClass": "trailer",
+            "movement": "through",
+            "fromLon": 8.2002,
+            "fromLat": 48.85,
+            "toLon": 8.2058,
+            "toLat": 48.85,
+            "trips": 2,
+            "beginHour": 0.0,
+            "endHour": 0.1,
+            "source": "dataset:3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+            "referenceDate": "2026-10-19"
+          }
+        }
+      ],
+      "day": 0,
+      "departureProfile": {
+        "evidence": "assumed",
+        "method": "stratified-uniform-within-input-window",
+        "seed": 42,
+        "seedRule": "scenario.population.seed XOR 0x66726569676874 XOR relationId.hashCode()"
+      },
+      "generatedVehicleTrips": 8,
+      "independentContributions": [
+        "person-demand",
+        "company-tours",
+        "parcel-logistics"
+      ],
+      "inputVehicleTrips": 8,
+      "scope": "heavy-freight-only",
+      "source": "dataset",
+      "status": "generated",
+      "targetEvidence": {
+        "status": "not-verified-by-generation-ledger",
+        "routing": "sumo/traffic-routing.json",
+        "execution": "sumo/traffic-execution.json"
+      },
+      "tripJoin": "relationId",
+      "tripLedger": "freight/trips.csv",
+      "unit": "vehicle-trips/day"
+    },
+    "failures": {},
+    "targets": {
+      "sumo": {
+        "stageStatus": "DONE",
+        "execution": {
+          "contract": "synthesis-traffic-execution-v1",
+          "status": "complete",
+          "routingVerified": true,
+          "demandRetained": true,
+          "vehicles": {
+            "requested": 8,
+            "routed": 8,
+            "departed": 8,
+            "completed": 8,
+            "unrouted": 0,
+            "notDeparted": 0,
+            "unfinished": 0,
+            "vaporized": 0
+          },
+          "persons": {
+            "requested": 0,
+            "routed": 0,
+            "departed": 0,
+            "completed": 0,
+            "unrouted": 0,
+            "notDeparted": 0,
+            "unfinished": 0,
+            "vaporized": 0
+          },
+          "nativeVehicles": {
+            "requested": 8,
+            "routed": 8,
+            "departed": 8,
+            "completed": 8,
+            "unrouted": 0,
+            "notDeparted": 0,
+            "unfinished": 0,
+            "vaporized": 0
+          },
+          "nativeVehicleTeleports": 0,
+          "teleportAccountingComplete": true,
+          "groups": [
+            {
+              "source": "heavy-freight",
+              "vehicleClass": "trailer",
+              "kind": "vehicle",
+              "counts": {
+                "requested": 4,
+                "routed": 4,
+                "departed": 4,
+                "completed": 4,
+                "unrouted": 0,
+                "notDeparted": 0,
+                "unfinished": 0,
+                "vaporized": 0
+              }
+            },
+            {
+              "source": "heavy-freight",
+              "vehicleClass": "truck",
+              "kind": "vehicle",
+              "counts": {
+                "requested": 4,
+                "routed": 4,
+                "departed": 4,
+                "completed": 4,
+                "unrouted": 0,
+                "notDeparted": 0,
+                "unfinished": 0,
+                "vaporized": 0
+              }
+            }
+          ]
+        },
+        "executionReport": "sumo/traffic-execution.json",
+        "executionSha256": "2a20e05158e01a4df5697d2193e63f0be428755c344a036a1da046e311b099ab"
+      },
+      "logitopp": {
+        "stageStatus": "SKIPPED"
+      }
+    }
+  },
+  "failed": {
+    "contract": "synthesis-source-run-resolution-v1",
+    "run": {
+      "id": "8d8b1f56/2026-11-04T10:59:47.386456Z",
+      "scenarioId": "8d8b1f56",
+      "state": "FAILED",
+      "startedAt": "2026-11-04T10:59:47.386456Z",
+      "finishedAt": "2026-11-04T10:59:47.390169Z",
+      "error": "Keine zugelassene Quelle verwendbar; kein versteckter Ersatz",
+      "seed": 42,
+      "referenceYear": 2026,
+      "planSha256": "4e8fda738a843c9f54bf21ba3c93035aa318a12e316a70671c4345e03714b628",
+      "lockSha256": "dbe2dce096d20a4065090860c22965e1f7982325cce55fdf7c1689542a06691d"
+    },
+    "plan": {
+      "enabled": true,
+      "qualityMode": "exploration",
+      "aspects": {
+        "population.distribution": {
+          "source": "builtins",
+          "providers": [
+            {
+              "provider": "uniform",
+              "excluded": false,
+              "onUnavailable": "fail"
+            }
+          ],
+          "gapProviders": [],
+          "gaps": "legacy",
+          "internalTrips": 0,
+          "inboundTrips": 0,
+          "outboundTrips": 0,
+          "throughTrips": 0,
+          "vehicleClass": "truck",
+          "demonstrationAccepted": false,
+          "assumptionStatement": ""
+        },
+        "opportunities.work": {
+          "source": "builtins",
+          "providers": [
+            {
+              "provider": "osm-pois",
+              "excluded": false,
+              "onUnavailable": "fail"
+            }
+          ],
+          "gapProviders": [],
+          "gaps": "legacy",
+          "internalTrips": 0,
+          "inboundTrips": 0,
+          "outboundTrips": 0,
+          "throughTrips": 0,
+          "vehicleClass": "truck",
+          "demonstrationAccepted": false,
+          "assumptionStatement": ""
+        },
+        "freight.vehicleOd": {
+          "source": "dataset",
+          "providers": [],
+          "gapProviders": [],
+          "revision": "3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+          "gaps": "legacy",
+          "internalTrips": 0,
+          "inboundTrips": 0,
+          "outboundTrips": 0,
+          "throughTrips": 0,
+          "vehicleClass": "truck",
+          "demonstrationAccepted": false,
+          "assumptionStatement": ""
+        }
+      }
+    },
+    "decisions": [
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "freight.vehicleOd",
+        "attribution": "Testfixture",
+        "coverage": {
+          "minLat": 48.848,
+          "minLon": 8.2,
+          "maxLat": 48.852,
+          "maxLon": 8.206
+        },
+        "evidence": "user-provided-unverified",
+        "gaps": "legacy",
+        "label": "Künstliche Schwerlastrevision A",
+        "licence": "unknown",
+        "qualityMode": "exploration",
+        "referenceDate": "2026-10-19",
+        "revision": "3c2f72c256f446b66dcfe28846d04e089898e728c4ef437a2dfeda5f1a28ebb0",
+        "selectionRole": "explicit-selection",
+        "skipped": [
+          {
+            "reason": "replaced-by-explicit-dataset-in-covered-area",
+            "source": "legacy"
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "2f96c98a6c393419f358d7c0fbcb7a8c14a3b38d50f3e1b3f16267477895bba3",
+        "status": "resolved",
+        "temporalTransfer": false
+      },
+      {
+        "applicationStatus": "pending-runtime-inputs",
+        "aspect": "opportunities.work",
+        "candidates": [
+          {
+            "rank": 1,
+            "status": "pending",
+            "reason": "requires-runtime-inputs",
+            "provider": "osm-pois",
+            "onUnavailable": "fail"
+          }
+        ],
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "parameters": {
+          "seed": 42
+        },
+        "qualityMode": "exploration",
+        "selectionRole": "explicit-provider-order",
+        "source": "builtins",
+        "status": "pending-resolution"
+      },
+      {
+        "applicationStatus": "pending-runtime-inputs",
+        "aspect": "population.distribution",
+        "candidates": [
+          {
+            "rank": 1,
+            "status": "pending",
+            "reason": "requires-runtime-inputs",
+            "provider": "uniform",
+            "onUnavailable": "fail"
+          }
+        ],
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "parameters": {
+          "manualTotalPersons": 12,
+          "personsPerKm2": 1500.0,
+          "seed": 42
+        },
+        "qualityMode": "exploration",
+        "selectionRole": "explicit-provider-order",
+        "source": "builtins",
+        "status": "pending-resolution"
+      }
+    ],
+    "workplaces": {},
+    "populationSource": "not-resolved",
+    "populationDistribution": "not-resolved",
+    "population": {
+      "allocatedPersons": 11.999999999999998,
+      "candidates": [
+        {
+          "rank": 1,
+          "status": "selected",
+          "reason": "first-usable-candidate",
+          "provider": "uniform",
+          "onUnavailable": "fail"
+        }
+      ],
+      "contract": "synthesis-population-resolution-v1",
+      "diagnostics": {
+        "personsPerKm2": 1500.0
+      },
+      "distributionProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.distribution",
+        "root": "weights",
+        "nodes": [
+          {
+            "id": "input",
+            "operation": "source",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "builtin",
+              "sourceHash": "",
+              "label": "Dichteannahme",
+              "origin": "density-estimate",
+              "referenceDate": "",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                }
+              ]
+            },
+            "parameters": {
+              "provider": "uniform-noise",
+              "providerVersion": "density-v1"
+            }
+          },
+          {
+            "id": "weights",
+            "operation": "modelled-spatial-weights",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [
+              "input"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                }
+              ]
+            },
+            "parameters": {
+              "diagnostics": {
+                "personsPerKm2": 1500.0
+              },
+              "seed": 42,
+              "smooth": true
+            }
+          }
+        ]
+      },
+      "distributionSource": "uniform-noise",
+      "status": "resolved",
+      "totalPersons": 12,
+      "totalProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.total",
+        "root": "total",
+        "nodes": [
+          {
+            "id": "total",
+            "operation": "manual-total",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                }
+              ]
+            },
+            "parameters": {
+              "persons": 12
+            }
+          }
+        ]
+      },
+      "totalSource": "user-defined"
+    },
+    "failures": {
+      "workplace": {
+        "status": "insufficient-input",
+        "message": "Keine zugelassene Quelle verwendbar; kein versteckter Ersatz",
+        "candidates": [
+          {
+            "rank": 1,
+            "status": "not-applicable",
+            "reason": "no-osm-pois",
+            "provider": "osm-pois",
+            "onUnavailable": "fail"
+          }
+        ]
+      }
+    },
+    "targets": {
+      "sumo": {
+        "stageStatus": "PENDING"
+      },
+      "logitopp": {
+        "stageStatus": "PENDING"
+      }
+    }
+  },
+  "browserChecks": {
+    "actualSourceLedgersVisible": true,
+    "separateHouseholdRounding": {
+      "target": 12,
+      "actual": 13,
+      "difference": 1
+    },
+    "generatedAndCompletedHeavyTrips": 8,
+    "failureReplacesSuccess": true,
+    "failureHasNoFreightLedger": true,
+    "failureDoesNotReuseEarlierSumoExecution": true,
+    "browserConsoleErrors": []
+  },
+  "screenshots": [
+    {
+      "path": "docs/figures/source-run-report/completed.jpg",
+      "sha256": "fa2a388d0dc9464a25d48cfef1bc2c5e2e1c11c7f0e925ded1c8b1d1d7682083"
+    },
+    {
+      "path": "docs/figures/source-run-report/failed.jpg",
+      "sha256": "c14ec5dec1e481a9d869ef95694cefc89921e6a7c49ed52b4dfc3b25208ea4b0"
+    },
+    {
+      "path": "docs/figures/source-run-report/target-execution.jpg",
+      "sha256": "0e07bdb50a2a87d998afe335c5c3a245fd4872823683412f001a04bbbca09cd1"
+    }
+  ]
+}

@@ -11,6 +11,9 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       <nav class="nav">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Studio</a>
         <a routerLink="/vergleich" routerLinkActive="active">Vergleich</a>
+        <a class="settings-link" routerLink="/einstellungen" routerLinkActive="active" aria-label="Einstellungen" title="Tool-Einstellungen">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 3-.7 2.3-2 .9L4 5.8 2 9.2l1.7 1.8v2L2 14.8l2 3.4 2.3-.4 2 .9L9 21h4l.7-2.3 2-.9 2.3.4 2-3.4-1.7-1.8v-2L20 9.2l-2-3.4-2.3.4-2-.9L13 3Z"/><circle cx="11" cy="12" r="3"/></svg>
+        </a>
       </nav>
     </header>
     <router-outlet />
@@ -45,6 +48,10 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       padding: 5px 12px;
       border-radius: 7px;
     }
+    .settings-link { display: inline-flex; align-items: center; }
+    .nav a:hover { background: rgba(255, 255, 255, 0.1); }
+    .nav a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    @media (max-width: 760px) { .subtitle { display: none; } .app-header { align-items: center; } }
     .nav a.active {
       background: rgba(255, 255, 255, 0.16);
       color: #fff;

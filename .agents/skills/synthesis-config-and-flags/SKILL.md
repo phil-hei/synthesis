@@ -58,6 +58,7 @@ driften, daher nur Block + Bedienelement).
 
 | Feld | Typ | Default | Wirkung / Konsument | Status |
 |---|---|---|---|---|
+| `dataPlan` | SourcePlan | `enabled=false`, keine Policies | Experimenteller Quellenplan: `population.distribution`, `opportunities.work`, `freight.vehicleOd`; `SourceResolver` vor Queueing und Studio-Vorprüfung; unveränderliche Revisionen explizit auswählen, Workplace-Lückenregel `legacy`/`none`, schwere Fahrzeugmengen als explizite Annahme. UI „Daten & Quellen öffnen“. Arbeitsplatzpunktdaten erfordern vollständigen Erhebungsumfang. `source=profile` bindet einen unveränderlichen Quellenprofilhash: geordnete Revisions-/Paketkandidaten, explizite Abwahl und Ausfallregel; lokale ZIP-Paketinstallation aktiviert keine Quelle. Übrige Bestandsketten und allgemeiner Abhängigkeitsgraph offen (2026-10-28). | experimentell, aus |
 | `id` | String | – (vom Backend vergeben) | Persistenz-Schlüssel (`ScenarioRepository`) | produktiv |
 | `name` | String | `"Neues Szenario"` | Anzeigename; Studio-Block „Szenario" | produktiv |
 | `createdAt` | Instant | – | Metadatum | produktiv |
@@ -139,6 +140,7 @@ UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellier
 | `seed` | long | `42` | Zufalls-Seed – gleicher Seed + gleiche Parameter = identisches Ergebnis. Konsumenten: Pipeline-`random`, `GtaBehaviorRunner`/`LlmModeChoiceRunner` (baseSeed) | produktiv |
 | `useOsmData` | boolean | `true` | **@Deprecated, zur JSON-Kompatibilität behalten und zur Laufzeit ignoriert.** Die Quelle wird automatisch als Szenario-Snapshot → Live-Overpass → synthetischer Fallback gewählt; im Studio gibt es dafür keine Checkbox mehr. | Legacy |
 | `useRealRouting` | boolean | `true` | Echte Reisezeit-/Distanzmatrizen via GraphHopper (OSM-Straßennetz) in Stufe „Matrizen"; bei `false`/Fehlschlag Luftlinie. Konsument: `GenerationService` → `RoutingEngine`/`MatrixGenerator` | produktiv |
+| `roadLocatedActivities` | boolean | **`false`** | Synthetische interne Wohn-/Fix-/Aktivitätsorte auf gemeinsame öffentliche Pkw-/Rad-/Fuß-Straßen innerhalb derselben Zone legen; kein zusätzlicher Zufallszug. Benötigt erfolgreiches reales Routing, sonst Fehler statt Ortsfallback. Externe Anker und Depotkoordinaten bleiben unverändert. Report `population/road-locations.json`; UI „Synthetische Wohn- und Aktivitätsorte an Straßen platzieren“. | **experimentell, 2026-10-19** |
 | `externalTrips` | boolean | `true` | Externe Zielzonen um das Gebiet, damit ein Teil der Wege es verlässt (realistische Weglängen). Konsument: `GenerationService` → `ExternalZones` | produktiv |
 | `behaviorSource` | String | `"actitopp"` | **Achse A**: `actitopp` (KIT, kalibriert) \| `gta` (LLM-Agenten, **experimentell**, Fallback actiTopp) \| `template` (einfacher Generator; **nicht** im UI-Select, nur Legacy-Fallback). Konsument: Stufe „Aktivitätenpläne" via `behaviorSourceEffective()` → `GtaBehaviorRunner`/`ActitoppRunner`/`ActivityGenerator`. UI: Select „Verhaltensmodell" | `actitopp` produktiv; `gta` **experimentell** |
 | `gtaWhatIf` | String | `""` | GTA 3d: Freitext-Was-wäre-wenn-Kontext (Policy/Technologie) für die LLM-Tagesplanung; leer = normales Verhalten. UI: Textarea, nur sichtbar bei `behaviorSource === 'gta'` | experimentell |
@@ -193,6 +195,151 @@ Targets `logitopp` + `mobilecity`.
 
 ---
 
+### 1.5 Schwerer Güterverkehr (`Scenario.freight`, Stand 2026-10-15)
+
+`enabled=false` aktiviert explizite Tages-OD nur mit SUMO und vollständiger Personen-
+nachfrage. `day=0` bezeichnet Montag und muss zum SUMO-Betriebstag passen.
+`sevasEnabled=false` verwendet einen vom Nutzer hochgeladenen Snapshot.
+`profileChecksEnabled=false` ergänzt statische Standard-LKW-Profile (26/40 t Volllast,
+4 m Höhe, 2,55 m Breite) plus Quellregel-/Abbiege-Audit in der bestehenden SUMO-Stufe.
+Eigene schwere SUMO-Typzuordnungen sind damit vorerst nicht kombinierbar.
+Ungeklärte Bedingungen/Zweckregeln und Achslasten bleiben ungeklärt; nicht routbare
+Fahrten oder nachgewiesene Verstöße liefern FAILED mit erhaltenem
+`freight/route-checks.json`. Deaktivierung entfernt alte Prüfartefakte.
+Frontend: Checkbox im Güterverkehrsblock; beim Abwählen von Güterverkehr/SUMO wird
+auch die Profilprüfung deaktiviert. Details: docs/21, Abschnitt 20.
+
+---
+
+### 1.6 Quellenplan: Gemeindeaggregate und Laufzweck (2026-10-29)
+
+`SourcePlan` bleibt standardmäßig deaktiviert. `qualityMode` ist `exploration` oder
+`analysis` (Default Exploration). Die bekannte technische Lkw-Mengendemonstration
+ist ausschließlich bei Exploration, `Policy.demonstrationAccepted=true` (Default
+false) und 10–1.000 Zeichen `Policy.assumptionStatement` erlaubt. Alte gespeicherte
+Demonstrationen erhalten keine automatische Freigabe. Die Moduswahl selbst
+zertifiziert keine empirische Qualität anderer Quellen/Modelle. UI: Daten & Quellen,
+Beiträge → Verwendungszweck und bei Lkw-Demonstration Freigabe/Beschreibung.
+
+Zusätzliche Importverträge: `municipal-workplaces-v1` für `opportunities.work` und
+`municipality-allocation-v1` als unterstützende Revision. Metadaten `geography`:
+`codeSystem=de:AGS`, `edition` als Datum, `allocationMethod=explicit-point-weights-v1`,
+beim Aggregat `allocationRevision` als Hash. Die unterstützende Revision aktiviert
+keinen Nachfrageaspekt. Referenzgraph mit erwarteten Schemas, Zyklus-/Tiefenprüfung
+und gefrorenen Revisionen im Eingabelock; keine allgemeine Workflowplanung. Für Aggregate ist zusätzlich
+`allocationMethod=uniform-area-v1` mit Referenzvertrag `municipality-areas-v1`
+verfügbar: WGS84-GeoJSON, Flächenverschneidung in EPSG:3035, 1-cm-Abdeckungstoleranz,
+ungepufferte Mengen, Löcher/MultiPolygone und getrennte Teilzonen-/Außenbilanz.
+Der Methodenwechsel im Importeditor löscht die alte Referenzauswahl. Die
+Punktgewichtsvariante bleibt eigenständig.
+
+**Ergänzung 2026-10-29 – gemischte Profile und Registerlücken:**
+Quellenprofile für Bevölkerung und Work unterstützen `builtin:<ID>` zusätzlich zu
+`revision:<Hash>`/`pack:<ZIP-Hash>:<Quellen-ID>`. Native Profile verlangen `fallback=none`;
+gemischte Work-Profile verlangen `gaps=none|providers`. Potenziell benötigte Revisionen
+und Referenzen werden vor Queueing unter `sources/lock.json.chains` gebunden (`staged`),
+Auswahl folgt im Lauf. Defekte potenzielle Dateien sind fatal; ausgeschlossene und
+hinter einer geeigneten Importrevision liegende Kandidaten werden nicht eingelesen.
+`Policy.gaps=providers` und `gapProviders` (geordnete native Work-Kandidaten) ergänzen
+nur nicht vollständig übernommene Zonen. Bestätigte Nullwerte bleiben erhalten.
+Punktregister, Gemeindegewichte und Flächenverteilung nutzen dieselbe atomare Komposition.
+Work-Bericht: `gapResolution`, `gapPolicy`, getrennte `gap/…`-Herkunft; keine Summe aus
+Registermengen und heuristischen Gewichten. Keine Lücken → kein nativer Ersatzaufruf.
+Default bleibt ausgeschalteter Gesamtplan und der bestehende Legacy-Vertrag.
+Ausführbares Paket und genaue Grenzen: `docs/examples/mixed-sources/README.md`.
+
+**Ergänzung 2026-10-29 – regionale Mehrregisterkomposition:**
+`SourceProfiles.Chain.strategy="fill-gaps"` ergänzt importierte Work-Register räumlich
+nach Vorrang. Fehlend/null bedeutet weiterhin Auswahl der ersten verwendbaren Quelle;
+null wird nicht serialisiert, alte Profilhashes bleiben erhalten. Regionale Profile
+verlangen `fallback=none`, mindestens einen aktiven Registerkandidaten und dürfen
+keine nativen Kandidaten enthalten; native Restlücken bleiben `Policy.gapProviders`.
+Vorprüfung bindet alle potenziellen Registerrevisionen/Referenzen. Im Lauf übernimmt
+jede Zone das erste vollständig abdeckende Register, einschließlich Nullwerten.
+`RegionalWorkplaces` bilanziert angewendete, verdeckte, Außen- und Teilmengen pro
+Revision; tatsächliche Scopes liegen unter `register-<Rang>/…`, die Diagnose vor
+Vorrang unter `allocationBeforePriority`. Keine gemeinsame beobachtete Gesamtzahl.
+Restlücken werden explizit ergänzt oder führen atomar zum Fehler. Andere Zwecke
+und der Pipeline-RNG bleiben unverändert. UI: Profileditor → Zusammenführung →
+Register regional ergänzen. Beispiel: `docs/examples/regional-registers/README.md`.
+
+**Ergänzung 2026-10-30 – Rasterzellen und Masken:**
+`population-cells-v1`/`workplace-cells-v1` verwenden vollständige EPSG:3035-Zellen:
+West-/Südkante und Kante (100-m-ausgerichtet, 100–10.000 m), Status `value`, `missing`,
+`not-collected`, `suppressed`; echte Null bleibt bekannt. `CellImportAdapter.normalize`
+erhält unbekannte Rohmarker, bevor Validierung und Revisionshash erfolgen. Alte
+Schemahashes/Reader bleiben erhalten. Zellen dürfen nicht überlappen; Quellbox ist
+keine Werteabdeckung. `MaskedCells` verteilt ungepufferte Flächenanteile nur auf
+vollständig bekannte Modellzonen; ganze Teilzonen bleiben Lücken, ihre bekannten
+nicht angewendeten Mengen stehen separat. Work nutzt atomare Komposition und
+`gaps=none|providers`. Population darf für diesen Vertrag ebenfalls
+`gaps=providers` verwenden, mit `osm-places`, `poi-density`, `uniform` in
+`gapProviders`. Bei tatsächlichen Lücken ist `population.totalPersons` als
+konsistenter Mengenanker erforderlich; nur die Restmenge wird ergänzt. Vollabdeckung
+mit widersprechendem manuellem Total ist fatal. Herkunft trennt Daten, Flächenannahme,
+Mengenanker und Ersatzmodell. Neues UI: Rasterstatusvertrag im Import, Lückenmodelle
+und Mengenanker. Keine native Zensusmigration oder unterzonale Ergänzung; ganze
+Haushalte besitzen weiterhin eine eigene Rundungsabweichung. Vertrag/Beispiel:
+`docs/examples/masked-cells/README.md`. Opt-in `dataPlan.enabled` bleibt `false`.
+
+**Ergänzung 2026-10-30 – installationsweite Datenpaketbibliothek:**
+`DataPackLibrary` speichert unveränderliche portable ZIP-Versionen unter
+`<synthesis.data-dir>/source-library/packs/<SHA-256>.zip`. Keine neue Property, kein
+Szenarioflag: Veröffentlichung/Übernahme sind explizite Verwaltungsaktionen und
+aktivieren weder den Quellenplan noch eine Quelle. Bibliothekspakete müssen alle
+referenzierten Revisionen enthalten; `DataPacks.validatePortable` prüft Vertrag,
+Referenzgraph und kommunale Bindung vor Speicherung. Die Übernahme verwendet
+weiterhin die lokalen Szenariopfade und identische Revisionshashes. Laufresolver und
+Eingabelock lesen keine zentralen Dateien. Neue Versionen binden bestehende Szenarien
+nicht um. `GET/POST /api/data-library/packs`,
+`POST /api/scenarios/{scenario}/data/packs/{hash}/library` (bereitstellen),
+`POST /api/scenarios/{scenario}/data/library/packs/{hash}/install` (kopieren).
+UI: Daten & Quellen → Datenbestand → Szenarioübergreifende Datenbibliothek.
+Ungültige zentrale Einträge sind sichtbar und nicht übernehmbar; ein Bibliotheks-
+Lesefehler blockiert den übrigen Szenariobestand nicht. Quellenprofile bleiben
+szenariolokal; keine Cloud-Synchronisierung oder Regionalempfehlung. Beispiel:
+`docs/examples/source-library/README.md`.
+
+**Ergänzung 2026-10-30 – gemeinsame Quellenprofile:**
+`SourceProfileLibrary` speichert `synthesis-source-profile-v1` unter
+`<synthesis.data-dir>/source-library/profiles/<Profilhash>.json`. Die gemeinsamen
+`SourceProfiles.prepare/decode` erhalten die bisherigen kanonischen Profilhashes.
+Portable Profile erlauben feste `pack:`-Beiträge und native `builtin:`-Regeln;
+`revision:`-Kandidaten bleiben szenariolokal und werden für die Bibliothek abgelehnt.
+Alle aktiven Paketversionen müssen vorhanden, portabel und aspektpassend sein;
+höchstens 16 verschiedene. Ausgeschlossene Pakete werden nicht gelesen/kopiert.
+Vor der ersten Zielschreiboperation werden alle aktiven Archive eingelesen/geprüft.
+Die Übernahme kopiert Profile/Pakete, aktiviert nichts und übernimmt keine
+Szenario-Lückenregeln/Mengenanker. Native Quellen werden im Ziel neu aufgelöst;
+insbesondere wird kein Upload über `builtin:upload-grid` mitkopiert. Neue globale
+Versionen binden vorhandene Szenarien nicht um. Keine zentrale Laufzeitabhängigkeit.
+`GET/POST /api/data-library/source-profiles`,
+`POST /api/scenarios/{scenario}/data/source-profiles/{hash}/library`,
+`POST /api/scenarios/{scenario}/data/library/source-profiles/{hash}/install`.
+UI: Daten & Quellen → Datenbestand → Szenarioübergreifende Quellenprofile; direkte
+JSON-Definition oder Bereitstellung gespeicherter Szenarioprofile. Fehler werden
+sichtbar, andere Datenpfade bleiben nutzbar. Details/Beispiele:
+`docs/examples/shared-source-profiles/README.md`.
+
+**Ergänzung 2026-11-02 – Schwerlastquellen und Zielwirkung:**
+**Laufbindung und UI (2026-11-04):** `sources/resolution.json` trägt zusätzlich `synthesis-source-run-resolution-v1`: Beginn/Ende, Status/Fehler, Plan-/Lockhashes, tatsächliche Haushaltsrundung und eigene Teilfehler. Die Studioansicht „Daten & Quellen → Lauf prüfen“ zeigt Mengen, Herkunft und Zielausführung getrennt. SUMO-Bilanzen werden nur bei erfolgreicher aktueller Stufe mit Dateihash gebunden; alte Dateien bei übersprungenen Stufen zählen nicht. Nur letzter Lauf, kein Archiv und kein automatischer Gleichstandsbeleg für nachträglich bearbeitete Szenarioeingaben. Kein neues Flag; `dataPlan.enabled=false` bleibt der Default.
+
+`sources/resolution.json.freight` enthält `synthesis-freight-source-resolution-v1`
+(`FreightSources`): Eingangs-/Ergebnismengen pro gebundener Relation, Quellzeile und
+Revisions-/Rohhash, Zeitpunkt-/Klassen-/Koordinatenprüfung, Join nach
+`freight/trips.csv` über `relationId`. Quelle unbestätigt = `unknown`, explizite
+Mengendemonstration = `assumed`; modellierte Abfahrtsverteilung wird getrennt als
+Annahme mit Seedableitung ausgewiesen. `FreightDemandGenerator.sourceQuality`
+kennzeichnet die Demonstration auch in Freight-Berichten und Manifest konsistent
+als Annahme. Bestandspfade behalten ihre bisherigen Qualitätswerte.
+Keine neue Konfigurationsachse: `dataPlan.enabled` bleibt Opt-in. Auswahl/Abwahl
+von `freight.vehicleOd` betrifft allein schweren Hintergrund; aktivierte
+Unternehmenstouren, Paketlogistik und Population bleiben unabhängig. Die UI benennt
+das ausdrücklich. Erzeugte Fahrten sind kein Routing-/Abschlussbeweis: separate
+`sumo/traffic-routing.json`, `sumo/traffic-execution.json`, `freight/execution.json`.
+Begrenzte native Abnahme ohne private/Paketfahrten, keine G9-Fachfreigabe. Details:
+`docs/examples/source-plan-traffic/README.md`.
+
 ## 2. Betriebs-Properties (`SynthesisProperties`, Prefix `synthesis.`)
 
 Quelle: `backend/src/main/java/de/synthesis/SynthesisProperties.java`
@@ -201,6 +348,36 @@ Quelle: `backend/src/main/java/de/synthesis/SynthesisProperties.java`
 (`# sumo:`, `# llm:`, `# transit:`, Teile von `overpass`/`simulation`)**: Das ist bewusste
 **Doku der verfügbaren Keys**, die Java-Defaults gelten dann. Nicht löschen; beim Ergänzen von
 Keys mitpflegen.
+
+**Ergänzung 2026-10-29 – gemeinsame Auswahl und Work:**
+`dataPlan.aspects["opportunities.work"].source="builtins"` erlaubt die geordnete
+`providers`-Liste mit `osm-pois` und `synthetic`; Einträge wie bei Bevölkerung.
+`ProviderChain<T>` ist der gemeinsame verzögerte Auswahlkern. OSM liefert die
+bereits in Stufe 3 abgeleiteten Work-Gewichte; das synthetische Modell verwendet
+private Zonenkopien und Seed `population.seed XOR 0x574f524b5f56314c`.
+Andere Attraktivitätszwecke und der gemeinsame Pipeline-RNG bleiben unverändert.
+Bericht: `sources/resolution.json.workplaces`, Einheit `model-weight`, keine
+beobachtete Arbeitsplatzsumme. Fehler: `sources/workplace-failure.json`.
+Native Kette und Revisions-/Paketprofile sind inzwischen über gemischte Profile
+verbindbar; explizite Registerlücken nutzen `gaps=providers` (siehe Ergänzung oben). OSM-Abwahl für Work deaktiviert keine anderen
+OSM-Verbraucher. Reine Kandidatenabwahl gilt nicht als ausgefallene Primärquelle.
+Beispiele: `docs/examples/workplace-sources/README.md`.
+
+**Ergänzung 2026-10-29 – native Bevölkerungskette:**
+`dataPlan.aspects["population.distribution"].source="builtins"` verwendet die explizite
+Liste `providers` mit `provider`, `excluded`, `onUnavailable: fail|next`.
+Zulässige IDs: `upload-grid`, `census-2022`, `osm-places`, `poi-density`, `uniform`.
+Der Standard bleibt `source=legacy`, der Gesamtplan bleibt `enabled=false`.
+Eine manuelle `totalPersons`-Zahl überschreibt nur die Gesamtzahl, nicht die
+Verteilungsquelle. Abwahl in dieser Kette betrifft keine Straßen/Arbeitsplätze oder
+anderen Zensusverbraucher. Vorprüfung: `pending-resolution`; tatsächliche räumliche
+Auswahl im Lauf. Zugelassene Uploads binden Hash/Abwesenheit vor Queueing; Kopie unter
+`sources/population-grid.csv`. Getrennte Gesamtzahl-/Verteilungsherkunft unter
+`sources/resolution.json.population`; Quellenfehler unter `sources/population-failure.json`.
+Die neue Kette schlägt bei Integritätsfehlern/unterdrückten Rasterwerten fehl; die
+Legacy-Leiter bleibt kompatibel. Keine allgemeine Qualitätsfreigabe durch `analysis`.
+Beispiele und Grenzen: `docs/examples/population-sources/README.md`.
+
 
 ### 2.0 Root
 

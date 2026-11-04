@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "qualityMode": "exploration",
+  "aspects": {
+    "population.distribution": {
+      "source": "builtins",
+      "providers": [
+        { "provider": "upload-grid", "excluded": false, "onUnavailable": "fail" },
+        { "provider": "census-2022", "excluded": false, "onUnavailable": "next" },
+        { "provider": "osm-places", "excluded": false, "onUnavailable": "next" },
+        { "provider": "poi-density", "excluded": false, "onUnavailable": "next" },
+        { "provider": "uniform", "excluded": false, "onUnavailable": "fail" }
+      ]
+    }
+  }
+}

@@ -1,10 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { OperationsPreview } from '../models/vehicle-operations.model';
+import { CompanyTourImport, TourMapping, CompanyTourContext, CompanyTourLocationLookup, TourImportProfile, CompanyTourGeocodingLookup } from '../models/company-tour.model';
 import { ComparisonEntry, ZonePreview } from '../models/results.model';
 import {
   ArtifactInfo, CommuterUploadSummary, GenerationJob, OsmDataUploadSummary, Region, RegionEstimate, RoadNetworkUploadSummary,
-  Scenario, UploadInfo, UploadSummary, WorkplaceMarginUploadSummary
+  FreightDemand, Scenario, UploadInfo, UploadSummary, WorkplaceMarginUploadSummary
 } from '../models/scenario.model';
 
 @Injectable({ providedIn: 'root' })
@@ -15,8 +17,58 @@ export class ApiService {
   constructor(private http: HttpClient) {
   }
 
+  validateVehicleOperations(bundle: unknown): Observable<OperationsPreview> {
+    return this.http.post<OperationsPreview>(`${this.base}/vehicle-operations/validate`, bundle);
+  }
+
   listScenarios(): Observable<Scenario[]> {
     return this.http.get<Scenario[]>(`${this.base}/scenarios`);
+  }
+
+  listCompanyTours(id: string): Observable<CompanyTourImport[]> {
+    return this.http.get<CompanyTourImport[]>(`${this.base}/scenarios/${id}/company-tours`);
+  }
+
+  uploadCompanyTours(id: string, file: File): Observable<CompanyTourImport> {
+    const body = new FormData(); body.append('file', file);
+    return this.http.post<CompanyTourImport>(`${this.base}/scenarios/${id}/company-tours`, body);
+  }
+
+  mapCompanyTours(id: string, hash: string, action: 'preview' | 'confirm' | 'suggest', mapping: TourMapping, sourceReviewed = false): Observable<CompanyTourImport> {
+    return this.http.post<CompanyTourImport>(`${this.base}/scenarios/${id}/company-tours/${hash}/${action}`, sourceReviewed ? { mapping, sourceReviewed } : { mapping });
+  }
+
+  deleteCompanyTours(id: string, hash: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/scenarios/${id}/company-tours/${hash}`);
+  }
+
+  companyTourExportUrl(id: string, hash: string): string {
+    return `${this.base}/scenarios/${id}/company-tours/${hash}/export`;
+  }
+  analyzeCompanyTours(id: string, hash: string, mode: string): Observable<CompanyTourImport> {
+    return this.http.post<CompanyTourImport>(`${this.base}/scenarios/${id}/company-tours/${hash}/analyze`, { mode });
+  }
+  listTourImportProfiles(id: string): Observable<TourImportProfile[]> {
+    return this.http.get<TourImportProfile[]>(`${this.base}/scenarios/${id}/company-tours/profiles`);
+  }
+  saveTourImportProfile(id: string, hash: string, name: string): Observable<TourImportProfile> {
+    return this.http.post<TourImportProfile>(`${this.base}/scenarios/${id}/company-tours/${hash}/profile`, { name });
+  }
+  applyTourImportProfile(id: string, hash: string, profileId: string): Observable<CompanyTourImport> {
+    return this.http.post<CompanyTourImport>(`${this.base}/scenarios/${id}/company-tours/${hash}/apply-profile`, { profileId });
+  }
+  saveCompanyTourContext(id: string, hash: string, context: CompanyTourContext): Observable<CompanyTourImport> {
+    return this.http.put<CompanyTourImport>(`${this.base}/scenarios/${id}/company-tours/${hash}/context`, context);
+  }
+  activateCompanyTours(id: string, hash: string, enabled: boolean): Observable<CompanyTourImport> {
+    return this.http.post<CompanyTourImport>(`${this.base}/scenarios/${id}/company-tours/${hash}/activation`, { enabled });
+  }
+  geocodeCompanyTours(id: string, hash: string, targets?: string[], refresh = false): Observable<CompanyTourGeocodingLookup> {
+    return this.http.post<CompanyTourGeocodingLookup>(`${this.base}/scenarios/${id}/company-tours/${hash}/geocode`, { targets, refresh });
+  }
+  locateCompanyTours(id: string, hash: string, file: File): Observable<CompanyTourLocationLookup> {
+    const body = new FormData(); body.append('file', file);
+    return this.http.post<CompanyTourLocationLookup>(`${this.base}/scenarios/${id}/company-tours/${hash}/locations`, body);
   }
 
   scenarioDefaults(): Observable<Scenario> {
@@ -56,6 +108,18 @@ export class ApiService {
     const form = new FormData();
     form.append('file', file);
     return this.http.post<Scenario>(`${this.base}/scenarios/${id}/gtfs`, form);
+  }
+
+  uploadSevas(id: string, file: File): Observable<FreightDemand> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<FreightDemand>(`${this.base}/scenarios/${id}/freight/sevas`, form);
+  }
+
+  uploadFreight(id: string, file: File): Observable<FreightDemand> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<FreightDemand>(`${this.base}/scenarios/${id}/freight`, form);
   }
 
   listUploads(id: string): Observable<UploadInfo[]> {
@@ -112,6 +176,15 @@ export class ApiService {
 
   generate(id: string): Observable<GenerationJob> {
     return this.http.post<GenerationJob>(`${this.base}/scenarios/${id}/generate`, {});
+  }
+
+  uploadEnergySnapshot(id: string, file: File): Observable<{ name: string; objects: number; sha256: string }> {
+    const form = new FormData(); form.append('file', file);
+    return this.http.post<{ name: string; objects: number; sha256: string }>(`${this.base}/scenarios/${id}/energy-infrastructure/osm-snapshot`, form);
+  }
+
+  deleteEnergySnapshot(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/scenarios/${id}/energy-infrastructure/osm-snapshot`);
   }
 
   generationStatus(id: string): Observable<GenerationJob> {

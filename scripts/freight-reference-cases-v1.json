@@ -1,0 +1,122 @@
+{
+  "contract": "freight-reference-cases-v1",
+  "sourceRelease": "Overture 2026-09-23.1 / Geofabrik 2026-10-13",
+  "purpose": "regression of source restrictions and fixed nearest-road directed endpoints, not observed site access",
+  "vehicleProfiles": "assumed standard 26t/40t full-load, 4m high, 2.55m wide",
+  "cases": [
+    {
+      "siteId": "overture:27945c53-b2d3-4d94-9f76-9e448e756528",
+      "sourceName": "NODU Fliesendirektvertrieb GmbH",
+      "coordinates": [
+        7.47931414,
+        51.47605433
+      ],
+      "baselineMustContainViolation": {
+        "key": "maxwidth",
+        "value": "2"
+      },
+      "expectedAfterByProbe": {
+        "probe_3_truck_in": "review-required",
+        "probe_3_truck_out": "review-required",
+        "probe_3_trailer_in": "review-required",
+        "probe_3_trailer_out": "review-required"
+      },
+      "physicalEntranceModelled": false
+    },
+    {
+      "siteId": "overture:7a5fa186-f281-4c99-a856-47bafeaf3007",
+      "sourceName": "Hana Baumaterialien",
+      "coordinates": [
+        7.450769,
+        51.522885
+      ],
+      "baselineMustContainViolation": {
+        "key": "maxweight",
+        "value": "3.5"
+      },
+      "expectedAfterByProbe": {
+        "probe_9_truck_in": "review-required",
+        "probe_9_truck_out": "review-required",
+        "probe_9_trailer_in": "review-required",
+        "probe_9_trailer_out": "review-required"
+      },
+      "physicalEntranceModelled": false
+    },
+    {
+      "siteId": "overture:876ce230-8136-45cc-986b-e5aea7084aea",
+      "sourceName": "Möllmann Technik Und Service",
+      "coordinates": [
+        7.532256,
+        51.592833
+      ],
+      "baselineMustContainViolation": {
+        "key": "maxheight",
+        "value": "3.8 m"
+      },
+      "expectedAfterByProbe": {
+        "probe_10_truck_in": "review-required",
+        "probe_10_truck_out": "review-required",
+        "probe_10_trailer_in": "review-required",
+        "probe_10_trailer_out": "review-required"
+      },
+      "physicalEntranceModelled": false
+    },
+    {
+      "siteId": "overture:acf19e31-c0e2-4f61-abad-9fb5490f42ec",
+      "sourceName": "Pew Gmbh Beleuchtungstechnik",
+      "coordinates": [
+        7.53009,
+        51.620061
+      ],
+      "baselineMustContainViolation": {
+        "key": "maxheight",
+        "value": "3.8"
+      },
+      "expectedAfterByProbe": {
+        "probe_13_truck_in": "review-required",
+        "probe_13_truck_out": "no-native-route",
+        "probe_13_trailer_in": "review-required",
+        "probe_13_trailer_out": "no-native-route"
+      },
+      "physicalEntranceModelled": false
+    },
+    {
+      "siteId": "overture:cf859ab3-dc47-4d2d-8936-66126940999d",
+      "sourceName": "Blees Leo Möbelhaus",
+      "coordinates": [
+        7.483151,
+        51.512801
+      ],
+      "baselineMustContainViolation": {
+        "key": "maxweight",
+        "value": "30"
+      },
+      "expectedAfterByProbe": {
+        "probe_16_truck_in": "review-required",
+        "probe_16_truck_out": "review-required",
+        "probe_16_trailer_in": "review-required",
+        "probe_16_trailer_out": "review-required"
+      },
+      "physicalEntranceModelled": false
+    },
+    {
+      "siteId": "overture:e88cae93-6ff1-4cf0-b3f9-3b177d3f42fc",
+      "sourceName": "Edelstahl- Und Metallhalbzeug- Vertrieb Zweigniederlassung",
+      "coordinates": [
+        7.537214,
+        51.457208
+      ],
+      "baselineMustContainViolation": {
+        "key": "maxweight",
+        "value": "7.5"
+      },
+      "expectedAfterByProbe": {
+        "probe_18_truck_in": "review-required",
+        "probe_18_truck_out": "review-required",
+        "probe_18_trailer_in": "review-required",
+        "probe_18_trailer_out": "review-required"
+      },
+      "physicalEntranceModelled": false
+    }
+  ]
+}

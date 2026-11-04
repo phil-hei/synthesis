@@ -28,6 +28,10 @@ import java.util.zip.ZipFile;
  * nachfolgenden OSM-/Dichtequelle.
  */
 public final class CensusPopulationSource {
+    /** Integrity errors are fatal in an explicitly configured provider chain. */
+    public static final class InvalidSourceException extends IOException {
+        public InvalidSourceException(String message){super(message);}
+    }
 
     public static final String LICENSE =
             "Datenlizenz Deutschland - Namensnennung - Version 2.0";
@@ -65,16 +69,7 @@ public final class CensusPopulationSource {
             return Optional.empty();
         }
         try {
-            Path csv = ensureCached(cacheRoot, log);
-            PopulationGridParser.ParseResult grid = PopulationGridParser.parse(csv, region);
-            if (grid.points().isEmpty()) {
-                log.accept("Zensus 2022 enthält keine Einwohnerzellen in der Region - nutze Fallback");
-                return Optional.empty();
-            }
-            Provenance provenance = new Provenance("destatis-zensus-2022", config.getVersion(),
-                    config.getReferenceDate(), config.getSourceUrl(),
-                    config.getArchiveSha256(), LICENSE, ATTRIBUTION);
-            return Optional.of(new Resolved(grid, provenance));
+            return resolveInternal(region,cacheRoot,log,false);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.accept("Zensus-2022-Abruf unterbrochen - nutze Fallback");
@@ -85,7 +80,26 @@ public final class CensusPopulationSource {
         }
     }
 
-    private synchronized Path ensureCached(Path cacheRoot, Consumer<String> log)
+    /** Same reader/cache, but explicit chains retain errors instead of treating corruption as absence. */
+    public Optional<Resolved> resolveChecked(Scenario.Region region,Path cacheRoot,Consumer<String> log)
+            throws IOException,InterruptedException {
+        return resolveInternal(region,cacheRoot,log,true);
+    }
+    public String referenceDate(){return config.getReferenceDate();}
+    private Optional<Resolved> resolveInternal(Scenario.Region region,Path cacheRoot,Consumer<String> log,boolean strict)
+            throws IOException,InterruptedException {
+        if(!config.isEnabled()||region==null||!intersectsGermany(region))return Optional.empty();
+        Path csv=ensureCached(cacheRoot,log,strict);
+        PopulationGridParser.ParseResult grid=strict?PopulationGridParser.parseStrict(csv,region):PopulationGridParser.parse(csv,region);
+        if(grid.points().isEmpty()){
+            log.accept("Zensus 2022 enthält keine Einwohnerzellen in der Region - nutze Fallback");
+            return Optional.empty();
+        }
+        return Optional.of(new Resolved(grid,new Provenance("destatis-zensus-2022",config.getVersion(),
+                config.getReferenceDate(),config.getSourceUrl(),config.getArchiveSha256(),LICENSE,ATTRIBUTION)));
+    }
+
+    private synchronized Path ensureCached(Path cacheRoot, Consumer<String> log,boolean strict)
             throws IOException, InterruptedException {
         validateConfig();
         String safeVersion = config.getVersion().replaceAll("[^A-Za-z0-9._-]", "_");
@@ -94,9 +108,11 @@ public final class CensusPopulationSource {
         Path archive = versionDir.resolve("Zensus2022_Bevoelkerungszahl.zip");
         Path csv = versionDir.resolve("Zensus2022_Bevoelkerungszahl_100m-Gitter.csv");
         Path marker = versionDir.resolve("source.sha256");
+        Path gridHash=versionDir.resolve("grid.sha256");
 
         if (Files.isRegularFile(archive)
                 && !config.getArchiveSha256().equalsIgnoreCase(sha256(archive))) {
+            if(strict)throw new InvalidSourceException("SHA-256-Abweichung im gespeicherten Zensusarchiv");
             Files.delete(archive);
             Files.deleteIfExists(csv);
             Files.deleteIfExists(marker);
@@ -106,17 +122,24 @@ public final class CensusPopulationSource {
         }
         String actualArchiveSha = sha256(archive);
         if (!config.getArchiveSha256().equalsIgnoreCase(actualArchiveSha)) {
-            throw new IOException("SHA-256-Abweichung: erwartet " + config.getArchiveSha256()
+            throw new InvalidSourceException("SHA-256-Abweichung: erwartet " + config.getArchiveSha256()
                     + ", erhalten " + actualArchiveSha);
         }
 
         String markedSha = Files.isRegularFile(marker) ? Files.readString(marker).trim() : "";
         if (!Files.isRegularFile(csv) || Files.size(csv) == 0
-                || !config.getArchiveSha256().equalsIgnoreCase(markedSha)) {
-            extractGrid(archive, csv);
+                || !config.getArchiveSha256().equalsIgnoreCase(markedSha)
+                || (strict&&!Files.isRegularFile(gridHash))) {
+            try{extractGrid(archive, csv);}catch(IOException invalid){
+                if(strict)throw new InvalidSourceException("Zensusarchiv ist nicht lesbar: "+invalid.getMessage());
+                throw invalid;
+            }
             Files.writeString(marker, config.getArchiveSha256() + System.lineSeparator());
+            if(strict)Files.writeString(gridHash,sha256(csv));
             log.accept("Zensus-2022-Raster " + config.getVersion() + " aus geprüftem Archiv extrahiert");
         }
+        if(strict&&!sha256(csv).equals(Files.readString(gridHash).strip()))
+            throw new InvalidSourceException("SHA-256-Abweichung im extrahierten Zensus-Raster");
         return csv;
     }
 
@@ -145,7 +168,7 @@ public final class CensusPopulationSource {
         String actualSha = sha256(tmp);
         if (!config.getArchiveSha256().equalsIgnoreCase(actualSha)) {
             Files.deleteIfExists(tmp);
-            throw new IOException("SHA-256-Abweichung: erwartet " + config.getArchiveSha256()
+            throw new InvalidSourceException("SHA-256-Abweichung: erwartet " + config.getArchiveSha256()
                     + ", erhalten " + actualSha);
         }
         Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING,

@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-30",
+  "scope": "Installation-local immutable package library, explicit scenario transfer and isolated runtime inputs; not full concept acceptance",
+  "backend": {
+    "tests": 469,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 9
+  },
+  "skippedCases": [
+    "de.synthesis.generation.pipeline.MobileCityRastattSourcesTest.exportsObservedRastattSourcesWithoutSilentFallback",
+    "de.synthesis.generation.pipeline.ActitoppIntegrationTest.pinnedRunnerProducesValidWeeklySchedules",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.cacheAvoidsRepeatLlmCalls",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.sameSeedIsReproducible",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.liveLlmProducesPersonaPlans",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.whatIfContextYieldsReasons",
+    "de.synthesis.generation.pipeline.PtIntegrationTest.fullTransitChainRidesBuses",
+    "de.synthesis.generation.pipeline.LlmModeChoiceTest.aggregatesValidModalSplitAndIsReproducible",
+    "de.synthesis.generation.pipeline.MobileCityCrossMunicipalitySourcesTest.exportsObservedCrossMunicipalitySourcesWithPerZoneEvidence"
+  ],
+  "focusedSourceTests": 89,
+  "frontend": {
+    "tests": 116,
+    "productionBuild": "passed"
+  },
+  "browserProof": "2026-10-30-source-library-ui.json",
+  "preregisteredBrowserPlan": "2026-10-30-source-library-plan.json",
+  "packageVersions": [
+    "51f91c2635de87e637580d7046af92c9a42ea202edfd77081f20478d2665aaa2",
+    "fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978"
+  ],
+  "byteIdenticalAfterCentralCorruption": true,
+  "remaining": [
+    "shared source profiles and remote catalogs",
+    "automatic regional recommendations",
+    "full migration of remaining source families",
+    "native census mask migration and arbitrary CRS/GeoTIFF",
+    "empirical freight fallback and full real-region/target-model migration acceptance"
+  ],
+  "comparisonArtifacts": {
+    "population/person.csv": {
+      "bytes": 4061,
+      "rows": 63,
+      "sha256": "bf1a6a9f39fabfc9f40eb7aebafe6237db328e9ed6bf6b7b113c66972cf12798"
+    },
+    "population/household.csv": {
+      "bytes": 1698,
+      "rows": 28,
+      "sha256": "0c6861ed4fd835c35651142d0e7e89fbef0257fa363b1cb1b0d705d7706390ae"
+    },
+    "population/activity.csv": {
+      "bytes": 30501,
+      "rows": 1814,
+      "sha256": "ad6da94beb1f8ad5b5399e7f13e48f855d64e929c337f891b86ea6c16707ece3"
+    },
+    "zone-repository/zones.csv": {
+      "bytes": 2617,
+      "rows": 21,
+      "sha256": "a36e54062b60573cbf011ea4b0493bb02c1f77d93a3911c7c57617729cb89cad"
+    },
+    "zone-repository/attractivities.csv": {
+      "bytes": 1197,
+      "rows": 21,
+      "sha256": "3ef4848519aa95d93f185f708c0e0b3bacdf55025f6cb6b78bfb9fed2a773646"
+    }
+  },
+  "proofRefinement": "Five populated CSV artifacts replace the initially empty offline traffic container comparison.",
+  "finalBackendRunFinished": "2026-10-30T10:55:55+01:00",
+  "strengthenedByteComparisonIncludedInFullSuite": true
+}

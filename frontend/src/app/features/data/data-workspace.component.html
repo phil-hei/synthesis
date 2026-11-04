@@ -1,0 +1,251 @@
+<h2>Daten &amp; Quellen</h2>
+<p>Fachliche Beiträge konfigurieren, unterschiedliche Quellformate zuordnen und Ersatzannahmen prüfen.</p>
+@if (!scenario.id || !scenario.region) { <p role="alert">Szenario mit Region zuerst speichern.</p> }
+@else {
+  <nav aria-label="Datenarbeitsbereich">
+    <button (click)="tab = 'aspects'" [attr.aria-pressed]="tab === 'aspects'">Beiträge</button>
+    <button (click)="tab = 'inventory'" [attr.aria-pressed]="tab === 'inventory'">Datenbestand</button>
+    <button (click)="checkPlan()" [disabled]="busy" [attr.aria-pressed]="tab === 'review'">Lauf prüfen</button>
+  </nav>
+  @if (error) { <p class="error" role="alert">{{ error }}</p> }
+  @if (notice) { <p class="notice" role="status">{{ notice }}</p> }
+  @if (busy) { <p role="status">Daten werden geprüft…</p> }
+  @if (tab === 'aspects') {
+    <label class="check"><input type="checkbox" [(ngModel)]="scenario.dataPlan!.enabled" (ngModelChange)="planChanged()" [disabled]="disabled">Quellenplan verwenden (experimentell)</label>
+    @if (!scenario.dataPlan!.enabled) { <p class="hint">Bisherige Quellenprioritäten und Fallbacks bleiben aktiv. Eigene Daten können unabhängig davon vorbereitet werden.</p> }
+    <label>Verwendungszweck<select [(ngModel)]="scenario.dataPlan!.qualityMode" (ngModelChange)="planChanged()" [disabled]="disabled"><option value="exploration">Exploration</option><option value="analysis">Fachliche Auswertung</option></select></label>
+    <p class="hint">Die technische Lkw-Mengendemonstration wird für fachliche Auswertungen blockiert. Die Qualität aller übrigen Daten und Modelle braucht eine eigene Prüfung.</p>
+    <div class="workspace">
+      <div class="aspects">
+        @for (s of aspects; track s.aspect) { <button (click)="selected = s.aspect; candidateToAdd = ''" [attr.aria-pressed]="selected === s.aspect"><strong>{{ s.label }}</strong><span>{{ status(s.aspect) }}</span></button> }
+      </div>
+      <section class="detail">
+        <h3>{{ title(selected) }}</h3>
+        <label>Quelle
+          <select [(ngModel)]="policy().source" (ngModelChange)="modeChanged()" [disabled]="disabled || !scenario.dataPlan!.enabled">
+            <option value="legacy">Bisherige Quellenkette</option><option value="dataset">Geprüfte Datenrevision</option><option value="profile">Geordnetes Quellenprofil</option>
+            @if (selected === 'population.distribution') { <option value="builtins">Bevölkerungsquellen einzeln konfigurieren</option> }
+            @if (selected === 'opportunities.work') { <option value="builtins">Arbeitsplatzquellen einzeln konfigurieren</option> }
+            @if (selected === 'freight.vehicleOd') { <option value="excluded">Schwerlastverkehr bewusst ausschließen</option><option value="model">Technische Lkw-Mengendemonstration</option> }
+          </select>
+        </label>
+        @if (policy().source === 'builtins' && selected === 'population.distribution') {
+          <fieldset [disabled]="busy || disabled || !scenario.dataPlan!.enabled"><legend>Reihenfolge der Bevölkerungsquellen</legend>
+            <p>Die erste verwendbare Quelle gewinnt. Abgewählte Quellen werden nicht gelesen; nach einem Treffer werden weitere Kandidaten nicht aufgelöst. Ohne verwendbare Quelle bricht der Lauf ab.</p>
+            <ol class="candidates">@for (c of policy().providers; track c.provider; let i = $index) {
+              <li><strong>{{ populationProviderLabel(c.provider) }}</strong><p class="hint">{{ populationProviderDetail(c.provider) }}</p>
+                <div class="actions"><button (click)="movePopulationProvider(i, -1)" [disabled]="i === 0" [attr.aria-label]="'Bevölkerungsquelle ' + (i + 1) + ' nach oben'">↑</button><button (click)="movePopulationProvider(i, 1)" [disabled]="i === (policy().providers?.length ?? 0) - 1" [attr.aria-label]="'Bevölkerungsquelle ' + (i + 1) + ' nach unten'">↓</button></div>
+                <label class="check"><input type="checkbox" [(ngModel)]="c.excluded" (ngModelChange)="planChanged()">Diese Quelle abwählen</label>
+                <label>Wenn diese Quelle nicht verfügbar ist<select [(ngModel)]="c.onUnavailable" (ngModelChange)="planChanged()"><option value="fail">Abbrechen</option><option value="next">Nächste zugelassene Quelle prüfen</option></select></label>
+              </li>
+            }</ol>
+            <p class="hint">Eine manuelle Einwohnerzahl überschreibt nur die Gesamtzahl. Quellen ohne räumliche Eignung werden übersprungen; ungültige explizite Daten führen zum Fehler. Die Planprüfung prüft die Reihenfolge, die tatsächliche Verwendbarkeit folgt im Lauf. Straßen und Arbeitsplatzdaten bleiben unabhängig.</p>
+          </fieldset>
+        }
+        @if (policy().source === 'builtins' && selected === 'opportunities.work') {
+          <fieldset [disabled]="busy || disabled || !scenario.dataPlan!.enabled"><legend>Reihenfolge der Arbeitsplatzquellen</legend>
+            <p>Die erste verwendbare Quelle liefert Arbeitsgewichte. Beide Angebote sind Modelle; daraus entsteht keine beobachtete Arbeitsplatzsumme.</p>
+            <ol class="candidates">@for (c of policy().providers; track c.provider; let i = $index) {
+              <li><strong>{{ workplaceProviderLabel(c.provider) }}</strong><p class="hint">{{ workplaceProviderDetail(c.provider) }}</p>
+                <div class="actions"><button (click)="movePopulationProvider(i, -1)" [disabled]="i === 0" [attr.aria-label]="'Arbeitsplatzquelle ' + (i + 1) + ' nach oben'">↑</button><button (click)="movePopulationProvider(i, 1)" [disabled]="i === (policy().providers?.length ?? 0) - 1" [attr.aria-label]="'Arbeitsplatzquelle ' + (i + 1) + ' nach unten'">↓</button></div>
+                <label class="check"><input type="checkbox" [(ngModel)]="c.excluded" (ngModelChange)="planChanged()">Diese Quelle abwählen</label>
+                <label>Wenn diese Quelle nicht verfügbar ist<select [(ngModel)]="c.onUnavailable" (ngModelChange)="planChanged()"><option value="fail">Abbrechen</option><option value="next">Nächste zugelassene Quelle prüfen</option></select></label>
+              </li>
+            }</ol>
+            <p class="hint">Ohne passende OSM-Ortsdaten wird nur ein ausdrücklich zugelassenes Ersatzmodell verwendet. Straßen, Bevölkerungsverteilung und andere Zielzwecke bleiben unabhängig. Für importierte Register bleibt die getrennte Auswahl einer Datenrevision mit ihrer Lückenregel verfügbar.</p>
+          </fieldset>
+        }
+        @if (policy().source === 'dataset') {
+          <label>Datenrevision<select [(ngModel)]="policy().revision" (ngModelChange)="profileChanged()" [disabled]="disabled"><option [ngValue]="undefined">Revision auswählen</option>@for (r of matchingRevisions; track r.id) { <option [ngValue]="r.id">{{ r.label }} · {{ r.referenceDate }} · {{ r.id.slice(0, 8) }}</option> }</select></label>
+          @if (selected === 'opportunities.work') { <label>Außerhalb der Abdeckung<select [(ngModel)]="policy().gaps" (ngModelChange)="gapModeChanged()" [disabled]="disabled">@if (!explicitWorkGaps) { <option value="legacy">Bisherige Arbeitsplatzgewichte erhalten</option> }<option value="none">Ohne vollständige Abdeckung abbrechen</option><option value="providers">Eigene Quellen für nicht abgedeckte Zonen</option></select></label> }
+        }
+        @if (policy().source === 'profile') {
+          <label>Quellenprofilversion<select [(ngModel)]="policy().profile" (ngModelChange)="profileChanged()" [disabled]="disabled"><option [ngValue]="undefined">Profil auswählen</option>@for (p of matchingSourceProfiles; track p.id) { <option [ngValue]="p.id">{{ p.definition.name }} · {{ p.id.slice(0, 8) }}</option> }</select></label>
+          @if (selected === 'opportunities.work') { <label>Außerhalb der gewählten Datenabdeckung<select [(ngModel)]="policy().gaps" (ngModelChange)="gapModeChanged()" [disabled]="disabled">@if (!explicitWorkGaps) { <option value="legacy">Bisherige Arbeitsplatzgewichte erhalten</option> }<option value="none">Ohne vollständige Abdeckung abbrechen</option><option value="providers">Eigene Quellen für nicht abgedeckte Zonen</option></select></label> }
+          <p class="hint">Die gespeicherte Reihenfolge entscheidet. Eine Paketinstallation oder neue Profilversion verändert diese Auswahl nicht. Profile mit nativen Quellen verwenden ausschließlich ihre expliziten Ersatzkandidaten.</p>
+        }
+        @if (policy().source === 'profile' && regionalProfileSelected) { <p class="notice">Regionale Registerergänzung: Frühere Quellen behalten ihre vollständig abgedeckten Zonen einschließlich Nullwerten. Weitere Register ergänzen nur offene Zonen.</p> }
+        @if (selected === 'opportunities.work' && policy().gaps === 'providers' && (policy().source === 'dataset' || policy().source === 'profile')) {
+          <fieldset [disabled]="busy || disabled"><legend>Quellen für Registerlücken</legend>
+            <p>Nur Zonen außerhalb der vollständigen Registerabdeckung erhalten diese Modellgewichte. Bestätigte Nullwerte bleiben erhalten; Teilzonen werden als ganze Zone ergänzt.</p>
+            <ol class="candidates">@for (c of policy().gapProviders; track c.provider; let i = $index) {
+              <li><strong>{{ workplaceProviderLabel(c.provider) }}</strong>
+                <div class="actions"><button (click)="moveGapProvider(i, -1)" [disabled]="i === 0" [attr.aria-label]="'Lückenquelle ' + (i + 1) + ' nach oben'">↑</button><button (click)="moveGapProvider(i, 1)" [disabled]="i === (policy().gapProviders?.length ?? 0) - 1" [attr.aria-label]="'Lückenquelle ' + (i + 1) + ' nach unten'">↓</button></div>
+                <label class="check"><input type="checkbox" [(ngModel)]="c.excluded" (ngModelChange)="planChanged()">Diese Lückenquelle abwählen</label>
+                <label>Wenn die Lückenquelle nicht verfügbar ist<select [(ngModel)]="c.onUnavailable" (ngModelChange)="planChanged()"><option value="fail">Abbrechen</option><option value="next">Nächste zugelassene Quelle prüfen</option></select></label>
+              </li>
+            }</ol>
+            <p class="hint">Ohne Lücken wird diese Liste nicht ausgeführt. Fehlende Ersatzquellen führen zum Abbruch, bevor Registerwerte angewendet werden. Arbeitsplatzmengen und ergänzende Modellgewichte werden nicht zu einer Gesamtmenge addiert.</p>
+          </fieldset>
+        }
+        @if (maskedPopulationSelected) {
+          <label>Unbekannte oder teilweise belegte Rasterzonen<select [(ngModel)]="policy().gaps" (ngModelChange)="gapModeChanged()" [disabled]="disabled"><option value="none">Ohne vollständige Werte abbrechen</option><option value="providers">Restmenge aus manueller Gesamtzahl modellieren</option></select></label>
+          @if (policy().gaps === 'providers') {
+            <fieldset [disabled]="busy || disabled"><legend>Modellquellen für Rasterlücken</legend>
+              <label>Manuelle Gesamtzahl als Mengenanker<input type="number" min="1" step="1" [(ngModel)]="scenario.population.totalPersons" (ngModelChange)="planChanged()"></label>
+              <p>Bekannte Beiträge vollständig belegter Zonen bleiben erhalten. Nur die Restmenge zur Gesamtzahl wird in offenen Zonen modelliert; bestätigte Nullzonen bleiben leer.</p>
+              <ol class="candidates">@for (c of policy().gapProviders; track c.provider; let i = $index) {
+                <li><strong>{{ providerLabel(c.provider) }}</strong><div class="actions"><button (click)="moveGapProvider(i, -1)" [disabled]="i === 0" [attr.aria-label]="'Rasterlückenquelle ' + (i + 1) + ' nach oben'">↑</button><button (click)="moveGapProvider(i, 1)" [disabled]="i === (policy().gapProviders?.length ?? 0) - 1" [attr.aria-label]="'Rasterlückenquelle ' + (i + 1) + ' nach unten'">↓</button></div>
+                  <label class="check"><input type="checkbox" [(ngModel)]="c.excluded" (ngModelChange)="planChanged()">Diese Rasterlückenquelle abwählen</label>
+                  <label>Wenn die Quelle nicht verfügbar ist<select [(ngModel)]="c.onUnavailable" (ngModelChange)="planChanged()"><option value="fail">Abbrechen</option><option value="next">Nächste zugelassene Quelle prüfen</option></select></label>
+                </li>
+              }</ol>
+              <p class="hint">Ohne Mengenanker bleibt die regionale Summe unbekannt und der Lauf bricht ab. Eine Gesamtzahl unter den bekannten Beiträgen ist widersprüchlich.</p>
+            </fieldset>
+          }
+        }
+        @if (policy().source === 'model') {
+          <p class="notice">Reines Annahmenszenario: repräsentative Binnen-/Randpunkte, gleichmäßiges Tagesprofil. Mengen enthalten Leerfahrten; es gibt keinen pauschalen Aufschlag.</p>
+          <label class="check"><input type="checkbox" [(ngModel)]="policy().demonstrationAccepted" (ngModelChange)="planChanged()" [disabled]="disabled">Nur für Exploration freigeben: technische Demonstration mit angenommenen Orten und Abfahrten.</label>
+          <label>Annahmen und Zweck der Lkw-Demonstration<textarea [(ngModel)]="policy().assumptionStatement" (ngModelChange)="planChanged()" minlength="10" maxlength="1000" rows="2" [disabled]="disabled"></textarea></label>
+          <div class="fields">@for (c of counts; track c.key) { <label>{{ c.label }} pro Modelltag<input type="number" min="0" max="200000" step="1" [(ngModel)]="policy()[c.key]" (ngModelChange)="planChanged()" [disabled]="disabled"></label> }</div>
+          <label>Fahrzeugklasse<select [(ngModel)]="policy().vehicleClass" (ngModelChange)="planChanged()" [disabled]="disabled"><option value="truck">LKW</option><option value="trailer">Sattelzug</option></select></label>
+          <p class="hint">Die vier Mengen sind explizite Vorgaben; lokale Bevölkerung identifiziert keinen Durchgangsverkehr. Mindestens eine positive Menge ist nötig. Kein Nachweis vollständiger regionaler Nachfrage.</p>
+        }
+        @if (selected === 'opportunities.work') { <p class="hint">Unterstützt werden vollständige Register mit Betriebspunkten und Rasterzellen mit explizitem Wertstatus. Die Vollständigkeit muss für das deklarierte Gebiet und den Erhebungsumfang angegeben sein; nur dann bedeuten fehlende Punkte null. Gemeindeaggregate verwenden den Gemeindeimport mit AGS, Gebietsstand und separat versionierten Verteilungsgewichten. Andere Zwecke und das Straßennetz bleiben unabhängig.</p> }
+        @if (selected === 'population.distribution') { <p class="hint">Importierte Punkt-/Rasterwerte liefern Verteilungsgewichte und die Gesamtzahl, sofern keine manuelle Gesamtzahl gesetzt ist. Der bisherige Punkt-/Rastervertrag verlangt vollständige Gebietsabdeckung. Rasterzellen mit Wertstatus können explizite Maskenlücken und einen Mengenanker verwenden.</p> }
+        @if (selected === 'freight.vehicleOd') { <p class="hint">Diese Auswahl betrifft nur den Schwerlasthintergrund. Aktivierte Unternehmenstouren und Paketlogistik bleiben separat. Tagesmengen gelten für den im Szenario gewählten Güterverkehrstag. Aktiver Güterverkehr benötigt 100 % Bevölkerung. Importierte Außenbeziehungen müssen bereits an Orte im Szenarionetz angebunden sein.</p> }
+        <details>
+          <summary>Neues Quellenprofil für diesen Beitrag</summary>
+          <fieldset [disabled]="busy || disabled">
+            <label>Name des Quellenprofils<input [(ngModel)]="sourceDraft().name" (ngModelChange)="sourceDraftChanged()" maxlength="100"></label>
+            @if (selected === 'opportunities.work') {
+              <label>Zusammenführung<select [(ngModel)]="sourceDraft().strategy" (ngModelChange)="strategyChanged()"><option value="choose">Erste verwendbare Quelle auswählen</option><option value="fill-gaps">Register regional ergänzen</option></select></label>
+              @if (sourceDraftRegional) { <p class="hint">Register liefern ganze Zonen in dieser Reihenfolge. Spätere Register ergänzen nur offene Zonen; bestätigte Nullwerte bleiben erhalten. Native Modelle werden danach über die separate Lückenregel gewählt.</p> }
+              @if (sourceDraftRegional && sourceDraftHasNatives) { <p role="alert">Für regionale Ergänzung native Kandidaten hier entfernen und bei den Registerlücken konfigurieren.</p> }
+            }
+            <label>Kandidat hinzufügen<select [(ngModel)]="candidateToAdd"><option value="">Quelle auswählen</option>@for (c of providerChoices; track c.provider) { <option [ngValue]="c.provider">{{ c.label }}</option> }</select></label>
+            <button (click)="addCandidate()" [disabled]="!candidateToAdd || sourceDraft().candidates.length >= 16">Kandidat anfügen</button>
+            <ol class="candidates">@for (c of sourceDraft().candidates; track c.provider; let i = $index) {
+              <li><strong>{{ providerLabel(c.provider) }}</strong>
+                <div class="actions"><button (click)="moveCandidate(i, -1)" [disabled]="i === 0" [attr.aria-label]="'Kandidat ' + (i + 1) + ' nach oben'">↑</button><button (click)="moveCandidate(i, 1)" [disabled]="i === sourceDraft().candidates.length - 1" [attr.aria-label]="'Kandidat ' + (i + 1) + ' nach unten'">↓</button><button (click)="removeCandidate(i)" [attr.aria-label]="'Kandidat ' + (i + 1) + ' entfernen'">Entfernen</button></div>
+                <label class="check"><input type="checkbox" [(ngModel)]="c.excluded" (ngModelChange)="sourceDraftChanged()">Diesen Kandidaten abwählen</label>
+                <label>Wenn die gespeicherte Quelldatei fehlt<select [(ngModel)]="c.onUnavailable" (ngModelChange)="sourceDraftChanged()"><option value="fail">Abbrechen</option><option value="next">Nächsten Kandidaten prüfen</option></select></label>
+              </li>
+            }</ol>
+            <label>Wenn kein Kandidat passt<select [(ngModel)]="sourceDraft().fallback" (ngModelChange)="sourceDraftChanged()"><option value="none">Mit fehlender Eingabe abbrechen</option><option value="legacy" [disabled]="sourceDraftHasNatives || sourceDraftRegional">Bisherigen Datenpfad erlauben</option></select></label>
+            <p class="hint">Unpassende Abdeckung wird übersprungen. Defekte Daten werden immer als Fehler behandelt. Die Ersatzregel verändert keine Quellen außerhalb dieses Profils. Bei nativen Kandidaten gibt es keinen zusätzlichen bisherigen Datenpfad; alle gewünschten Ersatzquellen ausdrücklich hinzufügen. Potenziell benötigte Importrevisionen werden vor dem Lauf geprüft und gebunden.</p>
+            <button (click)="saveSourceDraft()" [disabled]="!sourceDraft().name.trim() || !sourceDraft().candidates.length || (sourceDraftRegional && sourceDraftHasNatives)">Quellenprofilversion speichern</button>
+          </fieldset>
+        </details>
+        <button (click)="beginImport()" [disabled]="disabled || busy">Daten hinzufügen</button>
+      </section>
+    </div>
+    <details><summary>Weitere vorhandene Datenpfade</summary><p>Aktivitäten, Pendlerdaten, Straßenrouting, GTFS, Paketlogistik, Flotten-/Stationsdaten und Unternehmenstouren verwenden weiter ihre vorhandenen Studioeinstellungen. GTFS ersetzt die gemeinsame geschätzte ÖV-Zeitmatrix derzeit nicht. Weitere Fachadapter können den registrierten Importkern erweitern.</p></details>
+    <div class="actions"><button (click)="checkPlan()" [disabled]="busy">Quellenplan prüfen</button><button (click)="savePlan.emit()" [disabled]="busy || disabled || hasPendingEdits">Szenario mit Quellenplan speichern</button></div>
+  }
+  @if (tab === 'inventory') {
+    <div class="actions"><button (click)="beginImport()" [disabled]="busy || disabled">Daten hinzufügen</button><button (click)="reload()" [disabled]="busy">Aktualisieren</button></div>
+    <h3>Szenarioübergreifende Datenbibliothek</h3>
+    <p class="hint">Pakete dieser Installation in weiteren Szenarien verwenden. Jede Übernahme kopiert genau diese unveränderliche Version. Quellen werden danach separat ausgewählt; bestehende Szenarien behalten ihren Stand.</p>
+    <label>Paket in Bibliothek speichern (ZIP)<input type="file" accept=".zip" (change)="publishLibraryPack($event)" [disabled]="busy || disabled"></label>
+    @if (libraryError) { <p role="alert">{{ libraryError }}</p> }
+    @for (e of library; track e.id) {
+      <div class="entry"><div><strong>{{ e.pack?.title ?? 'Ungültige Paketversion' }}</strong><p>{{ e.pack?.edition }} · {{ e.id.slice(0, 12) }}</p>
+        @if (e.status === 'invalid') { <p role="alert">{{ e.issue }}</p> }
+        @if (e.pack) { <ul>@for (s of e.pack.sources; track s.id) { <li>{{ s.label }} · {{ s.referenceDate }} · Lizenz: {{ s.licence === 'unknown' ? 'nicht angegeben' : s.licence }}</li> }</ul> }
+      </div><button (click)="installLibraryPack(e.id)" [disabled]="busy || disabled || e.status !== 'available' || scenarioHasPack(e.id)">{{ scenarioHasPack(e.id) ? 'In diesem Szenario vorhanden' : 'In dieses Szenario übernehmen' }}</button></div>
+    }
+    @if (!library.length && !libraryError) { <p>Noch keine Datenpakete in der Bibliothek.</p> }
+    <h3>Lokale Datenpakete</h3>
+    <label>Datenpaket installieren (ZIP)<input type="file" accept=".zip" (change)="installPack($event)" [disabled]="busy || disabled"></label>
+    <p class="hint">Manifest plus lokale strukturierte Dateien, maximal 5 MB. Die Installation aktiviert keine Quelle. Neue Paketinhalte erhalten eine eigene unveränderliche Version.</p>
+    @for (p of packs; track p.id) { <div class="entry"><div><strong>{{ p.title }}</strong><p>{{ p.packId }} · {{ p.edition }} · {{ p.id.slice(0, 12) }}</p><ul>@for (s of p.sources; track s.id) { <li>{{ s.label }} · {{ s.referenceDate }} · Lizenz: {{ s.licence === 'unknown' ? 'nicht angegeben' : s.licence }}</li> }</ul></div><button (click)="promotePack(p.id)" [disabled]="busy || disabled || libraryHas(p.id)">{{ libraryHas(p.id) ? 'In Bibliothek vorhanden' : 'In Bibliothek bereitstellen' }}</button></div> }
+    @if (!packs.length) { <p>Keine Datenpakete installiert.</p> }
+    <h3>Szenarioübergreifende Quellenprofile</h3>
+    <p class="hint">Gemeinsame Profile speichern Reihenfolge, Abwahl und Ausfallregeln. Aktive Paketquellen müssen in der Datenbibliothek vorhanden sein. Die Übernahme kopiert Profil und benötigte Pakete; Mengenanker und Lückenregeln des Szenarios werden danach separat geprüft. Native Quellen werden im Ziel neu aufgelöst, szenarioeigene Uploads werden nicht mitkopiert.</p>
+    <label>Quellenprofil in Bibliothek speichern (JSON)<input type="file" accept=".json" (change)="importLibraryProfile($event)" [disabled]="busy || disabled"></label>
+    @if (libraryProfilesError) { <p role="alert">{{ libraryProfilesError }}</p> }
+    @for (e of libraryProfiles; track e.id) {
+      <div class="entry"><div><strong>{{ e.profile?.definition?.name ?? 'Ungültiges Quellenprofil' }}</strong><p>{{ e.id.slice(0, 12) }}</p>
+        @if (e.status === 'invalid') { <p role="alert">{{ e.issue }}</p> }
+        <p>{{ e.requiredPacks.length }} benötigte Paketversionen</p><ul>@for (p of e.requiredPacks; track p.id) { <li>{{ p.title }} · {{ p.edition }} · {{ p.id.slice(0, 12) }}</li> }</ul>
+      </div><button (click)="installLibraryProfile(e.id)" [disabled]="busy || disabled || e.status !== 'available' || scenarioHasProfile(e.id)">{{ scenarioHasProfile(e.id) ? 'Quellenprofil in diesem Szenario vorhanden' : 'Profil und Daten übernehmen' }}</button></div>
+    }
+    @if (!libraryProfiles.length && !libraryProfilesError) { <p>Noch keine gemeinsamen Quellenprofile.</p> }
+    <h3>Gespeicherte Quellenprofile</h3><p class="hint">Profile speichern Reihenfolgen und Ausfallregeln; sie sind keine Mappingprofile.</p>
+    @for (p of sourceProfiles; track p.id) { <div class="entry"><p>{{ p.definition.name }} · {{ p.id.slice(0, 12) }}</p><button (click)="promoteSourceProfile(p.id)" [disabled]="busy || disabled || libraryHasProfile(p.id)">{{ libraryHasProfile(p.id) ? 'Quellenprofil in Bibliothek vorhanden' : 'Quellenprofil in Bibliothek bereitstellen' }}</button></div> }
+    <h3>Geprüfte Revisionen</h3><p class="hint">Importiert bedeutet noch nicht ausgewählt. Prüfstatus belegt keine regionale Kalibrierung.</p>
+    @for (r of revisions; track r.id) { <div class="entry"><div><strong>{{ r.label }}</strong><p>{{ r.rows }} Datensätze · {{ r.referenceDate }} · {{ r.source }}</p><small>Revision {{ r.id }}</small></div>@if (isScenarioRevision(r)) { <button (click)="useRevision(r)" [disabled]="disabled">Für Beitrag auswählen</button> } @else { <span>Als Referenz im Gemeindeimport auswählbar</span> }</div> }
+    @if (!revisions.length) { <p>Keine Datenrevision gespeichert.</p> }
+    <h3>Importentwürfe</h3>@for (i of imports; track i.draft.id) { <div class="entry"><span>{{ i.draft.filename }} · {{ i.draft.source.format }}</span><button (click)="selectImport(i)" [disabled]="busy">Zuordnung öffnen</button></div> }
+  }
+  @if (tab === 'import') {
+    <h3>Gemeinsamer Datenimport</h3>
+    @if (!current) {
+      <label>Fachlicher Beitrag<select [(ngModel)]="importSchemaId">@for (s of schemas; track s.id) { <option [ngValue]="s.id">{{ s.label }}</option> }</select></label>
+      <label>Quelldatei<input type="file" accept=".csv,.tsv,.xlsx,.json,.xml,.docx,.geojson" (change)="upload($event)" [disabled]="busy || disabled"></label>
+      <p class="hint">CSV, TSV, XLSX, JSON, XML oder DOCX mit Tabellen; maximal 5 MB. Tourentextanalyse bleibt im vorhandenen Tourenimport verfügbar.</p>
+    }
+    @if (current && mapping && metadata) {
+      <p>{{ current.draft.filename }} → {{ schema?.label }} · {{ current.draft.source.format }}</p>
+      <details><summary>Gespeichertes Mappingprofil verwenden</summary><label>Profil<select [(ngModel)]="selectedProfile"><option value="">Profil auswählen</option>@for (p of matchingProfiles; track p.id) { <option [ngValue]="p.id">{{ p.name }}</option> }</select></label><button (click)="applyProfile()" [disabled]="busy || !selectedProfile">Als Vorschlag anwenden</button></details>
+      <div class="fields"><label>Tabelle<select [(ngModel)]="mapping.tableId" (ngModelChange)="tableChanged()" [disabled]="busy">@for (t of current.draft.source.tables; track t.id) { <option [ngValue]="t.id">{{ t.name }}</option> }</select></label><label>Kopfzeile<input type="number" min="1" [(ngModel)]="mapping.headerRow" (ngModelChange)="mappingChanged()"></label></div>
+      <app-mapping-editor [mapping]="mapping" [fields]="fields" [columns]="columns" [disabled]="busy || disabled" (changed)="mappingChanged()" />
+      @if (current.draft.schemaId === 'workplace-cells-v1' || current.draft.schemaId === 'population-cells-v1') {
+        <p class="notice">Rastervertrag: West-/Südkante und Zellgröße in EPSG:3035-Metern. Status value enthält eine Zahl einschließlich 0; missing, not-collected und suppressed bleiben getrennt unbekannt. Negative oder textuelle Marker werden nur mit explizitem unbekanntem Status erhalten.</p>
+      }
+      <div class="fields">
+        <label>Dezimalzeichen<select [(ngModel)]="mapping.decimalSeparator" (ngModelChange)="mappingChanged()"><option value=".">Punkt (12.5)</option><option value=",">Komma (12,5)</option></select></label>
+        <label>Mengeneinheit<select [(ngModel)]="metadata.unit" (ngModelChange)="mappingChanged()"><option value="jobs">Arbeitsplätze</option><option value="relative-weight">Relative Verteilungsgewichte</option><option value="area-boundary">Gemeindeflächen (Geometrien)</option><option value="persons">Personen</option><option value="vehicle-trips/day">Fahrzeugfahrten pro Tag</option><option value="tonnes/month">Tonnen pro Monat (zusätzliches Fachmodell erforderlich)</option></select></label>
+        <label>Bezeichnung<input [(ngModel)]="metadata.label" (ngModelChange)="mappingChanged()" maxlength="200"></label>
+        <label>Herkunft / Datensatzdefinition<input [(ngModel)]="metadata.source" (ngModelChange)="mappingChanged()" maxlength="500" placeholder="Datenanbieter und Bedeutung der Menge"></label>
+        <label>Bezugsdatum<input type="date" [(ngModel)]="metadata.referenceDate" (ngModelChange)="mappingChanged()"></label>
+        <label>Lizenz (unbekannt: unknown)<input [(ngModel)]="metadata.licence" (ngModelChange)="mappingChanged()" maxlength="500"></label>
+        <label>Namensnennung / Attribution<input [(ngModel)]="metadata.attribution" (ngModelChange)="mappingChanged()" maxlength="1000"></label>
+      </div>
+      @if (metadata.geography; as geography) {
+        <fieldset [disabled]="busy || disabled"><legend>Gemeindeschlüssel und räumliche Zuordnung</legend>
+          <p>Schlüsselraum: de:AGS. Achtstellige Gemeindeschlüssel einschließlich führender Nullen erhalten.</p>
+          <label>Gebietsstand<input type="date" [(ngModel)]="geography.edition" (ngModelChange)="mappingChanged()"></label>
+          @if (current.draft.schemaId === 'municipal-workplaces-v1') {
+            <label>Verteilungsmodell<select [(ngModel)]="geography.allocationMethod" (ngModelChange)="allocationMethodChanged()"><option value="explicit-point-weights-v1">Explizite Punktgewichte</option><option value="uniform-area-v1">Flächengleichverteilung anhand Gemeindegeometrien</option></select></label>
+            <label>Revision der Gemeindezuordnung<select [(ngModel)]="geography.allocationRevision" (ngModelChange)="mappingChanged()"><option [ngValue]="undefined">Revision auswählen</option>@for (r of allocationRevisions; track r.id) { <option [ngValue]="r.id">{{ r.label }} · {{ r.id.slice(0, 8) }}</option> }</select></label>
+          }
+          @if (geography.allocationMethod === 'uniform-area-v1') { <p class="hint">Modell: Gleichverteilung innerhalb der vollständigen Gemeindefläche in EPSG:3035. Löcher und Außenanteile bleiben erhalten. Teilzonen folgen der Lückenregel; ihre Mengen werden getrennt ausgewiesen.</p> } @else { <p class="hint">Modell: explizite Punktgewichte je Gemeinde. Der Nenner umfasst alle bereitgestellten Gewichte, einschließlich Orten außerhalb des Szenarios.</p> }
+          <p class="hint">Die räumliche Verteilung ist eine Annahme; die ursprünglichen Gemeindeaggregate bleiben unverändert erhalten.</p>
+        </fieldset>
+      }
+      @if (metadata.coverageDeclaration; as declaration) {
+        <fieldset [disabled]="busy || disabled">
+          <legend>Arbeitsplatzdaten: Erhebungsumfang</legend>
+          <label>Datenform<select [(ngModel)]="declaration.kind" (ngModelChange)="mappingChanged()"><option value="point-register">Betriebsstandorte mit Punktkoordinaten</option><option value="municipality-aggregate">Gemeindesummen mit AGS und Verteilungsrevision</option></select></label>
+          <label>Vollständigkeit<select [(ngModel)]="declaration.completeness" (ngModelChange)="mappingChanged()"><option value="unknown">Nicht geklärt</option><option value="partial">Lückenhafter Bestand</option><option value="complete">Vollständig für den beschriebenen Umfang und das Gebiet</option></select></label>
+          <label>Erhobene Betriebe/Arbeitsplätze und Grundlage der Vollständigkeit<textarea [(ngModel)]="declaration.statement" (ngModelChange)="mappingChanged()" minlength="10" maxlength="1000" rows="3" placeholder="Welche Betriebe und Arbeitsplätze sind erfasst? Weshalb ist der Bestand für das deklarierte Gebiet vollständig?"></textarea></label>
+          <p class="hint">Diese Angabe wird mit der Revision gespeichert. Sie ist eine Erklärung zur Quelle, keine unabhängige Verifikation. Unbekannte oder lückenhafte Bestände dürfen hier keine fehlenden Arbeitsplätze auf null setzen.</p>
+        </fieldset>
+      }
+      <details><summary>Deklarierte Quellenabdeckung (WGS84)</summary><p class="hint">Vorbelegt mit der Szenarioregion. Auf die tatsächliche, inhaltlich vollständige Quellenabdeckung korrigieren; nicht aus den vorhandenen Punkten erschließen.</p><div class="fields"><label>Westen<input type="number" [(ngModel)]="metadata.coverage.minLon" (ngModelChange)="mappingChanged()"></label><label>Osten<input type="number" [(ngModel)]="metadata.coverage.maxLon" (ngModelChange)="mappingChanged()"></label><label>Süden<input type="number" [(ngModel)]="metadata.coverage.minLat" (ngModelChange)="mappingChanged()"></label><label>Norden<input type="number" [(ngModel)]="metadata.coverage.maxLat" (ngModelChange)="mappingChanged()"></label></div></details>
+      <label class="check"><input type="checkbox" [(ngModel)]="coverageConfirmed" (ngModelChange)="mappingChanged()">Einheit, Bezugsdatum und deklarierte Abdeckung geprüft. Fehlende Werte sind keine beobachteten Nullen.</label>
+      <details><summary>Quellvorschau</summary><div class="table-scroll"><table><tbody>@for (row of table?.rows?.slice(0, 6) ?? []; track row.sourceRow) { <tr><th>{{ row.sourceRow }}</th>@for (cell of row.cells; track $index) { <td>{{ cell }}</td> }</tr> }</tbody></table></div></details>
+      <div class="actions"><button (click)="runPreview()" [disabled]="busy || disabled">Vorschau und vollständige Eingabe prüfen</button></div>
+      @if (preview) {
+        <p role="status">{{ preview.mappedRows }} von {{ preview.inputRows }} Zeilen zugeordnet · {{ preview.rejectedRows }} fehlerhaft · {{ preview.blankRows }} leer.</p>
+        @if (preview.issues.length) { <ul class="error">@for (issue of preview.issues.slice(0, 30); track $index) { <li>Zeile {{ issue.sourceRow }} · {{ issue.field }}: {{ issue.message }}</li> }</ul> }
+        <div class="table-scroll"><table><thead><tr><th>Quellzeile</th>@for (f of schema?.fields ?? []; track f.id) { <th>{{ f.label }}</th> }</tr></thead><tbody>@for (row of preview.sample; track row.sourceRow) { <tr><td>{{ row.sourceRow }}</td>@for (f of schema?.fields ?? []; track f.id) { <td>{{ formatCell(row.values[f.id]) }}</td> }</tr> }</tbody></table></div>
+        <div class="actions"><button (click)="publish()" [disabled]="busy || disabled || preview.status !== 'valid'">Geprüfte Revision speichern</button></div>
+        <label>Profilname<input [(ngModel)]="profileName" maxlength="100"></label><button (click)="saveProfile()" [disabled]="busy || preview.status !== 'valid' || !profileName.trim()">Zuordnungsregeln als Profil speichern</button>
+      }
+    }
+  }
+  @if (tab === 'review') {
+    <h3>Quellenplan vor dem Lauf</h3>
+    <p>Verwendungszweck: {{ scenario.dataPlan!.qualityMode === 'analysis' ? 'Fachliche Auswertung' : 'Exploration' }}. Die technische Vorprüfung ersetzt keine empirische Qualitätsabnahme.</p>
+    @if (check) {
+      <p [class.error]="!check.ready" role="status">{{ check.ready ? 'Quelleneingaben verwendbar; reale Ausführung und Abdeckung werden im Lauf bilanziert.' : 'Quellenplan enthält einen Blocker.' }}</p>
+      <ul class="error">@for (issue of check.issues; track $index) { <li>{{ issue }}</li> }</ul>
+      @for (d of check.decisions; track d.aspect) { @if (d.strategy === 'fill-gaps') { <p>Regionale Registerergänzung: Registerprioritäten und verbleibende Lücken werden im Lauf geprüft.</p> } }
+      @for (d of check.decisions; track d.aspect) { <div class="entry"><strong>{{ title(d.aspect) }}</strong><div>{{ d.label || sourceLabel(d.source) }} · {{ statusLabel(d.status, d.source) }}<p class="hint">{{ evidenceLabel(d.evidence) }}@if (d.licence) { · Lizenz: {{ d.licence === 'unknown' ? 'nicht angegeben' : d.licence }} }</p>@if (d.attribution) { <p class="hint">{{ d.attribution }}</p> }@if (d.scientificUse === 'not-approved') { <p class="notice">Technische Demonstration für Exploration; für fachliche Auswertungen gesperrt.</p><p>{{ d.assumptionStatement }}</p> }@if (d.geography; as geography) { <p>Schlüsselraum: {{ geography.codeSystem }} · Gebietsstand: {{ geography.edition }}</p><p class="hint">Räumliche Verteilung aus der gewählten Zuordnungsrevision ({{ allocationLabel(geography.allocationMethod) }}); Modellannahme.</p> }@if (d.coverageDeclaration; as declaration) { <p>Vollständigkeit laut Quellenangabe: {{ declaration.statement }}</p><p class="hint">Zonenzuordnung und verwendete Teilbeiträge werden erst im Lauf bilanziert.</p> }</div></div> }
+      @for (d of check.decisions; track d.aspect) {
+        @if (d.candidates?.length) { <details open><summary>Quellenreihenfolge: {{ title(d.aspect) }}</summary><ol>@for (c of d.candidates; track c.rank) { <li><strong>{{ providerLabel(c.provider) }}</strong><p>{{ candidateStatus(c.status) }} · {{ candidateReason(c) }}</p></li> }</ol></details> }
+      }
+      @for (d of check.decisions; track d.aspect) {
+        @if (d.gapProviders?.length) { <details open><summary>{{ d.aspect === 'population.distribution' ? 'Geplante Modellquellen für Rasterlücken' : 'Geplante Quellen für Registerlücken' }}</summary><ol>@for (c of d.gapProviders; track c.provider) { <li>{{ providerLabel(c.provider) }} · {{ c.excluded ? 'Abgewählt' : 'Nur bei nicht abgedeckten Zonen prüfen' }}</li> }</ol><p class="hint">Die tatsächlich ergänzten Zonen und Modellgewichte stehen nach dem Lauf im Quellenbericht.</p></details> }
+      }
+      @if (!scenario.dataPlan!.enabled) { <p>Bisheriger Ablauf aktiv; keine neue Quellenpolicy angewendet.</p> }
+      <p class="hint">Die Planprüfung prüft Datenrevisionen und Voraussetzungen der neuen Beiträge. Sie ersetzt keine vollständige Simulation oder Qualitätsabnahme aller anderen Stufen.</p>
+      <button (click)="savePlan.emit()" [disabled]="!check.ready || busy || disabled || hasPendingEdits">Szenario mit geprüftem Quellenplan speichern</button>
+    }
+    @if (scenario.id) { <app-source-run-report [scenarioId]="scenario.id" [runVersion]="runVersion" /> }
+  }
+}

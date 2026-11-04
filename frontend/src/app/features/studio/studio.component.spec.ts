@@ -8,6 +8,7 @@ import { StudioComponent } from './studio.component';
 describe('StudioComponent', () => {
   let fixture: ReturnType<typeof TestBed.createComponent<StudioComponent>> | null;
   let api: {
+    listCompanyTours: ReturnType<typeof vi.fn>;
     listScenarios: ReturnType<typeof vi.fn>;
     scenarioDefaults: ReturnType<typeof vi.fn>;
     createScenario: ReturnType<typeof vi.fn>;
@@ -20,6 +21,7 @@ describe('StudioComponent', () => {
     deleteCommuters: ReturnType<typeof vi.fn>;
     deleteWorkplaceMargins: ReturnType<typeof vi.fn>;
     uploadCommuters: ReturnType<typeof vi.fn>;
+    uploadSevas: ReturnType<typeof vi.fn>;
     generate: ReturnType<typeof vi.fn>;
     generationStatus: ReturnType<typeof vi.fn>;
     artifactUrl: ReturnType<typeof vi.fn>;
@@ -30,6 +32,7 @@ describe('StudioComponent', () => {
   beforeEach(async () => {
     fixture = null;
     api = {
+      listCompanyTours: vi.fn(() => of([])),
       listScenarios: vi.fn(() => of([])),
       scenarioDefaults: vi.fn(() => of(null)),
       createScenario: vi.fn(),
@@ -42,6 +45,7 @@ describe('StudioComponent', () => {
       deleteCommuters: vi.fn(() => of(undefined)),
       deleteWorkplaceMargins: vi.fn(() => of(undefined)),
       uploadCommuters: vi.fn(),
+      uploadSevas: vi.fn(),
       generate: vi.fn(() => of(job('QUEUED'))),
       generationStatus: vi.fn(() => of(job('RUNNING'))),
       artifactUrl: vi.fn((_id: string, path: string) => `/artifacts/${path}`),
@@ -64,6 +68,122 @@ describe('StudioComponent', () => {
     fixture?.destroy();
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it('separates inserted vehicles, routing losses and day-end persons in SUMO results', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('saved');
+    component.job = job('DONE');
+    component.sumoSummary = {
+      vehicles: 3316, vehicleCountScope: 'inserted-including-bicycles',
+      meanStatisticsScope: 'motor-vehicle-trip-statistics',
+      meanDurationMin: 19.2, meanRouteLengthKm: 18.8, meanSpeedKmh: 59, runtimeSeconds: 100,
+      accounting: {
+        status: 'incomplete', demandRetained: false, nativeVehicleTeleports: 1,
+        teleportAccountingComplete: true,
+        vehicles: { requested: 3624, routed: 3316, departed: 3316, completed: 3316,
+          unrouted: 308, notDeparted: 0, unfinished: 0, vaporized: 0 },
+        persons: { requested: 215, routed: 207, departed: 207, completed: 206,
+          unrouted: 8, notDeparted: 0, unfinished: 1, vaporized: 0 }
+      }
+    };
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Eingesetzte Fahrzeuge inkl. Rad');
+    expect(text).toContain('3624 / 3316 / 3316 / 3316');
+    expect(text).toContain('215 / 207 / 207 / 206');
+    expect(text).toContain('308 / 8');
+    expect(text).toContain('Die angeforderte Nachfrage ist nicht vollständig erhalten.');
+    expect(text).toContain('Am Tagesende unterwegs');
+    const accounting = component.sumoSummary!.accounting!;
+    accounting.status = 'review-required';accounting.demandRetained = true;accounting.nativeVehicleTeleports = 2;
+    accounting.vehicles = { requested: 3624, routed: 3624, departed: 3624, completed: 3624,
+      unrouted: 0, notDeparted: 0, unfinished: 0, vaporized: 0 };
+    accounting.persons = { requested: 215, routed: 215, departed: 215, completed: 214,
+      unrouted: 0, notDeparted: 0, unfinished: 1, vaporized: 0 };
+    fixture.detectChanges();
+    const reviewed = fixture.nativeElement.textContent;
+    expect(reviewed).toContain('Prüfung erforderlich');
+    expect(reviewed).toContain('3624 / 3624 / 3624 / 3624');
+    expect(reviewed).toContain('215 / 215 / 215 / 214');
+    expect(reviewed).not.toContain('Die angeforderte Nachfrage ist nicht vollständig erhalten.');
+  });
+  it('enables road-based synthetic locations and explains their scope', () => {
+    fixture=TestBed.createComponent(StudioComponent);fixture.detectChanges();const component=fixture.componentInstance;component.scenario=scenario('road-locations');fixture.detectChanges();
+    const checkbox=Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('label')).find(label=>label.textContent?.includes('Synthetische Wohn- und Aktivitätsorte'))?.querySelector<HTMLInputElement>('input');
+    expect(checkbox?.checked).toBe(false);checkbox!.click();fixture.detectChanges();expect(component.scenario.population.roadLocatedActivities).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('keine beobachteten Adressen');expect(fixture.nativeElement.textContent).toContain('Externe Zielanker');
+  });
+
+  it('shows a SUMO preflight failure visibly even if the optional-stage job itself is done', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.scenario = scenario('saved');
+    fixture.componentInstance.job = { ...job('DONE'), stages: [{ name: 'SUMO (Verkehr)', status: 'FAILED', durationMs: 0,
+      message: 'Straßennetz-Vorprüfung: 2 Endpunkte ohne zulässige Straße innerhalb 300 m' }] };
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.stage-message').textContent).toContain('2 Endpunkte');
+  });
+
+  it('shows the shared demand and downloads without selecting SUMO or claiming computed street routes', () => {
+    fixture = TestBed.createComponent(StudioComponent); fixture.detectChanges();
+    const c = fixture.componentInstance; c.scenario = scenario('saved'); c.scenario.targetModels = ['logitopp'];
+    c.trafficDemandSummary = { contract: 'synthesis-traffic-demand-v1', movements: 5, tours: 1,
+      byDemandSource: { 'heavy-freight': 2, 'company-tours': 3 }, byTrafficCategory: { logistics: 5 },
+      personDemandStatus: 'not-generated', parcelDemandStatus: 'not-generated', geometry: 'OD-connections-not-routed' };
+    fixture.detectChanges(); const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Gemeinsame Nachfrage');
+    expect(html.textContent).toContain('Personenwege wurden in diesem Lauf nicht erzeugt');
+    expect(html.textContent).toContain('keine berechneten Straßenrouten');
+    expect(html.querySelector('a[href="/artifacts/demand/traffic-demand.json"]')).not.toBeNull();
+    expect(html.querySelector('a[href="/artifacts/demand/planned-connections.geojson"]')).not.toBeNull();
+  });
+
+  it('enables freight independently and keeps demand when deselecting SUMO', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('saved');
+    component.scenario.freight = { enabled: false, day: 0, relations: [] };
+    component.scenario.targetModels = [];
+    component.scenario.population.samplingFraction = .1;
+    component.setFreightEnabled(true);
+    expect(component.scenario.freight.enabled).toBe(true);
+    expect(component.scenario.population.samplingFraction).toBe(1);
+    expect(component.scenario.targetModels).toEqual([]);
+    component.scenario.targetModels = ['sumo', 'logitopp'];
+    component.scenario.companyTours = { enabled: true, imports: [{ importId: 'abc', executionHash: 'rev' }] };
+    component.scenario.freight.sevasEnabled = true;
+    component.scenario.freight.profileChecksEnabled = true;
+    component.toggleTarget('sumo');
+    expect(component.scenario.freight.enabled).toBe(true);
+    expect(component.scenario.companyTours.enabled).toBe(true);
+    expect(component.scenario.freight.sevasEnabled).toBe(false);
+    expect(component.scenario.freight.profileChecksEnabled).toBe(false);
+  });
+
+  it('imports a SEVAS snapshot without overwriting local flags and retains it on rejection', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('saved');
+    component.scenario.freight = { enabled: true, sevasEnabled: true, day: 0, relations: [] };
+    const snapshot = { type: 'FeatureCollection', features: [{}] };
+    api.uploadSevas.mockReturnValue(of({ enabled: false, sevasEnabled: false, day: 0, relations: [], sevasSnapshot: snapshot }));
+    const file = new File(['{}'], 'sevas.geojson');
+    const input = { files: [file], value: 'sevas.geojson' };
+    component.onSevasSelected({ target: input } as unknown as Event);
+    expect(api.uploadSevas).toHaveBeenCalledWith('saved', file);
+    expect(component.scenario.freight.sevasSnapshot).toBe(snapshot);
+    expect(component.scenario.freight.sevasEnabled).toBe(true);
+    expect(component.scenario.freight.enabled).toBe(true);
+    api.uploadSevas.mockReturnValue(throwError(() => ({ error: { message: 'Invalid snapshot' } })));
+    component.onSevasSelected({ target: input } as unknown as Event);
+    expect(component.scenario.freight.sevasSnapshot).toBe(snapshot);
+    expect(component.sevasUploadBusy).toBe(false);
+    expect(component.message).toContain('Invalid snapshot');
   });
 
   it('disables census weighting when its KIT household source is switched off', async () => {

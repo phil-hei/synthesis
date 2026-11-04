@@ -21,3 +21,11 @@ Die Bilder messen 2400 × 1350 Pixel. Phase 6 und 7 sind zusätzlich als editier
 - `folie-12-v2.png` / `.svg`: ohne übergeordneten Titel, Pkw-Basisreisezeiten, Einkaufsort C als Kandidat, beispielhafte Logistikparameter.
 - `folie-18-v2.png` / `.svg`: ohne übergeordneten Titel, Alex’ Montag als Pkw-Beispiel; getrennte Zustelltour D → A → E → D an Alex’ Haushalt und eine andere Zustellzone.
 - Reproduktion: `sources/render_slides_v2.py`. Dieselben gespeicherten GraphHopper-Geometrien; keine neue Nachfrage- oder Verkehrssimulation. PNG/SVG: 2400 × 1100 Pixel.
+
+## Einkaufsalternativen mit Straßenverbindungen (8. Oktober 2026)
+
+`folie-12-v4.png` / `.svg` ergänzt B → C2 → A und B → C3 → A. C1 lila, C2 türkis, C3 pink; keine Alternative ist als ausgewählt dargestellt. C1 verwendet die gespeicherten GraphHopper-Routen. Die vier neuen Verbindungen wurden als schnellste Pkw-Wege auf dem gespeicherten, gerichteten SUMO-Netz desselben Beispiels berechnet (Pkw-Zugangsrechte berücksichtigt); öffentliche OSM-Abfragen waren nicht verfügbar. Es handelt sich nicht um eine bereits implementierte GraphHopper-SUMO-Routenübertragung. Die Zahlen rechts bleiben die ursprünglichen GraphHopper-Beispieleinträge für A/B/C1. Neue Routen: `sources/shopping-candidate-routes-v4.json`; Reproduktion: `sources/route_shopping_candidates.py` und `sources/render_candidates_v4.py`. Die Standortwahl bleibt illustrativ.
+
+## Korrektur: nur Matrixeinträge und Zielkandidaten
+
+`folie-12-v5.png` / `.svg` zeigt keinerlei ausgewählte Wege oder Routenlinien. Rechts stehen A → B und die Relationen B → Ci sowie Ci → A für i=1,2,3 als Distanz-/Zeitwerte. A/B/C1 bleiben die ursprünglichen GraphHopper-Basiswerte. C2/C3 wurden aus den schnellsten Pkw-Verbindungen im gespeicherten SUMO-Straßennetz abgeleitet (Summe der Kantenlängen und Basisfahrzeiten; keine Verkehrssimulation, keine belastungsabhängigen Zeiten). Die zusätzliche Datengrundlage ist `sources/shopping-candidate-matrix-v5.json`. Illustrative Standorte; keine gewählte Einkaufszone. Reproduktion: `sources/render_candidate_matrix_v5.py`.

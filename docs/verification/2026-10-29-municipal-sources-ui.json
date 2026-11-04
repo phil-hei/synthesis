@@ -1,0 +1,549 @@
+{
+  "scenarioId": "01839f9b",
+  "passed": true,
+  "frontend": "production build",
+  "viewportWidths": [
+    1440,
+    390
+  ],
+  "flow": [
+    "import versioned municipal weights without activation",
+    "import AGS aggregates and bind exact edition/reference",
+    "block unacknowledged demonstration",
+    "block demonstration for analysis",
+    "save explicit exploration plan",
+    "offline generation",
+    "verify 100 input, 75 applied, 25 outside and frozen reference"
+  ],
+  "allocation": "ba011956624e19e2356ce1fc2fc133a78b9b28dbeceb27c742c2c366bdfc31be",
+  "freightTrips": 3,
+  "resolution": {
+    "decisions": [
+      {
+        "aspect": "freight.vehicleOd",
+        "assumptionStatement": "Technischer Test mit drei synthetischen Binnenfahrten",
+        "evidence": "assumed",
+        "gaps": "legacy",
+        "qualityMode": "exploration",
+        "scientificUse": "not-approved",
+        "selectionRole": "explicit-fallback",
+        "skipped": [],
+        "source": "model",
+        "status": "resolved-with-fallback"
+      },
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "opportunities.work",
+        "attribution": "",
+        "coverage": {
+          "minLat": 48.7,
+          "minLon": 8.1,
+          "maxLat": 49.1,
+          "maxLon": 8.4
+        },
+        "coverageDeclaration": {
+          "kind": "municipality-aggregate",
+          "completeness": "complete",
+          "statement": "Vollständige synthetische Summen für die enthaltenen Gemeindeschlüssel"
+        },
+        "evidence": "user-provided-unverified",
+        "gaps": "legacy",
+        "geography": {
+          "codeSystem": "de:AGS",
+          "edition": "2025-01-01",
+          "allocationRevision": "ba011956624e19e2356ce1fc2fc133a78b9b28dbeceb27c742c2c366bdfc31be",
+          "allocationMethod": "explicit-point-weights-v1"
+        },
+        "label": "municipal.csv",
+        "licence": "unknown",
+        "qualityMode": "exploration",
+        "referenceDate": "2026-01-01",
+        "references": [
+          {
+            "schema": "municipality-allocation-v1",
+            "sourceHash": "982bc6687292c150f1f0ebeb83edd87de9be6368a554c9df3feb416128cd49d2",
+            "revision": "ba011956624e19e2356ce1fc2fc133a78b9b28dbeceb27c742c2c366bdfc31be",
+            "label": "weights.csv"
+          }
+        ],
+        "revision": "2ec992fff04ec16452790fefc34ce8f1a781017f6b9b21b24af440e87f28e1e6",
+        "selectionRole": "explicit-selection",
+        "skipped": [
+          {
+            "source": "legacy",
+            "reason": "replaced-by-explicit-dataset-in-covered-area"
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "f2cacfcfa14e4a73786fea1266a9e41aa464af17daef14f1327ffc654f0822f9",
+        "status": "resolved",
+        "temporalTransfer": false
+      },
+      {
+        "aspect": "population.distribution",
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "qualityMode": "exploration",
+        "selectionRole": "legacy-delegation",
+        "skipped": [],
+        "source": "legacy",
+        "status": "legacy"
+      }
+    ],
+    "workplaces": {
+      "allocation": "explicit-point-weights-v1; normalized across ALL supplied points for each AGS, including points outside the model",
+      "allocationRevision": "ba011956624e19e2356ce1fc2fc133a78b9b28dbeceb27c742c2c366bdfc31be",
+      "appliedJobs": 75,
+      "contract": "synthesis-municipal-workplace-allocation-v1",
+      "coverageDenominator": "internal model zones explicitly assigned by allocation points; not municipal polygon coverage",
+      "coveredZones": 2,
+      "fallbackZones": 23,
+      "geography": {
+        "codeSystem": "de:AGS",
+        "edition": "2025-01-01",
+        "allocationRevision": "ba011956624e19e2356ce1fc2fc133a78b9b28dbeceb27c742c2c366bdfc31be",
+        "allocationMethod": "explicit-point-weights-v1"
+      },
+      "inputJobs": 100,
+      "municipalities": [
+        {
+          "ags": "01001000",
+          "weightDenominator": 4,
+          "appliedJobs": 75,
+          "outsideJobs": 25,
+          "inputJobs": 100,
+          "sourceRow": 2
+        },
+        {
+          "ags": "02000000",
+          "weightDenominator": 2,
+          "appliedJobs": 0,
+          "outsideJobs": 0,
+          "inputJobs": 0,
+          "sourceRow": 3
+        }
+      ],
+      "outsideAllocationRows": 1,
+      "outsideJobs": 25,
+      "provenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "opportunities.work",
+        "root": "work-weights",
+        "nodes": [
+          {
+            "id": "municipal-totals",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "2ec992fff04ec16452790fefc34ce8f1a781017f6b9b21b24af440e87f28e1e6",
+              "sourceHash": "f2cacfcfa14e4a73786fea1266a9e41aa464af17daef14f1327ffc654f0822f9",
+              "label": "municipal.csv",
+              "origin": "Synthetische Gemeindeaggregate und explizite Verteilungsgewichte",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                }
+              ]
+            },
+            "parameters": {
+              "geography": {
+                "codeSystem": "de:AGS",
+                "edition": "2025-01-01",
+                "allocationRevision": "ba011956624e19e2356ce1fc2fc133a78b9b28dbeceb27c742c2c366bdfc31be",
+                "allocationMethod": "explicit-point-weights-v1"
+              },
+              "mapping": {
+                "tableId": "csv",
+                "headerRow": 1,
+                "columns": {
+                  "ags": 1,
+                  "id": 0,
+                  "value": 2
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "municipal-workplaces-v1"
+            }
+          },
+          {
+            "id": "allocation-weights",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "ba011956624e19e2356ce1fc2fc133a78b9b28dbeceb27c742c2c366bdfc31be",
+              "sourceHash": "982bc6687292c150f1f0ebeb83edd87de9be6368a554c9df3feb416128cd49d2",
+              "label": "weights.csv",
+              "origin": "Synthetische Gemeindeaggregate und explizite Verteilungsgewichte",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                }
+              ]
+            },
+            "parameters": {
+              "geography": {
+                "codeSystem": "de:AGS",
+                "edition": "2025-01-01",
+                "allocationMethod": "explicit-point-weights-v1"
+              },
+              "mapping": {
+                "tableId": "csv",
+                "headerRow": 1,
+                "columns": {
+                  "ags": 1,
+                  "id": 0,
+                  "lat": 3,
+                  "lon": 2,
+                  "weight": 4
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "municipality-allocation-v1"
+            }
+          },
+          {
+            "id": "municipal-allocation",
+            "operation": "explicit-point-weights-v1",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [
+              "municipal-totals",
+              "allocation-weights"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                }
+              ]
+            },
+            "parameters": {
+              "geography": {
+                "codeSystem": "de:AGS",
+                "edition": "2025-01-01",
+                "allocationRevision": "ba011956624e19e2356ce1fc2fc133a78b9b28dbeceb27c742c2c366bdfc31be",
+                "allocationMethod": "explicit-point-weights-v1"
+              },
+              "normalization": "all points per AGS, including outside-model points",
+              "unit": "jobs"
+            }
+          },
+          {
+            "id": "legacy-work",
+            "operation": "legacy-delegation",
+            "evidence": "unknown",
+            "selectionRole": "fallback",
+            "source": {
+              "kind": "legacy",
+              "label": "Bisherige Arbeitsplatzgewichte",
+              "origin": "legacy-delegation",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "unit": "model-weight"
+            }
+          },
+          {
+            "id": "work-weights",
+            "operation": "fill-gaps",
+            "evidence": "derived",
+            "selectionRole": "composition",
+            "inputs": [
+              "municipal-allocation",
+              "legacy-work"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "quantitiesComparable": false,
+              "semantics": "model weights; no observed point locations inferred"
+            }
+          }
+        ]
+      },
+      "revision": "2ec992fff04ec16452790fefc34ce8f1a781017f6b9b21b24af440e87f28e1e6",
+      "rowAssignments": [
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "allocationId": "a",
+          "allocationRow": 2,
+          "quantity": 75,
+          "share": 0.75,
+          "status": "applied",
+          "weight": 3,
+          "zone": {
+            "externalId": 100006,
+            "modelIndex": 5
+          }
+        },
+        {
+          "aggregateId": "total-a",
+          "aggregateRow": 2,
+          "ags": "01001000",
+          "allocationId": "b",
+          "allocationRow": 3,
+          "quantity": 25,
+          "share": 0.25,
+          "status": "outside-model",
+          "weight": 1
+        },
+        {
+          "aggregateId": "total-b",
+          "aggregateRow": 3,
+          "ags": "02000000",
+          "allocationId": "c",
+          "allocationRow": 4,
+          "quantity": 0,
+          "share": 1,
+          "status": "applied",
+          "weight": 2,
+          "zone": {
+            "externalId": 100008,
+            "modelIndex": 7
+          }
+        }
+      ],
+      "unresolvedJobs": 0
+    },
+    "populationSource": "user-defined",
+    "populationDistribution": "uniform-noise"
+  }
+}

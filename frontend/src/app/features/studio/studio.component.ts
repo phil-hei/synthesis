@@ -2,6 +2,13 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HelpTipComponent } from '../../shared/help-tip.component';
+import { CompanyTourImportComponent } from './company-tour-import.component';
+import { DataWorkspaceComponent } from '../data/data-workspace.component';
+import { EnergyOperationsPanelComponent } from './energy-operations-panel.component';
+import { emptyOperations, emptyVehicleConfiguration } from '../../core/models/vehicle-operations.model';
+import { EnergyInfrastructurePanelComponent } from './energy-infrastructure-panel.component';
+import { EnergyGeoJson, EnergyQuality, energyPopup } from '../../core/models/energy-infrastructure.model';
+import { forkJoin } from 'rxjs';
 import * as L from 'leaflet';
 import { ApiService } from '../../core/services/api.service';
 import {
@@ -24,18 +31,21 @@ import {
   ParcelDensityGeoJson,
   SimKpis,
   SumoSummary,
+  TrafficRouteProperties,
+  TrafficRoutesGeoJson,
+  TrafficDemandSummary,
   TourFeatureProperties,
   TourGeoJson,
   ZoneFeatureProperties
 } from '../../core/models/results.model';
-import type { LineString, Polygon } from 'geojson';
+import type { LineString, Polygon, Point } from 'geojson';
 
 type DeliveryShareKey = 'shareHome' | 'shareWork' | 'sharePackstation';
 type LogisticsMetricKey = 'parcelsPerPersonWeek' | 'parcelStdDev';
 
 @Component({
   selector: 'app-studio',
-  imports: [CommonModule, FormsModule, HelpTipComponent],
+  imports: [CommonModule, FormsModule, HelpTipComponent, CompanyTourImportComponent, DataWorkspaceComponent, EnergyInfrastructurePanelComponent, EnergyOperationsPanelComponent],
   templateUrl: './studio.component.html',
   styleUrls: ['./studio.component.css']
 })
@@ -67,6 +77,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   workplaceMarginUploadBusy = false;
   randomizeEachRun = false;
 
+  trafficDemandSummary: TrafficDemandSummary | null = null;
   simKpis: SimKpis | null = null;
   sumoSummary: SumoSummary | null = null;
   llmModeChoice: LlmModeChoiceResult | null = null;
@@ -76,6 +87,10 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   simDepots: DepotStats[] = [];
   showParcelLayer = false;
   showTourLayer = false;
+  showPrivateRoutes = false;
+  showLogisticsRoutes = false;
+  freightUploadBusy = false;
+  sevasUploadBusy = false;
   showCongestionLayer = false;
 
   private map!: L.Map;
@@ -90,7 +105,15 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   private congestionLayer: L.GeoJSON<CongestionFeatureProperties, LineString> | null = null;
   private parcelDensity: ParcelDensityGeoJson | null = null;
   private tourData: TourGeoJson | null = null;
+  private trafficRoutes: TrafficRoutesGeoJson | null = null;
+  private trafficRouteLayer: L.GeoJSON<TrafficRouteProperties, LineString> | null = null;
   private congestionData: CongestionGeoJson | null = null;
+  energyData: EnergyGeoJson | null = null;
+  energyQuality: EnergyQuality | null = null;
+  showEnergyLayer = false;
+  showUnconfirmedEnergy = false;
+  private energyLayer: L.GeoJSON<EnergyGeoJson['features'][number]['properties'], Point> | null = null;
+  private energyRequest = 0;
 
   constructor(private api: ApiService) {
   }
@@ -114,6 +137,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopPolling();
+    this.clearEnergyInfrastructure();
     this.map?.remove();
   }
 
@@ -133,6 +157,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   newScenario(): void {
+    this.sourcePlanChanged = false;
     this.stopPolling();
     this.api.scenarioDefaults().subscribe({
       next: defaults => {
@@ -163,6 +188,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onScenarioSelected(): void {
+    this.sourcePlanChanged = false;
     this.stopPolling();
     const selected = this.scenarios.find(s => s.id === this.selectedScenarioId);
     if (!selected) {
@@ -196,6 +222,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
           this.job = job;
           if (job.state === 'DONE') {
             this.loadArtifacts();
+          } else if (job.state === 'FAILED') {
+            this.loadEnergyInfrastructure();
           }
         },
         // Der Job-Status lebt nur im Backend-Prozess. Nach einem Neustart sind die
@@ -414,6 +442,13 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private withMobileCityDefaults(scenario: Scenario): Scenario {
+    scenario.energyInfrastructure ??= { enabled: false, useBnetza: true, useOsm: true };
+    scenario.energyInfrastructure.verifyNetworkAccess ??= false;
+    scenario.energyInfrastructure.maxSnapDistanceM ??= 50;
+    scenario.vehicleOperations ??= emptyOperations();
+    scenario.vehicleConfiguration ??= emptyVehicleConfiguration();
+    scenario.freight ??= { enabled: false, day: 0, relations: [] };
+    scenario.companyTours ??= { enabled: false, imports: [] };
     scenario.referenceYear ??= 2026;
     scenario.mobileCity ??= { useTemplate: false, templateId: 'tramigo-v2' };
     scenario.population.useCensusStructure ??= false;
@@ -648,6 +683,12 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
       targets.splice(i, 1);
+      if (target === 'sumo' && this.scenario.freight) {
+        this.scenario.freight.sevasEnabled = false; this.scenario.freight.profileChecksEnabled = false;
+      }
+      if (target === 'sumo') {
+        if (this.scenario.energyInfrastructure) this.scenario.energyInfrastructure.verifyNetworkAccess = false;
+      }
       if (target === 'logitopp') {
         this.scenario.logistics.returns.enabled = false;
       }
@@ -1143,6 +1184,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private drawRegion(): void {
+    this.clearEnergyInfrastructure();
     this.regionLayer?.remove();
     this.regionLayer = null;
     if (!this.scenario?.region) {
@@ -1172,7 +1214,28 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // --- Generierung ----------------------------------------------------------
 
+  companyTourPending = false;
+  dataWorkspaceOpen = false;
+  dataImportPending = false;
+  sourcePlanChanged = false;
+  openDataWorkspace(): void {
+    this.dataWorkspaceOpen = true;
+    (document.getElementById('data-workspace-dialog') as HTMLDialogElement | null)?.showModal();
+  }
+  closeDataWorkspace(event?: Event): void {
+    event?.preventDefault();
+    if (this.dataImportPending && !window.confirm('Ungespeicherte Importzuordnungen und Quellenprofilentwürfe verwerfen? Gespeicherte Importe und Profilversionen bleiben erhalten.')) return;
+    (document.getElementById('data-workspace-dialog') as HTMLDialogElement | null)?.close();
+    this.dataWorkspaceOpen = false; this.dataImportPending = false;
+  }
+  dataPlanChanged(): void { this.sourcePlanChanged = true; }
+
   generate(): void {
+    if (this.dataImportPending) { this.message = 'Geänderten Datenimport oder Quellenprofilentwurf zuerst speichern oder die Änderungen im Datenarbeitsbereich verwerfen.'; return; }
+    if (this.companyTourPending) {
+      this.message = 'Geänderten Unternehmenstouren-Kontext zuerst speichern oder durch erneute Importauswahl verwerfen.';
+      return;
+    }
     if (!this.scenario?.id) {
       this.message = 'Bitte zuerst speichern';
       return;
@@ -1197,6 +1260,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private startGeneration(scenarioId: string): void {
+    this.clearEnergyInfrastructure();
     this.api.generate(scenarioId).subscribe({
       next: job => {
         this.job = job;
@@ -1227,7 +1291,10 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
           if (job.state === 'DONE' || job.state === 'FAILED') {
             this.stopPolling();
             if (job.state === 'DONE') {
+              this.sourcePlanChanged = false;
               this.loadArtifacts();
+            } else {
+              this.loadEnergyInfrastructure();
             }
           }
         },
@@ -1273,16 +1340,21 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Lädt KPIs, Depot-Statistiken und Kartenlayer; 404 = Simulation übersprungen. */
   private loadSimulation(): void {
     this.clearSimulation();
+    this.loadEnergyInfrastructure();
     const id = this.scenario?.id;
     if (!id) {
       return;
     }
+    this.api.artifactJson<TrafficDemandSummary>(id, 'demand/traffic-summary.json')
+      .subscribe({ next: value => this.trafficDemandSummary = value, error: () => this.trafficDemandSummary = null });
     this.api.artifactJson<SimKpis>(id, 'simulation/kpis.json')
       .subscribe({ next: kpis => this.simKpis = kpis, error: () => this.simKpis = null });
     this.api.artifactJson<DepotStats[]>(id, 'simulation/depot-stats.json')
       .subscribe({ next: depots => this.simDepots = depots, error: () => this.simDepots = [] });
     this.api.artifactJson<ParcelDensityGeoJson>(id, 'simulation/parcel-density.geojson')
       .subscribe({ next: geo => this.parcelDensity = geo, error: () => this.parcelDensity = null });
+    this.api.artifactJson<TrafficRoutesGeoJson>(id, 'sumo/traffic-routes.geojson')
+      .subscribe({ next: geo => this.trafficRoutes = geo, error: () => this.trafficRoutes = null });
     this.api.artifactJson<TourGeoJson>(id, 'simulation/tours.geojson')
       .subscribe({ next: geo => this.tourData = geo, error: () => this.tourData = null });
     this.api.artifactJson<SumoSummary>(id, 'sumo/summary.json')
@@ -1296,6 +1368,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private clearSimulation(): void {
+    this.clearEnergyInfrastructure();
+    this.trafficDemandSummary = null;
     this.simKpis = null;
     this.sumoSummary = null;
     this.llmModeChoice = null;
@@ -1305,6 +1379,11 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     this.simDepots = [];
     this.parcelDensity = null;
     this.tourData = null;
+    this.trafficRoutes = null;
+    this.trafficRouteLayer?.remove();
+    this.trafficRouteLayer = null;
+    this.showPrivateRoutes = false;
+    this.showLogisticsRoutes = false;
     this.congestionData = null;
     this.parcelLayer?.remove();
     this.parcelLayer = null;
@@ -1317,8 +1396,146 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showCongestionLayer = false;
   }
 
+  clearEnergyInfrastructure(): void {
+    this.energyRequest++;
+    this.energyLayer?.remove(); this.energyLayer = null;
+    this.energyData = null; this.energyQuality = null;
+    this.showEnergyLayer = false; this.showUnconfirmedEnergy = false;
+  }
+
+  private loadEnergyInfrastructure(): void {
+    this.clearEnergyInfrastructure();
+    const scenario = this.scenario;
+    if (!scenario?.id || !scenario.region || !scenario.energyInfrastructure?.enabled) return;
+    const id = scenario.id, request = this.energyRequest;
+    forkJoin({
+      data: this.api.artifactJson<EnergyGeoJson>(id, 'energy/stations.geojson'),
+      quality: this.api.artifactJson<EnergyQuality>(id, 'energy/quality.json')
+    }).subscribe({
+      next: ({ data, quality }) => {
+        const current = this.scenario;
+        if (request !== this.energyRequest || current?.id !== id || !current.region) return;
+        const sameRegion = (['minLon', 'minLat', 'maxLon', 'maxLat'] as const).every(key => current.region![key] === data.region[key]);
+        const config = current.energyInfrastructure;
+        if (!sameRegion || current.referenceYear !== data.referenceYear || !config?.enabled
+          || config.useBnetza !== data.configuration.useBnetza || config.useOsm !== data.configuration.useOsm) return;
+        this.energyData = data; this.energyQuality = quality;
+      },
+      error: () => { /* Missing artifacts do not imply observed zero supply. */ }
+    });
+  }
+
+  toggleEnergyLayer(): void {
+    this.showEnergyLayer = !this.showEnergyLayer; this.drawEnergyLayer();
+  }
+
+  toggleUnconfirmedEnergy(): void {
+    this.showUnconfirmedEnergy = !this.showUnconfirmedEnergy; this.drawEnergyLayer();
+  }
+
+  private drawEnergyLayer(): void {
+    this.energyLayer?.remove(); this.energyLayer = null;
+    if (!this.showEnergyLayer || !this.energyData || !this.map) return;
+    this.energyLayer = L.geoJSON<EnergyGeoJson['features'][number]['properties'], Point>(this.energyData, {
+      attribution: 'Bundesnetzagentur.de (CC BY 4.0); © OpenStreetMap contributors (ODbL)',
+      filter: feature => feature.properties.access === 'public' || this.showUnconfirmedEnergy,
+      pointToLayer: (feature, latlng) => {
+        const carrier = feature.properties.offers[0]?.carrier;
+        const color = carrier === 'electricity' ? '#047857' : carrier === 'hydrogen' ? '#c2410c' : '#1d4ed8';
+        return L.circleMarker(latlng, { radius: 6, color, weight: 2, fillOpacity: feature.properties.access === 'public' ? .8 : .25 });
+      },
+      onEachFeature: (feature, layer) => layer.bindPopup(energyPopup(feature.properties), {
+        maxWidth: Math.max(160, Math.min(320, this.map.getSize().x - 50))
+      })
+    }).addTo(this.map);
+  }
+
   get hasSimLayers(): boolean {
-    return !!this.parcelDensity || !!this.tourData || !!this.congestionData;
+    return !!this.parcelDensity || !!this.tourData || !!this.congestionData || !!this.trafficRoutes;
+  }
+
+  setFreightEnabled(enabled: boolean): void {
+    if (!this.scenario?.freight) return;
+    this.scenario.freight.enabled = enabled;
+    if (!enabled) {
+      this.scenario.freight.sevasEnabled = false;
+      this.scenario.freight.profileChecksEnabled = false;
+    }
+    if (enabled) {
+      this.scenario.population.samplingFraction = 1;
+      this.message = 'Schwerer Güterverkehr für die gemeinsame Nachfrage aktiviert. Bitte vorbereitete Fahrtenbeziehungen hochladen.';
+    }
+  }
+
+  get freightTripCount(): number {
+    return this.scenario?.freight?.relations.reduce((sum, row) => sum + row.trips, 0) ?? 0;
+  }
+
+  onFreightSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0]; input.value = '';
+    if (!file || !this.scenario?.id) return;
+    this.freightUploadBusy = true;
+    const id = this.scenario.id;
+    this.api.uploadFreight(id, file).subscribe({
+      next: freight => {
+        if (this.scenario?.id === id && this.scenario.freight) this.scenario.freight.relations = freight.relations;
+        this.freightUploadBusy = false;
+        this.message = `${freight.relations.length} Güterverkehrsbeziehungen übernommen. Quelle: eigene Eingabedaten; noch nicht kalibriert.`;
+      },
+      error: err => {
+        this.freightUploadBusy = false;
+        this.message = 'Güterverkehrs-Upload fehlgeschlagen: ' + (err.error?.message ?? err.message);
+      }
+    });
+  }
+
+  onSevasSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const id = this.scenario?.id;
+    if (!file || !id) return;
+    this.sevasUploadBusy = true;
+    this.api.uploadSevas(id, file).subscribe({
+      next: freight => {
+        if (this.scenario?.id === id && this.scenario.freight) this.scenario.freight.sevasSnapshot = freight.sevasSnapshot;
+        this.sevasUploadBusy = false;
+        this.message = `${freight.sevasSnapshot?.features.length ?? 0} SEVAS-Segmente übernommen. Anwendbare Sperren werden im SUMO-Lauf geprüft.`;
+      },
+      error: err => {
+        this.sevasUploadBusy = false;
+        this.message = 'SEVAS-Upload fehlgeschlagen: ' + (err.error?.message ?? err.message);
+      }
+    });
+    input.value = '';
+  }
+
+  get hasFreightCheckReport(): boolean {
+    return this.artifacts.some(artifact => artifact.path === 'freight/route-checks.json');
+  }
+
+  get hasFreightNetwork(): boolean {
+    return this.artifacts.some(artifact => artifact.path === 'sumo/freight-network.geojson');
+  }
+
+  downloadFreightTemplate(): void {
+    const header = 'id;vehicleClass;movement;fromLon;fromLat;toLon;toLat;trips;beginHour;endHour;source;referenceDate;fromEdge;toEdge\n';
+    const url = URL.createObjectURL(new Blob([header], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a'); link.href = url; link.download = 'freight-demand.csv'; link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  toggleTrafficRoutes(category: 'private' | 'logistics'): void {
+    if (category === 'private') this.showPrivateRoutes = !this.showPrivateRoutes;
+    else this.showLogisticsRoutes = !this.showLogisticsRoutes;
+    this.trafficRouteLayer?.remove(); this.trafficRouteLayer = null;
+    if (!this.trafficRoutes || (!this.showPrivateRoutes && !this.showLogisticsRoutes)) return;
+    this.trafficRouteLayer = L.geoJSON<TrafficRouteProperties, LineString>(this.trafficRoutes, {
+      filter: f => f.properties.trafficCategory === 'private' ? this.showPrivateRoutes : this.showLogisticsRoutes,
+      style: f => ({ color: f?.properties.trafficCategory === 'logistics' ? '#d35400' : '#2471a3', weight: 2, opacity: 0.5 }),
+      onEachFeature: (f, layer) => layer.bindTooltip(
+        `${f.properties.trafficCategory === 'logistics' ? 'Logistik' : 'Privat / Personenverkehr'} · ${f.properties.vehicleType} · ${f.properties.demandSource}`)
+    }).addTo(this.map);
   }
 
   toggleParcelLayer(): void {

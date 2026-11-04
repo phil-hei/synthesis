@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "scenarioId": "9ed7e8fb",
+  "pack": "74338f6705ca1d69b29e21d95544cb7a3b1ddb0a35d998975a129b7b92abba3f",
+  "profile": "075704b5bec4ba9ad9ae0910766bfeb059599be3f184f69575fb2bd5ae964f08",
+  "parts": [
+    {
+      "revision": "01cb5d43bbc410321d1e8c868e2e441a38342bacc3ebb2077456f2a208dbdc2f",
+      "inputJobs": 12,
+      "appliedJobs": 12,
+      "shadowedJobs": 0,
+      "outsideJobs": 0,
+      "unappliedPartialJobs": 0
+    },
+    {
+      "revision": "09e8b77e6f61ef7688e398dcfce4f62801d194d970c5440d762fbfcbca9f7cfe",
+      "inputJobs": 106,
+      "appliedJobs": 7,
+      "shadowedJobs": 99,
+      "outsideJobs": 0,
+      "unappliedPartialJobs": 0
+    }
+  ],
+  "gapStatus": "not-required"
+}

@@ -1,0 +1,65 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "properties": {
+        "segment_id": 1,
+        "restrkn_id": 6170,
+        "name": "Synthetische Testkante",
+        "osm_vers": "osm_20260325",
+        "osm_id": 20,
+        "fahrtri": "0",
+        "typ": "253",
+        "wert": "",
+        "tage_einzl": "0000000",
+        "tage_grppe": "0",
+        "zeit1_von": "",
+        "zeit1_bis": "",
+        "zeit2_von": "",
+        "zeit2_bis": "",
+        "gemeinde": "Test",
+        "kreis": "Test",
+        "regbezirk": "Test",
+        "vz_1010_51": "false",
+        "vz_1010_57": "false",
+        "vz_1010_60": "false",
+        "vz_1020_12": "false",
+        "vz_1020_30": "false",
+        "vz_1024_12": "false",
+        "vz_1024_13": "false",
+        "vz_1024_14": "false",
+        "vz_1026_31": "false",
+        "vz_1026_32": "false",
+        "vz_1026_33": "false",
+        "vz_1026_34": "false",
+        "vz_1026_35": "false",
+        "vz_1026_36": "false",
+        "vz_1026_37": "false",
+        "vz_1026_38": "false",
+        "vz_1026_39": "false",
+        "vz_1026_62": "false",
+        "vz_1048_14": "false",
+        "vz_1048_15": "false",
+        "vz_1049_13": "false",
+        "vz_1053_33": "",
+        "vz_1053_36": "false",
+        "vz_1053_37": "false"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            7.402,
+            51.5
+          ],
+          [
+            7.404,
+            51.5
+          ]
+        ]
+      }
+    }
+  ]
+}

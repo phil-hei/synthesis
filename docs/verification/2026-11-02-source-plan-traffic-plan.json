@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-02",
+  "scope": "Source-plan heavy OD plus independent company demand; synthetic contract and native SUMO acceptance, not empirical regional calibration",
+  "fixtures": {
+    "backend/src/test/resources/source-plan-traffic/company.csv": "0fde9fada9ba9ca8e42cc02649e87805264168a8e0c213735b9e78412fe7a5f1",
+    "backend/src/test/resources/source-plan-traffic/freight-a.csv": "2f96c98a6c393419f358d7c0fbcb7a8c14a3b38d50f3e1b3f16267477895bba3",
+    "backend/src/test/resources/source-plan-traffic/freight-b.csv": "a2723ed1ad73e9d7cf25f2a778365a0524c281407741126e5deff86a37a61f81",
+    "backend/src/test/resources/source-plan-traffic/network.osm": "8ae24af77c414605a51341789b12e7bc3a56b5b9afb2e0a98b0e30827aff6b69",
+    "backend/src/test/resources/source-plan-traffic/north/freight-a.csv": "9f766bc529ca9d8ec41633fb9937c35d06c9bd548665e6626d7fb5eec5ef8d73",
+    "backend/src/test/resources/source-plan-traffic/north/freight-b.csv": "6c01cd6dc4d73a65a455d4e986a0dcfb4b91d2aca668a3af6fa9bb1533977d81",
+    "backend/src/test/resources/source-plan-traffic/north/network.osm": "336ffb6ec6c5cc5cd9947233cc686bf903ab47ce226ba31fffe4eb8fe28ba1c7"
+  },
+  "seeds": [
+    7,
+    42,
+    777
+  ],
+  "regions": [
+    "synthetic network near 8.2/48.85",
+    "same topology translated to 7.4/51.5"
+  ],
+  "expected": {
+    "legacyAndRevisionA": {
+      "heavyTrips": 8,
+      "companyLegs": 3,
+      "totalCommonMovements": 11
+    },
+    "revisionB": {
+      "heavyTrips": 9,
+      "companyLegs": 3,
+      "totalCommonMovements": 12
+    },
+    "excludedHeavy": {
+      "heavyTrips": 0,
+      "companyLegs": 3,
+      "totalCommonMovements": 3
+    }
+  },
+  "invariants": [
+    "input scenario configuration stays unchanged by preflight and generation",
+    "private population/activity/matrix/logistics/legacy files remain byte-identical across heavy source changes",
+    "company legs and import/mapping/execution identities remain unchanged",
+    "unchanged heavy relations retain exact departures after changing another relation",
+    "requested, routed, departed and completed quantities verified separately",
+    "native SUMO failures/skips are reported as such; no empirical quality inferred"
+  ],
+  "nativeRequirements": [
+    "installed SUMO runtime",
+    "synthetic local road upload; no external network or logiTopp needed"
+  ],
+  "limits": [
+    "no simulated private demand in these native runs: population artifacts only; logiTopp explicitly disabled",
+    "no full MobileCity acceptance or real-region city/rural source validation",
+    "no isolated pre-refactor baseline"
+  ],
+  "comparisonArtifacts": [
+    "population/person.csv",
+    "population/household.csv",
+    "population/activity.csv",
+    "zone-repository/attractivities.csv",
+    "freight/trips.csv",
+    "demand/traffic-demand.json"
+  ],
+  "companyContext": {
+    "date": "2026-10-19",
+    "startReturnTime": [
+      "00:00",
+      "00:10"
+    ],
+    "baseLongitudes": {
+      "depot": 8.201,
+      "stopA": 8.203,
+      "stopB": 8.205
+    },
+    "baseLatitude": 48.85,
+    "northLongitudes": {
+      "depot": 7.401,
+      "stopA": 7.403,
+      "stopB": 7.405
+    },
+    "northLatitude": 51.5,
+    "vehicle": "van-1"
+  },
+  "selectionModes": [
+    "legacy disabled plan",
+    "explicit revision A",
+    "ordered source profile selecting A",
+    "explicit revision B",
+    "excluded heavy background"
+  ]
+}

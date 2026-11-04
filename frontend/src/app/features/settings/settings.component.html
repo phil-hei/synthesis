@@ -1,0 +1,46 @@
+<main class="settings-page">
+  <header class="page-heading"><div class="eyebrow">ARBEITSUMGEBUNG</div><h1>Einstellungen</h1>
+    <p>Werkzeuge und Laufzeiten für alle Szenarien dieser Installation.</p>
+  </header>
+  <aside class="info">Pfade beziehen sich auf den Rechner, auf dem das Backend läuft. Relative Pfade starten im Backend-Arbeitsverzeichnis; <code>~</code> wird nicht aufgelöst. Speichern prüft die Eingaben, installiert oder startet aber keine Werkzeuge.</aside>
+  @if (error) { <div class="error" role="alert">{{ error }}</div> }
+  @if (loading) { <p role="status">Einstellungen werden geladen …</p> }
+  @if (!settings && !loading) { <button type="button" (click)="load()">Erneut laden</button> }
+  @if (settings; as tools) {
+    @if (restartRequired) {
+      <div class="restart" role="status"><strong>Backend-Neustart erforderlich.</strong> Gespeicherte Änderungen werden beim nächsten Start aktiv. Laufende und neue Jobs nutzen bis dahin die bisherige Konfiguration.</div>
+    }
+    @if (saved) { <p class="success" role="status">{{ restartRequired ? 'Einstellungen gespeichert.' : 'Einstellungen gespeichert und bereits aktiv.' }}</p> }
+    <form #settingsForm="ngForm" (ngSubmit)="save()">
+      <fieldset [disabled]="saving || loading">
+        <div class="settings-layout">
+          <nav aria-label="Einstellungsbereiche">
+            @for (section of sections; track section.key) { <a [href]="'/einstellungen#' + section.key">{{ section.title }}</a> }
+          </nav>
+          <div class="sections">
+            @for (section of sections; track section.key) {
+              <section class="card" [id]="section.key" [attr.aria-labelledby]="section.key + '-heading'">
+                <div class="section-heading"><div><h2 [id]="section.key + '-heading'">{{ section.title }}</h2><p>{{ section.description }}</p></div>
+                  <label class="toggle"><input type="checkbox" [name]="section.key + '-enabled'" [(ngModel)]="tools[section.key].enabled" (ngModelChange)="saved = false"> Aktiviert</label>
+                </div>
+                @for (field of section.fields; track field.key) {
+                  <div class="field"><label [for]="section.key + '-' + field.key">{{ field.label }}</label>
+                    <input [id]="section.key + '-' + field.key" [name]="section.key + '-' + field.key"
+                      [type]="field.type || 'text'" [ngModel]="value(section.key, field.key)" (ngModelChange)="change(section.key, field.key, $event)"
+                      [required]="!field.optional" [min]="field.min ?? null" [max]="field.max ?? null" [step]="field.step ?? 1"
+                      [attr.maxlength]="field.key === 'model' ? 200 : 2048" [attr.aria-describedby]="field.hint ? section.key + '-' + field.key + '-hint' : null" spellcheck="false">
+                    @if (field.hint) { <small [id]="section.key + '-' + field.key + '-hint'">{{ field.hint }}</small> }
+                  </div>
+                }
+              </section>
+            }
+          </div>
+        </div>
+      </fieldset>
+      <footer class="actions"><span>{{ dirty ? 'Ungespeicherte Änderungen' : 'Änderungen gelten nach einem Backend-Neustart.' }}</span>
+        <button type="button" (click)="load()" [disabled]="!dirty || saving || loading">Änderungen verwerfen</button>
+        <button class="primary" type="submit" [disabled]="!dirty || settingsForm.invalid || saving || loading">{{ saving ? 'Wird gespeichert …' : 'Einstellungen speichern' }}</button>
+      </footer>
+    </form>
+  }
+</main>

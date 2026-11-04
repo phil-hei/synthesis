@@ -12,6 +12,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class SumoRunnerDeliveryTourTest {
 
+    @Test void preservesFractionalServiceMinutesForNativeStopsAndRejectsInvalidService(@TempDir Path tempDir) throws Exception {
+        Path tours = tempDir.resolve("planned-tours.csv");
+        String header = "tourId;vehicleType;fromX;fromY;toX;toY;plannedTimeSimMin;tripDur;deliveryDur\n";
+        Files.writeString(tours, header + "7;2;8;48;8.01;48;5;1;0.5\n");
+        var runner = new SumoRunner(new SynthesisProperties.Sumo());
+        assertThat(runner.readDeliveryLegs(tours).getFirst().serviceSeconds()).isEqualTo(30);
+        Files.writeString(tours, header + "7;2;8;48;8.01;48;5;1;-1\n");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> runner.readDeliveryLegs(tours)).isInstanceOf(java.io.IOException.class);
+    }
+
     @Test
     void closesNormalTourFromLastStopBackToDepot(@TempDir Path tempDir) throws Exception {
         Path tours = tempDir.resolve("planned-tours.csv");

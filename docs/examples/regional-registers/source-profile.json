@@ -1,0 +1,22 @@
+{
+  "contract": "synthesis-source-profile-v1",
+  "name": "Register regional ergänzen (synthetisch)",
+  "aspects": {
+    "opportunities.work": {
+      "candidates": [
+        {
+          "provider": "pack:74338f6705ca1d69b29e21d95544cb7a3b1ddb0a35d998975a129b7b92abba3f:register-a",
+          "excluded": false,
+          "onUnavailable": "next"
+        },
+        {
+          "provider": "pack:74338f6705ca1d69b29e21d95544cb7a3b1ddb0a35d998975a129b7b92abba3f:register-b",
+          "excluded": false,
+          "onUnavailable": "next"
+        }
+      ],
+      "fallback": "none",
+      "strategy": "fill-gaps"
+    }
+  }
+}

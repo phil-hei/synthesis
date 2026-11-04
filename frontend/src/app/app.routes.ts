@@ -11,5 +11,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/comparison/comparison.component')
       .then(module => module.ComparisonComponent)
   },
+  {
+    path: 'einstellungen',
+    canDeactivate: [(component: { dirty: boolean }) => !component.dirty || window.confirm('Ungespeicherte Einstellungen verwerfen?')],
+    loadComponent: () => import('./features/settings/settings.component')
+      .then(module => module.SettingsComponent)
+  },
   { path: '**', redirectTo: '' }
 ];

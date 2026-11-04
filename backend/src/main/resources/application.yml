@@ -12,6 +12,19 @@ spring:
       max-request-size: 210MB
 
 synthesis:
+  # Unternehmenstouren: lokaler LLM-Vorschlag, zusätzlich zum immer manuellen Mapping.
+  # company-tour-import:
+  #   llm-enabled: false
+  #   source-analysis-enabled: false # Explizit: Quelltexte/Tabellenproben an lokalen LLM senden
+  #   document-python: python3       # Mit pypdf für PDF-Text
+  #   document-extractor: ../scripts/extract-tour-document.py
+  #   endpoint: http://localhost:11434/v1
+  #   model: qwen2.5:7b-instruct
+  #   timeout-seconds: 60
+  #   geocoding-enabled: false       # Opt-in, ausschließlich lokaler Nominatim-kompatibler Dienst
+  #   geocoding-endpoint: http://127.0.0.1:8585
+  #   geocoding-timeout-seconds: 3
+  #   geocoding-max-batch: 10
   data-dir: data
   max-zones: 600                         # Default neuer Szenarien; in der UI pro Szenario einstellbar
   max-zones-hard-limit: 1200             # Schutzgrenze, da mehrere OD-Matrizen quadratisch wachsen

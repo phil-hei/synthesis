@@ -62,7 +62,7 @@ class DemandArtifactsTest {
         assertThat(Files.readAllLines(first.resolve("person-trips.csv")).getFirst())
                 .isEqualTo("personOid;tripId;plannedDepartureMinute;plannedArrivalMinute;"
                         + "mode;modeCode;tripModeCode;originZoneId;destinationZoneId;"
-                        + "fromLon;fromLat;toLon;toLat;distanceKm;legCount");
+                        + "fromLon;fromLat;toLon;toLat;distanceKm;legCount;trafficCategory");
 
         List<String> od = Files.readAllLines(first.resolve("od-flows.csv"));
         assertThat(od).anyMatch(line -> line.startsWith("0;0;0;A;B;car;1;2"));

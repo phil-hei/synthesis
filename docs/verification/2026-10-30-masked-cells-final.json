@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-30",
+  "scope": "Explicit EPSG:3035 masked cells for Work and population; not full concept acceptance",
+  "backend": {
+    "tests": 462,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 9
+  },
+  "backendExecutionDate": "2026-10-29",
+  "skippedCases": [
+    "de.synthesis.generation.pipeline.MobileCityRastattSourcesTest.exportsObservedRastattSourcesWithoutSilentFallback",
+    "de.synthesis.generation.pipeline.ActitoppIntegrationTest.pinnedRunnerProducesValidWeeklySchedules",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.cacheAvoidsRepeatLlmCalls",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.sameSeedIsReproducible",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.liveLlmProducesPersonaPlans",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.whatIfContextYieldsReasons",
+    "de.synthesis.generation.pipeline.PtIntegrationTest.fullTransitChainRidesBuses",
+    "de.synthesis.generation.pipeline.LlmModeChoiceTest.aggregatesValidModalSplitAndIsReproducible",
+    "de.synthesis.generation.pipeline.MobileCityCrossMunicipalitySourcesTest.exportsObservedCrossMunicipalitySourcesWithPerZoneEvidence"
+  ],
+  "focusedSourcesTests": 82,
+  "frontend": {
+    "tests": 112,
+    "productionBuild": "passed"
+  },
+  "exampleProof": "2026-10-30-masked-cells-example.json",
+  "remaining": [
+    "arbitrary CRS/GeoTIFF and native census mask migration",
+    "subzone residual allocation",
+    "full migration of remaining source families",
+    "authoritative territorial crosswalks",
+    "empirical freight fallback and real-region model acceptance"
+  ],
+  "browserProof": "2026-10-30-masked-cells-ui.json",
+  "householdRounding": {
+    "targetPersons": 60,
+    "actualPersons": 63,
+    "difference": 3
+  }
+}

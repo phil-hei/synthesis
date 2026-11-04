@@ -1,0 +1,5 @@
+id;fromLon;fromLat;toLon;toLat;trips;vehicleClass;movement;beginHour;endHour
+internal;8.2002;48.85;8.2058;48.85;2;truck;internal;0;0.1
+inbound;8.2002;48.85;8.2058;48.85;2;trailer;inbound;0;0.1
+outbound;8.2002;48.85;8.2058;48.85;2;truck;outbound;0;0.1
+through;8.2002;48.85;8.2058;48.85;2;trailer;through;0;0.1

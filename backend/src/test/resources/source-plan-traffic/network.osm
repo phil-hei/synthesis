@@ -1,0 +1,13 @@
+<osm version="0.6">
+<node id="1" lat="48.85" lon="8.2"/><node id="2" lat="48.85" lon="8.202"/>
+<node id="3" lat="48.85" lon="8.204"/><node id="4" lat="48.852" lon="8.203"/>
+<node id="5" lat="48.85" lon="8.206"/><node id="6" lat="48.848" lon="8.203"/>
+<node id="7" lat="48.851" lon="8.2"/><node id="8" lat="48.851" lon="8.206"/>
+<way id="10"><nd ref="1"/><nd ref="2"/><tag k="highway" v="primary"/><tag k="oneway" v="yes"/></way>
+<way id="20"><nd ref="2"/><nd ref="3"/><tag k="highway" v="primary"/><tag k="oneway" v="yes"/><tag k="hgv" v="no"/></way>
+<way id="30"><nd ref="2"/><nd ref="4"/><nd ref="3"/><tag k="highway" v="primary"/><tag k="oneway" v="yes"/></way>
+<way id="40"><nd ref="3"/><nd ref="5"/><tag k="highway" v="primary"/><tag k="oneway" v="yes"/></way>
+<way id="50"><nd ref="5"/><nd ref="6"/><nd ref="1"/><tag k="highway" v="primary"/><tag k="oneway" v="yes"/></way>
+<way id="60"><nd ref="1"/><nd ref="7"/><nd ref="8"/><nd ref="5"/><tag k="highway" v="primary"/><tag k="oneway" v="yes"/></way>
+<way id="70"><nd ref="1"/><nd ref="7"/><nd ref="8"/><nd ref="5"/><tag k="highway" v="footway"/></way>
+</osm>

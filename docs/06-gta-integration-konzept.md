@@ -93,6 +93,21 @@ Weglänge). Änderbar nur durch **Neu-Kalibrierung** dieser Parameter (siehe D).
 
 ---
 
+### A.8 Austauschbare Datenquellen und Fallbacks — erster experimenteller Schnitt (2026-10-28)
+
+Die [Bestandsanalyse und der Architekturvorschlag](22-datenquellen-adapter-und-fallbackkonzept.md)
+ordnen die heutigen Quellen ihren tatsächlichen Nachfrage-/Angebotsbeiträgen zu und
+unterscheiden globale Formate, nationale Datenbestände, regionale Quellen sowie
+übertragene Modellprofile. Vorgeschlagen sind Quelladapter und Auswahlregeln je
+fachlichem Aspekt, mit expliziter Teilabdeckung, Herkunft und Ersatzannahmen. Für
+Schwerlastverkehr gibt es zunächst einen expliziten Mengenannahmenpfad;
+fehlende Quellen dürfen nicht als beobachteter Nullverkehr erscheinen.
+Der [erste experimentelle Umsetzungsschnitt](22-datenquellen-adapter-und-fallbackkonzept.md#19-erste-experimentelle-umsetzung-und-verifikation)
+ist standardmäßig ausgeschaltet. Er umfasst gemeinsame Reader und Feldzuordnung,
+unveränderliche Importrevisionen, drei Fachverträge und einen Studioarbeitsbereich.
+Das vollständige Quelleninventar und weitere Providerprofile bleiben im verlinkten
+Konzept beschrieben; die übrigen Bestandsquellen sind noch nicht migriert.
+
 ## B. Integrationskonzept GTA-Ansatz
 
 ### B.1 Leitidee und Abgrenzung
@@ -1196,6 +1211,33 @@ nutzen ausschließlich Open-Source-Tooling; Phase 5 ist nicht-technisch (Kontakt
   echten logiTopp-Lauf; weitere Prompt-/Frequenz-Kalibrierung.
 
 ### Phase 4 – Produktiv-Härtung (querschnittlich)
+- **✅ Globale Tool-Einstellungen (2026-10-22):** Ein Zahnrad rechts in der Kopfzeile
+  öffnet `/einstellungen`: SUMO-Binärverzeichnis/SUMO_HOME, OpenAI-kompatibler LLM-Endpunkt,
+  Modellname, Temperatur und Anfragebudget sowie actiTopp-/logiTopp-Adapter, Transit-Python/
+  `gtfs2pt.py` und MobileCity-Python/.NET/ConfigTool mit Zeitlimits und globalen Freigaben.
+  Diese Betriebswerte gehören zur Installation; Szenarioziele, Seeds und fachliche Parameter
+  bleiben im Studio. Die Modellauswahl erfolgt über den exakten Namen eines bereits beim
+  LLM-Dienst verfügbaren Modells; Installation, API-Key-Verwaltung und Modellerkennung sind
+  nicht Teil dieses Bereichs. Der separate Unternehmenstouren-Assistent behält seine eigene
+  `synthesis.company-tour-import`-Konfiguration.
+- **Persistenz und Aktivierung:** `GET/PUT /api/settings/tools` liefert gespeicherte und aktive
+  Werte plus `restartRequired`. Ein begrenztes, validiertes DTO wird atomar unter
+  `<synthesis.data-dir>/tool-settings.json` geschrieben (standardmäßig
+  `backend/data/tool-settings.json`). Änderungen werden ausschließlich beim Backend-Neustart
+  nach Spring-Property-Binding und vor Übergabe an Konsumenten geladen; laufende und bis dahin
+  gestartete Jobs verwenden die aktive Konfiguration. Die gespeicherten Felder haben Vorrang
+  vor YAML/Umgebungswerten, andere Betriebs-Properties bleiben erhalten. Zum Rücksetzen auf
+  die YAML-/Umgebungswerte die Datei bei gestopptem Backend sichern/entfernen und neu starten.
+  Eine beschädigte Datei stoppt den Start mit Dateipfad im Fehler, statt still andere Werkzeuge
+  zu verwenden. Pfade gelten auf dem Backend-Rechner; Verfügbarkeit wird weiterhin durch die
+  jeweiligen Runner geprüft, Speichern installiert oder startet kein Tool.
+- **Verifiziert:** `ToolSettingsTest` (5 Tests: atomare Persistenz, unveränderte aktive Werte,
+  echtes Spring-Binding beim Neustart, HTTP-Validierung ohne Überschreiben, Schreibfehler/
+  Cleanup und beschädigte Startdatei); Backend-Suite 354 Tests, 0 Fehler, 4 umgebungsabhängig
+  übersprungen. Frontend-Suite 80 Tests inklusive vier Settings-Interaktionstests und
+  Navigation, Produktions-AOT-Build grün. Browserprüfung gegen einen isolierten temporären
+  Datenordner: Laden, LLM-Änderung, Speichern, Neustart-Hinweis und Rückkehr auf aktive Werte.
+  Ungespeicherte Eingaben werden beim Verlassen der Seite bzw. Schließen des Fensters geschützt.
 - **✅ Sampling-Vertrag und Routing-Provenienz korrigiert (2026-07-27):**
   `samplingFraction` wird bereits in `PopulationGenerator` auf die synthetisierte/exportierte
   Bevölkerung angewandt; logiTopp verarbeitet diesen Export jetzt mit
@@ -2441,3 +2483,1259 @@ stoppspezifische Tourplanung und zeitabhängige Matrizen bleiben offen.
 9 explizit übersprungen, keine Fehler; 53 Frontendtests und Produktionsbuild
 bestanden. Alle fünf Straßenroutentests einschließlich nativer Kette bestanden
 ohne Skip. [Prüfbericht](verification/2026-10-07-shared-road-routes.json).
+
+
+## Schwerer Güterverkehr und Routenkennzeichnung (✅ 2026-10-10, experimentell)
+
+`freight.enabled=false` ergänzt die bestehende Logistikstufe um normalisierte Tages-OD-
+Fahrten. CSV-Import im Studio, Quellen-Snapshot und separater Seed liefern schwere
+Solo-LKW (`truck`) und Sattelzüge (`trailer`) zusätzlich zu Personen- und Paketverkehr.
+SUMO routet mit Klassenberechtigungen, prüft fehlende schwere Routen/Fahrzeuge und
+protokolliert unvollständige Fahrten am Tagesende. Aktives Freight setzt vollständige
+Personennachfrage voraus und deaktiviert Modus-Caps. Gütertag und SUMO-Tag müssen passen.
+
+`trafficCategory=private|logistics` und `demandSource` unterscheiden geroutete
+Personenfahrzeuge, Paketlogistik und schwere Güterfahrten. Die Karte bietet separate
+SUMO-Routenlayer; Fußgänger/ÖV werden weiterhin separat bilanziert. Neue Artefakte sind
+`freight/{sources.json,trips.csv,summary.json,execution.json}` sowie
+`sumo/{traffic-routes.geojson,traffic-categories.json}`. Standard-Referenztypen verwenden
+`HBEFA3/HDV_D_EU6`; Fahrzeugkatalogrollen `heavyTruck`/`articulatedTruck` sind ergänzbar.
+
+**Evidenz:** native Fixture-Kette mit zwei PKW, drei schweren Fahrzeugen und einem
+Fußgänger; schwere Fahrzeuge meiden eine `hgv=no`-Strecke, alle drei werden abgeschlossen.
+Ein unabhängiger Review fand und prüfte Korrekturen der multimodalen Eingabedateiliste,
+der Invalidierung alter Routen und des Regionswechsels bei inaktiven Güterdaten.
+
+**Grenze:** noch kein automatischer Mautimport und keine regionale Kalibrierung.
+Der Import verlangt vorbereitete Koordinaten und ganze Fahrzeugmengen einschließlich
+Leerfahrten. Nächste zulässige Kante ersetzt noch keinen gerichteten Netzrandkonnektor;
+Beladungs-/Flottenzustände und Tourenmodell fehlen. Konzept, recherchierte öffentliche
+Datenquellen, vollständiger CSV-Vertrag und nächste Schritte stehen in
+[docs/21](21-gueterverkehr-konzept-und-datenquellen.md).
+
+
+**Gates (2026-10-10):** Backend-Gesamtsuite erfolgreich (238 Fälle, 0 Fehler,
+9 Voraussetzungen-Skips), zusätzlicher Schwerlast-Katalogtest erfolgreich;
+54 Frontend-Tests und strict-AOT-Build erfolgreich. Der vorhandene Rastatt-SUMO-
+Test und der neue multimodale Schwerlast-Fixture-Test wurden tatsächlich ausgeführt.
+
+
+### Güterverkehr: gerichtete Zugänge und KBA-Referenzimport (✅ 2026-10-12, experimentell)
+
+Der bestehende opt-in-Güterverkehr akzeptiert optional `fromEdge`/`toEdge` am Ende der
+OD-CSV. Alte Eingaben bleiben gültig. Zulässige gerichtete Netzkanten sind im Studio als
+`sumo/freight-network.geojson` herunterladbar; Existenz, Klasse und Koordinatenabstand
+werden pro Lauf geprüft. `freight/edge-mapping.json` hält die tatsächliche Zuordnung fest.
+
+Ein strengerer nativer Test deckte auf, dass der HGV-Sperrnachweis vom 10.10.2026 nicht
+isoliert war. `OsmFreightPermissions` überträgt jetzt explizites `hgv=no` einschließlich
+Richtungsregeln auf die Lane-Berechtigungen. Nicht unterstützte HGV-Werte werden berichtet;
+Gewicht/Höhe/Conditional bleiben offen. Geometrievereinfachung wird deaktiviert, um
+Wegsegment-IDs zu erhalten. Evidenz und Korrektur stehen in [docs/05](05-validierung.md#schwere-lkw-osm-sperrübertragung-2026-10-12--ursprünglicher-nachweis-korrigiert).
+
+Der neue Offline-Adapter `scripts/inspect-kba-freight.py` importiert das tatsächliche
+KBA-PUF-2025-ZIP: elf CSV und 70.716 Kennwerte. Quellenhash und Qualitätsmarker bleiben
+erhalten, unterdrückte Daten werden nicht als null Verkehr behandelt. Die Daten sind
+Referenzdaten; Codebuch, Einheiten, Lizenz und regionale Tagesumrechnung sind noch offen.
+Bedienung, Datenvertrag und Snapshot: [docs/21, Abschnitt 9](21-gueterverkehr-konzept-und-datenquellen.md#9-gerichtete-zugänge-und-erster-kba-datenadapter-2026-10-12).
+
+
+**Verifiziert (2026-10-12):** Backend-Gesamtsuite 242 Fälle, keine Fehler, neun
+Voraussetzungen-Skips; 54 Frontend-Tests und strict-AOT-Build grün. Drei Python-Importtests
+grün sowie tatsächlicher Import des KBA-ZIP. Native Schwerlastprüfung und bestehende
+Rastatt-Simulation wurden ausgeführt. Read-only-Widerlegungsversuch prüfte Kantenvalidierung,
+Cache-Lebensdauer und richtungsbezogene Lane-Berechtigungen ohne weiteren belegten Fehler.
+
+### SEVAS: einfache NRW-LKW-Sperren per Snapshot (✅ 2026-10-12, experimentell)
+
+Kommunale SEVAS-Restriktionen ergänzen die bisherige OSM-HGV-Übertragung.
+Das Studio erlaubt GeoJSON-Upload und separates Opt-in (`freight.sevasEnabled=false`);
+der Snapshot bleibt mit normalisiertem Hash und Entscheidungen im Ergebnis erhalten.
+Nur unbedingte VZ-253-Regeln ohne Zusatzzeichen, Zeitbedingungen oder Ausnahmen greifen.
+Nicht passende/teilweise Kanten, unklare Richtung, unbekannte Schemafelder und gemischte
+Regeln desselben OSM-Ways werden übersprungen. Sperren werden vor Routing und ÖV-Vorbereitung
+angewendet, andere Lane-Klassen bleiben erhalten. Fehlende aktive Daten scheitern im
+Preflight; ungültige Uploads erhalten den bisherigen Snapshot; alte Berichte werden bereinigt.
+
+Ein nativer Test ohne OSM-HGV-Tag beweist allein die SEVAS-Wirkung: PKW nutzen die
+Abkürzung, Solo-LKW/Sattelzüge umgehen sie; alle Fahrten schließen ab. Der tatsächliche
+Dortmunder Snapshot ergibt mit dem Java-Adapter 14 angewendete Segmente und 77 gerichtete
+Kanten. Der unabhängige Read-only-Widerlegungsversuch fand keinen weiteren belegten Fehler,
+grenzte aber den fehlenden OSM-Versionsabgleich ein: Versionskennungen werden erhalten,
+geprüft wird die Geometrie, nicht die zeitliche Aktualität (`networkVersionVerified=false`).
+Vorrangrouten, Teilkantensplitting und Liefer-/Anliegerrechte bleiben offen.
+Bedienung und Vertrag: [docs/21, Abschnitt 11](21-gueterverkehr-konzept-und-datenquellen.md#11-sevas-snapshot-im-studio-verwenden-2026-10-12-experimentell).
+
+**Verifiziert (2026-10-12):** Backend-Gesamtsuite 249 Fälle, 0 Fehler, 9 externe
+Voraussetzungen-Skips; 55 Frontend-Tests und strict-AOT-Build erfolgreich.
+Der SEVAS-Mischverkehrstest wurde nativ ausgeführt. Die erste Gesamtsuite deckte
+JSON-`null` beim Laden eines deaktivierten Snapshots auf; korrigiert und durch einen
+Roundtrip-Regressionstest abgesichert. Tatsächlicher Java-Snapshot-Abgleich und
+unabhängiger Read-only-Widerlegungsversuch abgeschlossen. Keine automatische SEVAS-
+Nachfrageableitung oder regionale Verkehrsvalidierung behauptet.
+
+### Maut-OD: realer Dortmund/Unna-Datenpilot (✅ 2026-10-12, Datenvorbereitung)
+
+Vier öffentliche Toll-Collect-API-Abfragen für Juli 2026 wurden mit URLs und Hashes
+archiviert. `scripts/prepare-toll-freight.py` bereinigt Perspektivendoppelungen:
+3.167 Rohzeilen → 3.163 gerichtete Gemeinde-OD, veröffentlichte gerundete Monatssumme
+979.240 → 775.840. Optionaler gerichteter Zugangsmapping-Vertrag erzeugt eine
+Kalenderdurchschnitts-Tages-CSV; Mapping, Anteile, unzugeordnete Mengen und Hash bleiben
+im Bericht. Ohne Mapping keine erzeugte Tagesnachfrage. Datenschutzrundung auf
+Zehnerstufen und Mautnetzein-/austritt-Semantik wurden im Portal bestätigt.
+
+Eine unabhängige Straßen.NRW-Zählbasis für denselben Monat unterscheidet SGV von
+SV inklusive Bussen. Noch keine Kalibrierung: vollständiger regionaler Netz-/Transit-
+und Stationsabgleich fehlen; größere Overpass-Abfragen scheiterten an HTTP 406/504.
+Zehn Python-Aufbereitungstests grün; unabhängiger Review und Provenienzhärtung.
+Details, Befunde, Befehle und nächste Abnahmebedingungen in
+[docs/21, Abschnitt 12](21-gueterverkehr-konzept-und-datenquellen.md#12-realer-maut-od-datenpilot-dortmundunna-2026-10-12).
+
+### Maut-OD: native Routingprobe und SGV-Teilvergleich (✅ 2026-10-13)
+
+Der Hauptstraßen-Netzabruf Dortmund/Unna gelang. Die produktiven Gütergenerator- und
+Kantenprüfungen sowie `duarouter`/SUMO verarbeiteten zwei gerichtete reale Monats-OD
+mit ausdrücklich modellierten Zugängen, Klassenanteilen und Tagesprofil:
+359 erzeugte → 359 abgeschlossene schwere Fahrten; zwei synthetische PKW-Kontrollen,
+keine Teleports oder unerledigten Güterfahrten. Keine volle regionale Population simuliert.
+
+`scripts/compare-freight-counts.py` vergleicht abgeschlossene SGV-Passagen mit kompatiblen
+Kalenderdurchschnittszählungen. Amtliche Stationsgeometrien ermöglichen einen vorläufigen
+B236-Berghofen-Abgleich; Brechten/Wambeldorf bleiben wegen widersprüchlicher Stationsarten
+ungeklärt. Der modellierte Teilbeitrag von 359 gegenüber 2.236 hängt vom Zugangsproxy ab,
+keine unabhängige Abdeckungs- oder Kalibrierbehauptung. Oktober-Netz und Juli-Beobachtung
+sind zeitlich nicht nachweislich identisch. 17 Python-Tests grün, native Kette ausgeführt;
+unabhängiger Review und Randkanten-Härtung abgeschlossen.
+Details und Artefakte: [docs/21, Abschnitt 13](21-gueterverkehr-konzept-und-datenquellen.md#13-native-maut-od-routingprobe-dortmundunna-2026-10-13).
+
+### Gemeinsame Nachfrage unabhängig vom Exportziel (✅ 2026-10-21)
+
+Die bisherige SUMO-Kopplung der schweren und importierten Güternachfrage ist
+aufgelöst. `TrafficDemand` vereinigt Personenverkehr, Paketlogistik, allgemeine
+schwere Fahrten und Unternehmenstouren in einem eigenen versionierten Vertrag
+unter `demand/`. Aufbereitung und Aktivierung benötigen kein SUMO. Der
+Produktivadapter liest den gemeinsamen JSON-Bestand; seine Straßenrouten und
+native Ausführung bleiben nachgelagert. Die vorhandene Personen-Schnittstelle
+und Modal-Split-Bedeutung bleiben unverändert.
+
+Ohne Personenlauf wird dessen Beitrag als nicht erzeugt gekennzeichnet; alte
+Ergebnisse werden nicht wiederverwendet. Gemeinsame Mengen und neutrale Downloads
+sind im Studio verfügbar. Vollständige Pipeline ohne SUMO sowie nativer SUMO-Lauf
+mit allen vier Quellen geprüft. [Verträge, Nachweise und Adaptergrenzen](21-gueterverkehr-konzept-und-datenquellen.md#30-gemeinsame-nachfrage-vor-den-zieladaptern-2026-10-21).
+
+### Unternehmenstouren zusätzlich in SUMO ausführen (✅ 2026-10-21, experimentell)
+
+Bestätigter Kontext für Unternehmen, Quelltag/Simulationsdatum, physische Fahrzeuge,
+Depotstart/-rückkehr, Haltreihenfolge und Fensterregel sowie manuelle oder lokale
+Adress-/Koordinatenzuordnung ergänzen den Importentwurf. Exakte Ausführungsrevisionen
+werden ausdrücklich aktiviert und vor der Job-Warteschlange eingefroren.
+`companyTours.enabled=false` bleibt der Default. Änderungen entziehen die Auswahl;
+aktive ungespeicherte Änderungen sperren den Studio-Start.
+
+Die vorhandenen nativen Fahrzeugketten führen Touren zusätzlich zur Personen- und
+Paketnachfrage aus. Routen-/Fahrzeitvorprüfung und eigener Abschlussbericht umfassen
+Bedienende, Verspätung, Kundenfenster und Rückfahrt. Zwei PKW plus ein importierter
+schwerer LKW mit zwei Kundenhalten und Rückfahrt wurden über Upload/Mapping/Kontext/
+Aktivierung nativ ausgeführt und deterministisch wiederholt. Unabhängiger Review
+führte zu Hausnummern-, Auswahlzustands- und Berichtsinvalidierungsregressionen.
+
+**Grenzen:** vollständige Touren innerhalb einer Region und eines 24-Stunden-Tages;
+keine automatische Mengenüberlappungskorrektur, individuelle Ladungszertifizierung
+oder regionale Abnahme der echten Zurbrüggen-Planung. Lade-/Tankmodelle bleiben
+zurückgestellt. [Verträge, Bedienung und Nachweise](21-gueterverkehr-konzept-und-datenquellen.md#28-unternehmenstouren-kontext-lokale-ortszuordnung-und-zusätzliche-sumo-ausführung-2026-10-21).
+
+### Unternehmenstouren: Importentwurf und lokales Mapping (✅ 2026-10-14, experimentell)
+
+Das Studio bietet CSV-/XLSX-Upload, positionale Spaltenzuordnung, Haltdetails vor
+Bestätigung und JSON-Export eines geprüften Tourenentwurfs. Mehrere Auftragszeilen
+werden optional zu einem Halt gruppiert; Standzeit einmal, Kundenfenster je Auftrag.
+Quellhash schützt gegen doppelte Uploads. Der lokale LLM-Vorschlag ist separat
+`synthesis.company-tour-import.llm-enabled=false` und verarbeitet ausschließlich
+Typstatistiken und bekannte Feldbezeichnungen. Manuelle Zuordnung bleibt verfügbar.
+
+**Verifiziert:** zehn neue Backendtests; reale Datei im Speicher mit 222 zugeordneten
+Zeilen, 41 Tourgruppen und 187 Haltkandidaten; unabhängiges Excel-Beispiel und isolierte
+Browserprüfung. Gesamtbackend 259 Tests/0 Fehler/9 Skips, Frontend 60 Tests und
+Produktionsbuild grün. Bestehendes natives SUMO-Testnetz um ausdrücklichen Fußweg
+ergänzt, nachdem SUMO 1.28 dort keine begehbaren Kanten heuristisch erzeugte.
+**Grenze:** alle Entwürfe `simulationReady=false`; Depot/Fahrzeuge, Geokodierung,
+Revisionen und zusammenhängende Tourensimulation sind nächste Pakete.
+[Betrieb, API und genaue Abgrenzung](21-gueterverkehr-konzept-und-datenquellen.md#16-unternehmenstouren-csv-excel-importentwurf--2026-10-14-experimentell).
+
+### Unternehmenstouren mit LLM-Mapping (KONZEPT, 2026-10-13)
+
+Unternehmensplanungen sollen als zusätzlicher, nach Herkunft getrennter
+Logistikbeitrag in SUMO eingehen. Ein lokales LLM schlägt ein versioniertes Mapping
+vor; bestätigte Regeln übernehmen alle Zeilen deterministisch in einen Tourenvertrag.
+Aufträge, Halte und Fahrzeugtouren bleiben getrennt. Fehlende Depot-/Fahrzeugangaben
+blockieren vollständige Touren statt erfundene Rückfahrten zu erzeugen.
+
+**Stand:** Beispiel lokal strukturell analysiert, Importkomponente noch nicht
+implementiert. Quellenstand, Dateibefund, Datenschutz, Region-/Zeitbehandlung,
+Doppelzählungsgrenzen und Umsetzungspakete stehen in
+[docs/21, Abschnitt 15](21-gueterverkehr-konzept-und-datenquellen.md#15-unternehmenstouren-quellenstand-und-llm-gestützter-import-konzept-2026-10-13).
+
+### Regionale Maut-OD mit mehreren Zugängen (✅ 2026-10-13)
+
+`scripts/expand-toll-access-mapping.py` ergänzt die Offline-Vorbereitung um einen
+geometrisch geprüften Mautknoten-Katalog und native Routingkandidaten. Sechs Gemeinden,
+neun veröffentlichte Knoten, 28 OD und 72.430 gerundete Monatswerte → 2.336 modellierte
+Tagesfahrten; native Java-Gütergenerator-/Kantenprüfung, Routing und SUMO abgeschlossen.
+Acht neue Tests sowie 17 vorhandene Aufbereitungstests grün. Unabhängiger Review
+reproduzierte Mengen, Abschlüsse und Hashes; alte Phase-2-Ausgaben werden beim
+Kandidaten-Neustart invalidiert, native Typen gegen den Kandidaten geprüft.
+
+Drei reine Knotengewichtsvarianten schließen je 2.336 Güterfahrten ohne Teleports
+oder Restfahrzeuge ab. Berghofen-Beiträge 518 / 331 / 704 bei gleichen OD-Mengen.
+Die vorhergesagte Richtung und Größenordnung der Gewichtswirkung wurden widerlegt;
+die Abhängigkeit vom Zugangsprior ist belegt. Keine beobachtete Knotenverteilung,
+kein vollständiger Transit und keine Kalibrierqualität behauptet. Methoden, Quellen,
+Artefakte und Grenzen: [docs/21, Abschnitt 14](21-gueterverkehr-konzept-und-datenquellen.md#14-mehrere-mautknotenzugänge-und-regionale-od-erweiterung-2026-10-13).
+
+### Overture-Standortinventar für Güterverkehr (✅ 2026-10-15, Offline-Pilot)
+
+`fetch-overture-freight-sites.py` lädt eine feste Places-Veröffentlichung mit exakten
+Point-Geometrien; `inspect-freight-sites.py` erzeugt über eine versionierte Kategorienliste
+ein quellenbelegtes GeoJSON-Inventar mit Zeilenbilanz und optionaler Gemeindezuordnung.
+Die Werkzeuge laufen ausdrücklich außerhalb der Pipeline und aktivieren keine Nachfrage.
+
+**Verifiziert:** echter regionaler Download und Offline-Auswertung, 34 betroffene
+Python-Tests grün. Der aktuelle OSM-Vergleich bleibt wegen HTTP 406/500 offen;
+eine verbesserte Standortabdeckung oder regionale Güterverkehrsmenge ist nicht belegt.
+Quelle, Datenvertrag, Messergebnis und Wiederholung stehen in
+[docs/21, Abschnitt 17](21-gueterverkehr-konzept-und-datenquellen.md#17-regionale-betriebsstandorte-aus-overture-2026-10-15-offline-pilot).
+
+### OSM-Standortvergleich und native LKW-Zugangsprobe (✅ 2026-10-15, Offline-Pilot)
+
+Datierter Geofabrik-PBF statt Live-Overpass; gemeinsame Gemeindegeometrien begrenzen
+beide Standortinventare. Neue Offline-Werkzeuge bereiten OSM-Standorte und lokale
+Straßen auf, erzeugen Dubletten-/Näheprüffälle und kontrollieren mögliche LKW-Kanten.
+Keine neue Pipeline-Stufe oder automatisch aktivierte Nachfrage.
+
+**Verifiziert:** echter Quellenvergleich, 54 betroffene Python-Tests und native
+Regionalnetz-/Routingprobe. Zusätzliche Übertragung eindeutiger OSM-HGV-Verbote
+entfernt vier explizit verbotene Pfade; alle 56 Proben bleiben technisch routbar.
+Maß-/Zeitregeln, Restriktionsvollständigkeit und tatsächliche Betriebseingänge sind
+weiterhin ungeprüft. Messergebnisse, Negativbefund, Werkzeuge und Wiederholung:
+[docs/21, Abschnitt 18](21-gueterverkehr-konzept-und-datenquellen.md#18-lokaler-osm-abgleich-und-lkw-kantenprüfung-2026-10-15-offline-pilot).
+
+### Explizite LKW-Profile und numerische Restriktionen (✅ 2026-10-15, Offline-Pilot)
+
+Versionierte Betriebsprofile referenzieren die vorhandenen Katalogtypen. Der lokale
+Prüfer trennt Maße, tatsächliche und zulässige Masse, unbekannte Achslasten sowie
+Zeit-/Zugangsregeln. Ein separates Profilnetz sperrt nur explizit nachgewiesene
+Verstöße der jeweiligen Fahrzeugklasse. Keine Änderung der Produktivpipeline.
+
+**Verifiziert:** 70 betroffene Python-Tests einschließlich nativer 26-/40-t-Vergleichsprobe.
+Die regionale Wiederholung bilanziert alle 56 ursprünglichen Proben; numerische Verstöße
+entfallen, zwei Rückfahrten bleiben ausdrücklich nicht berechenbar. Die übrigen Routen
+sind wegen weiterer Quellregeln nicht als vollständig befahrbar zertifiziert.
+Profile, Quellen, Lastannahmen, Messwerte und Wiederholung:
+[docs/21, Abschnitt 19](21-gueterverkehr-konzept-und-datenquellen.md#19-fahrzeugprofile-und-numerische-restriktionen-2026-10-15-offline-pilot).
+
+### Optionale LKW-Profilprüfung und Abbiege-Audit (✅ 2026-10-15)
+
+`freight.profileChecksEnabled=false` ergänzt die bestehende SUMO-Stufe um statische
+Standardprofile mit expliziter 26-/40-t-Volllastannahme, klassenbezogene Sperren und
+vollständige Bilanz der angeforderten Güterfahrten. Nicht routbare Fahrten und
+nachgewiesene Quellverstöße führen mit erhaltenem Bericht zum Fehler; Zeit-/Zweckregeln
+und unbekannte Achslasten bleiben sichtbar ungeklärt. Der Overpass-Netzabruf nimmt
+jetzt auch Abbiegerelationen samt Mitgliedern auf. Keine neue Stufe oder Python-
+Abhängigkeit im SUMO-Kernpfad. Standortanbindung ausdrücklich nur über die nächste
+zulässige Straße, ohne separates Einfahrtsmodell.
+
+**Verifiziert:** native Profil-/Umweg-/Fehlerproben, sechs regionale Referenzstandorte
+mit 24 unverändert bilanzierten Proben und quellbezogener Abbiege-Audit. Die ursprünglichen
+zwei Rückfahrten scheitern an Richtung plus Höhenlimit; die Gegenrichtung auf derselben
+Straße routet beide Klassen. Eine abweichende native Abbiegeverbindung wird von keiner
+der 54 bisherigen Regionalrouten benutzt. Details, Grenzen, Artefakte und Abnahme:
+[docs/21, Abschnitt 20](21-gueterverkehr-konzept-und-datenquellen.md#20-rückfahrten-abbiegerelationen-und-optionale-profilprüfung-2026-10-15).
+
+### Regionaler Güterverkehrs-Gesamttest (❌ Abnahme nicht bestanden, 2026-10-16)
+
+Die produktive Szenariokette verarbeitet im isolierten Fall 1.001 künstliche
+Modellpersonen, reale OSM-Daten und 2.336 aus veröffentlichten Maut-Monats-OD
+abgeleitete Tagesfahrten. Native logiTopp-Simulation und Netzkonvertierung gelingen;
+die Java-DOM-Nachbearbeitung des 1,28-GB-SUMO-Netzes überschreitet 6 GiB Heap vor der
+optionalen Profilprüfung und dem LKW-Routing. Der regionale Abschlussnachweis bleibt
+offen; der nächste technische Schritt ist die stromweise Netzverarbeitung.
+
+**✅ Korrigiert:** Stufe und Job melden jetzt auch einen `Error` als FAILED und werfen
+ihn anschließend weiter. Der ursprüngliche hängenbleibende RUNNING-Status ist im
+Regressionstest und durch die tatsächliche regionale Fehlerwiederholung abgesichert.
+Quellen, Annahmen, Ressourcenbudget und Negativbeleg:
+[docs/21, Abschnitt 21](21-gueterverkehr-konzept-und-datenquellen.md#21-regionaler-gesamttest-mit-profilprüfung-2026-10-16-negativer-abnahmebefund).
+
+### Regionale SUMO-Netze stromweise verarbeiten (✅ umgesetzt, 2026-10-16)
+
+OSM-HGV-, Profil- und SEVAS-Netzänderungen sowie die Netz-/Routenleser verarbeiten
+XML-Datensätze einzeln. Relationen und Kanten halten kompakte IDs; Netz-/Routen-
+GeoJSON werden Feature für Feature geschrieben. Der gemeinsame Straßenadapter
+hasht Netzdateien stückweise. Temporäre Netzdateien ersetzen das Original erst
+nach erfolgreichem Abschluss; Sperren, Profile und Nachfrage bleiben unverändert.
+Keine neue Abhängigkeit, Stufe oder Heap-Erhöhung.
+
+**Verifiziert:** 275 Backend-Testfälle, 0 Fehler, vier bestehende Skips; 150.000
+Kanten in separater 64-MiB-JVM. Die unveränderte 6-GiB-Regionalprobe erreicht jetzt
+Profilprüfung und Routing. Die Gesamtabnahme bleibt negativ wegen nachgewiesener
+Netzabdeckungs-/Randprobleme; kein vollständiger regionaler SUMO-Lauf behauptet.
+[Messung und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#22-streaming-der-regionalen-sumo-netze-2026-10-16).
+
+### Regionalen schweren Güterpfad nativ abgeschlossen (✅ begrenzt abgenommen, 2026-10-16)
+
+Die separate Reparaturprobe verwendet den vollständigen NRW-Quellsnapshot desselben
+Stichtags und einen größeren Straßenpuffer. Sie verändert keine Gütermengen,
+Koordinaten, Profile oder Kantenbindungen. Das 2,62-GB-Netz läuft mit dem
+Streaming-Code bei unveränderten 6 GiB Java-Heap durch Profilprüfung, Routing,
+native SUMO-Ausführung und Geometrie-/Netzlastexport. Alle 2.336 schweren Fahrten
+werden beendet, ohne Güter-Teleport oder expliziten Quellverstoß.
+
+**Grenze:** Alle Routen bleiben prüfpflichtig; die Personen-/Paketnachfrage hat
+separat ausgewiesene Routingverluste. Daher keine vollständige Gesamtverkehrs-
+oder Zugangsabnahme. Der frühere unveränderte Netzfall bleibt negativ archiviert.
+[Getrennte Bilanz und offene Schritte](21-gueterverkehr-konzept-und-datenquellen.md#231-native-ausführung-und-getrennte-abnahme).
+
+
+### SUMO-Routingverluste sichtbar machen und Straßenzuordnung korrigieren (✅ umgesetzt, 2026-10-17)
+
+Die Diagnose verknüpft jede angeforderte ID mit nativen Warnungen. Erlaubtes Wenden
+an Sackgassen erhält explizite OSM-Wendeverbote. Klassen- und richtungsbezogene
+Straßenbindung sowie eine Netzvorprüfung schützen den vollständigen Gütermodus
+vor stillen Verlusten der Personen-/Paketnachfrage. Angeforderte, geroutete,
+gestartete und abgeschlossene Fahrzeuge/Personen werden getrennt ausgewiesen;
+Fahrräder zählen zur Fahrzeugsumme. Tagesrand und Teleports bleiben eigene Befunde.
+Das Studio zeigt diese Bilanz und optionale SUMO-Stufenfehler sichtbar an.
+
+**Regionalbefund:** Die isolierte Wendeoption reduziert 316 fehlende Routen auf 18.
+145 Endpunkte haben keine zulässige Straße innerhalb 300 m; ein vollständiger
+Kantenvergleich bestätigt die räumliche Suche. Die neue gerichtete Prüfung findet
+zusätzlich sechs nicht erreichbare Anfragen und korrigiert elf Richtungen derselben
+Straße. Alle 125 automatischen HGV-Kantenbindungen bleiben unverändert.
+Keine neue Stufe, Abhängigkeit, Radiusvergrößerung oder separate Betriebseinfahrt.
+
+**Grenze/Rollback:** Die frühere Gesamtabnahme bleibt negativ; Quellpositionen
+außerhalb des Radius müssen fachlich geklärt werden. Der negative Zwischenstand
+mit reiner Klassenabbildung bleibt dokumentiert. Ein Rückbau darf diese Befunde
+nicht als erfolgreiche vollständige Nachfrage ausgeben.
+[Detailberichte, Versuche und Regressionen](21-gueterverkehr-konzept-und-datenquellen.md#24-routingverluste-vorprüfung-und-vollständige-ausführungsbilanz-2026-10-17).
+
+**Verifiziert (2026-10-17):** Vollständige Backend-Suite: 286 Fälle, keine Fehler,
+vier ausgewiesene Skips. Frontend: 62 Tests grün und Produktionsbuild erfolgreich.
+Die 17 gezielten Routing-/Bilanz-/Güterfälle laufen ohne Skip; darunter echte
+native Sackgassen-/Wendeverbotsfälle und die lokale regionale Archiv-Regression.
+
+
+**Produktiver Regionalnachweis (2026-10-17):** Die unveränderte vollständige
+`GenerationService`-Kette mit eingefrorenen Produktionsklassen prüft alle 3.839
+Anfragen und stoppt die SUMO-Stufe mit FAILED: 145 nicht zuordenbare Endpunkte und
+sechs Anfragen ohne gerichteten Pfad, elf korrigierte Richtungen. Es werden keine
+Routen-/Statistik-/Abschlussdateien oder Success-Summary vorgetäuscht. Der Job
+bleibt gemäß bestehender Optionalstufen-Politik DONE; der konkrete SUMO-Fehler ist
+sichtbar. Eingaben, Quell-/Klassenhashes und Ergebnis liegen separat unter
+`.runtime/traffic-routing-regional-2026-10-17-final/verified-result.json`.
+
+
+**Frische native Güterkontrolle (2026-10-17):** Auf dem abschließenden Netz werden
+alle 2.336 schweren Fahrten mit ihren neuen nativen Routen separat bis zum
+Tagesende ausgeführt: 2.336 angefordert, geroutet, gestartet und beendet; keine
+fehlende/unfertige Fahrt, null Teleports. Die Kontrolle isoliert den Güterpfad und
+ersetzt keine Gesamtabnahme oder Zugangsfreigabe. Kommando, Abschluss-IDs,
+Tripinfo, Statistik und Ladehinweise sind unter
+`.runtime/traffic-routing-2026-10-16/heavy-control/` archiviert.
+
+
+### Quellorte nachweisen und Pkw am Wohnort initialisieren (✅ umgesetzt, 2026-10-19)
+
+`TrafficEndpointOrigins` ergänzt den bestehenden SUMO-Netzbericht um exakte
+Quellkoordinaten-Referenzen und Dateien mit Hash/Lesestatus. Mehrdeutige Orte und
+unbekannte Herkunft bleiben ausdrücklich sichtbar. Die Diagnose verändert keine
+Nachfrage und keine Straßenbindung. `PopulationGenerator` und der Legacy-Pkw-
+Export initialisieren Fahrzeuge konsistent am Haushaltswohnort; IDs, Zonenräume
+und Seed bleiben erhalten. Fehlende Haushalte verursachen einen Exportfehler.
+
+Die regionale Artefaktwiederholung prüft alle 515 Pkw und die Herkunft aller
+bekannten Endpunktfehler; sie ist keine erneute Verkehrsausführung. Eine neue
+regionale Vollabnahme bleibt offen.
+[Befund und quantitative Evidenz](05-validierung.md#ortsherkunft-der-sumo-restfälle-und-pkw-initialorte-2026-10-19).
+
+
+**Verifiziert (2026-10-19):** 290 Backend-Testfälle, keine Fehler, vier ausgewiesene
+Skips; 19 gezielte Fälle ohne Skip. Neue Regressionen prüfen Haushalts-/Pkw-Orts-
+konsistenz einschließlich Zonen-ID-Räumen und fehlendem Haushalt sowie exakte,
+mehrdeutige und fehlgeschlagene Quellzuordnungen. Die regionale Artefaktwiederholung
+prüft Fahrzeugzahl und alle übrigen Pkw-Attribute unverändert; sie führt keine
+neue Verkehrssimulation aus. Befehlslogs und Quell-/Eingabehashes:
+`.runtime/traffic-origins-2026-10-19/verification.json`.
+
+
+### Synthetische Wohn- und Aktivitätsorte straßennah erzeugen (✅ implementiert, 2026-10-19)
+
+Die neue Szenario-Option `population.roadLocatedActivities` (Default `false`)
+verankert synthetische interne Wohnorte, Fixziele und Opportunities an gemeinsam
+für Pkw, Fahrrad und Fuß freigegebenen öffentlichen Straßen innerhalb ihrer
+bisherigen Zone. Das Studio erklärt die Modellannahme und den Fehlerfall.
+`RoadLocations` verwendet kopierte Geometrie aus dem ohnehin aufgebauten
+GraphHopper-Graphen; keine neue Stufe, Abhängigkeit oder Zufallsziehung.
+Der Bericht `population/road-locations.json` weist ursprüngliche/gewählte Orte,
+OSM-Weg, Verschiebung, Zonenprüfung und Quellenhash aus. Externe Anker und
+Depotkoordinaten bleiben erhalten. Fehlt eine geeignete Straße oder ein
+funktionsfähiger Graph, wird die aktivierte Ortswahl mit Fehler abgebrochen.
+
+**Technischer Nachweis:** Paarprüfungen erhalten Personendaten, Haushalts-/Pkw-Zahl,
+Zielzonen und Zufallsfolge. Ein nativer Kleinfall führt ausgewählte Punkte mit Pkw,
+Fahrrad und Fuß bis zum Abschluss. Die Pipeline prüft auch Abschalten und Entfernen
+alter Berichte. Eine gesonderte Gegenprüfung fand keine materiellen Codefehler;
+Netzinseln und native Abbiege-/Gehwegregeln bleiben ausdrücklich nachgelagerte
+Prüfungen. Die Option bleibt experimentell; keine amtliche Adresszuordnung oder
+fachliche Kalibrierung behauptet.
+
+
+**Negativbefund und Korrektur:** Der erste Regionalversuch verfehlt die Vorab-
+Prognose: 145 → 20 Endpunktfehler, zusätzlich acht Verbindungsfehler. Öffentliche
+`service`-Straßen sind in GraphHopper für Pkw nutzbar, in SUMOs Standardimport
+jedoch nicht. Version 2 schließt solche Standorte und nur über diese Zufahrten
+angebundene Pkw-Inseln konservativ aus; Straßenbrücken bleiben gültige Verbinder.
+Der Ortsbericht dokumentiert die schwache Hauptkomponente und verworfene Kanten.
+Eine zweite Widerlegungsprüfung findet keine neue Codeverletzung, benennt aber
+den Ausschluss lokal nutzbarer Inseln und die weiter erforderliche native Prüfung.
+[Befund, Quellen und Grenzen](05-validierung.md#straßennahe-orte-negativer-erstlauf-und-native-netzberechtigungen-2026-10-19).
+
+
+**Native Gehwege:** Version 2 besteht die regionale Netzvorprüfung, verliert im
+nativen Routing jedoch drei Fußwege auf schneller befahrenen `secondary`-Straßen.
+Version 3 berücksichtigt deshalb zusätzlich die 50-km/h-Grenze der nativen
+Gehwegschätzung; unerkannte Tempoformate werden als Ortskandidaten verworfen.
+Schnelle Straßen bleiben Pkw-Verbinder. Zwei unabhängige native Regressionen
+prüfen Service-Berechtigungen sowie 50-/70-km/h- und Default-Gehwege.
+
+
+**Fußnetz-Zusammenhang:** Version 3 verliert sechs Fußwege trotz begehbarer
+Endpunktstraßen. Version 4 filtert deshalb beide schwachen Hauptkomponenten für
+Pkw und Fuß; schnelle Straßen verbinden keine Fußinseln. Ein gepaarter nativer
+Gegenfall beweist den vorherigen Fußverlust und danach vollständige Abschlüsse
+für Pkw, Fahrrad und Fuß. Die Auswahl bleibt konservativ und experimentell;
+beide unabhängig größten Komponenten können lokal geeignete Inseln ausschließen.
+Die tatsächliche Routing-/Ausführungsprüfung bleibt verbindlich.
+
+
+**Verifiziert (2026-10-19):** Vollständige Backend-Suite 300 Fälle, keine Fehler,
+vier ausgewiesene Skips. Die neun gezielten Ortsfälle laufen ohne Skip; darunter
+native Service-/Tempo-/Fußinsel-Regressionsfälle, drei Seeds für Demografie und
+Zufallsfolge, LAEA-Rundung sowie Abschalten mit Entfernung alter Berichte.
+Frontend: 63 Tests grün, Produktionsbuild erfolgreich. Befehlslogs unter
+`.runtime/road-locations-2026-10-19/` (`backend-v4-tests.log`,
+`locations-v4-tests.log`, `frontend-review-tests.log`, `frontend-review-build.log`).
+
+
+**Regional verifiziert, Ausführung prüfpflichtig:** Version 4 routet alle 3.839
+exportierten Tag-0-Anfragen ohne Verluste oder Koordinatenwarnungen; sämtliche
+3.624 Fahrzeuge werden gestartet und beendet, einschließlich aller 2.336 schweren
+Fahrten. 214 von 215 Fußwegen sind beendet, der letzte überschreitet rechnerisch
+das feste Tagesende. Zwei Teleports (Rad/Pkw) an einer gemeinsamen Tram-/Straßen-
+Signalstelle halten die Ausführung auf `review-required`. Das Studio zeigt diese
+Prüfung ausdrücklich neben den vollständigen Mengen an. Die Option bleibt
+standardmäßig aus; eine vollständig teleportfreie Ausführung wird nicht behauptet.
+[Abschließende Bilanz und offene Signalprüfung](05-validierung.md#abschluss-version-4-routing-und-mengenerhalt-bestätigt-2026-10-19).
+
+### Öffentliche Lade- und Tankmöglichkeiten — ✅ Stationsbestand umgesetzt (2026-10-20)
+
+- **Quellen und Karte:** `EnergyInfrastructure` verbindet den bestehenden
+  BNetzA-Registerstand mit erhaltenen Ladepunkt-/Anschlussdetails und gezielten
+  OSM-Stationen (`nwr`, Objektart/ID/Version/Zeitstempel). Strom, CNG, LNG, LPG
+  und H₂ bleiben getrennte Angebote. Steuerung:
+  `energyInfrastructure.enabled=false` als Default; Frontend-Checkbox
+  „Stationsbestand erfassen (experimentell)“, getrennte BNetzA-/OSM-Auswahl.
+- **Wiederholung und Qualität:** Regionale OSM-Eingaben werden mit SHA-256
+  eingefroren, wiederverwendet und auf die gespeicherte Region geprüft; Upload
+  und bewusste Erneuerung sind möglich. Quellenfehler bleiben `FAILED` mit
+  Qualitätsbericht. Private/inaktive Stationen werden ausgeschlossen,
+  ungeklärter/beschränkter Zugang ist in der Karte ausdrücklich zuschaltbar.
+  Mögliche Mehrfachmeldungen werden markiert; Stecker und OSM-Kapazitäten werden
+  nicht zu BNetzA-Ladepunkten addiert.
+- **Pipeline:** Einbettung in die vorhandene Quellenstufe, keine neue Stufe,
+  Nebenläufigkeit oder Zufallsziehung. MobileCity verwendet denselben
+  Registerbasisbestand; seine bisherige Aggregation bleibt erhalten.
+- **Verifiziert:** sechs gezielte Backend-Fälle einschließlich vollständiger
+  Offline-Pipeline, Wiederholung, Abschalten, Quellenfehler, Uploadschutz,
+  Mirror-Abfrage und Register-/OSM-Zählung. Backend insgesamt 311 Fälle,
+  null Fehler, vier Skips; Frontend 67 Tests und Produktionsbuild grün.
+  Reales Dortmunder Registerbeispiel mit **359 Einrichtungen / 487 Ladepunkten**
+  sowie Gas-/H₂-Zugangsfilter mit ausdrücklich benannten Testdaten im Browser
+  geprüft. [Befund und Grenzen](05-validierung.md#öffentlicher-stationsbestand-registerdetails-und-kartenprüfung-2026-10-20).
+- *Offen:* H2-Stations-API mit produktivem Token, gemeinsame MobileCity-Ableitung
+  aus dem Stationsvertrag, physische Einfahrten, vollständige Fahrzeugeignung und
+  operative Lade-/Tankplanung. Lokale Netzprüfung und externe Referenzbilanz sind
+  in der folgenden Ausbaustufe umgesetzt.
+  [Bedienung und nächste Schritte](19-fahrzeugimport-und-modellbegriffe.md#öffentliche-lade--und-tankinfrastruktur-bestandsprüfung-und-integrationsplan-2026-10-20).
+
+### Falsche Bahnsignalblockade bei reinem Straßenverkehr (✅ korrigiert, 2026-10-20)
+
+`RoadSignalPolicy` entfernt importierte Bahnsignalsteuerung nur bei nachgewiesen
+schienenfreier Nachfrage. Duale Straßenampeln werden erhalten, native
+Signalübertragungen auf Kreuzungscluster separat geprüft. Opake ÖV-Provider
+behalten die bisherige Steuerung; falsch deklarierte Schienen-/unbekannte Typen
+und ungeprüfte XML-Includes führen vor Routing/Simulation zum Fehler. Der
+Quellen-/Importbericht liegt unter `sumo/road-signals.json`.
+
+**Verifiziert:** Gepaarte native Kontrollfälle und regionaler Vergleich bestätigen
+zwei → null Teleports bei vollständig erhaltener Nachfrage. Der spät gestartete
+Fußweg am festen Tagesende bleibt getrennt als prüfpflichtig ausgewiesen;
+`roadLocatedActivities` bleibt standardmäßig aus. Kein Fahrberechtigungs-,
+Teleport- oder Tageslängen-Workaround.
+[Befund, Gegenversuche und regionale Abnahme](05-validierung.md#gemeinsame-tram-straßen-signale-nativer-gegenversuch-und-importkorrektur-2026-10-20).
+
+### Stationszufahrten und Fahrzeug-Energiebilanz — ✅ erste Stufe (2026-10-20)
+
+- **Gerichtete Netzprüfung:** Opt-in `energyInfrastructure.verifyNetworkAccess`
+  (Default aus), Suchradius `maxSnapDistanceM=50`. `EnergyNetworkAccess` bindet
+  Stationsmeldungen an klassenzulässige gerichtete Kanten/Spuren und prüft
+  Zu-/Abfahrten mit getrennten nativen Routing-Proben. Bekannte Zugangs-/Maßregeln
+  auf dem gesamten getesteten Pfad werden berücksichtigt; unbekannte/bedingte
+  Regeln bleiben prüfpflichtig. Der Bericht unterscheidet Routennachweis,
+  Sperren, fehlende Zuordnung und weiterhin ungeprüfte physische Einfahrt.
+- **Identität und Zustand:** Opt-in `vehicleOperations.enabled` (Default aus),
+  versionierter Zuordnungsvertrag mit festen physischen Fahrzeug-IDs für
+  bestehende Quellfahrten. Der gebundene Fahrzeugtyp bleibt stabil. Eine externe
+  Referenzbilanz führt kWh bzw. Liter über native Fahrtsegmente fort, mit
+  deklariertem Verbrauch und tatsächlich gefahrener Distanz. Fehlende Werte,
+  Zeit-/Ortsbrüche, Teleports, Defizite und Reserveunterschreitungen bleiben
+  sichtbar; es gibt keinen stillen Energie-Reset.
+- **Studio und Artefakte:** Getrennte Checkboxen, Suchradius/Reserve,
+  servergeprüfter JSON-Import für Fahrzeuge/Fahrtzuordnungen, Beispiel und
+  Downloads für Fahrtschlüssel, Netzbericht und Energiebilanz. Andere
+  Konfigurationshashes sowie verspätete Antworten werden verworfen. Beim
+  Abschalten/Neustart werden alte zugehörige Ergebnisse entfernt.
+- **Verifiziert:** nativer Spike über Routing und Simulation, 320 Backend-Fälle
+  ohne Fehler (vier bekannte Skips), 70 Frontend-Tests und Produktionsbuild grün.
+  Isolierte vollständige Pipeline mit vorbereiteter Testnachfrage: zwei native
+  Fahrten, eine explizite physische ID, fortgeschriebene Bilanz **30 → 29,827572 kWh**.
+  Zwei Teststationen ergeben zehn Profilprüfungen: fünf zugeordnet, fünf durch
+  die niedrige Zufahrt gesperrt. 30 separate Proben verändern die Nachfrage
+  nicht. Browserdarstellung mit Reportdownloads geprüft.
+  [Befund und Prüfgrenzen](05-validierung.md#stationszufahrt-und-fahrzeugkontinuität-native-abnahme-2026-10-20).
+- *Offen:* physische Stationszufahrten und vollständige Bedienbarkeit,
+  zusammenhängende native Flottenausführung, dynamische Batterie-/Tankmodelle,
+  Lade-/Tankhalte samt Zeitfolgen und Gas-/H₂-Antriebsverträge. Die native
+  Simulation verwendet weiterhin einzelne Fahrtsegmente und erzwingt die
+  Referenz-Energiegrenzen noch nicht.
+
+### Native Güterfahrzeugketten — ✅ UMGESETZT (2026-10-21)
+
+- **Problem und Verhalten:** Bisher startete jede zugeordnete Etappe ein eigenes
+  SUMO-Fahrzeug. `vehicleOperations.chainTrips` (Default `false`) führt die
+  vorhandenen Etappen jetzt unter einer nativen Fahrzeug-ID mit Straßenhalten
+  aus. Zustellbedienzeiten und verspätete Ankünfte verschieben Folgefahrten;
+  Rückfahrten starten am vorherigen Halt. Widersprüchliche Orte brechen mit
+  einem eigenen Bericht ab. Nachfrage und Fahrzeugzahl werden getrennt bilanziert.
+- **Integration:** Bestehende SUMO-Stufe, keine neue Abhängigkeit oder Pooländerung.
+  Explizite Zuordnungen aus `vehicles/trip-identities.json`, Lieferwagenbeispiel
+  und Schalter im Studio. Nicht zugeordneter Verkehr bleibt erhalten. Energie-
+  und Tank-/Ladeplanung sind nach Nutzerentscheidung zurückgestellt; weitere
+  Arbeit richtet sich auf Güterverkehr und dessen Simulationsintegration.
+- **Verifiziert:** Native Lieferwagen-Tour mit drei Etappen einschließlich
+  Rückfahrt, Bedienzeit und Verspätung; zwei schwere Güterfahrten unter einer
+  Lkw-ID; Ortsbruch, Tagesende, Wiederholung und Abwahl. Vollständiger Pipeline-
+  Prüffall mit vorbereiteten Nachfrage-/Tourdateien: fünf Güteretappen mit zwei
+  physischen Fahrzeugen plus ein Pkw; sechs Etappen und drei native Fahrzeuge
+  vollständig, null Teleports. Die Nachfragesimulation selbst war dabei deaktiviert.
+  [Evidenz und Grenzen](05-validierung.md#native-güterfahrzeugketten-2026-10-21),
+  [Bedienung und Verträge](03-architektur.md#native-fahrzeugketten-für-den-güterverkehr-2026-10-21).
+
+### Formatübergreifender Firmen-Tourenimport — ✅ UMGESETZT (2026-10-22)
+
+- **Änderung:** Gemeinsame Quellenhülle für CSV/TSV/XLSX, JSON/XML, TXT/DOCX
+  und textbasierte PDF; opt-in lokale LLM-Analyse für Tabellenregeln und belegte
+  Dokumentzeilen. Vorschau und ausdrückliche Bestätigung bleiben notwendig.
+- **Profile:** Bestätigte Regeln szenariolokal speichern; Strukturwechsel bei
+  Tabellen ablehnen, Dokumente mit frischen Zitaten erneut auswerten.
+- **Gate/Rollback:** `llm-enabled=false` und `source-analysis-enabled=false`
+  deaktivieren die Quellinhaltsanalyse; manuelles Tabellenmapping bleibt nutzbar.
+- **Grenzen:** Kein OCR, kein universeller Binärformatparser und kein Nachweis
+  semantischer Vollständigkeit allein durch Quellzitate. PDF benötigt lokales
+  Python mit `pypdf`. Keine neue Pipeline-Stufe oder Exportabhängigkeit.
+- **Verifiziert:** Adapter-, Negativ-, Profil- und Bestätigungsprüfungen;
+  Messstand und lokale Modellprobe im [Befund](05-validierung.md#formatübergreifender-tourenimport-2026-10-22).
+  [Vertrag und Bedienung](21-gueterverkehr-konzept-und-datenquellen.md#31-formatübergreifender-tourenimport--umgesetzt-2026-10-22).
+
+### Gleiche Unternehmenstouren nicht mehrfach auswählen — ✅ UMGESETZT (2026-10-23)
+
+- **Problem:** Dateihash und physisches Fahrzeug erkennen überarbeitete Dateien
+  mit derselben fachlichen Tourkennung nicht zuverlässig als dieselbe Planung.
+- **Änderung:** Aktivierung und Einfrieren der gemeinsamen Nachfrage verweigern
+  doppelte ausgewählte Schlüssel aus Unternehmen, Simulationsdatum und
+  Quell-Tourkennung. Ausgeschlossene Touren bleiben unberücksichtigt; unterschiedliche
+  Unternehmen oder Tourkennungen bleiben additiv. Fehlgeschlagene Aktivierung
+  überschreibt keine gespeicherte Auswahl.
+- **Bedienung/Rollback:** Frühere Planung bewusst abwählen oder kollidierende Tour
+  ausschließen, neue Revision danach auswählen. Keine neue Pipeline-Stufe,
+  Betriebsabhängigkeit oder Artefaktversion; bestehende eindeutige Auswahlen
+  bleiben kompatibel.
+- **Grenzen:** Kein unscharfer Adress-/Auftragsvergleich, keine automatische
+  Ersetzung. Statistische/synthetische Nachfrage wird weiterhin nicht dedupliziert.
+- **Verifiziert:** Vier Integrationstests in `CompanyTourRevisionsTest`;
+  [Befund und Gates](05-validierung.md#tourenrevisionen-vor-der-gemeinsamen-nachfrage-2026-10-23).
+
+### Extern beginnende/ endende Unternehmenstouren — ✅ ERSTER ADAPTER (2026-10-23)
+
+- **Änderung:** Externe Start-, End- und Haltorte per ausdrücklicher Kontextfreigabe
+  übernehmen; Originalplanung im gemeinsamen Nachfragebestand unverändert halten.
+  Der regionale Adapter klassifiziert Binnen-, Ein-/Ausfahrts-, Durchgangs- und
+  Außenetappen und führt regionale Gebietsbesuche in SUMO aus.
+- **Modellannahme:** Grenzpunkte aus geraden Planverbindungen, Zeiten proportional
+  interpoliert. Keine externe Straßennetz-Routung oder externe Bedienung simuliert.
+- **Identität/Bilanz:** Wiedereinfahrten als getrennte native Besuche desselben
+  physischen Fahrzeugs; regionale Abschlüsse getrennt von vollständigen Touren.
+  Projektionsbericht und bestätigte Regionsgrenzen werden mitgeschrieben.
+- **Gate/Rollback:** `regionalProjectionConfirmed=false` bleibt Standard und stellt
+  die bisherige Sperre externer Orte wieder her. Keine neue Pipeline-Stufe oder
+  neue externe Laufzeit. 24-Stunden- und Fahrzeugprüfungen bleiben bestehen.
+- **Verifiziert:** Nativer Zweibesuch-LKW mit privatem Verkehr, Originalnachfrage
+  unverändert, keine Kundenbedienung am Grenzaustritt, Wiederholung identisch.
+  [Befund/Gates](05-validierung.md#regionale-unternehmenstouren-mit-externen-orten-2026-10-23).
+
+
+### Netzbasierte Gebietsbesuche — ✅ UMGESETZT (2026-10-23, experimentell)
+
+- **Problem/Verhalten:** Die gerade Verbindung externer Originalorte konnte reale
+  Durchfahrten verfehlen. Mit `networkProjectionRequested=true` erzeugen gerichtete
+  klassenabhängige Straßenrouten alle regionalen Besuche und feste Straßenfolgen.
+- **Nachfrage/Bilanz:** Vollständige Originalnachfrage bleibt erhalten; regionale
+  Abschlüsse und physische Fahrzeugidentität bleiben getrennt bilanziert.
+  Eintrittszeiten beruhen weiterhin auf Planzeiten, externe Bedienung bleibt offen.
+- **Gate/Rollback:** Netzoption standardmäßig `false`, zusätzlich zur regionalen
+  Freigabe. Fehlende vollständige Netzabdeckung stoppt den Lauf. Ausschalten stellt
+  die ausdrücklich bestätigte geometrische Projektion wieder her.
+- **Verifiziert:** Native gekrümmte Straßenroute mit Gebietsbesuchen trotz verfehlender
+  Gerade, feste Straßenfolge, Wiederholung und fehlende Netzabdeckung. 365 Backendtests,
+  keine Fehler, vier optionale Skips; 83 Frontendtests und Build grün.
+- **Reale Abnahme:** Zurbrüggen-CSV vollständig importiert und exportiert; 222 Zeilen,
+  41 Tourgruppen, 187 Haltkandidaten. Aktivierung ohne Betriebsdaten abgewiesen.
+  Bestätigte Depots, Fahrzeugzuordnung, Koordinaten und Region fehlen weiterhin.
+- **Offen:** Interaktive Netzvorschau/manuelle Gateways und mehrtägige Touren.
+  [Befund](05-validierung.md#netzbasierte-unternehmenstouren-und-zurbrüggen-import-2026-10-23).
+
+
+### Rückfragen im Tourenimport — ✅ UMGESETZT (2026-10-24)
+
+- **Mechanik:** Der Assistent fragt anhand des bearbeiteten Kontexts nach fehlenden
+  Betriebsangaben, auch ohne LLM. Eine gemeinsame Depotantwort gilt für alle
+  ausgewählten Touren; unterschiedliche Start-/Endadressen sind je Tour möglich.
+- **Persistenz:** Optionales Kontextfeld `depotAddresses` mit Tour-IDs. Antworten
+  bleiben nach Speichern/Neuladen erhalten. Neue Adressen setzen alte Positionen
+  und die Ortsbestätigung zurück; Koordinatenfragen bleiben bis zur Zuordnung offen.
+- **Prüfung:** Backend-Aktivierung erfordert weiterhin vollständige Betriebsdaten.
+  Leere Adressfelder ändern keine Altimport-Revisionen; Adressantworten werden
+  revisionswirksam gespeichert. Keine neue Pipeline-Stufe oder externe Laufzeit.
+- **Verifiziert:** `CompanyTourExecutionTest` prüft Persistenz, fehlende Koordinaten,
+  Aktivierungssperre, Revisionswechsel und fremde Tour-IDs. Komponentenprüfungen
+  decken verbleibende Rückfragen, ausgeschlossene Touren und ungültig gewordene
+  Koordinaten ab. UI-Probe mit allen 41 Zurbrüggen-Tourgruppen: gemeinsame Antwort
+  gespeichert, keine fehlenden Fahrzeug-/Koordinatenangaben verborgen.
+- **Offen:** Reale Ausführungsabnahme benötigt weiterhin bestätigte Koordinaten,
+  Fahrzeuge, Depotzeiten und Modellregion. Freie LLM-Antwortdialoge und automatische
+  Adressgeokodierung sind weitere Erweiterungen.
+  [Befund](05-validierung.md#rückfragen-und-depotantworten-im-tourenimport-2026-10-24).
+
+  **Gates (2026-10-24):** 366 Backendtests ohne Fehler, vier optionale Skips;
+  85 Frontendtests und Produktionsbuild grün.
+
+
+### Lokale Ortsvorschläge und regionaler Tourenpilot — ✅ UMGESETZT (2026-10-24)
+
+- **Mechanik:** Optionaler Loopback-Geocoder liefert begrenzte, gecachte Vorschläge.
+  Nutzer wählen Koordinaten explizit; die Sammelübernahme behandelt nur eindeutige
+  Treffer. Region und fehlende Betriebsangaben sind im Import sichtbar.
+- **Steuerung:** `synthesis.company-tour-import.geocoding-enabled=false`;
+  Endpunkt, Timeout und Batchgröße konfigurierbar. Lokaler NRW-Index über separate
+  CLI-Werkzeuge, keine neue Generierungsstufe oder öffentliche Adressübermittlung.
+- **Verifiziert:** HTTP-Vorschläge → bewusste Kontextentscheidung → gemeinsame
+  Nachfrage → natives SUMO. Vollständige Gates: 371 Backendtests ohne Fehler,
+  vier bestehende optionale Skips; 86 Frontendtests, Produktionsbuild und zwei
+  Pythonprüfungen grün. Reale Quelldaten in einem begrenzten regionalen Pilotlauf
+  erfolgreich; vollständige Unternehmensabnahme bleibt offen.
+- **Grenzen:** Manueller Browser-Gegentest nicht ausgeführt: automatische
+  Freigabeprüfung blockierte den lokalen Frontendstart wegen ihres Nutzungslimits.
+  Fehlende Ortszuordnungen, reale Flotten-/Zeitbestätigung und Gesamtbestand-Abnahme
+  bleiben offen. Freie LLM-Antwortdialoge sind keine Funktion dieser Erweiterung.
+  [Befund und Pilotannahmen](05-validierung.md#lokale-geokodierung-und-regionaler-zurbrüggen-pilot-2026-10-24).
+
+
+### Tourenbestand: fortsetzbare lokale Ortszuordnung — ✅ UMGESETZT (2026-10-26)
+
+- **Mechanik:** Ortssuche durchläuft auch nach leeren/mehrdeutigen Antworten weitere
+  Pakete. Explizite Neusuche aktualisiert alte Cache-Antworten. Vorherige Ergebnisse
+  bleiben in derselben Importsitzung nach Kontextspeicherung verfügbar.
+- **Daten:** Formatnormalisierung, geprüfte Gemeinde-Aliasse, ausdrücklich optionale
+  amtliche Flurstücksvorschläge und lokaler OSM-Abgleich. Quellenkorrekturen werden
+  als Modellannahmen markiert. Kein automatischer öffentlicher Geocoder und keine
+  neue Generierungsstufe; Geokodierung bleibt standardmäßig deaktiviert.
+- **Verifiziert:** 372 Backendtests ohne Fehler, vier bestehende optionale Skips;
+  87 Frontendtests, Produktionsbuild und sechs Pythonprüfungen grün. Browserprobe
+  von Neusuche bis zusätzlicher Auswahl samt persistiertem Kontext erfolgreich.
+- **Grenzen:** Einzelne Quelladressen bleiben ohne belastbaren Treffer gesperrt.
+  Generische Fahrzeuge, Depotzeitpuffer und gewählte Ortsrepräsentanten sind
+  dokumentierte Modellannahmen. Die regionale Bestandsprüfung ist von einer
+  tatsächlichen Betriebsabnahme und externer Kundenbedienung zu unterscheiden.
+  [Messwerte und Abnahmestand](05-validierung.md#tourenbestand-und-fortsetzbare-ortssuche-2026-10-26).
+
+
+### Netzmetadaten für große Unternehmenstouren-Abzüge — ✅ UMGESETZT (2026-10-26)
+
+- **Auslöser:** Der Abnahmelauf am großen lokalen Netz belegt nahezu den gesamten
+  6-GB-Java-Heap (6.197.630 von 6.291.456 KiB). Der Versuch wird zur Überarbeitung
+  der internen Datenhaltung unterbrochen; das ist kein erfolgreicher Ausführungsnachweis.
+- **Mechanik:** Länge und Maximalgeschwindigkeit je Unternehmens-Fahrzeugklasse in
+  einem primitiven Kantendatensatz statt mehrerer String-/Double-Maps. Unveränderte
+  Fahrstreifenberechtigungen, Geschwindigkeitsmaxima, Routing- und Zeitregeln.
+- **Verifiziert:** Vollständige Backend-Suite ohne Fehler und regionaler nativer Bestandslauf erfolgreich;
+  [gemessener Abschlussstand](05-validierung.md#tourenbestand-und-fortsetzbare-ortssuche-2026-10-26).
+
+
+### Regionale Vergleichsprüfung: Signal-Zufahrten und Tagesnachlauf — ✅ UMGESETZT (2026-10-26)
+
+- **Auslöser:** Die erzeugte regionale Pkw-Nachfrage enthält 23 am Dienstag beginnende
+  Fahrten mit geplanter Ankunft nach Mitternacht. Der feste SUMO-Endzeitpunkt 86.400 s
+  berücksichtigt diesen Überhang nicht. Die unveränderte Tagesauswahl erhält nun einen
+  Nachlauf bis mindestens eine Stunde nach der spätesten geplanten Personenankunft bzw.
+  ausgewählten Straßenabfahrt. Mengen- und Teleportprüfungen bleiben maßgeblich;
+  der Nachlauf garantiert keinen Abschluss unter beliebiger Überlastung.
+- **Signalprüfung:** Zwei duale Signalquellen sind über jeweils zwei Split-Kanten
+  nach 9,51 bzw. 10,87 m mit einer nativen Ampel verbunden. Die Prüfung verfolgt
+  nun auch kurze Ketten: jede ausgehende Verzweigung muss innerhalb insgesamt
+  25 m an einer Ampel enden. Schleifen, Sackgassen und unkontrollierte oder längere
+  Äste bleiben Fehler. Keine Änderung der importierten Steuerungen oder OSM-Daten.
+  Zusätzliche Streaming-Durchläufe laden ausschließlich benötigte Fortsetzungskanten;
+  maximal 32 Kanten pro Pfad, konservativer Abbruch bei weiterer Aufteilung.
+- **Verifiziert:** Vollständige Offline-Backend-Suite: 374 Tests, keine Fehler,
+  vier bestehende optionale Skips. Zusätzlich drei native Signal-/Tagesgrenzentests
+  erfolgreich, einschließlich tatsächlicher Pkw-Ankunft nach Mitternacht.
+  Keine Frontendänderung, neue Abhängigkeit oder Pipeline-Stufe.
+- **Regionaler Nachweis:** Gesamtfreigabe nicht bestanden: unvollständige private
+  Ortszuordnung, B vor der Simulation abgebrochen. Unternehmenstouren bleiben in
+  der gemeinsamen Nachfrage und Projektion erhalten. Keine A/B-Wirkungskennzahlen.
+  [Vergleichsprotokoll und Ergebnis](05-validierung.md#regionale-nachfrage-mit-unternehmenstouren-2026-10-26).
+
+
+### Straßenkoordinaten für Bildungsziele und Außen-Opportunities — ✅ UMGESETZT (2026-10-26)
+
+- **Bildung:** Eigene `SynthesisSimulationPerson` im separaten logiTopp-Adapter
+  erhält exportierte feste Koordinaten für Primary/Secondary/Tertiary, wenn die
+  gewählte Zone zur festen Zone passt. Die KIT-Ortsauswahl läuft davor unverändert,
+  damit ihr Zufallsverbrauch erhalten bleibt. Andere Zielzonen und nicht feste
+  Bildungsziele folgen der vorhandenen Auswahl. Eigene Unterklasse, unveränderte KIT-Quellen/JARs.
+- **Außen-Opportunities:** Unter `roadLocatedActivities` werden synthetische
+  Opportunities auch in Außenzonen auf konservative gemeinsame Pkw/Rad/Fuß-Straßen
+  gelegt. Gleiche Außenzone, höchstens 1.500 m Verschiebung, sonst Fehler.
+  Feste Außenanker bleiben unverändert. Ursprungs-/Zielpunkt, Straße und Verschiebung
+  erscheinen im Ortsbericht; keine zusätzlichen Zufallszahlen. Keine neue Pipeline-Stufe,
+  Abhängigkeit oder Konfigurationsachse.
+- **Regressionen:** Backend 377 Tests ohne Fehler, vier optionale Skips;
+  sieben Adaptertests grün, separater Adapter gebaut. Gegenproben sichern
+  Zonen-/Distanzgrenze, fehlende Straßen, Außenanker-Cache und ursprüngliche KIT-Auswahl.
+- **Neuerzeugung:** Alle 213.527 Personenwege behalten Identität, Modus, Zeiten,
+  Zonen, Distanzen und Legs exakt. 88 Außen-Opportunities mit maximal rund 689 m
+  Verschiebung. Technische A/B-Abnahme am 27.10. bestanden: sämtliche Pkw in
+  beiden Fällen und alle ausgewählten regionalen Unternehmensetappen vollständig;
+  empirische Kalibrierung bleibt gesondert offen.
+  [Native Abnahme und Grenzen](05-validierung.md#korrigierte-ortsübergabe-regionaler-wiederholungslauf-2026-10-26).
+
+
+### SUMO-Szenarioseed auch ohne physische Fahrzeugketten — ✅ UMGESETZT (2026-10-27)
+
+- **Auslöser:** Native Kontrolle zeigt Standardseed 23.423 im reinen Pkw-Lauf,
+  expliziten Szenarioseed im Lauf mit Lkw-Ketten. Gleiche Szenariometadaten allein
+  beweisen keine gleichen nativen Prozessparameter.
+- **Korrektur:** Konstruktorseed initialisiert den Runner; jede SUMO-Ausführung
+  erhält ihn explizit. Szenariokonfiguration bleibt maßgeblich beim bestehenden
+  `useFreight`-Einstieg. Kein neues Flag oder Eingriff in KIT-Quellen.
+- **Verifiziert:** Native Gegenprobe ohne Ketten schreibt den angeforderten Seed 777
+  selbst in den Ergebnisheader. Komplette Backend-Suite: 377 Tests, keine Fehler,
+  vier optionale Skips. [Regionaler Nachlauf und Vergleich](05-validierung.md#korrigierte-ortsübergabe-regionaler-wiederholungslauf-2026-10-26).
+
+### Hintergrund-Lkw und Näherungsorte — ✅ UMGESETZT (2026-10-27)
+
+- **Gemeinsame Nachfrage:** Monatliche Maut-OD mit Gemeindegeometrien werden lokal
+  automatisch auf die Region zugeschnitten und an das nächste erreichbare
+  Lkw-Kantenpaar angebunden. Das Ergebnis nutzt den bestehenden gerichteten
+  Güterverkehrs-Upload und wird vor dem SUMO-Export gemeinsam mit Personen- und
+  Unternehmenstouren geführt. Keine neue Pipeline-Stufe oder automatische
+  Kürzung der Unternehmenspläne; Überschneidungen werden ignoriert.
+- **Näherungsorte:** Fehlende Hausnummern erhalten lokale Nachbarvorschläge mit
+  sichtbarer Herkunft. Die Unternehmens-Netzprojektion unterstützt ausdrücklich
+  als Näherung gekennzeichnete Orte bis fünf Kilometer zum nächsten erreichbaren
+  Straßenpaar. Restriktionen bleiben wirksam, detaillierte Zufahrten entfallen.
+- **Mengenanpassung:** Ein begrenzter Hintergrund-Mengenfit unterstützt feste
+  Unternehmensbeiträge, Zeit-/Klassen-/Netzhashprüfungen und separate Prüfzähler.
+  Sein Ergebnis verlangt eine erneute native Ausführung; eine lineare Anpassung
+  wird nicht als empirische Gesamtvalidierung ausgegeben.
+- **Verifiziert:** Native gemischte Regression in zwei Testregionen mit jeweils
+  drei Seeds. Reale Datenaufbereitung und Grenzen stehen im
+  [Befund](05-validierung.md#regionaler-hintergrundverkehr-und-näherungen-2026-10-27),
+  Bedienung und Datenverträge in
+  [Abschnitt 39](21-gueterverkehr-konzept-und-datenquellen.md#39-regionaler-hintergrundverkehr-und-vereinfachte-ortszuordnung-2026-10-27).
+
+<a id="datenquellen-import-umsetzungsstand"></a>
+
+### Datenquellen und gemeinsamer Importkern — ✅ ERSTER SCHNITT UMGESETZT (2026-10-28, experimentell)
+
+- **Import und Auswahl:** `Scenario.dataPlan.enabled=false` erhält den Bestandspfad.
+  Reader und Feldzuordnung werden mit dem Tourenimport geteilt. Neue Fachadapter
+  normalisieren Bevölkerungspunkte, Arbeitsplatzgewichte und schwere Fahrzeug-OD
+  in unveränderliche Revisionen; Uploads aktivieren keine Daten automatisch.
+- **Studio und Pipeline:** „Daten & Quellen öffnen“ verbindet Import, Mapping,
+  Herkunft, explizite Quellenwahl und serverseitige Vorprüfung. Dieselbe
+  Resolverregel bereitet Generierungen vor; Quellenplan, Eingabelock und
+  Anwendungsbericht werden im Manifest verlinkt. Mengenannahmen für schwere
+  Fahrzeuge sind ausdrücklich als Annahme ausgewiesen und brauchen positive
+  vorgegebene Tagesmengen.
+- **Verifiziert:** Backend-Gesamtsuite 389 Tests, keine Fehler, vier optionale Skips;
+  abschließend zehn fokussierte Import-/Pipelinefälle inklusive Bytevergleich des
+  ausgeschalteten Plans gegen reine Legacy-Auswahl. Frontend 92 Tests grün und
+  Produktionsbuild erfolgreich. Echte Browserkette vom JSON-Upload bis zu drei
+  schweren Fahrten im isolierten Offlinefall erfolgreich.
+- **Offen:** Vollständige Bestandsmigration, globale geordnete Quellenprofile,
+  installierbare Datenpakete und Dienstconnectoren. Das Ersatzprofil ist kein
+  empirisch kalibriertes Güterverkehrsmodell.
+  [Verifikation und Grenzen](05-validierung.md#datenquellenimport-und-quellenplan-2026-10-28--technischer-schnitt-bestanden),
+  [Vergleich mit dem zweiten Konzept](22-datenquellen-adapter-und-fallbackkonzept.md#18-vergleich-mit-dem-simudrive-konzept-eines-zweiten-llm).
+
+#### Implementierter Import-/API-Vertrag dieses Schnitts
+
+- Gemeinsame `TabularReader`-/`SourceReader`-Bausteine unter
+  `backend/src/main/java/de/synthesis/data/importing/`. Der Tourenimport nutzt sie
+  über kompatible Fassaden; sein fachlicher Mapper und seine Betriebslogik bleiben
+  getrennt. Gemeinsame Mapping-UI für Touren und neue Fachimporte.
+- Registrierte Importadapter als Spring-Beans für `workplaces-v1`,
+  `population-grid-v1` und `vehicle-od-v1`. CSV/TSV/XLSX, JSON/XML und DOCX-Tabellen
+  werden mit expliziter Zuordnung normalisiert. Dokumenttext ohne Tabellen braucht
+  einen Fach-Extraktionsadapter; die vorhandene Tourentextanalyse bleibt separat.
+- Deklarierte Einheit, Dezimalzeichen, Bezugsdatum, Abdeckungsbox, Herkunft sowie
+  Lizenz-/Attributionsfelder. `unknown` kennzeichnet eine nicht angegebene Lizenz;
+  die Software behauptet dadurch keine geklärten Nutzungsrechte.
+- Szenariolokale Rohdateien, Importentwürfe, strukturgeprüfte Mappingprofile und
+  per Inhaltshash unveränderliche normalisierte Revisionen unter
+  `uploads/data-imports/`. Upload und Revisionserzeugung aktivieren keine Quelle.
+- Quellenwahl für Bevölkerungsverteilung, Arbeitsplatzgewichte und schwere
+  Fahrzeug-OD. Ein gewählter Datenvertrag muss zum Aspekt passen. Datenrevisionen
+  werden vor dem Queueing eingelesen und auf Veränderung geprüft.
+- Arbeitsplatzwerte ersetzen ausschließlich `Work` innerhalb vollständig durch
+  die deklarierte Box abgedeckter Modellzonen. Andere Zwecke bleiben erhalten;
+  Explizite Nullwerte bleiben null; Zonen ohne Punkt werden innerhalb der Box ebenfalls null. Ein expliziter Vollständigkeitsvertrag fehlt noch (siehe Reviewgrenze unten). Teilzonen behalten bei erlaubten Lücken die
+  bisherigen Gewichte. Der Bericht trennt zugeordnete und tatsächlich angewendete
+  Arbeitsplatzmengen. Ohne passende Lückenregel bricht die Verarbeitung ab.
+- Eine technische Schwerlast-Mengendemonstration mit vier vorgegebenen
+  Tagesmengen für Binnen-, eingehenden, ausgehenden und Durchgangsverkehr. Es
+  verwendet repräsentative Binnen-/Randpunkte und gleichmäßige Abfahrten. Das ist
+  **kein kalibriertes Branchenmodell, kein Güterkettenmodell und keine belegte
+  regionale Vollnachfrage**. Mengen null sind erlaubt; die Gesamtsumme muss für
+  ein aktives Ersatzmodell positiv sein. Die vorhandene 100-%-Bedingung bleibt.
+- Gemeinsame Backendregel für Quellenplan-Vorprüfung und Vorbereitung der
+  Generierung; keine zweite Auswahlregel im Frontend. Neue Laufberichte unter
+  `sources/plan.json`, `sources/lock.json` und `sources/resolution.json`, verlinkt
+  im Manifest. Die Bestandsquellen des Legacy-Pfads sind darin noch nicht einzeln
+  vollständig als Providerkette aufgelöst.
+- Native Studioansicht „Daten & Quellen öffnen“ als breiter Dialog mit Beiträgen,
+  Datenbestand, Importeditor und Vorprüfung. Die Bestandseinstellungen bleiben
+  erhalten. Keine Hintergrundaktivierung importierter Daten und kein automatisch
+  als erfolgreich ausgegebener fehlender Mengenanker.
+
+API-Einstieg ist `/api/scenarios/{id}/data`: `schemas`, `imports`,
+`imports/{importId}/preview`, `imports/{importId}/revisions`, `revisions`,
+`profiles`, `imports/{importId}/profiles`, `imports/{importId}/profile` und
+`plan/preview`. Die letzte Route erhält den aktuellen, gegebenenfalls noch nicht
+gespeicherten Szenariostand. Eine neue Revision braucht eine erneute explizite
+Szenarioauswahl; bestehende Bindungen wandern nicht automatisch weiter.
+
+#### Reviewgrenze des ersten Schnitts (2026-10-28)
+
+Implementiert bedeutet hier technisch vorhanden und teilweise geprüft. Die
+[Freigabematrix](22-datenquellen-adapter-und-fallbackkonzept.md#13-nachweise-die-vor-übernahme-nötig-sind)
+ist nicht vollständig bestanden. Insbesondere fehlen eine umfassende
+Vor-Umbau-Baseline, aufgelöste Teileherkunft und ein expliziter
+Vollständigkeitsvertrag für Arbeitsplatzpunktdaten. Kommunale Aggregate mit AGS
+und Gebietsstand sind vom Punktadapter nicht unterstützt. Die
+[Lkw-Mengendemonstration](22-datenquellen-adapter-und-fallbackkonzept.md#95-vorhandene-mengendemonstration-und-fehlende-fachfreigabe)
+ist kein freigegebener struktureller Fallback. Diese Klarstellung ändert keinen
+Laufzeitcode und führt keine zusätzlichen bestandenen Gates ein.
+
+### Datenquellen M0: vollständige Punktregister und Teileherkunft — ✅ UMGESETZT (2026-10-28, experimentell)
+
+- **Vollständigkeit:** Arbeitsplatzimporte benötigen `coverageDeclaration` mit
+  Datenform `point-register`, Vollständigkeit `complete` und beschriebenem
+  Erhebungsumfang. Backendprüfung gilt auch bei Auswahl gespeicherter Revisionen;
+  alte Hashes bleiben lesbar, aber ungeklärte Bestände werden nicht verwendet.
+  Die UI startet mit „Nicht geklärt“ und übernimmt keine Erklärung aus Mappingprofilen.
+- **Anwendungsbericht:** Typisierte Quell-, Zuordnungs- und Kompositionsknoten
+  erhalten zonenbezogene Geltung, getrennte externe IDs/Modellindizes und
+  Quellzeilen mit Status angewendet/Teilzone/nicht zugeordnet. Alte Arbeitsgewichte
+  bleiben mit unbekannter Teileherkunft gekennzeichnet. Unvergleichbare
+  Arbeitsplatzanzahlen und Modellgewichte werden nicht als Gesamtmenge addiert.
+- **Fehlerverhalten:** Die Lückenregel wird vor dem Überschreiben geprüft;
+  bestätigte vollständige Nullbereiche bleiben null, auch ohne lokal zugeordneten Punkt.
+- **Verifiziert:** Backend 394 Tests, keine Fehler, vier optionale Skips;
+  14 fokussierte Import-/Pipelinefälle; Frontend 95 Tests und Produktionsbuild grün.
+  Neue Browserabnahme wegen fehlender automatischer Freigabe noch offen.
+  [Befund und Grenzen](05-validierung.md#datenquellen-m0-vollständigkeit-und-teileherkunft-2026-10-28).
+- **Offen:** AGS-/Gebietsstandsadapter, geordnete Quellenprofile/Datenpakete,
+  übrige Aspekte, vollständige regionale Vergleichsmatrix und fachlich geprüfter
+  Schwerlastfallback. Der Quellenplan bleibt standardmäßig ausgeschaltet.
+
+### Datenquellen M1: lokale Pakete und geordnete Profile — ✅ ERSTER SCHNITT UMGESETZT (2026-10-28, experimentell)
+
+- **Paketvertrag:** `synthesis-data-pack-v1` verbindet ein Manifest mit lokalen
+  strukturierten Dateien, Rohhashes, Mapping und Fachmetadaten. Alle Quellen werden
+  vor der Veröffentlichung geprüft. Grenzen: 5 MB ZIP, 15 MB entpackt, zehn Quellen;
+  keine Pfade, nicht deklarierten Dateien oder Downloads. Die gesamte ZIP-Bytefolge
+  bestimmt die Paketidentität, auch bei gleicher Paket-ID/Edition.
+- **Quellenprofil:** `synthesis-source-profile-v1` versioniert explizite Reihenfolge,
+  Abwahl und Ausfallregeln. Kandidaten sind Paketbeiträge oder vorhandene Revisionen.
+  Ein Szenario wählt `source=profile` und den konkreten Hash im Feld `profile`.
+  Neue Installationen oder Profilversionen verändern diese Auswahl nicht.
+- **Auflösung:** Vorschau und Generierung verwenden denselben Resolver. Er erhält
+  Abwahl, unpassende Abdeckung/Zeit/Fachvertrag, fehlende Datei, tatsächliche Auswahl
+  und nicht geprüfte nachrangige Kandidaten als verschiedene Diagnosen. Nur die
+  explizite `next`-Regel erlaubt bei fehlenden Dateien den nächsten Versuch;
+  beschädigte Daten brechen ab. Ohne Gewinner gilt ausschließlich `none` oder
+  ausdrücklich erlaubter Bestandspfad. Bei Blockern bleiben Diagnosen in der UI.
+- **Studio:** Im Datenbestand ZIP installieren; unter Beiträge Quellenprofil
+  erstellen, Kandidaten ordnen/abwählen und Regeln speichern. Aktivierung ist ein
+  gesonderter Schritt. Ungespeicherte Profilentwürfe schützen den Generierungsstart
+  wie ungespeicherte Importzuordnungen. Der Eingabelock hält Profildefinition,
+  Kandidatendiagnosen und aufgelöste Revisionen fest.
+- **Verifiziert:** Backend-Gesamtsuite 401 Tests ohne Fehler, vier optionale Skips;
+  abschließend 22 fokussierte Fälle ohne Fehler/Skips, einschließlich einer danach
+  ergänzten Profilprüfung für Bevölkerung und schwere Fahrzeuge. Frontend 99 Tests
+  und Produktionsbuild grün. Echte Browserkette mit CSV-/JSON-Paketen, Nicht-DE-Auswahl
+  und Offlinegenerierung bestanden; Details im verlinkten Befund.
+- **Grenzen:** Szenariolokaler Schnitt für die drei vorhandenen Importverträge,
+  keine vollständige Migration der Bestandsquellen, keine globale Paketverwaltung
+  oder Dienstconnectoren. Abhängige Modellprovider und allgemeine Zyklusprüfung,
+  kommunale Gebietsadapter und fachlicher Schwerlastfallback bleiben offen.
+  [Befund und Nachweise](05-validierung.md#datenquellen-m1-pakete-profile-und-gebietswechsel-2026-10-28),
+  [ausführbare Beispiele](examples/data-packs/README.md).
+
+### Gemeindeaggregate und Qualitätsmodus — ✅ ERSTER SCHNITT UMGESETZT (2026-10-29, experimentell)
+
+- **Gemeindevertrag:** `municipal-workplaces-v1` erhält Quell-ID, achtstelligen AGS
+  und Arbeitsplatzsumme. Metadaten tragen `de:AGS`, einen Gebietsstand und die
+  konkrete Revision separater räumlicher Gewichte. Führende Nullen bleiben erhalten;
+  doppelte Gemeindeschlüssel sind fehlerhafte Importzeilen.
+- **Explizite Verteilung:** `municipality-allocation-v1` liefert Punkte und positive
+  Gewichte je Schlüssel. Der Join verlangt gleichen Schlüsselraum, Gebietsstand
+  und Modellversion. Der Nenner umfasst alle Gewichte je AGS, auch außerhalb des
+  Modells. Ein künstlicher 3:1-Fall liefert aus 100 Arbeitsplätzen genau 75 im
+  Modell und 25 außerhalb; eine echte Null bleibt null. Nur explizit zugeordnete
+  Zonen ändern ihre Arbeitsgewichte. Andere Zonen folgen der gespeicherten
+  Lückenregel; ein Fehler überschreibt keine Zone teilweise.
+- **Referenzen:** Fachadapter deklarieren typisierte Revisionsabhängigkeiten.
+  Fehlende/falsche, zyklische und zu tiefe Abhängigkeiten werden geprüft; verwendete
+  Revisionen stehen unter `references` im Eingabelock. Der Anwendungsbericht behält
+  Quellzeilen, AGS, Verteilungsanteile, externe IDs/Modellindizes und Mengenbilanz.
+  Der Verteilungsknoten ist ausdrücklich eine Annahme, keine Standortbeobachtung.
+- **Laufzweck:** `dataPlan.qualityMode=exploration` als Default. Die technische
+  Lkw-Demonstration braucht `demonstrationAccepted=true` und eine beschriebene
+  Annahme. `analysis` blockiert sie vor dem Queueing. Alte Demonstrationen werden
+  nicht automatisch freigegeben. Die UI zeigt Zweck, Sperre und Herkunft getrennt.
+- **Verifiziert:** Backend 411 Tests ohne Fehler, vier optionale Skips;
+  31 fokussierte Quellenfälle, 102 Frontendtests und Produktions-AOT grün.
+  Echte Browserkette mit 75/25-Mengenbilanz und Analysesperre bestanden;
+  Grenzen und Nachweise im [Befundregister](05-validierung.md#gemeindeaggregate-und-qualitätsmodus-2026-10-29)
+  ausgewiesen.
+- **Grenzen:** Explizites Punktgewichtsmodell, keine amtliche Grenz-/Schlüsselprüfung
+  und keine automatische Überleitung zwischen Gebietsständen. Die Moduswahl
+  zertifiziert nicht alle anderen Quellen oder Modelle. Empirischer Güterfallback,
+  Polygonzuordnung und vollständige Bestandsmigration bleiben weitere Arbeit.
+  [Beispiele und Bedienung](examples/municipal-workplaces/README.md).
+
+### Gemeindegeometrien und Flächenverteilung — ✅ ERSTER SCHNITT UMGESETZT (2026-10-29, experimentell)
+
+- **Geometriereader:** `municipality-areas-v1` erhält Polygon-/MultiPolygon-Objekte
+  und Featurebelege aus WGS84-GeoJSON. Skalare Eigenschaften werden im gemeinsamen
+  Mappingeditor zugeordnet. Geometrien werden nicht in Koordinatenzeilen zerlegt.
+  Grenzen: 5 MB, 500 Features und 50.000 Koordinaten. Ungültige Ringe, doppelte AGS,
+  abweichendes CRS und überlappende Gemeindegeometrien werden abgewiesen.
+- **Modell:** `uniform-area-v1` verteilt die Gemeindesumme proportional zur
+  Schnittfläche in EPSG:3035. Löcher und getrennte Teile bleiben erhalten. Echte
+  projizierte Rasterecken ersetzen keine Zone durch ihre größere Lat/Lon-Box.
+  Nicht dargestellte Außenmenge und nicht angewendete Teilzonenmenge stehen separat
+  im Bericht. Teilmengen werden nicht mit einem ganzen alten Zonengewicht addiert.
+- **Numerik:** Abdeckung verwendet einen 1-cm-Randpuffer für die bekannte
+  Projektions-Rundlaufgenauigkeit. Mengen werden an ungepufferten Geometrien
+  berechnet. Diese Rechentoleranz bescheinigt keine Messgenauigkeit der Quelle.
+- **Wiederverwendung:** Die bisherigen MobileCity-Geometrieoperationen sind in
+  `SpatialGeometry` wiederverwendbar, mit kompatibler Fassade für die Bestandspfade.
+  Eine neue externe Bibliothek oder Pipeline-Stufe ist nicht hinzugekommen.
+- **UI:** Geometrierevision importieren, im Gemeindeimport Flächenverteilung wählen
+  und die genaue Revision binden. Punkt- und Geometriereferenzen bleiben getrennt;
+  ein Modellwechsel verwirft die alte Referenzauswahl. GeoJSON wird auch im lokalen
+  Datenpaketvertrag unterstützt.
+- **Verifiziert:** Finale Backend-Suite 418 Tests ohne Fehler, vier optionale Skips;
+  38 fokussierte Quellenfälle, Frontend 103 Tests und Produktions-AOT grün.
+  Echte Browserkette mit Lochpolygon, Außenmenge und Teilzonen bestanden; Grenzen
+  stehen im [Befundregister](05-validierung.md#gemeindegeometrien-und-flächenverteilung-2026-10-29).
+- **Grenzen:** Konstante Dichte als explizite Modellannahme, synthetische Fixtures,
+  keine amtliche Grenz-/Schlüsselbestätigung oder allgemeine Kalibrierungsabnahme.
+
+### Konfigurierbare Bevölkerungsprovider — ✅ ERSTER SCHNITT UMGESETZT (2026-10-29, experimentell)
+
+- **Quellenkette:** `population.distribution` kann mit `source=builtins` eine
+  explizite Reihenfolge der vorhandenen Provider Uploadraster, Zensus 2022,
+  OSM-Siedlungen, POI-Verteilung und Ersatz ohne Ortsdaten wählen. `PopulationSources`
+  kapselt die verzögerte Auflösung; abgewählte oder nachrangige Loader werden nicht
+  ausgeführt. Nur Nichtverfügbarkeit mit `onUnavailable=next` erlaubt Fortsetzung;
+  eine unpassende Quelle wird übersprungen. Erschöpfung führt zum Fehler.
+- **Kompatibilität:** `source=legacy` bleibt Standard. Die Pipeline hat dieselben
+  Stufen und dieselbe Zufallsfolge. Der neue Standardreihenfolge-Schnitt verwendet
+  die bisherigen Berechnungen. Die Migration umfasst eine Providerfamilie, keinen
+  vollständigen allgemeinen Workflowplaner oder Katalog aller alten Quellen.
+- **Eingaben und Fehler:** Der Quellenlock bindet bei zugelassenem Upload seinen
+  Hash bzw. die Abwesenheit vor dem Queueing. Der Lauf prüft eine behaltene Kopie;
+  eine zwischenzeitliche Änderung/Entfernung ist fatal. Der explizite Zensuspfad
+  prüft Archiv und extrahierte Rasterdatei und behandelt Integritätsfehler als
+  Fehler. Der alte Zensuspfad behält seine bisherige optionale Ausweichsemantik.
+  Nullwerte sind gültig; unterdrückte/negative/ungültige Rasterwerte werden im neuen
+  Pfad nicht still übersprungen. Eine eigene NoData-Maske ist weiterhin offen.
+- **Herkunft:** `sources/resolution.json.population` trennt Gesamtzahl und Verteilung
+  einschließlich manueller Übersteuerung, Modellannahmen und Zonengeltung.
+  Kandidaten erhalten Rang, Status und Grund. Die Vorprüfung meldet ausstehende
+  Laufauflösung. Fehlerpfade erhalten `sources/population-failure.json`;
+  Folgeläufe entfernen veraltete Berichte und Uploadkopien.
+- **UI:** Reihenfolge, Abwahl und Ausfallregel sind im Datenarbeitsbereich bedienbar.
+  Der Plan greift ausschließlich in die Bevölkerungsquelle ein; Straßennetz,
+  Arbeitsplatzgewichte und andere Zensusverbraucher behalten ihre eigenen Gates.
+- **Verifikation:** Siehe [Befundregister](05-validierung.md#konfigurierbare-bevölkerungsprovider-2026-10-29)
+  für tatsächliche Tests, Artefaktvergleiche und Browsernachweis.
+- **Grenzen:** Keine neue empirische Freigabe. Die fünf Bestandsprovider und die
+  bisherigen Revisions-/Paketprofile sind noch getrennte Auswahlmöglichkeiten;
+  globale Providerregistrierung und weitere Quellfamilien bleiben offen.
+  [Bedienung und Beispielplan](examples/population-sources/README.md).
+
+### Gemeinsame Providerauflösung und Arbeitsplatzquellen — ✅ ERSTER SCHNITT UMGESETZT (2026-10-29, experimentell)
+
+- **Gemeinsamer Kern:** `ProviderChain<T>` löst typisierte Werte unabhängig von
+  Quelldomäne und Dateiformat auf. Bevölkerung und Arbeitsgewichte verwenden
+  denselben Algorithmus für Vorrang, Abwahl, Nichtverfügbarkeit, ungültige Eingaben,
+  Unterbrechung und erschöpfte Listen. Reine Abwahl wird nicht als gescheiterte
+  Primärquelle und nicht als Fallback ausgegeben. Population behält seinen
+  bisherigen spezifischen Wert-/Diagnosevertrag als Fassade.
+- **Work-Verbraucher:** `source=builtins` am Aspekt `opportunities.work` ordnet
+  `osm-pois` und `synthetic`. Die OSM-Variante übernimmt die unveränderte
+  Work-Ableitung der Attraktivitätsstufe. Die synthetische Variante verwendet
+  denselben Modellalgorithmus auf privaten Zonenkopien und einen versionierten,
+  aus dem Szenarioseed abgeleiteten eigenen Zufallsstrom. Andere Zwecke und der
+  gemeinsame Pipeline-Zufallsstrom werden nicht verändert. Die Auswahl wird
+  vollständig validiert, bevor Work-Werte überschrieben werden.
+- **Herkunft:** Bericht unter `sources/resolution.json.workplaces`, Einheit
+  `model-weight`, getrennte Evidenz für OSM-Eingang und Gewichtableitung sowie
+  Modellprofil/Seed für synthetische Werte. Es wird keine beobachtete Arbeitsplatz-
+  gesamtsumme behauptet. Fehlerpfade liegen unter `sources/workplace-failure.json`.
+- **UI:** Arbeitsplatzprovider einzeln anordnen/abwählen; Population und Work haben
+  getrennte Konfigurationen. Die Herkunft des gemeinsamen OSM-Transports wird
+  dadurch nicht vollständig neu implementiert. Datensatz-/Paketprofile und die
+  konfigurierbare native Kette sind weiterhin getrennte Auswahlmöglichkeiten.
+- **Verifikation und Grenzen:** [Befundregister](05-validierung.md#gemeinsame-providerauflösung-und-arbeitsplatzquellen-2026-10-29).
+  [Bedienung und Beispielplan](examples/workplace-sources/README.md).
+
+### Gemischte Profile und explizite Registerlücken — ✅ ERSTER SCHNITT UMGESETZT (2026-10-29, experimentell)
+
+- **Gemeinsame Kette:** Quellenprofile für Bevölkerung und Work können importierte
+  Revisionen, Paketquellen und native `builtin:`-Provider enthalten. `MixedSources`
+  prüft/bindet potenziell benötigte Revisionen samt Referenzen vor dem Queueing und
+  übergibt die typisierten Werte im Lauf an `ProviderChain<T>`. Die geplante Bindung
+  (`staged`) ist von tatsächlicher Auswahl getrennt. Alte reine Importprofile
+  bleiben unter unverändertem Hash lesbar und nutzen ihren bisherigen Vertrag.
+- **Explizite Abwahl:** Gemischte Profile verlangen `fallback=none`; alle Ersatzquellen
+  stehen in der Liste. Gemischte Work-Profile erlauben nur `gaps=none|providers`.
+  Ein impliziter alter Pfad darf eine native Abwahl nicht rückgängig machen.
+- **Lücken:** `Policy.gaps=providers` mit geordneter `gapProviders`-Liste wählt native
+  Work-Gewichte für nicht vollständig übernommene Zonen. `WorkplaceComposition`
+  unterstützt Punktregister und beide Gemeindeallokationen. Bestätigte Nullwerte
+  bleiben erhalten; Teilzonen erhalten ganze Ersatzgewichte. Original-, Außen- und
+  nicht angewendete Teilmengen werden nicht mit Modellgewichten addiert.
+- **Atomarität/Herkunft:** Die ganze Zuordnung läuft zunächst auf Zonenkopien.
+  Erst nach erfolgreicher Prüfung von Primärbeitrag, benötigtem Lückenfüller und
+  Herkunftsgraph werden Work-Werte übernommen. Bei voller Abdeckung wird kein
+  Lückenprovider aufgelöst. Scope und Modellparameter der `gap/…`-Beiträge bleiben
+  im Graph erhalten; ihre Berichtssumme umfasst ausschließlich ergänzte Zonen.
+- **UI:** Gemeinsame Kandidatenliste im Profileditor, explizite Lückenquellen mit
+  Reihenfolge/Abwahl, Vorprüfung mit gebundenen Eingaben und geplanten Lückenfüllern.
+  Installation, Veröffentlichung, Profilversion und Szenarioauswahl bleiben getrennt.
+- **Verifikation/Grenzen:** [Befundregister](05-validierung.md#gemischte-profile-und-explizite-registerlücken-2026-10-29).
+  [Ausführbares Paket, Profil und Bedienung](examples/mixed-sources/README.md).
+  Mehrere regionale Register werden noch nicht automatisch kombiniert; externe
+  Fachquellen, Masken und empirische Modellabnahme bleiben eigene Aufgaben.
+
+### Mehrere Register regional ergänzen — ✅ ERSTER SCHNITT UMGESETZT (2026-10-29, experimentell)
+
+- **Vertrag:** Optionale Profilstrategie `fill-gaps` für importierte Work-Register.
+  Ohne Strategie bleibt `choose` wirksam; das neue Feld wird bei alten Profilen
+  nicht serialisiert. Eine vor der Änderung gespeicherte Profil-Fixture behält
+  exakt ihren erfassten Hash. Regionale Profile verlangen explizite Lückenregeln;
+  native Modelle bleiben in der getrennten Lückenliste.
+- **Komposition:** `RegionalWorkplaces` übernimmt ganze vollständig abgedeckte Zonen
+  nach Quellenrang. Ein Nullwert ist ein belegter Wert. Nachrangige Register können
+  nur noch offene Zonen ergänzen; Überlappungswerte werden als `shadowedJobs` erhalten.
+  Gemeindeaußenmengen und polygonale Teilmengen behalten ihren jeweiligen Nenner.
+- **Herkunft/Atomarität:** Mengenbilanz pro Revision, tatsächliche disjunkte Scopes
+  unter `register-<Rang>/…`, Diagnose vor Vorrang unter `allocationBeforePriority`.
+  Ein gemeinsamer beobachteter Arbeitsplatzgesamtwert wird nicht behauptet. Erst
+  nach vollständiger Prüfung einschließlich erforderlichem Ersatz werden echte
+  Work-Werte übernommen. Andere Zwecke und der Pipeline-RNG bleiben erhalten.
+- **Vorprüfung:** Alle potenziellen Register werden vor Queueing gebunden, auch
+  nachrangige, deren räumliche Notwendigkeit noch nicht feststeht. Abgewählte Quellen
+  werden nicht gelesen; nach vollständiger tatsächlicher Abdeckung werden keine
+  weiteren Register zugeordnet. Das ist von einer bestätigten Auswahl zu trennen.
+- **UI:** „Zusammenführung → Register regional ergänzen“, Quellenvorrang, getrennte
+  native Lücken und sichtbarer Strategiestatus im ausgewählten Profil/Preflight.
+- **Nachweise/Grenzen:** [Befundregister](05-validierung.md#mehrere-register-regional-ergänzen-2026-10-29).
+  [Ausführbares Paket und genaue Mengenregeln](examples/regional-registers/README.md).
+  Fachliche Registervergleichbarkeit, NoData-Masken und empirische Abnahme bleiben offen.
+
+### Rasterzellen mit expliziten Masken — ✅ ERSTER SCHNITT UMGESETZT (2026-10-30, experimentell)
+
+- **Verträge:** `population-cells-v1` und `workplace-cells-v1` bilden vollständige
+  EPSG:3035-Quadrate mit `value`, `missing`, `not-collected`, `suppressed` ab.
+  Bekannte Null und unbekannte Menge bleiben getrennt; explizite Marker bleiben
+  erhalten. Gemeinsame Reader, Mappingeditor, Revisionen, Profile und Pakete werden
+  wiederverwendet. Der Adapter normalisiert vor Validierung und Revisionshash.
+- **Raum/Mengen:** Vollständig bekannte Modellzonen erhalten ungepufferte
+  Flächenanteile der Quellmenge. Die Flächenverteilung ist eine Annahme.
+  Masken, Außenmengen und bekannte nicht angewendete Teilmengen bleiben separat.
+  Ganze Teilzonen folgen der expliziten Lückenregel; es gibt keine Hochskalierung
+  der Quellsumme auf die Region. Rasterüberlappungen werden abgelehnt.
+- **Ersatz:** Work nutzt regionale Nachrangregister oder konfigurierte native
+  Gewichte über die bestehende atomare Komposition. Population verlangt bei
+  Lücken eine konsistente manuelle Gesamtzahl. Nur deren Restmenge wird mit den
+  ausdrücklich gewählten räumlichen Modellen auf offene Zonen verteilt. Echte
+  Nullwerte bleiben erhalten; Mengenanker, Flächenannahme und Modell bleiben
+  einzelne Herkunftsteile. Ohne positive Restmenge wird kein Ersatzmodell geladen.
+- **UI:** Eigene Rasterverträge im gemeinsamen Import, sichtbarer Statusvertrag,
+  Lückenquellen mit Reihenfolge/Abwahl/Ausfallregel und manueller Bevölkerungsanker.
+  Vorprüfung bindet Quellen; tatsächliche Maskenabdeckung folgt im Lauf.
+- **Verifiziert:** Zehn neue `MaskedCellsTest`-Fälle; 82 Quellenfälle, vollständige
+  Backend-Suite mit 462 Tests ohne Fehler (neun optionale Skips), 112 Frontendtests
+  und Produktionsbuild. Tatsächlicher UI-Import und Offlinegenerierung sowie
+  Installation/Generierung des Beispielpakets bestanden.
+  [Befundregister](05-validierung.md#rasterzellen-mit-expliziten-masken-2026-10-30),
+  [Vertrag und ausführbares Beispiel](examples/masked-cells/README.md).
+- **Grenzen:** Festes EPSG:3035-Zellformat, keine automatische Migration nativer
+  Zensusmasken, keine unterzonale Ergänzung oder empirische Modellfreigabe.
+  Flächenmengen sind Verteilungsgewichte; die vorhandene Erzeugung ganzer Haushalte
+  besitzt eine eigene Rundungsabweichung (im Browserfall Ziel 60, tatsächlich 63).
+
+### Szenarioübergreifende Datenpaketbibliothek — ✅ ERSTER SCHNITT UMGESETZT (2026-10-30, experimentell)
+
+- **Wiederverwendung:** `DataPackLibrary` verwaltet portable Pakete einer Installation
+  unter `source-library/packs/<hash>.zip`. Eigene ZIPs können hochgeladen oder
+  installierte Szenarioversionen ausdrücklich bereitgestellt werden. Kein neuer
+  Fachparser, keine zusätzliche Pipeline-Stufe und keine Änderung an Seeds.
+- **Portabilität:** `DataPacks.validatePortable` verwendet die vorhandenen
+  Fachadapter und verlangt sämtliche Referenzrevisionen im selben ZIP. Graph,
+  Vertragstyp und kommunaler Schlüssel-/Gebietsstandsjoin werden geprüft, bevor
+  die Bibliothek eine Version speichert. Szenariolokale Pakete behalten ihren
+  bisherigen Vertrag; ein nur dort auflösbarer externer Verweis ist nicht portabel.
+- **Versionsbindung:** Eine Übernahme kopiert konkrete ZIP- und Revisionsbytes in
+  den Szenariobestand. Neue Bibliotheksversionen verändern keine vorhandenen
+  Quellenbindungen. Die Generierung liest ausschließlich die eigenen eingefrorenen
+  Eingaben und benötigt die Zentraldatei nicht. Veröffentlichung, Installation
+  und Aktivierung sind getrennte Aktionen.
+- **UI:** Bibliothek im Datenbestand, Versions-/Lizenzangaben, ausdrückliche
+  Bereitstellung und Übernahme. Ungültige Zentraldateien erscheinen mit Grund;
+  ihre Übernahme ist blockiert. Ein Bibliotheks-Lesefehler lässt den übrigen
+  Szenariobestand nutzbar. Bereits vorhandene konkrete Versionen sind erkennbar.
+- **Verifiziert:** Sieben neue Backendfälle; vollständige Suite mit 469 Tests ohne
+  Fehler (neun optionale Skips), 89 Quellenfälle ohne Fehler/Skips, 116 Frontendtests
+  und Produktions-AOT. Die echte Browserkette mit zwei Szenarien
+  veröffentlicht V1, übernimmt sie ohne Aktivierung, wählt die Beiträge ausdrücklich,
+  veröffentlicht V2 ohne Umbindung und generiert nach zentraler Beschädigung
+  bytegleiche gefüllte Personen-, Haushalts-, Aktivitäten-, Zonen- und
+  Attraktivitätsdateien aus der Szenariokopie.
+  [Befundregister](05-validierung.md#szenarioübergreifende-datenpaketbibliothek-2026-10-30),
+  [Bedienung, API und Versionsbeispiele](examples/source-library/README.md).
+- **Grenzen:** Installationsweite Datenpakete, weiterhin szenariolokale
+  Quellenprofile. Keine automatische Regionalempfehlung, entfernten Dienste oder
+  empirische Qualitätsfreigabe. Die vollständige Konzeptfreigabe bleibt separat.
+
+### Gemeinsame Quellenprofile mit Paketabhängigkeiten — ✅ ERSTER SCHNITT UMGESETZT (2026-10-30, experimentell)
+
+- **Vertrag:** `SourceProfileLibrary` verwendet die bestehende Profildefinition und
+  gemeinsame kanonische Serialisierung. Profilhashes bleiben zwischen lokalem und
+  gemeinsamem Bestand identisch; die alte erfasste Profilhash-Fixture besteht.
+  Portable Profile enthalten native Regeln oder feste Paketbeiträge. Direkte
+  Revisionskandidaten bleiben lokal. Alle aktiven Pakete müssen in der Bibliothek
+  vorhanden und zum Aspekt passend sein; ausgeschlossene Pakete werden nicht gelesen.
+- **Übernahme:** Vor der ersten Zielschreiboperation werden sämtliche aktiven
+  Paketbytes geprüft/eingelesen. Danach werden konkrete Kopien und das Profil im
+  Zielscenario gespeichert. Es wird kein Beitrag aktiviert. Mengenanker und
+  Lückenregeln bleiben Szenarioentscheidungen. Native Provider lösen ihre Eingaben
+  im Ziel neu auf; eine Profilkopie überträgt keine Uploads oder Liveantworten.
+- **Versionen/UI:** Bereitstellung gespeicherter Szenarioprofile und JSON-Import
+  in der Bibliothek, sichtbare Paketabhängigkeiten und explizite Profil-/Datenübernahme.
+  Neue Versionen binden Szenarien nicht um. Fehlerhafte gemeinsame Profile bleiben
+  sichtbar und sind nicht übernehmbar; ein Bibliotheksausfall blockiert den übrigen
+  Szenariobestand nicht. Die Generierung liest weiterhin nur ihre eigenen Inputs.
+- **Nachweise:** Sieben neue `SourceProfileLibraryTest`-Fälle; vollständige Backend-
+  Suite mit 476 Tests ohne Fehler (neun optionale Skips), 96 Quellenfälle ohne
+  Fehler/Skips; 120 Frontendtests und Produktionsbuild. Echte Browserkette mit
+  gemeinsamer Zweiaspektdefinition, Paketübernahme, JSON-Version V2 ohne Umbindung
+  und fünf gefüllten bytegleichen CSV-Dateien nach zentraler Beschädigung bestanden.
+  [Befundregister](05-validierung.md#gemeinsame-quellenprofile-und-kompatibilitätsnachweise-2026-10-30),
+  [Vertrag, Bedienung und Beispiele](examples/shared-source-profiles/README.md).
+- **Kompatibilitätskorrektur:** Die fünf nativen Bevölkerungszweige verglichen
+  bereits gefüllte Dateien über `coreArtifacts`; die vorige Einordnung als reiner
+  Leercontainervergleich war zu weitgehend. Neu sind ausdrückliche gefüllte
+  Mindestartefakte und nachvollziehbare Fixture-/Ergebnishashes je Zweig. Eine
+  isolierte Vor-Umbau-Baseline bleibt offen. Weitere Quellfamilien, entfernte
+  Katalogdienste und empirische Fachfreigaben bleiben eigene Aufgaben.
+
+### Schwerlastquellen, additive Unternehmensbeiträge und native Zielwirkung — ✅ BEGRENZTER SCHNITT UMGESETZT (2026-11-02)
+
+- **Herkunft:** `FreightSources` ergänzt unter `sources/resolution.json.freight` eine
+  relationale Quellen-/Ergebnisbilanz. Quellzeile, Revision/Rohhash, Metadaten,
+  ursprüngliche Relation und tatsächlich erzeugte Tagesmenge bleiben verbunden.
+  Klassen, Koordinaten, Kanten, Zeitfenster und Mengen werden gegen die gebundenen
+  Relationen geprüft. Einzelne Fahrten sind über `freight/trips.csv` zuordenbar.
+- **Evidenz:** Nutzerquellen bleiben unbestätigt; die technische Demonstration ist
+  `assumed`. Dieser Status gilt jetzt konsistent auch in Freight-Berichten und
+  Manifest. Abfahrten innerhalb des Eingangsfensters sind weiterhin eine getrennte
+  Modellannahme. Erzeugung ist kein Ausführungsbeweis; separate native Bilanzen
+  werden ausdrücklich referenziert. Der fachliche Güterfallback aus G9 bleibt offen.
+- **Semantik:** Auswahl/Abwahl des Schwerlasthintergrunds ersetzt keine aktivierten
+  Unternehmenstouren. Die UI benennt die Abgrenzung zu Unternehmen und Paketlogistik.
+  Die neue Migrationsfallmenge vergleicht Bestand, direkte Revision, Quellenprofil,
+  Revisionswechsel und Abwahl bei drei Seeds und zwei künstlichen Netzlagen.
+- **Verifiziert:** Für den Schnitt bleiben Unternehmensidentitäten und 69 fachliche
+  Population-/Matrix-/Exportdateien unverändert. Gleichwertige Bestand-/Revisionsdaten
+  liefern denselben gefüllten gemeinsamen Nachfragecontainer. Die geänderte Relation
+  verändert nur ihre eigene Menge/Zufallsfolge. Ein kontrollierter Wartepunkt prüft
+  die Bindung vor späteren Quell-/Szenarioänderungen. 18 echte SUMO-Läufe prüfen
+  angeforderte, geroutete, abgefahrene und abgeschlossene Bewegungen ohne Teleports.
+  [Ausgeführte Gesamtsuiten und genaue Grenzen](05-validierung.md#quellenplan-schwerlast-unternehmensbeiträge-und-native-zielwirkung-2026-11-02),
+  [Vertrag und feste Prüfmenge](examples/source-plan-traffic/README.md).
+- **Grenzen:** Zwei übersetzte synthetische Netze sind keine unabhängigen realen
+  Stadt-/Landreferenzen. Die privaten Population-/Aktivitätsartefakte sind vorhanden,
+  simulierte private Personenfahrten und Paketfahrten sind in diesen nativen Läufen
+  nicht enthalten; logiTopp und GTFS sind ausdrücklich deaktiviert. Volle regionale,
+  empirische und MobileCity-Abnahmen bleiben offen.
+
+### Lesbarer Quellenlaufbericht mit Teilfehlern — ✅ UMGESETZT (2026-11-04)
+
+- **Verhalten:** „Daten & Quellen → Lauf prüfen“ zeigt angewendete Quellen,
+  getrennte Registermengen, Modellgewichte, Maskenzustände, Herkunftsschritte und
+  Ersatzrollen. Die Bevölkerungssynthese weist Zielmenge und tatsächliche
+  Haushaltsrundung getrennt aus, auch beim delegierten Bestandspfad.
+- **Laufbindung:** `SourceRunReport` ergänzt den vorhandenen Quellenbericht um
+  Laufkennung, Beginn/Ende, Status/Fehler sowie Plan-/Lockhashes. Er schreibt bereits
+  am Start und bei Teilfehlern; atomarer Ersatz vor Veröffentlichung des Laufendes.
+  Fehlgeschlagene Läufe erben keine früheren Erfolgsanteile. Die bisherigen
+  Fehlerbereinigungstests prüfen nun ausdrücklich diese stärkere Invariante.
+- **Zielwirkung:** Erzeugte Nachfrage und tatsächliche Zielausführung bleiben
+  getrennt. Nur eine erfolgreich beendete aktuelle SUMO-Stufe bindet ihre aggregierte
+  Bilanz und den Hash der vollständigen Ausführungsdatei. Ein alter Dateirest ist
+  kein Erfolg einer übersprungenen oder noch ausstehenden Stufe.
+- **Grenzen:** Nur letzter Lauf, kein Archiv. Nachträgliche Szenarioänderungen
+  erfordern eine neue Generierung; der Bericht bestätigt keinen automatischen
+  Gleichstand sämtlicher aktueller Eingaben. Keine zusätzliche Quellenfamilie,
+  neue Pipeline-Stufe oder neue Zufallsfolge; `dataPlan.enabled=false` bleibt Default.
+  [Bedienung und Vertrag](examples/source-run-report/README.md),
+  [ausgeführte Tests und Browsernachweis](05-validierung.md#quellenlaufbericht-und-lesbare-teileherkunft-2026-11-04).

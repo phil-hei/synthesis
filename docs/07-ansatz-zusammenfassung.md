@@ -28,18 +28,18 @@ Eine Generierung durchläuft 15 Stufen. „A/B-gated" = läuft nur, wenn die Ach
 | # | Stufe | Was passiert | Wichtigste Artefakte |
 |---|---|---|---|
 | 1 | Zonierung | Region → freies Bbox-Raster, flexibel EPSG:3035-ausgerichtetes Raster oder amtliches INSPIRE-Raster; Zellgröße wird an das szenariospezifische Zonenlimit angepasst | `zones.csv` |
-| 2 | OSM-Daten (POIs) | Szenario-Snapshot oder Overpass: Shops/Amenities/… und bevölkerte `place`-Nodes (synthetischer Fallback nur beim Live-Pfad) | `uploads/osm-data.json` (optional), Provenienz in `manifest.json` |
+| 2 | OSM-Daten (POIs) | Szenario-Snapshot oder Overpass: Shops/Amenities/… und bevölkerte `place`-Nodes (synthetischer Fallback nur beim Live-Pfad); optional BNetzA-/OSM-Stationsbestand für Strom/Gas/H₂, ohne synthetischen Infrastruktur-Fallback | `uploads/osm-data.json` (optional), `energy/stations.geojson`, `energy/quality.json`, verwendeter OSM-Stationssnapshot, Provenienz in `manifest.json` |
 | 3 | Attraktivitäten + Pendleranker | Ziel-Attraktivität je Zelle; optional koordinatenbasierte Pendler-OD, externe Arbeitsortanker auf reale gewichtete Ziele verschoben; diagnostischer OSM-Außenzielkandidat mit automatischem OD-Gegencheck | `attractivities.csv`, `population/commuters.csv`, `population/external-destination-candidates.json` |
 | 4 | Matrizen | GraphHopper-Routing (Pkw/Rad/Fuß) Zelle↔Zelle; Netzquelle Szenario-OSM-XML → Serverdatei → Overpass, Luftlinien-Fallback | Visum `.mtx.bz2` + Matrix-YAMLs |
 | 5 | Bevölkerungssynthese | Gesamtzahl/Verteilung: manuell → alternatives Upload-Raster → hashgeprüfter Destatis-Zensus 2022 → OSM → Dichte; danach Personen/Haushalte (KIT-Sample, optional experimentell nach regionalen Zensus-Anteilen gewichtet, oder synthetisch) + Pkw + feste Ziele | `person.csv`, `household.csv`, `car.csv`, `fixedDestination.csv`; optional `population/census-structure.json`, Provenienz in `manifest.json` |
 | 6 | **Aktivitätenpläne (Achse A)** | Wochenpläne je Person aus `actiTopp` \| `GTA-LLM` \| `Template` | `activity.csv` |
-| 7 | Logistik | Depots, Packstationen, Paketnachfrage sowie optionale Kundenretouren als Pickup-Nachfrage | `distribution-centers.csv`, `cepsp-shares.csv`, `parcel-demand-config.yaml` |
+| 7 | Logistik | Depots, Packstationen, Paketnachfrage, optionale Kundenretouren und opt-in schwere Tages-OD-Fahrten per CSV | `distribution-centers.csv`, `cepsp-shares.csv`, `parcel-demand-config.yaml`, `freight/` |
 | 8 | Legacy-Export | Umwandlung in das logiTopp-Legacy-Format | `legacy/…` |
 | 9 | **MobileCity-Export (B)** | Teilbeitrag, TRAMIGO-Vorlage oder eigenes Regionalpaket mit OD-Verbindungsnetzen, regionalem GTFS, optionalem KBA-BEV-Anteil, öffentlichen BNetzA-Ladepunkten, expliziten Carsharing-Annahmen und optionalen manuellen oder Zensus-Pufferring-basierten Umland-Districts samt vier eingehenden Zweckanteilen; experimentell, unkalibrierte Profile | `mobilecity/` (6 bzw. 25 CSV-Familien, Shapefile, Dateninventar und Provenienz; vollständige Modi zusätzlich Governance und ZIP). [Grenzen und Ausbau](06-gta-integration-konzept.md#mobilecity-naechste-schritte) |
 | 10 | **MobileCity-Validierung (optional)** | Vollständiges Regional-/Vorlagenpaket im echten lokalen ConfigTool importieren, Binärdateien neu laden, Beiträge für Bevölkerung/Pkw/BEV/Ladepunkte/Carsharing/Umlandnachfrage prüfen und mindestens drei Jahre simulieren; fehlende Laufzeit wird sichtbar übersprungen | `mobilecity-validation/status.json`, optional `validation-report.json` und native Logs |
 | 11 | Manifest | Lauf-Metadaten inklusive SHA-256 der OSM-Kampagneneingabe und erzeugten Attraktivitäten | `manifest.json` |
 | 12 | **Simulation logiTopp (B)** | Externe Wochensimulation Personen+Pakete, experimentell inkl. Kundenretouren als Abholaufträge (+ optional Kalibrierungsschleife); normalisiert die simulierten Personenwege einmal in den nativen Demand-Vertrag | `demandsimulationResult.csv`, `demand/{metadata.json,person-trips.csv,legs.csv,zone-flows.csv,od-flows.csv}`, `kpis.json`, `depot-stats.json`, `tours.geojson`, `parcel-density.geojson` |
-| 13 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-, Rad- und Fuß-Trips** der Nachfrage + **Zustelltouren** (Lkw/Lastenrad) + optional **ÖV/Bus** (GTFS → `gtfs2pt.py`, intermodal); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp inkl. Bus) | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte) |
+| 13 | **SUMO (B)** | OSM → `netconvert` → `duarouter` → `sumo`: **PKW-, Rad- und Fuß-Trips** der Nachfrage + **Zustelltouren** (Lieferwagen/Lastenrad), optional **schwere LKW/Sattelzüge** aus vorbereiteten OD-Mengen + optional **ÖV/Bus** (GTFS → `gtfs2pt.py`, intermodal); misst edgeData + CO₂ (HBEFA je Fahrzeugtyp inkl. Bus); optionale native Fahrzeugketten mit Halten und Verspätungsfortschreibung; Stationsprüfung und externe Referenzbilanz separat | `sumo/` (net, routes, `statistics.xml`, `summary.json` mit CO₂, `congestion.geojson` = Netzlast-Karte, `traffic-routes.geojson` mit `private`/`logistics`), optional `vehicles/native-chains.json`, `sumo/simulation.rou.xml`, `sumo/chain-stops.xml`, `energy/network-access.json`, `vehicles/trip-identities.json`, `vehicles/energy-ledger.json` |
 | 14 | **Netz-Feedback (optional)** | Gleichgewichts-Schleife: Stau-Faktoren je Zonenrelation (1–3), **MSA-gedämpft** in die Pkw-Matrix → logiTopp entscheidet neu → SUMO erneut – bis Konvergenz (Δ<0,01, max. 3 Iterationen) | aktualisierte `CAR_TTC`-Matrizen + neue `kpis.json`/SUMO-Artefakte |
 | 15 | **LLM-Moduswahl (A, GTA 3c)** | LLM wählt Modus je Distanzband auf simulierten Trips | `simulation/llm-mode-choice.json` |
 
@@ -80,6 +80,68 @@ Zwei-Hebel-Regler die gemeinsame Modus-Distanz-Sicht: `asc_put` führt das globa
 Realrouting und korrigierter Distanzmarginale den Promotions-Gate bestehen.
 
 ## 5. Wichtigste Artefakt-Gruppen
+
+Lokale Datenpakete und inhaltlich versionierte Quellenprofile ergänzen die drei
+Importverträge. Der Nutzer bestimmt Reihenfolge, Abwahl und Ausfallregel; Installation
+und Profilspeicherung aktivieren keine Quellen. Die Vorprüfung erklärt die Auswahl.
+[Bedienung und Beispiele](examples/data-packs/README.md). Gemeindeaggregate können über einen getrennten
+AGS-/Gebietsstandsvertrag und explizite Gewichtsrevisionen beitragen; außerhalb
+liegende Mengen werden bilanziert. Die technische Lkw-Demonstration benötigt eine
+Explorationsfreigabe und wird im Auswertungsmodus gesperrt.
+[Gemeindeimport und Grenzen](examples/municipal-workplaces/README.md). Alternativ
+stehen versionierte GeoJSON-Polygone und Flächenverteilung mit Erhalt von Löchern,
+Teilzonen- und Außenbilanz zur Verfügung; die Verteilung ist eine Modellannahme.
+
+Für Bevölkerung lassen sich erstmals auch einzelne Bestandsprovider ordnen und
+abwählen: Upload, Zensus, OSM-Siedlungen, POI-Ersatz und Ersatz ohne Ortsdaten.
+Gesamtzahl und Verteilung haben getrennte Herkunftsberichte.
+[Bedienung und Grenzen](examples/population-sources/README.md).
+
+Auch OSM-Arbeitsgewichte und synthetische Work-Gewichte sind getrennt auswählbar.
+Beide Familien verwenden denselben typisierten Auswahlkern; andere Zielzwecke
+bleiben unabhängig. [Work-Provider und Grenzen](examples/workplace-sources/README.md).
+
+Gemischte Profile verbinden native Provider, Datenrevisionen und Paketquellen.
+Registerlücken können explizit mit OSM-/synthetischen Work-Gewichten ergänzt werden;
+Nullwerte und nicht angewendete Mengen bleiben getrennt erhalten.
+[Vertrag und Beispiel](examples/mixed-sources/README.md).
+
+Mehrere Arbeitsplatzregister können über eine explizite regionale Priorität gemeinsam
+verwendet werden. Überlappungen, echte Nullwerte und native Restlücken bleiben getrennt.
+[Regionaler Vertrag](examples/regional-registers/README.md).
+
+Explizite Rasterzellverträge für Bevölkerung und Work erhalten echte Nullwerte und
+getrennte NoData-Zustände. Nur unbekannte Zonen werden ergänzt; Bevölkerung benötigt
+dafür eine konsistente Gesamtzahl als Mengenanker.
+[Zellvertrag und Beispiel](examples/masked-cells/README.md).
+
+Eine lokale Datenpaketbibliothek erlaubt die Wiederverwendung zwischen Szenarien.
+Konkrete Kopien erhalten ihre Hashes; neue Bibliotheksversionen ändern keine
+bestehenden Quellenbindungen. [Bedienung und Grenzen](examples/source-library/README.md).
+
+Auch Quellenprofile lassen sich samt festen Paketabhängigkeiten zwischen Szenarien
+übernehmen. Auswahl und Lückenregeln bleiben ausdrücklich szenariobezogen.
+[Gemeinsame Profile und Grenzen](examples/shared-source-profiles/README.md).
+
+Schwerlastquellen haben eine relationale Eingangs-/Ergebnisbilanz. Ein begrenzter
+Migrationsnachweis erhält Unternehmensbeiträge und prüft die native SUMO-Wirkung
+über Revision, Quellenprofil und Abwahl. Private Fahrten und MobileCity sind damit
+noch nicht abgenommen. [Umfang und Nachweise](examples/source-plan-traffic/README.md).
+
+Die Quellenprüfung im Studio zeigt eine lesbare Bilanz des letzten Quellenlaufs
+einschließlich Teilfehlern, Quellen-/Ersatzherkunft und getrennten Zieldiagnosen.
+[Laufbindung, Bedienung und Grenzen](examples/source-run-report/README.md).
+
+Experimentell ergänzt der standardmäßig ausgeschaltete Quellenplan den Import von
+Bevölkerungsverteilung, Arbeitsplatzgewichten und schweren Fahrzeug-OD. Der
+Studioarbeitsbereich nutzt denselben Mappingeditor wie der Tourenimport;
+Revisionserzeugung und Quellenaktivierung sind getrennte Schritte. Arbeitsplatzpunktdaten benötigen eine explizite Vollständigkeitsangabe; angewendete und erhaltene Arbeitsgewichte bekommen zonenbezogene Teileherkunft. Die
+Fachfreigabe ist offen; technische Prüfungen und Grenzen stehen im [Umsetzungsschnitt](22-datenquellen-adapter-und-fallbackkonzept.md#19-erste-experimentelle-umsetzung-und-verifikation).
+
+- **Quellenplan:** `sources/plan.json`, `sources/lock.json` und
+  `sources/resolution.json`; Rohdaten und unveränderliche Importrevisionen bleiben
+  als Szenarioeingaben unter `uploads/data-imports/`.
+
 - **mobiTopp-Inputs:** `zones`, `attractivities`, `person`, `household`, `activity`, `car`,
   `fixedDestination` (CSV) + Visum-Matrizen (`.mtx.bz2`)
 - **logiTopp/Logistik:** `legacy/`, `distribution-centers`, `cepsp-shares`,
@@ -275,3 +337,122 @@ auf SUMO übertragen und nach dem Router geprüft. Ersatzrouten und Reisezeiten
 werden getrennt ausgewiesen. Sechs Rastatt-Testfahrten kommen ohne Umrouting an;
 Gebietsabdeckung und Belastungswirkung sind damit nicht nachgewiesen.
 [Details](20-erweiterungen-routenkonsistenz-und-zeitfeedback.md#experimenteller-adapter-umgesetzt-07102026).
+
+
+Schwerer Güterverkehr ist als experimenteller, standardmäßig deaktivierter Baustein
+technisch integriert. Ganze Tagesfahrten einschließlich Leerfahrten werden zusammen
+mit vollständiger Personennachfrage simuliert; Quellen-/Mengenbilanz und getrennte
+SUMO-Routenlayer unterscheiden Personenfahrzeuge, Paketverkehr und schwere LKW.
+Offline-Adapter bereiten reale monatliche Maut-OD auf und verteilen sie über explizite
+Mautknotenkataloge. Eine native Teilnachfrageprobe für sechs Gemeinden mit
+Zugangssensitivität ist durchgeführt. Automatische regionale
+Netzrandzuordnung und regionale Kalibrierung bleiben offen. Explizite gerichtete SUMO-Kanten können inzwischen in der
+OD-CSV angegeben und im Studio heruntergeladen werden; ein Offline-KBA-PUF-Adapter
+normalisiert Referenzdaten mit Qualitätsmarkern. SEVAS-GeoJSON-Snapshots ergänzen optional
+unbedingte LKW-Sperren ohne Ausnahmen; Teilkanten, Zeit-/Maßregeln und Vorrangrouten
+werden noch nicht umgesetzt. Zusätzlich kann die SUMO-Stufe statische Standard-LKW-Profile
+(26/40 t Volllast) anwenden und Routen auf Quellverstöße prüfen. Bedingungen, Ausnahmen
+und unbekannte Achslasten bleiben sichtbar ungeklärt; nicht routbare Fahrten werden
+mit Fehlerbericht bilanziert. Der Streaming-Umbau überwindet die DOM-Speichergrenze
+im gleichen 6-GiB-Budget. Ein neuer Netzfall mit vollständigerer NRW-Quelle und
+größerem Straßenpuffer routet und beendet alle 2.336 schweren Güterfahrten ohne
+Güter-Teleport. Klassenbezogene Straßenbindung und gerichtete Vorprüfung sind ergänzt; die
+Gegenrichtung darf nur auf demselben Straßensegment und bei nicht fest vorgegebenen
+Kanten gewählt werden. Das erlaubte Sackgassenwenden reduziert im isolierten
+Vergleich 316 fehlende Routen auf 18. Angefordert/geroutet/gestartet/beendet werden
+getrennt bilanziert; die Fahrzeugzahl enthält Fahrräder. Der Netzbericht weist
+Quellreferenzen problematischer Endpunkte aus; Pkw werden am Haushaltswohnort
+initialisiert. Eine experimentelle Option platziert synthetische interne Wohn-/
+Aktivitätsorte an gemeinsamen öffentlichen Straßen derselben Zone; Zielzonen und
+Zufallsfolge bleiben erhalten. Der vollständige Modus
+weist ungeeignete Endpunkte mit Bericht ab. Die Gesamtabnahme bleibt offen;
+unbekannte Quellregeln bleiben prüfpflichtig.
+[Nachweise und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#24-routingverluste-vorprüfung-und-vollständige-ausführungsbilanz-2026-10-17). [Konzept und Datenquellen](21-gueterverkehr-konzept-und-datenquellen.md).
+
+Unternehmenstouren können als CSV-/XLSX-Entwurf mit Spaltenmapping, optionalem lokalem
+LLM-Vorschlag, Haltdetails und JSON-Export importiert werden. Ein bestätigter Kontext
+ergänzt Depot, physisches Fahrzeug, Zeiten und lokale Haltkoordinaten. Ausdrücklich
+aktivierte Revisionen gehen zusätzlich in die gemeinsame Nachfrage ein. Der SUMO-
+Adapter führt sie anschließend als native Fahrzeugketten mit Rückfahrt aus;
+Mengen und vollständige Abschlüsse werden getrennt ausgewiesen. Der erste Adapter
+verlangt vollständige Touren innerhalb der Region und eines 24-Stunden-Tages.
+[Bedienung, Verträge und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#30-gemeinsame-nachfrage-vor-den-zieladaptern-2026-10-21).
+
+
+Seit 21.10.2026 führt `synthesis-traffic-demand-v1` Personenwege, Paketlogistik,
+schwere Fahrten und bestätigte Unternehmenstouren in einer gemeinsamen,
+exportunabhängigen Nachfrage zusammen. SUMO liest diesen Bestand; Gütervorbereitung
+und Aktivierung benötigen das Zielmodell nicht. JSON/CSV, Tourreferenzen,
+Herkunfts-/Verfügbarkeitsbilanz und ungeroutete OD-Verbindungen stehen unter
+`artifacts/demand/` bereit. Fehlende Personen-/Paketquellen werden ausdrücklich
+gekennzeichnet. Weitere Zielmodelle benötigen passende Adapter für ihre jeweils
+unterstützten Güterverkehrsinhalte.
+[Architekturkorrektur und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#30-gemeinsame-nachfrage-vor-den-zieladaptern-2026-10-21).
+
+Unternehmenstouren können zusätzlich aus JSON/XML, Text, Word und textbasierten
+PDF übernommen werden. Ein ausdrücklich aktivierter lokaler LLM-Assistent
+schlägt Zuordnungen bzw. belegte Dokumentzeilen vor; bestätigte Importprofile
+sind wiederverwendbar. Prüfung, Depot-/Fahrzeugkontext und Aktivierung liegen
+weiterhin vor der gemeinsamen Verkehrsnachfrage. Scans erfordern externe OCR.
+[Details und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#31-formatübergreifender-tourenimport--umgesetzt-2026-10-22).
+
+Mehrfach ausgewählte Unternehmensplanungen mit derselben Unternehmens-, Tages-
+und Tourkennung werden vor der gemeinsamen Nachfrage abgewiesen. Frühere
+Revisionen müssen bewusst abgewählt werden; die additive Einspeisung gegenüber
+dem übrigen Verkehr bleibt bestehen.
+[Revisionsschutz und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#32-schutz-vor-mehrfach-ausgewählten-planrevisionen--umgesetzt-2026-10-23).
+
+Unternehmenstouren dürfen nach ausdrücklicher Freigabe außerhalb der Region
+beginnen oder enden. Die vollständige Nachfrage bleibt erhalten; die erste
+regionale Projektion schätzt Grenzpunkte und Zeiten aus geraden Planverbindungen.
+SUMO bilanziert Gebietsbesuche getrennt vom vollständigen Tourabschluss.
+[Bedienung und Näherungsgrenzen](21-gueterverkehr-konzept-und-datenquellen.md#34-touren-mit-externem-start-ende-und-zwischenhalten--erster-adapter-2026-10-23).
+
+
+Optional können regionale Grenzübergänge jetzt aus gerichteten, für die
+Fahrzeugklasse zulässigen Straßenrouten bestimmt werden. Das lokale Netz muss
+sämtliche Originalorte abdecken; fehlende Abdeckung stoppt den Lauf mit Bericht.
+Eintrittszeiten bleiben aus Planzeiten geschätzt. Der Zurbrüggen-Import ist mit
+222 Datensätzen geprüft; Depot-, Fahrzeug- und Ortsangaben bleiben im Kontext
+mit Herkunft und Modellannahmen nachvollziehbar.
+[Netzprojektion und reale Abnahme](21-gueterverkehr-konzept-und-datenquellen.md#35-netzbasierte-regionale-touren--umgesetzt-2026-10-23-experimentell).
+
+
+Der Unternehmenstouren-Assistent fragt gezielt nach fehlenden Betriebsangaben.
+Gemeinsame Depotadressen lassen sich auf ausgewählte Touren übernehmen und
+speichern; fehlende Koordinaten und Fahrzeuge bleiben als Rückfragen sichtbar.
+[Bedienung und Grenzen](21-gueterverkehr-konzept-und-datenquellen.md#37-fehlende-betriebsangaben-als-rückfragen--umgesetzt-2026-10-24).
+
+
+Optional liefert ein lokaler Geocoder wählbare Ortsvorschläge für Unternehmenstouren.
+Der gesamte Quellbestand lässt sich inzwischen mit gekennzeichneten lokalen
+Näherungsorten übernehmen; Originaladressen bleiben erhalten.
+[Stand und Grenzen](05-validierung.md#lokale-geokodierung-und-regionaler-zurbrüggen-pilot-2026-10-24).
+
+
+Die lokale Ortssuche für Unternehmenstouren lässt sich paketweise fortsetzen und
+bewusst aktualisieren. Amtliche NRW-Punkte können durch lokale OSM-Adressvorschläge
+ergänzt werden; fehlende Hausnummern und unklare Zufahrten unterstützen
+gekennzeichnete Näherungen am nächsten geeigneten Ort.
+Die Bedienprobe bis zur zusätzlichen Nachfrageauswahl ist erfolgreich.
+[Bestandsprüfung und Datengrenzen](05-validierung.md#tourenbestand-und-fortsetzbare-ortssuche-2026-10-26).
+
+Die technische regionale Abnahme mit erzeugter Pkw-Nachfrage und zusätzlichen
+Unternehmenstouren ist bestanden. Bildungs-/Außenkoordinaten, Ampel-Zufahrtsketten,
+Tagesnachlauf und expliziter SUMO-Seed sind abgesichert. Empirische Kalibrierung
+und vollständige externe Kundenbedienung bleiben gesonderte Grenzen.
+[Abschluss und Grenzen](05-validierung.md#korrigierte-ortsübergabe-regionaler-wiederholungslauf-2026-10-26).
+
+
+Die regionale Bestandsprüfung der zugeordneten Unternehmenstouren ist erfolgreich,
+einschließlich Fahrzeugketten und Wiedereinfahrten. Orts-/Netznäherungen werden
+mit Herkunft ausgewiesen; Originaltouren und Kundenzeiten bleiben erhalten.
+[Abnahme, Modellannahmen und Grenzen](05-validierung.md#tourenbestand-und-fortsetzbare-ortssuche-2026-10-26).
+
+**Hintergrundverkehr (27.10.2026):** Ein lokaler Vorbereiter projiziert räumliche
+Güter-OD auf die Region und erreichbare Lkw-Straßen. Die bestehende gemeinsame
+Nachfrage ergänzt diese Beziehungen additiv um Unternehmenstouren. Näherungsorte
+sind als solche gekennzeichnet; ein Hintergrund-Mengenfit lässt Unternehmen fest
+und trennt Kalibrierungs- und Prüfzähler. Empirische Gesamtvalidierung benötigt
+weiterhin kompatible Beobachtungen und erneute native Ausführung.
+[Vertrag und Einschränkungen](21-gueterverkehr-konzept-und-datenquellen.md#39-regionaler-hintergrundverkehr-und-vereinfachte-ortszuordnung-2026-10-27).

@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-30",
+  "scope": "Installation-local shared source profiles with pinned package dependencies, explicit activation and independent scenario copies; not full concept acceptance",
+  "backend": {
+    "tests": 476,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 9
+  },
+  "skippedCases": [
+    "de.synthesis.generation.pipeline.MobileCityRastattSourcesTest.exportsObservedRastattSourcesWithoutSilentFallback",
+    "de.synthesis.generation.pipeline.ActitoppIntegrationTest.pinnedRunnerProducesValidWeeklySchedules",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.cacheAvoidsRepeatLlmCalls",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.sameSeedIsReproducible",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.liveLlmProducesPersonaPlans",
+    "de.synthesis.generation.pipeline.GtaBehaviorTest.whatIfContextYieldsReasons",
+    "de.synthesis.generation.pipeline.PtIntegrationTest.fullTransitChainRidesBuses",
+    "de.synthesis.generation.pipeline.LlmModeChoiceTest.aggregatesValidModalSplitAndIsReproducible",
+    "de.synthesis.generation.pipeline.MobileCityCrossMunicipalitySourcesTest.exportsObservedCrossMunicipalitySourcesWithPerZoneEvidence"
+  ],
+  "focusedSourceTests": 96,
+  "frontend": {
+    "tests": 120,
+    "productionBuild": "passed"
+  },
+  "browserProof": "2026-10-30-shared-source-profiles-ui.json",
+  "preregisteredBrowserPlan": "2026-10-30-shared-source-profiles-plan.json",
+  "populationCompatibilityProof": "2026-10-30-population-compatibility.json",
+  "profileVersions": [
+    "592b4b9ac6b65ccb1ca658e69757efacd3707dd89b624d1165dd598e706fb941",
+    "bb88a2c72feccf9649acb92b30b67cf673cde889c00e09a8eaa936f555fc8b1e"
+  ],
+  "comparisonArtifacts": {
+    "population/person.csv": {
+      "rows": 63,
+      "bytes": 4061,
+      "sha256": "bf1a6a9f39fabfc9f40eb7aebafe6237db328e9ed6bf6b7b113c66972cf12798"
+    },
+    "population/household.csv": {
+      "rows": 28,
+      "bytes": 1698,
+      "sha256": "0c6861ed4fd835c35651142d0e7e89fbef0257fa363b1cb1b0d705d7706390ae"
+    },
+    "population/activity.csv": {
+      "rows": 1814,
+      "bytes": 30501,
+      "sha256": "ad6da94beb1f8ad5b5399e7f13e48f855d64e929c337f891b86ea6c16707ece3"
+    },
+    "zone-repository/zones.csv": {
+      "rows": 21,
+      "bytes": 2617,
+      "sha256": "a36e54062b60573cbf011ea4b0493bb02c1f77d93a3911c7c57617729cb89cad"
+    },
+    "zone-repository/attractivities.csv": {
+      "rows": 21,
+      "bytes": 1197,
+      "sha256": "3ef4848519aa95d93f185f708c0e0b3bacdf55025f6cb6b78bfb9fed2a773646"
+    }
+  },
+  "byteIdenticalAfterCentralCorruption": true,
+  "compatibilityCorrection": "Older five-branch tests already compared all core artifacts; explicit populated minima and fixture/result hashes added. No isolated pre-refactor baseline.",
+  "remaining": [
+    "full migration of remaining source families",
+    "remote catalogs and automatic regional recommendations",
+    "native census masks and arbitrary CRS/GeoTIFF",
+    "isolated pre-refactor baseline and full real-region/target-model acceptance",
+    "empirically accepted freight fallback"
+  ]
+}

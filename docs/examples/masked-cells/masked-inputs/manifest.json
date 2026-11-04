@@ -1,0 +1,74 @@
+{
+  "contract": "synthesis-data-pack-v1",
+  "id": "masked-cells",
+  "edition": "example-v1",
+  "title": "Zellwerte und explizite Masken (synthetisch)",
+  "sources": [
+    {
+      "id": "population",
+      "schema": "population-cells-v1",
+      "file": "cells.csv",
+      "sha256": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+      "mapping": {
+        "tableId": "csv",
+        "headerRow": 1,
+        "columns": {
+          "id": 0,
+          "easting": 1,
+          "northing": 2,
+          "resolution": 3,
+          "state": 4,
+          "value": 5
+        },
+        "decimalSeparator": "."
+      },
+      "metadata": {
+        "label": "Künstliche Bevölkerungszellen",
+        "source": "Synthetische Vertragswerte; keine reale Regionalbeobachtung",
+        "referenceDate": "2026-01-01",
+        "unit": "persons",
+        "coverage": {
+          "minLon": 5,
+          "minLat": 45,
+          "maxLon": 16,
+          "maxLat": 56
+        },
+        "licence": "unknown",
+        "attribution": "SyntheSis-Testfixture"
+      }
+    },
+    {
+      "id": "work",
+      "schema": "workplace-cells-v1",
+      "file": "cells.csv",
+      "sha256": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+      "mapping": {
+        "tableId": "csv",
+        "headerRow": 1,
+        "columns": {
+          "id": 0,
+          "easting": 1,
+          "northing": 2,
+          "resolution": 3,
+          "state": 4,
+          "value": 5
+        },
+        "decimalSeparator": "."
+      },
+      "metadata": {
+        "label": "Künstliche Arbeitsplatzzellen",
+        "source": "Synthetische Vertragswerte; keine reale Regionalbeobachtung",
+        "referenceDate": "2026-01-01",
+        "unit": "jobs",
+        "coverage": {
+          "minLon": 5,
+          "minLat": 45,
+          "maxLon": 16,
+          "maxLat": 56
+        },
+        "licence": "unknown",
+        "attribution": "SyntheSis-Testfixture"
+      }
+    }
+  ]
+}

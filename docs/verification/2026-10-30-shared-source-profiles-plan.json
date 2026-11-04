@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-30",
+  "scope": "Shared immutable source profiles with explicit package transfer and activation",
+  "inputs": {
+    "docs/examples/shared-source-profiles/profile-v1.json": "846a7e827c4f7fa4c09ebe24d7c23e60d7d08d0ee0f3e153b87c0ec0c459caf4",
+    "docs/examples/shared-source-profiles/profile-v2.json": "783ed158f73c8c95088471ab3f12e10821bc6e06be77499a330541cd19c27b99",
+    "docs/examples/source-library/regional-cells-v1.zip": "fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978"
+  },
+  "scenario": {
+    "region": {
+      "minLon": 8.33,
+      "maxLon": 8.42,
+      "minLat": 49.199,
+      "maxLat": 49.213
+    },
+    "seed": 42,
+    "populationTotal": 60,
+    "zoning": "epsg3035",
+    "cellSizeMeters": 1000,
+    "targetModels": [
+      "logitopp"
+    ],
+    "liveSources": false,
+    "externalSimulation": false
+  },
+  "expected": [
+    "promote existing scenario recipe without activation",
+    "copy profile and one active package into target with identical hashes",
+    "explicitly choose shared profile for population/Work and scoped gap models",
+    "publish V2 through JSON UI import without rebinding target",
+    "corrupt central recipe and package; existing target still generates from retained inputs"
+  ],
+  "comparisonArtifacts": [
+    "population/person.csv",
+    "population/household.csv",
+    "population/activity.csv",
+    "zone-repository/zones.csv",
+    "zone-repository/attractivities.csv"
+  ],
+  "minimumDataRows": 1,
+  "baselineScope": "same current implementation, no isolated pre-refactor baseline"
+}

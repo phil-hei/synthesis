@@ -1,3 +1,5 @@
+import type { SourcePlan } from './data-source.model';
+import type { VehicleOperationsConfiguration, VehicleConfigurationInput } from './vehicle-operations.model';
 export interface Region {
   minLat: number;
   minLon: number;
@@ -41,7 +43,28 @@ export interface RegionEstimate {
   places: { name: string; type: string; population: number }[];
 }
 
+export interface FreightRelation {
+  fromEdge?: string | null;
+  toEdge?: string | null;
+  id: string;
+  vehicleClass: 'truck' | 'trailer';
+  movement: 'internal' | 'inbound' | 'outbound' | 'through';
+  fromLon: number; fromLat: number; toLon: number; toLat: number;
+  trips: number; beginHour: number; endHour: number;
+  source: string; referenceDate: string;
+}
+export interface FreightDemand {
+  /** Experimental static standard-profile checks; unknown access rules remain visible. */
+  profileChecksEnabled?: boolean;
+  sevasEnabled?: boolean;
+  sevasSnapshot?: { type: string; features: unknown[] } | null;
+  enabled: boolean;
+  day: number;
+  relations: FreightRelation[];
+}
+
 export interface Scenario {
+  dataPlan?: SourcePlan;
   id?: string;
   name: string;
   createdAt?: string;
@@ -72,6 +95,8 @@ export interface Scenario {
     /** Netz-Feedback: SUMO-Stauzeiten → Pkw-Matrix → erneute logiTopp-Entscheidung. */
     sumoFeedback: boolean;
     sharedRoadRoutes?: boolean;
+    /** Synthetische interne Wohn-/Aktivitätsorte an öffentlichen Straßen; experimentell. */
+    roadLocatedActivities?: boolean;
     /** Optional hochgeladener GTFS-Feed (Pfad); Fallback zum Auto-Fetch. */
     gtfsUploadPath?: string;
     useKitPopulation: boolean;
@@ -91,6 +116,12 @@ export interface Scenario {
     carsPerHousehold: number;
     areaType?: string;
   };
+  freight?: FreightDemand;
+  companyTours?: { enabled: boolean; imports: { importId: string; executionHash: string }[] };
+  /** Source inventory; charging/refuelling and operational energy states remain separate. */
+  energyInfrastructure?: { enabled: boolean; useBnetza: boolean; useOsm: boolean; verifyNetworkAccess?: boolean; maxSnapDistanceM?: number };
+  vehicleOperations?: VehicleOperationsConfiguration;
+  vehicleConfiguration?: VehicleConfigurationInput;
   logistics: {
     parcelsPerPersonWeek: number;
     parcelStdDev: number;
@@ -113,6 +144,8 @@ export interface StageInfo {
 
 export interface GenerationJob {
   scenarioId: string;
+  startedAt?: string;
+  finishedAt?: string;
   state: 'QUEUED' | 'RUNNING' | 'DONE' | 'FAILED';
   currentStage?: string;
   stages: StageInfo[];

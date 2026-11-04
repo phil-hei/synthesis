@@ -1,0 +1,2773 @@
+{
+  "passed": true,
+  "scenarioId": "e49724fb",
+  "pack": "fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978",
+  "profile": "28829466bbb03966f7ce3867cb0d0972637bf047206b43f3e244b2d234a59433",
+  "resolution": {
+    "decisions": [
+      {
+        "aspect": "freight.vehicleOd",
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "qualityMode": "exploration",
+        "selectionRole": "legacy-delegation",
+        "skipped": [],
+        "source": "legacy",
+        "status": "legacy"
+      },
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "opportunities.work",
+        "attribution": "SyntheSis-Testfixture",
+        "candidates": [
+          {
+            "onUnavailable": "fail",
+            "provider": "pack:fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978:work",
+            "reason": "first-applicable-candidate",
+            "status": "selected",
+            "rank": 1
+          }
+        ],
+        "coverage": {
+          "minLat": 45,
+          "minLon": 5,
+          "maxLat": 56,
+          "maxLon": 16
+        },
+        "evidence": "user-provided-unverified",
+        "gapProviders": [
+          {
+            "provider": "synthetic",
+            "excluded": false,
+            "onUnavailable": "fail"
+          }
+        ],
+        "gaps": "providers",
+        "label": "Künstliche Arbeitsplatzzellen",
+        "licence": "unknown",
+        "profile": "28829466bbb03966f7ce3867cb0d0972637bf047206b43f3e244b2d234a59433",
+        "profileDefinition": {
+          "contract": "synthesis-source-profile-v1",
+          "name": "Künstliches Raster mit Wertstatus",
+          "aspects": {
+            "opportunities.work": {
+              "candidates": [
+                {
+                  "provider": "pack:fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978:work",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                }
+              ],
+              "fallback": "none"
+            },
+            "population.distribution": {
+              "candidates": [
+                {
+                  "provider": "pack:fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978:population",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                }
+              ],
+              "fallback": "none"
+            }
+          }
+        },
+        "qualityMode": "exploration",
+        "referenceDate": "2026-01-01",
+        "revision": "3b8de0c3d230d2f8816e74577b7b8bfc273373f8d3403be75cff2eb1230b2bb6",
+        "selectionRole": "profile-primary",
+        "skipped": [],
+        "source": "dataset",
+        "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+        "status": "resolved",
+        "temporalTransfer": false
+      },
+      {
+        "applicationStatus": "pending-spatial-allocation",
+        "aspect": "population.distribution",
+        "attribution": "SyntheSis-Testfixture",
+        "candidates": [
+          {
+            "onUnavailable": "fail",
+            "provider": "pack:fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978:population",
+            "reason": "first-applicable-candidate",
+            "status": "selected",
+            "rank": 1
+          }
+        ],
+        "coverage": {
+          "minLat": 45,
+          "minLon": 5,
+          "maxLat": 56,
+          "maxLon": 16
+        },
+        "evidence": "user-provided-unverified",
+        "gapProviders": [
+          {
+            "provider": "uniform",
+            "excluded": false,
+            "onUnavailable": "fail"
+          }
+        ],
+        "gaps": "providers",
+        "label": "Künstliche Bevölkerungszellen",
+        "licence": "unknown",
+        "profile": "28829466bbb03966f7ce3867cb0d0972637bf047206b43f3e244b2d234a59433",
+        "profileDefinition": {
+          "contract": "synthesis-source-profile-v1",
+          "name": "Künstliches Raster mit Wertstatus",
+          "aspects": {
+            "opportunities.work": {
+              "candidates": [
+                {
+                  "provider": "pack:fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978:work",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                }
+              ],
+              "fallback": "none"
+            },
+            "population.distribution": {
+              "candidates": [
+                {
+                  "provider": "pack:fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978:population",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                }
+              ],
+              "fallback": "none"
+            }
+          }
+        },
+        "qualityMode": "exploration",
+        "referenceDate": "2026-01-01",
+        "revision": "88a3c62162ae9bbe23d154bb8dae282010bb69d781816fcc95ca549ad72126ac",
+        "selectionRole": "profile-primary",
+        "skipped": [],
+        "source": "dataset",
+        "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+        "status": "resolved",
+        "temporalTransfer": false
+      }
+    ],
+    "workplaces": {
+      "allocation": "uniform within each full source cell; unbuffered intersection quantities; no renormalization to region",
+      "appliedJobs": 30,
+      "cells": [
+        {
+          "easting": 4200000,
+          "id": "a",
+          "northing": 2900000,
+          "resolution": 1000,
+          "sourceRow": 2,
+          "state": "value",
+          "value": 30
+        },
+        {
+          "easting": 4201000,
+          "id": "zero",
+          "northing": 2900000,
+          "resolution": 1000,
+          "sourceRow": 3,
+          "state": "value",
+          "value": 0
+        },
+        {
+          "easting": 4202000,
+          "id": "missing",
+          "northing": 2900000,
+          "rawValue": "NA",
+          "resolution": 1000,
+          "sourceRow": 4,
+          "state": "missing"
+        },
+        {
+          "easting": 4203000,
+          "id": "secret",
+          "northing": 2900000,
+          "rawValue": -1,
+          "resolution": 1000,
+          "sourceRow": 5,
+          "state": "suppressed"
+        },
+        {
+          "easting": 4204000,
+          "id": "not-surveyed",
+          "northing": 2900000,
+          "rawValue": "",
+          "resolution": 1000,
+          "sourceRow": 6,
+          "state": "not-collected"
+        }
+      ],
+      "compositionContract": "synthesis-workplace-composition-v1",
+      "contract": "synthesis-masked-cell-allocation-v1",
+      "coverageToleranceMeters": 0.01,
+      "coveredZones": 2,
+      "crs": "EPSG:3035",
+      "fallbackZones": 19,
+      "gapPolicy": "providers",
+      "gapResolution": {
+        "candidates": [
+          {
+            "onUnavailable": "fail",
+            "provider": "synthetic",
+            "reason": "first-usable-candidate",
+            "status": "selected",
+            "rank": 1
+          }
+        ],
+        "contract": "synthesis-workplace-resolution-v1",
+        "provenance": {
+          "contract": "synthesis-source-provenance-v1",
+          "aspect": "opportunities.work",
+          "root": "weights",
+          "nodes": [
+            {
+              "id": "input",
+              "operation": "model-profile",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "source": {
+                "kind": "model",
+                "label": "Synthetische Arbeitsgewichte",
+                "origin": "synthetic-work-weights-v1",
+                "referenceDate": "",
+                "licence": "unknown",
+                "attribution": ""
+              },
+              "inputs": [],
+              "scope": {
+                "purpose": "Work",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "baseWeightPerKm2": 400,
+                "centralitySlope": 0.8,
+                "gaussianSigma": 0.5,
+                "modelVersion": "synthetic-work-weights-v1",
+                "seed": 6291337688135381000,
+                "seedRule": "scenario.population.seed XOR 0x574f524b5f56314c"
+              }
+            },
+            {
+              "id": "weights",
+              "operation": "synthetic-work-weights",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "inputs": [
+                "input"
+              ],
+              "scope": {
+                "purpose": "Work",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "observedJobTotalAvailable": false,
+                "unit": "model-weight"
+              }
+            }
+          ]
+        },
+        "provider": "synthetic",
+        "status": "resolved",
+        "sumWeights": 4505.54337474348,
+        "unit": "model-weight",
+        "zoneWeights": [
+          {
+            "weight": 69.02267603175198,
+            "externalId": 100001,
+            "modelIndex": 0
+          },
+          {
+            "weight": 160.51228874202133,
+            "externalId": 100002,
+            "modelIndex": 1
+          },
+          {
+            "weight": 550.5046749740044,
+            "externalId": 100003,
+            "modelIndex": 2
+          },
+          {
+            "weight": 576.3622823236432,
+            "externalId": 100004,
+            "modelIndex": 3
+          },
+          {
+            "weight": 192.79699252810389,
+            "externalId": 100005,
+            "modelIndex": 4
+          },
+          {
+            "weight": 130.35858596172196,
+            "externalId": 100006,
+            "modelIndex": 5
+          },
+          {
+            "weight": 55.953402332905576,
+            "externalId": 100007,
+            "modelIndex": 6
+          },
+          {
+            "weight": 113.41122972198244,
+            "externalId": 100008,
+            "modelIndex": 7
+          },
+          {
+            "weight": 610.5203971685288,
+            "externalId": 100011,
+            "modelIndex": 10
+          },
+          {
+            "weight": 137.5101859981364,
+            "externalId": 100012,
+            "modelIndex": 11
+          },
+          {
+            "weight": 91.72440530057455,
+            "externalId": 100013,
+            "modelIndex": 12
+          },
+          {
+            "weight": 144.9517285342757,
+            "externalId": 100014,
+            "modelIndex": 13
+          },
+          {
+            "weight": 60.594875628485916,
+            "externalId": 100015,
+            "modelIndex": 14
+          },
+          {
+            "weight": 205.10419339385973,
+            "externalId": 100016,
+            "modelIndex": 15
+          },
+          {
+            "weight": 287.47419937930204,
+            "externalId": 100017,
+            "modelIndex": 16
+          },
+          {
+            "weight": 121.98616577548432,
+            "externalId": 100018,
+            "modelIndex": 17
+          },
+          {
+            "weight": 598.392368019371,
+            "externalId": 100019,
+            "modelIndex": 18
+          },
+          {
+            "weight": 323.60918126274817,
+            "externalId": 100020,
+            "modelIndex": 19
+          },
+          {
+            "weight": 74.75354166657904,
+            "externalId": 100021,
+            "modelIndex": 20
+          }
+        ]
+      },
+      "inputJobs": 30,
+      "knownApplied": 30,
+      "knownInPartialZonesNotApplied": 0,
+      "knownInput": 30,
+      "knownOutside": 0,
+      "maskIntersectionToleranceM2": 0.01,
+      "missingCells": 1,
+      "notCollectedCells": 1,
+      "outsideJobs": 0,
+      "provenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "opportunities.work",
+        "root": "work-weights",
+        "nodes": [
+          {
+            "id": "cells",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "3b8de0c3d230d2f8816e74577b7b8bfc273373f8d3403be75cff2eb1230b2bb6",
+              "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+              "label": "Künstliche Arbeitsplatzzellen",
+              "origin": "Synthetische Vertragswerte; keine reale Regionalbeobachtung",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": "SyntheSis-Testfixture"
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                }
+              ]
+            },
+            "parameters": {
+              "crs": "EPSG:3035",
+              "mapping": {
+                "tableId": "csv",
+                "headerRow": 1,
+                "columns": {
+                  "id": 0,
+                  "easting": 1,
+                  "northing": 2,
+                  "resolution": 3,
+                  "state": 4,
+                  "value": 5
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "workplace-cells-v1"
+            }
+          },
+          {
+            "id": "cell-allocation",
+            "operation": "uniform-source-cell-area",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [
+              "cells"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                }
+              ]
+            },
+            "parameters": {
+              "crs": "EPSG:3035",
+              "missingCells": 1,
+              "suppressedCells": 1,
+              "unit": "jobs"
+            }
+          },
+          {
+            "id": "gap/input",
+            "operation": "model-profile",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "source": {
+              "kind": "model",
+              "label": "Synthetische Arbeitsgewichte",
+              "origin": "synthetic-work-weights-v1",
+              "referenceDate": "",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "baseWeightPerKm2": 400,
+              "centralitySlope": 0.8,
+              "gaussianSigma": 0.5,
+              "modelVersion": "synthetic-work-weights-v1",
+              "seed": 6291337688135381000,
+              "seedRule": "scenario.population.seed XOR 0x574f524b5f56314c"
+            }
+          },
+          {
+            "id": "gap/weights",
+            "operation": "synthetic-work-weights",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "inputs": [
+              "gap/input"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "observedJobTotalAvailable": false,
+              "unit": "model-weight"
+            }
+          },
+          {
+            "id": "work-weights",
+            "operation": "fill-gaps",
+            "evidence": "derived",
+            "selectionRole": "composition",
+            "inputs": [
+              "cell-allocation",
+              "gap/weights"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "quantitiesComparable": false,
+              "quantityBasis": "known-source-cells-only"
+            }
+          }
+        ]
+      },
+      "quantityBasis": "known-source-cells-only",
+      "revision": "3b8de0c3d230d2f8816e74577b7b8bfc273373f8d3403be75cff2eb1230b2bb6",
+      "suppressedCells": 1,
+      "unappliedPartialJobs": 0,
+      "zoneMasks": [
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100001,
+            "modelIndex": 0
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100002,
+            "modelIndex": 1
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100003,
+            "modelIndex": 2
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100004,
+            "modelIndex": 3
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100005,
+            "modelIndex": 4
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100006,
+            "modelIndex": 5
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100007,
+            "modelIndex": 6
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100008,
+            "modelIndex": 7
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "value",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100009,
+            "modelIndex": 8
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [],
+          "knownAreaM2": 1000000
+        },
+        {
+          "state": "value",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100010,
+            "modelIndex": 9
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [],
+          "knownAreaM2": 1000000
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 1000000,
+          "zone": {
+            "externalId": 100011,
+            "modelIndex": 10
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "missing"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 1000000,
+          "zone": {
+            "externalId": 100012,
+            "modelIndex": 11
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "suppressed"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 1000000,
+          "zone": {
+            "externalId": 100013,
+            "modelIndex": 12
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "not-collected"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100014,
+            "modelIndex": 13
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100015,
+            "modelIndex": 14
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100016,
+            "modelIndex": 15
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100017,
+            "modelIndex": 16
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100018,
+            "modelIndex": 17
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100019,
+            "modelIndex": 18
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100020,
+            "modelIndex": 19
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        },
+        {
+          "state": "unresolved",
+          "maskedAreaM2": 0,
+          "zone": {
+            "externalId": 100021,
+            "modelIndex": 20
+          },
+          "zoneAreaM2": 1000000,
+          "reasons": [
+            "outside-source-cells"
+          ],
+          "knownAreaM2": 0
+        }
+      ]
+    },
+    "populationSource": "user-defined",
+    "populationDistribution": "dataset:88a3c62162ae9bbe23d154bb8dae282010bb69d781816fcc95ca549ad72126ac",
+    "population": {
+      "allocatedPersons": 60,
+      "candidates": [
+        {
+          "onUnavailable": "fail",
+          "provider": "revision:88a3c62162ae9bbe23d154bb8dae282010bb69d781816fcc95ca549ad72126ac",
+          "reason": "explicit-selection",
+          "status": "selected",
+          "rank": 1
+        }
+      ],
+      "contract": "synthesis-population-resolution-v1",
+      "diagnostics": {
+        "maskedCells": {
+          "allocation": "uniform within each full source cell; unbuffered intersection quantities; no renormalization to region",
+          "cells": [
+            {
+              "easting": 4200000,
+              "id": "a",
+              "northing": 2900000,
+              "resolution": 1000,
+              "sourceRow": 2,
+              "state": "value",
+              "value": 30
+            },
+            {
+              "easting": 4201000,
+              "id": "zero",
+              "northing": 2900000,
+              "resolution": 1000,
+              "sourceRow": 3,
+              "state": "value",
+              "value": 0
+            },
+            {
+              "easting": 4202000,
+              "id": "missing",
+              "northing": 2900000,
+              "rawValue": "NA",
+              "resolution": 1000,
+              "sourceRow": 4,
+              "state": "missing"
+            },
+            {
+              "easting": 4203000,
+              "id": "secret",
+              "northing": 2900000,
+              "rawValue": -1,
+              "resolution": 1000,
+              "sourceRow": 5,
+              "state": "suppressed"
+            },
+            {
+              "easting": 4204000,
+              "id": "not-surveyed",
+              "northing": 2900000,
+              "rawValue": "",
+              "resolution": 1000,
+              "sourceRow": 6,
+              "state": "not-collected"
+            }
+          ],
+          "contract": "synthesis-masked-cell-allocation-v1",
+          "coverageToleranceMeters": 0.01,
+          "coveredZones": 2,
+          "crs": "EPSG:3035",
+          "fallbackZones": 19,
+          "knownApplied": 30,
+          "knownInPartialZonesNotApplied": 0,
+          "knownInput": 30,
+          "knownOutside": 0,
+          "maskIntersectionToleranceM2": 0.01,
+          "missingCells": 1,
+          "notCollectedCells": 1,
+          "quantityBasis": "known-source-cells-only",
+          "revision": "88a3c62162ae9bbe23d154bb8dae282010bb69d781816fcc95ca549ad72126ac",
+          "suppressedCells": 1,
+          "zoneMasks": [
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "value",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [],
+              "knownAreaM2": 1000000
+            },
+            {
+              "state": "value",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [],
+              "knownAreaM2": 1000000
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 1000000,
+              "zone": {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "missing"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 1000000,
+              "zone": {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "suppressed"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 1000000,
+              "zone": {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "not-collected"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100015,
+                "modelIndex": 14
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100016,
+                "modelIndex": 15
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100017,
+                "modelIndex": 16
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100018,
+                "modelIndex": 17
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100019,
+                "modelIndex": 18
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100020,
+                "modelIndex": 19
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            },
+            {
+              "state": "unresolved",
+              "maskedAreaM2": 0,
+              "zone": {
+                "externalId": 100021,
+                "modelIndex": 20
+              },
+              "zoneAreaM2": 1000000,
+              "reasons": [
+                "outside-source-cells"
+              ],
+              "knownAreaM2": 0
+            }
+          ]
+        },
+        "gapResolution": {
+          "persons": 30,
+          "provider": "uniform",
+          "candidates": [
+            {
+              "onUnavailable": "fail",
+              "provider": "uniform",
+              "reason": "first-usable-candidate",
+              "status": "selected",
+              "rank": 1
+            }
+          ],
+          "status": "resolved",
+          "zonePersons": [
+            {
+              "zone": {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              "persons": 1.7859535259256936
+            },
+            {
+              "zone": {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              "persons": 1.6291709486345773
+            },
+            {
+              "zone": {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              "persons": 1.3734292506195136
+            },
+            {
+              "zone": {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              "persons": 1.6664207807375366
+            },
+            {
+              "zone": {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              "persons": 1.780918324784155
+            },
+            {
+              "zone": {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              "persons": 1.6620279495586923
+            },
+            {
+              "zone": {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              "persons": 1.432066340560654
+            },
+            {
+              "zone": {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              "persons": 1.6189368992099789
+            },
+            {
+              "zone": {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              "persons": 1.5783471477989335
+            },
+            {
+              "zone": {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              "persons": 1.4616992466054972
+            },
+            {
+              "zone": {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              "persons": 1.6115365144518563
+            },
+            {
+              "zone": {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              "persons": 1.3108970783586082
+            },
+            {
+              "zone": {
+                "externalId": 100015,
+                "modelIndex": 14
+              },
+              "persons": 1.420449018939964
+            },
+            {
+              "zone": {
+                "externalId": 100016,
+                "modelIndex": 15
+              },
+              "persons": 1.4557704824946198
+            },
+            {
+              "zone": {
+                "externalId": 100017,
+                "modelIndex": 16
+              },
+              "persons": 1.8239562275456034
+            },
+            {
+              "zone": {
+                "externalId": 100018,
+                "modelIndex": 17
+              },
+              "persons": 1.6128319169996432
+            },
+            {
+              "zone": {
+                "externalId": 100019,
+                "modelIndex": 18
+              },
+              "persons": 1.2700896730360607
+            },
+            {
+              "zone": {
+                "externalId": 100020,
+                "modelIndex": 19
+              },
+              "persons": 1.8405413975403881
+            },
+            {
+              "zone": {
+                "externalId": 100021,
+                "modelIndex": 20
+              },
+              "persons": 1.6649572761980187
+            }
+          ]
+        },
+        "distributionProvenance": {
+          "contract": "synthesis-source-provenance-v1",
+          "aspect": "population.distribution",
+          "root": "distribution",
+          "nodes": [
+            {
+              "id": "cells",
+              "operation": "source",
+              "evidence": "unknown",
+              "selectionRole": "primary",
+              "source": {
+                "kind": "dataset",
+                "revision": "88a3c62162ae9bbe23d154bb8dae282010bb69d781816fcc95ca549ad72126ac",
+                "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+                "label": "Künstliche Bevölkerungszellen",
+                "origin": "Synthetische Vertragswerte; keine reale Regionalbeobachtung",
+                "referenceDate": "2026-01-01",
+                "licence": "unknown",
+                "attribution": "SyntheSis-Testfixture"
+              },
+              "inputs": [],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  }
+                ]
+              },
+              "parameters": {
+                "crs": "EPSG:3035",
+                "mapping": {
+                  "tableId": "csv",
+                  "headerRow": 1,
+                  "columns": {
+                    "id": 0,
+                    "easting": 1,
+                    "northing": 2,
+                    "resolution": 3,
+                    "state": 4,
+                    "value": 5
+                  },
+                  "decimalSeparator": "."
+                },
+                "schema": "population-cells-v1"
+              }
+            },
+            {
+              "id": "known-allocation",
+              "operation": "uniform-source-cell-area",
+              "evidence": "assumed",
+              "selectionRole": "primary",
+              "inputs": [
+                "cells"
+              ],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  }
+                ]
+              },
+              "parameters": {
+                "crs": "EPSG:3035",
+                "unit": "persons"
+              }
+            },
+            {
+              "id": "total-anchor",
+              "operation": "manual-total",
+              "evidence": "assumed",
+              "selectionRole": "primary",
+              "inputs": [],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "knownApplied": 30,
+                "persons": 60,
+                "residualPersons": 30
+              }
+            },
+            {
+              "id": "model-input",
+              "operation": "source",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "source": {
+                "kind": "model",
+                "sourceHash": "",
+                "label": "Räumliche Ersatzgewichte ohne Ortsdaten",
+                "origin": "density-estimate",
+                "referenceDate": "",
+                "licence": "unknown",
+                "attribution": ""
+              },
+              "inputs": [],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "provider": "uniform",
+                "version": "density-v1"
+              }
+            },
+            {
+              "id": "mask-fill",
+              "operation": "manual-residual-by-model-weights-v1",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "inputs": [
+                "total-anchor",
+                "model-input"
+              ],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "modelWeightDenominator": 24.396702773529086,
+                "persons": 30,
+                "seed": 5786932416442619000,
+                "seedRule": "scenario.population.seed XOR 0x504f505f4d41534b"
+              }
+            },
+            {
+              "id": "distribution",
+              "operation": "fill-gaps",
+              "evidence": "derived",
+              "selectionRole": "composition",
+              "inputs": [
+                "known-allocation",
+                "mask-fill"
+              ],
+              "scope": {
+                "purpose": "residents",
+                "zones": [
+                  {
+                    "externalId": 100001,
+                    "modelIndex": 0
+                  },
+                  {
+                    "externalId": 100002,
+                    "modelIndex": 1
+                  },
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100006,
+                    "modelIndex": 5
+                  },
+                  {
+                    "externalId": 100007,
+                    "modelIndex": 6
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  },
+                  {
+                    "externalId": 100011,
+                    "modelIndex": 10
+                  },
+                  {
+                    "externalId": 100012,
+                    "modelIndex": 11
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100016,
+                    "modelIndex": 15
+                  },
+                  {
+                    "externalId": 100017,
+                    "modelIndex": 16
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100021,
+                    "modelIndex": 20
+                  }
+                ]
+              },
+              "parameters": {
+                "knownZerosPreserved": true,
+                "unit": "persons"
+              }
+            }
+          ]
+        }
+      },
+      "distributionProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.distribution",
+        "root": "distribution",
+        "nodes": [
+          {
+            "id": "cells",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "88a3c62162ae9bbe23d154bb8dae282010bb69d781816fcc95ca549ad72126ac",
+              "sourceHash": "2e0dc12b336e5849cc6a42721860579be83a323d523aa596f59b7971c575da2c",
+              "label": "Künstliche Bevölkerungszellen",
+              "origin": "Synthetische Vertragswerte; keine reale Regionalbeobachtung",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": "SyntheSis-Testfixture"
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                }
+              ]
+            },
+            "parameters": {
+              "crs": "EPSG:3035",
+              "mapping": {
+                "tableId": "csv",
+                "headerRow": 1,
+                "columns": {
+                  "id": 0,
+                  "easting": 1,
+                  "northing": 2,
+                  "resolution": 3,
+                  "state": 4,
+                  "value": 5
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "population-cells-v1"
+            }
+          },
+          {
+            "id": "known-allocation",
+            "operation": "uniform-source-cell-area",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [
+              "cells"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                }
+              ]
+            },
+            "parameters": {
+              "crs": "EPSG:3035",
+              "unit": "persons"
+            }
+          },
+          {
+            "id": "total-anchor",
+            "operation": "manual-total",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "knownApplied": 30,
+              "persons": 60,
+              "residualPersons": 30
+            }
+          },
+          {
+            "id": "model-input",
+            "operation": "source",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "source": {
+              "kind": "model",
+              "sourceHash": "",
+              "label": "Räumliche Ersatzgewichte ohne Ortsdaten",
+              "origin": "density-estimate",
+              "referenceDate": "",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "provider": "uniform",
+              "version": "density-v1"
+            }
+          },
+          {
+            "id": "mask-fill",
+            "operation": "manual-residual-by-model-weights-v1",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "inputs": [
+              "total-anchor",
+              "model-input"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "modelWeightDenominator": 24.396702773529086,
+              "persons": 30,
+              "seed": 5786932416442619000,
+              "seedRule": "scenario.population.seed XOR 0x504f505f4d41534b"
+            }
+          },
+          {
+            "id": "distribution",
+            "operation": "fill-gaps",
+            "evidence": "derived",
+            "selectionRole": "composition",
+            "inputs": [
+              "known-allocation",
+              "mask-fill"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "knownZerosPreserved": true,
+              "unit": "persons"
+            }
+          }
+        ]
+      },
+      "distributionSource": "dataset:88a3c62162ae9bbe23d154bb8dae282010bb69d781816fcc95ca549ad72126ac",
+      "status": "resolved",
+      "totalPersons": 60,
+      "totalProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.total",
+        "root": "total",
+        "nodes": [
+          {
+            "id": "total",
+            "operation": "manual-total",
+            "evidence": "assumed",
+            "selectionRole": "primary",
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                }
+              ]
+            },
+            "parameters": {
+              "persons": 60
+            }
+          }
+        ]
+      },
+      "totalSource": "user-defined"
+    }
+  }
+}

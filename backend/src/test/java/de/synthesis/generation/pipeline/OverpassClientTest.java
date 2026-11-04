@@ -40,6 +40,8 @@ class OverpassClientTest {
         assertTrue(query.contains("[out:xml][timeout:180]"),
                 "Default-Serverbudget 180 s wird eingebettet (nicht das allgemeine 30-s-Budget)");
         assertTrue(query.contains("way[\"highway\"]"), "Straßennetz-Query erwartet");
+        assertTrue(query.contains("relation(bw.roads)[\"type\"~\"^restriction\"]"), "Abbiegerelationen und ihre Mitglieder müssen im Netzabzug enthalten sein");
+        assertTrue(query.contains("(._; >;)"), "Mitglieder und Straßennodes rekursiv laden");
 
         props.getOverpass().setRoadNetworkTimeoutSeconds(240);
         assertTrue(client.roadNetworkQuery(rastatt()).contains("[out:xml][timeout:240]"),

@@ -33,11 +33,18 @@ public class RoutingEngine implements MatrixGenerator.Impedance, AutoCloseable {
     private final GraphHopper hopper;
     private final Path workDir;
     private final Map<Integer, Long> osmWays;
+    private final java.util.BitSet locationEdges;
+    private final java.util.BitSet passengerConnectorEdges;
+    private final java.util.BitSet pedestrianConnectorEdges;
 
-    private RoutingEngine(GraphHopper hopper, Path workDir, Map<Integer, Long> osmWays) {
+    private RoutingEngine(GraphHopper hopper, Path workDir, Map<Integer, Long> osmWays, java.util.BitSet locationEdges,
+                          java.util.BitSet passengerConnectorEdges, java.util.BitSet pedestrianConnectorEdges) {
         this.hopper = hopper;
         this.workDir = workDir;
         this.osmWays = osmWays;
+        this.locationEdges = locationEdges;
+        this.passengerConnectorEdges = passengerConnectorEdges;
+        this.pedestrianConnectorEdges = pedestrianConnectorEdges;
     }
 
     /**
@@ -46,17 +53,28 @@ public class RoutingEngine implements MatrixGenerator.Impedance, AutoCloseable {
      * zone-pair queries stay cheap.
      */
     public static RoutingEngine fromOsmXml(String osmXml) throws IOException {
+        return fromOsmXml(osmXml,false);
+    }
+    public static RoutingEngine fromOsmXml(String osmXml,boolean prepareLocations) throws IOException {
         Path workDir = Files.createTempDirectory("synthesis-routing-");
         Path osmFile = workDir.resolve("network.osm");
         Files.writeString(osmFile, osmXml, StandardCharsets.UTF_8);
 
         Map<Integer, Long> osmWays = new HashMap<>();
+        java.util.BitSet locationEdges=new java.util.BitSet();
+        java.util.BitSet passengerConnectorEdges=new java.util.BitSet();
+        java.util.BitSet pedestrianConnectorEdges=new java.util.BitSet();
         GraphHopper hopper = new GraphHopper() {
             @Override
             protected OSMParsers buildOSMParsers(Map<String, String> vehicles, List<String> values,
                                                   List<String> ignored, String dateRange) {
                 return super.buildOSMParsers(vehicles, values, ignored, dateRange)
-                        .addWayTagParser((edge, access, way, flags) -> osmWays.put(edge, way.getId()));
+                        .addWayTagParser((edge, access, way, flags) -> {
+                            osmWays.put(edge, way.getId());
+                            if(prepareLocations && RoadLocations.eligibleTags(way.getTags()))locationEdges.set(edge);
+                            if(prepareLocations && RoadLocations.passengerConnectorTags(way.getTags()))passengerConnectorEdges.set(edge);
+                            if(prepareLocations && RoadLocations.pedestrianConnectorTags(way.getTags()))pedestrianConnectorEdges.set(edge);
+                        });
             }
         };
         hopper.setOSMFile(osmFile.toString());
@@ -73,7 +91,64 @@ public class RoutingEngine implements MatrixGenerator.Impedance, AutoCloseable {
             cleanup(workDir);
             throw new IOException("GraphHopper-Import fehlgeschlagen: " + e.getMessage(), e);
         }
-        return new RoutingEngine(hopper, workDir, osmWays);
+        return new RoutingEngine(hopper, workDir, osmWays, locationEdges, passengerConnectorEdges, pedestrianConnectorEdges);
+    }
+
+    public RoadLocations roadLocations(List<Zone> zones) throws IOException {
+        var result=new RoadLocations(zones,OsmDataSnapshot.sha256(workDir.resolve("network.osm")));var em=hopper.getEncodingManager();
+        var access=List.of("car","bike","foot").stream().map(p->em.getBooleanEncodedValue(p+"_access")).toList();
+        var subnetworks=List.of("car","bike","foot").stream().map(p->em.getBooleanEncodedValue(com.graphhopper.routing.ev.Subnetwork.key(p))).toList();
+        // Native class permissions differ from GH: service links exclude cars and fast roads
+        // exclude walking. Filter candidate locations to both conservative main components.
+        // Weak connectivity is never a substitute for native lane/turn/pedestrian routing.
+        var graph=hopper.getBaseGraph();
+        var car=component(graph,passengerConnectorEdges,access.getFirst());
+        var foot=component(graph,pedestrianConnectorEdges,access.get(2));
+        int excluded=0,retained=0,footExcluded=0,footRetained=0;var candidates=graph.getAllEdges();
+        while(candidates.next()) {
+            if(!locationEdges.get(candidates.getEdge()) || access.stream().anyMatch(a->!candidates.get(a) && !candidates.getReverse(a)) || subnetworks.stream().anyMatch(candidates::get))continue;
+            if(!car.contains(candidates.getBaseNode())){excluded++;continue;}
+            retained++;
+            if(!foot.contains(candidates.getBaseNode())){footExcluded++;continue;}
+            footRetained++;
+            Long way=osmWays.get(candidates.getEdge());if(way==null)continue;
+            var points=candidates.fetchWayGeometry(com.graphhopper.util.FetchMode.ALL);
+            for(int i=1;i<points.size();i++)result.add(way,candidates.getEdge(),i-1,
+                    new RoadLocations.Point(points.getLon(i-1),points.getLat(i-1)),new RoadLocations.Point(points.getLon(i),points.getLat(i)));
+        }
+        result.connectivity(car.evidence("passenger",retained,excluded));
+        result.pedestrianConnectivity(foot.evidence("pedestrian, after passenger filter",footRetained,footExcluded));
+        result.finish();return result;
+    }
+
+    private record Component(int[] roots,int largest,int count,int edges,double metres) {
+        boolean contains(int node){return roots[node]==largest;}
+        Map<String,Object> evidence(String clazz,int retained,int excluded) {
+            return Map.of("method","largest weak component by road length; native routing remains authoritative",
+                    "classFilter",clazz,"connectorEdges",edges,"components",count,"selectedRoadMetres",metres,
+                    "retainedCandidateEdges",retained,"excludedCandidateEdges",excluded);
+        }
+    }
+    private static Component component(com.graphhopper.storage.BaseGraph graph,java.util.BitSet connectors,
+                                        com.graphhopper.routing.ev.BooleanEncodedValue access) {
+        int[] parent=new int[graph.getNodes()],size=new int[parent.length];
+        for(int i=0;i<parent.length;i++){parent[i]=i;size[i]=1;}
+        var edges=graph.getAllEdges();int accepted=0;
+        while(edges.next())if(connectors.get(edges.getEdge()) && (edges.get(access)||edges.getReverse(access))) {
+            int a=root(parent,edges.getBaseNode()),b=root(parent,edges.getAdjNode());
+            if(a!=b){if(size[a]<size[b]){int swap=a;a=b;b=swap;}parent[b]=a;size[a]+=size[b];}accepted++;
+        }
+        for(int i=0;i<parent.length;i++)parent[i]=root(parent,i);
+        double[] metres=new double[parent.length];edges=graph.getAllEdges();
+        while(edges.next())if(connectors.get(edges.getEdge()) && (edges.get(access)||edges.getReverse(access)))
+            metres[parent[edges.getBaseNode()]]+=edges.getDistance();
+        int largest=-1,count=0;
+        for(int i=0;i<metres.length;i++)if(metres[i]>0){count++;if(largest<0 || metres[i]>metres[largest])largest=i;}
+        return new Component(parent,largest,count,accepted,largest<0?0:metres[largest]);
+    }
+
+    private static int root(int[] parent,int node) {
+        while(parent[node]!=node){parent[node]=parent[parent[node]];node=parent[node];}return node;
     }
 
     private static String profileOf(MatrixGenerator.TravelMode mode) {

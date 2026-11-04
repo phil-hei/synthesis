@@ -1,0 +1,1472 @@
+{
+  "scenarioId": "bddda815",
+  "passed": true,
+  "frontend": "production build",
+  "viewportWidths": [
+    1440,
+    390
+  ],
+  "flow": [
+    "import population revision",
+    "import partial complete workplace register with true zero",
+    "create mixed native/revision source profiles in UI",
+    "configure native gap order and OSM exclusion",
+    "review staged inputs and planned gap sources",
+    "save exact profile bindings",
+    "offline generation with population 80",
+    "verify register jobs 12, true zero and disjoint synthetic gap weights"
+  ],
+  "workProfile": "d333a68083772f55ef0a0077ab5ca34d0eaa26a825dff4e511588b58206d4441",
+  "popProfile": "ceb8dad31ba43e76872348a731bba8ce92de70ee0d85700080d581b897ec007e",
+  "zeroZone": {
+    "externalId": 100007,
+    "modelIndex": 6
+  },
+  "resolution": {
+    "decisions": [
+      {
+        "aspect": "freight.vehicleOd",
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "qualityMode": "exploration",
+        "selectionRole": "legacy-delegation",
+        "skipped": [],
+        "source": "legacy",
+        "status": "legacy"
+      },
+      {
+        "applicationStatus": "pending-runtime-inputs",
+        "aspect": "opportunities.work",
+        "candidates": [
+          {
+            "onUnavailable": "fail",
+            "provider": "revision:af5f80dc120e1a05f8ccacf7c5255fc1c692aa3b260b42c0cc71dd98d04c30f3",
+            "reason": "revision-and-references-frozen",
+            "status": "staged",
+            "rank": 1
+          },
+          {
+            "onUnavailable": "fail",
+            "provider": "builtin:synthetic",
+            "reason": "earlier-retained-revision-is-terminal",
+            "status": "not-evaluated",
+            "rank": 2
+          }
+        ],
+        "evidence": "not-assessed",
+        "gapProviders": [
+          {
+            "provider": "synthetic",
+            "excluded": false,
+            "onUnavailable": "next"
+          },
+          {
+            "provider": "osm-pois",
+            "excluded": true,
+            "onUnavailable": "next"
+          }
+        ],
+        "gaps": "providers",
+        "profile": "d333a68083772f55ef0a0077ab5ca34d0eaa26a825dff4e511588b58206d4441",
+        "profileDefinition": {
+          "contract": "synthesis-source-profile-v1",
+          "name": "Work gemischt",
+          "aspects": {
+            "opportunities.work": {
+              "candidates": [
+                {
+                  "provider": "revision:af5f80dc120e1a05f8ccacf7c5255fc1c692aa3b260b42c0cc71dd98d04c30f3",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                },
+                {
+                  "provider": "builtin:synthetic",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                }
+              ],
+              "fallback": "none"
+            }
+          }
+        },
+        "source": "profile",
+        "status": "pending-resolution"
+      },
+      {
+        "applicationStatus": "pending-runtime-inputs",
+        "aspect": "population.distribution",
+        "candidates": [
+          {
+            "onUnavailable": "fail",
+            "provider": "builtin:census-2022",
+            "reason": "requires-runtime-inputs",
+            "status": "pending",
+            "rank": 1
+          },
+          {
+            "onUnavailable": "fail",
+            "provider": "revision:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+            "reason": "revision-and-references-frozen",
+            "status": "staged",
+            "rank": 2
+          },
+          {
+            "onUnavailable": "fail",
+            "provider": "builtin:uniform",
+            "reason": "earlier-retained-revision-is-terminal",
+            "status": "not-evaluated",
+            "rank": 3
+          }
+        ],
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "profile": "ceb8dad31ba43e76872348a731bba8ce92de70ee0d85700080d581b897ec007e",
+        "profileDefinition": {
+          "contract": "synthesis-source-profile-v1",
+          "name": "Bevölkerung gemischt",
+          "aspects": {
+            "population.distribution": {
+              "candidates": [
+                {
+                  "provider": "builtin:census-2022",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                },
+                {
+                  "provider": "revision:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                },
+                {
+                  "provider": "builtin:uniform",
+                  "excluded": false,
+                  "onUnavailable": "fail"
+                }
+              ],
+              "fallback": "none"
+            }
+          }
+        },
+        "source": "profile",
+        "status": "pending-resolution"
+      }
+    ],
+    "workplaces": {
+      "allocation": "point-to-zone; declared workplace counts used as Work weights",
+      "appliedJobs": 12,
+      "candidates": [
+        {
+          "onUnavailable": "fail",
+          "provider": "revision:af5f80dc120e1a05f8ccacf7c5255fc1c692aa3b260b42c0cc71dd98d04c30f3",
+          "reason": "first-usable-candidate",
+          "status": "selected",
+          "rank": 1
+        },
+        {
+          "onUnavailable": "fail",
+          "provider": "builtin:synthetic",
+          "reason": "higher-priority-candidate-selected",
+          "status": "not-evaluated",
+          "rank": 2
+        }
+      ],
+      "compositionContract": "synthesis-workplace-composition-v1",
+      "coverageBasis": "source-owner-declaration; not independently verified",
+      "coverageDeclaration": {
+        "kind": "point-register",
+        "completeness": "complete",
+        "statement": "Vollständige synthetische Arbeitsplatzwerte innerhalb der erklärten Teilabdeckung"
+      },
+      "coverageDenominator": "internal model zones fully covered by declared source bbox",
+      "coveredZones": 10,
+      "fallbackZones": 15,
+      "gapPolicy": "providers",
+      "gapResolution": {
+        "candidates": [
+          {
+            "onUnavailable": "next",
+            "provider": "synthetic",
+            "reason": "first-usable-candidate",
+            "status": "selected",
+            "rank": 1
+          },
+          {
+            "onUnavailable": "next",
+            "provider": "osm-pois",
+            "reason": "explicitly-excluded",
+            "status": "excluded",
+            "rank": 2
+          }
+        ],
+        "contract": "synthesis-workplace-resolution-v1",
+        "provenance": {
+          "contract": "synthesis-source-provenance-v1",
+          "aspect": "opportunities.work",
+          "root": "weights",
+          "nodes": [
+            {
+              "id": "input",
+              "operation": "model-profile",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "source": {
+                "kind": "model",
+                "label": "Synthetische Arbeitsgewichte",
+                "origin": "synthetic-work-weights-v1",
+                "referenceDate": "",
+                "licence": "unknown",
+                "attribution": ""
+              },
+              "inputs": [],
+              "scope": {
+                "purpose": "Work",
+                "zones": [
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100023,
+                    "modelIndex": 22
+                  },
+                  {
+                    "externalId": 100024,
+                    "modelIndex": 23
+                  },
+                  {
+                    "externalId": 100025,
+                    "modelIndex": 24
+                  }
+                ]
+              },
+              "parameters": {
+                "baseWeightPerKm2": 400,
+                "centralitySlope": 0.8,
+                "gaussianSigma": 0.5,
+                "modelVersion": "synthetic-work-weights-v1",
+                "seed": 6291337688135381000,
+                "seedRule": "scenario.population.seed XOR 0x574f524b5f56314c"
+              }
+            },
+            {
+              "id": "weights",
+              "operation": "synthetic-work-weights",
+              "evidence": "assumed",
+              "selectionRole": "fallback",
+              "inputs": [
+                "input"
+              ],
+              "scope": {
+                "purpose": "Work",
+                "zones": [
+                  {
+                    "externalId": 100003,
+                    "modelIndex": 2
+                  },
+                  {
+                    "externalId": 100004,
+                    "modelIndex": 3
+                  },
+                  {
+                    "externalId": 100005,
+                    "modelIndex": 4
+                  },
+                  {
+                    "externalId": 100008,
+                    "modelIndex": 7
+                  },
+                  {
+                    "externalId": 100009,
+                    "modelIndex": 8
+                  },
+                  {
+                    "externalId": 100010,
+                    "modelIndex": 9
+                  },
+                  {
+                    "externalId": 100013,
+                    "modelIndex": 12
+                  },
+                  {
+                    "externalId": 100014,
+                    "modelIndex": 13
+                  },
+                  {
+                    "externalId": 100015,
+                    "modelIndex": 14
+                  },
+                  {
+                    "externalId": 100018,
+                    "modelIndex": 17
+                  },
+                  {
+                    "externalId": 100019,
+                    "modelIndex": 18
+                  },
+                  {
+                    "externalId": 100020,
+                    "modelIndex": 19
+                  },
+                  {
+                    "externalId": 100023,
+                    "modelIndex": 22
+                  },
+                  {
+                    "externalId": 100024,
+                    "modelIndex": 23
+                  },
+                  {
+                    "externalId": 100025,
+                    "modelIndex": 24
+                  }
+                ]
+              },
+              "parameters": {
+                "observedJobTotalAvailable": false,
+                "unit": "model-weight"
+              }
+            }
+          ]
+        },
+        "provider": "synthetic",
+        "status": "resolved",
+        "sumWeights": 3536.095486768963,
+        "unit": "model-weight",
+        "zoneWeights": [
+          {
+            "modelIndex": 2,
+            "weight": 372.2848983156578,
+            "externalId": 100003
+          },
+          {
+            "modelIndex": 3,
+            "weight": 283.5792829115109,
+            "externalId": 100004
+          },
+          {
+            "modelIndex": 4,
+            "weight": 60.03994071379847,
+            "externalId": 100005
+          },
+          {
+            "modelIndex": 7,
+            "weight": 337.40948210020684,
+            "externalId": 100008
+          },
+          {
+            "modelIndex": 8,
+            "weight": 149.93495495195359,
+            "externalId": 100009
+          },
+          {
+            "modelIndex": 9,
+            "weight": 212.30208214327843,
+            "externalId": 100010
+          },
+          {
+            "modelIndex": 12,
+            "weight": 185.6635636350168,
+            "externalId": 100013
+          },
+          {
+            "modelIndex": 13,
+            "weight": 431.24554573805057,
+            "externalId": 100014
+          },
+          {
+            "modelIndex": 14,
+            "weight": 131.5861882941982,
+            "externalId": 100015
+          },
+          {
+            "modelIndex": 17,
+            "weight": 117.110019685948,
+            "externalId": 100018
+          },
+          {
+            "modelIndex": 18,
+            "weight": 559.0456857500316,
+            "externalId": 100019
+          },
+          {
+            "modelIndex": 19,
+            "weight": 273.85856056599744,
+            "externalId": 100020
+          },
+          {
+            "modelIndex": 22,
+            "weight": 81.10740201829368,
+            "externalId": 100023
+          },
+          {
+            "modelIndex": 23,
+            "weight": 240.89454679428698,
+            "externalId": 100024
+          },
+          {
+            "modelIndex": 24,
+            "weight": 100.03333315073368,
+            "externalId": 100025
+          }
+        ]
+      },
+      "jobsInPartiallyCoveredZonesNotApplied": 0,
+      "mappedJobs": 12,
+      "mappedRows": 2,
+      "outsideRows": 0,
+      "provenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "opportunities.work",
+        "root": "work-weights",
+        "nodes": [
+          {
+            "id": "register",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "primary",
+            "source": {
+              "kind": "dataset",
+              "revision": "af5f80dc120e1a05f8ccacf7c5255fc1c692aa3b260b42c0cc71dd98d04c30f3",
+              "sourceHash": "358d8e88ce05b5dba10916b550dec3c57c5fc3a6cbaa708de12fb4594f0c49bc",
+              "label": "workpoints.csv",
+              "origin": "Synthetische vollständige Vertragsfixture",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                }
+              ]
+            },
+            "parameters": {
+              "coverageDeclaration": {
+                "kind": "point-register",
+                "completeness": "complete",
+                "statement": "Vollständige synthetische Arbeitsplatzwerte innerhalb der erklärten Teilabdeckung"
+              },
+              "declaredCoverage": {
+                "minLat": 48.84,
+                "minLon": 8.19,
+                "maxLat": 48.9,
+                "maxLon": 8.23
+              },
+              "mapping": {
+                "tableId": "csv",
+                "headerRow": 1,
+                "columns": {
+                  "id": 0,
+                  "lat": 2,
+                  "lon": 1,
+                  "value": 3
+                },
+                "decimalSeparator": "."
+              },
+              "schema": "workplaces-v1"
+            }
+          },
+          {
+            "id": "point-allocation",
+            "operation": "point-to-zone-sum",
+            "evidence": "derived",
+            "selectionRole": "primary",
+            "inputs": [
+              "register"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                }
+              ]
+            },
+            "parameters": {
+              "emptyZonePolicy": "zero-by-completeness-declaration",
+              "modelIndexBase": 0,
+              "unit": "jobs"
+            }
+          },
+          {
+            "id": "gap/input",
+            "operation": "model-profile",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "source": {
+              "kind": "model",
+              "label": "Synthetische Arbeitsgewichte",
+              "origin": "synthetic-work-weights-v1",
+              "referenceDate": "",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "baseWeightPerKm2": 400,
+              "centralitySlope": 0.8,
+              "gaussianSigma": 0.5,
+              "modelVersion": "synthetic-work-weights-v1",
+              "seed": 6291337688135381000,
+              "seedRule": "scenario.population.seed XOR 0x574f524b5f56314c"
+            }
+          },
+          {
+            "id": "gap/weights",
+            "operation": "synthetic-work-weights",
+            "evidence": "assumed",
+            "selectionRole": "fallback",
+            "inputs": [
+              "gap/input"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "observedJobTotalAvailable": false,
+              "unit": "model-weight"
+            }
+          },
+          {
+            "id": "work-weights",
+            "operation": "fill-gaps",
+            "evidence": "derived",
+            "selectionRole": "composition",
+            "inputs": [
+              "point-allocation",
+              "gap/weights"
+            ],
+            "scope": {
+              "purpose": "Work",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "quantitiesComparable": false,
+              "semantics": "purpose-specific weights; no observed total inferred"
+            }
+          }
+        ]
+      },
+      "revision": "af5f80dc120e1a05f8ccacf7c5255fc1c692aa3b260b42c0cc71dd98d04c30f3",
+      "rowAssignments": [
+        {
+          "sourceRow": 2,
+          "sourceId": "positive",
+          "zone": {
+            "externalId": 100006,
+            "modelIndex": 5
+          },
+          "status": "applied",
+          "quantity": 12
+        },
+        {
+          "sourceRow": 3,
+          "sourceId": "zero",
+          "zone": {
+            "externalId": 100007,
+            "modelIndex": 6
+          },
+          "status": "applied",
+          "quantity": 0
+        }
+      ]
+    },
+    "populationSource": "dataset:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+    "populationDistribution": "dataset:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+    "population": {
+      "allocatedPersons": 80,
+      "candidates": [
+        {
+          "onUnavailable": "fail",
+          "provider": "builtin:census-2022",
+          "reason": "census-disabled-outside-coverage-or-empty",
+          "status": "not-applicable",
+          "rank": 1
+        },
+        {
+          "onUnavailable": "fail",
+          "provider": "revision:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+          "reason": "first-usable-candidate",
+          "status": "selected",
+          "rank": 2
+        },
+        {
+          "onUnavailable": "fail",
+          "provider": "builtin:uniform",
+          "reason": "higher-priority-candidate-selected",
+          "status": "not-evaluated",
+          "rank": 3
+        }
+      ],
+      "contract": "synthesis-population-resolution-v1",
+      "diagnostics": {
+        "revision": "25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+        "outsideModelPopulation": 0,
+        "mappedPopulation": 80,
+        "inputPopulation": 80
+      },
+      "distributionProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.distribution",
+        "root": "weights",
+        "nodes": [
+          {
+            "id": "input",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "fallback",
+            "source": {
+              "kind": "dataset",
+              "revision": "25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+              "sourceHash": "c0f165bf1f2231a4c6f13631007ac7ba5a9bbd8e9dd15f8055d0c6fd89c773f8",
+              "label": "population.csv",
+              "origin": "dataset:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "provider": "dataset:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+              "providerVersion": "synthesis-aspect-dataset-v1"
+            }
+          },
+          {
+            "id": "weights",
+            "operation": "grid-point-to-zone-sum",
+            "evidence": "derived",
+            "selectionRole": "fallback",
+            "inputs": [
+              "input"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "diagnostics": {
+                "revision": "25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+                "outsideModelPopulation": 0,
+                "mappedPopulation": 80,
+                "inputPopulation": 80
+              },
+              "seed": 42,
+              "smooth": false
+            }
+          }
+        ]
+      },
+      "distributionSource": "dataset:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+      "status": "resolved-with-fallback",
+      "totalPersons": 80,
+      "totalProvenance": {
+        "contract": "synthesis-source-provenance-v1",
+        "aspect": "population.total",
+        "root": "total",
+        "nodes": [
+          {
+            "id": "input",
+            "operation": "source",
+            "evidence": "unknown",
+            "selectionRole": "fallback",
+            "source": {
+              "kind": "dataset",
+              "revision": "25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+              "sourceHash": "c0f165bf1f2231a4c6f13631007ac7ba5a9bbd8e9dd15f8055d0c6fd89c773f8",
+              "label": "population.csv",
+              "origin": "dataset:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+              "referenceDate": "2026-01-01",
+              "licence": "unknown",
+              "attribution": ""
+            },
+            "inputs": [],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "provider": "dataset:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c",
+              "providerVersion": "synthesis-aspect-dataset-v1"
+            }
+          },
+          {
+            "id": "total",
+            "operation": "source-total",
+            "evidence": "derived",
+            "selectionRole": "primary",
+            "inputs": [
+              "input"
+            ],
+            "scope": {
+              "purpose": "residents",
+              "zones": [
+                {
+                  "externalId": 100001,
+                  "modelIndex": 0
+                },
+                {
+                  "externalId": 100002,
+                  "modelIndex": 1
+                },
+                {
+                  "externalId": 100003,
+                  "modelIndex": 2
+                },
+                {
+                  "externalId": 100004,
+                  "modelIndex": 3
+                },
+                {
+                  "externalId": 100005,
+                  "modelIndex": 4
+                },
+                {
+                  "externalId": 100006,
+                  "modelIndex": 5
+                },
+                {
+                  "externalId": 100007,
+                  "modelIndex": 6
+                },
+                {
+                  "externalId": 100008,
+                  "modelIndex": 7
+                },
+                {
+                  "externalId": 100009,
+                  "modelIndex": 8
+                },
+                {
+                  "externalId": 100010,
+                  "modelIndex": 9
+                },
+                {
+                  "externalId": 100011,
+                  "modelIndex": 10
+                },
+                {
+                  "externalId": 100012,
+                  "modelIndex": 11
+                },
+                {
+                  "externalId": 100013,
+                  "modelIndex": 12
+                },
+                {
+                  "externalId": 100014,
+                  "modelIndex": 13
+                },
+                {
+                  "externalId": 100015,
+                  "modelIndex": 14
+                },
+                {
+                  "externalId": 100016,
+                  "modelIndex": 15
+                },
+                {
+                  "externalId": 100017,
+                  "modelIndex": 16
+                },
+                {
+                  "externalId": 100018,
+                  "modelIndex": 17
+                },
+                {
+                  "externalId": 100019,
+                  "modelIndex": 18
+                },
+                {
+                  "externalId": 100020,
+                  "modelIndex": 19
+                },
+                {
+                  "externalId": 100021,
+                  "modelIndex": 20
+                },
+                {
+                  "externalId": 100022,
+                  "modelIndex": 21
+                },
+                {
+                  "externalId": 100023,
+                  "modelIndex": 22
+                },
+                {
+                  "externalId": 100024,
+                  "modelIndex": 23
+                },
+                {
+                  "externalId": 100025,
+                  "modelIndex": 24
+                }
+              ]
+            },
+            "parameters": {
+              "persons": 80,
+              "unroundedSourceTotal": 80
+            }
+          }
+        ]
+      },
+      "totalSource": "dataset:25f9fc9d95bd587d7c9263b50a5502e8b6a61a3f544c3755f01c4726d65c172c"
+    }
+  },
+  "javascriptErrors": []
+}

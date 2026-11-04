@@ -28,9 +28,14 @@ Fachlicher Ansatz: **Pendlerverflechtungen bestimmen mögliche Arbeitsbeziehunge
 |---|---|---|
 | KBA | Kraftfahrt-Bundesamt | Optionaler regionaler BEV-Anteil für MobileCity aus gespeichertem Referenzbestand. BEV bezeichnet batterieelektrische Pkw. |
 | BKG | Bundesamt für Kartographie und Geodäsie | Gemeindegeometrien zur Zuordnung der Fahrzeugdaten zu Modellzonen. |
-| BNetzA | Bundesnetzagentur | Optional öffentlich registrierte Ladepunkte für MobileCity aus gespeichertem Registerstand. |
+| BNetzA | Bundesnetzagentur | Optional öffentlich registrierte Ladepunkte für MobileCity und regionaler Stationsbestand mit Ladepunkt-/Anschlussdetails aus demselben gespeicherten Registerstand. |
 
 Diese Anbindungen existieren bereits. Aktivierung, passende Datenabdeckung und Quellenstände sind erforderlich. Sie bedeuten weder automatisch aktuelle Live-Fahrzeugdaten noch eine vollständige Nutzung im Personen-/Logistikmodell. Der gemeinsame Pkw-Bestand wird weiterhin durch das Bevölkerungsmodell erzeugt. Quellen: [BKG-Verwaltungsgebiete](https://gdz.bkg.bund.de/index.php/default/wms-verwaltungsgebiete-1-5-000-000-stand-31-12-wms-vg5000-1231.html), [BNetzA-Ladesäulenregister](https://bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html).
+
+Für öffentliche Lade- und Tankmöglichkeiten existiert zusätzlich ein optionaler OSM-Import
+für Strom, CNG, LNG, LPG und H₂ einschließlich Flächen/Relationen. H₂-Register-API,
+Straßenzufahrt und operative Lade-/Tankplanung bleiben offen:
+[Bedienung, Quellen und Integrationsplan](19-fahrzeugimport-und-modellbegriffe.md#öffentliche-lade--und-tankinfrastruktur-bestandsprüfung-und-integrationsplan-2026-10-20).
 
 ## Wer wählt das Einkaufsziel?
 

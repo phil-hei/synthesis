@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "qualityMode": "exploration",
+  "aspects": {
+    "opportunities.work": {
+      "source": "builtins",
+      "providers": [
+        { "provider": "osm-pois", "excluded": false, "onUnavailable": "next" },
+        { "provider": "synthetic", "excluded": false, "onUnavailable": "fail" }
+      ]
+    }
+  }
+}

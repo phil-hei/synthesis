@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-29",
+  "scope": "Mixed native/revision/pack profiles for population and Work; explicit native workplace gap composition; not full concept acceptance",
+  "backend": {
+    "tests": 444,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 4
+  },
+  "focusedSourcesTests": 64,
+  "frontend": {
+    "tests": 108,
+    "productionBuild": "passed"
+  },
+  "browserProof": "2026-10-29-mixed-sources-ui.json",
+  "exampleProof": "2026-10-29-mixed-sources-example.json",
+  "remaining": [
+    "regional composition of multiple imported registers",
+    "full migration of remaining source families",
+    "NoData masks and empirical model/source acceptance",
+    "authoritative municipality key verification and territorial crosswalks",
+    "scientifically validated freight generation fallback",
+    "full real-region and target-model migration acceptance"
+  ]
+}

@@ -52,6 +52,15 @@ public final class PopulationGridParser {
 
     /** Liest nur Punkte innerhalb der Region; wichtig für das deutschlandweite 100-m-Raster. */
     public static ParseResult parse(Path file, Scenario.Region region) throws IOException {
+        return parse(file,region,false);
+    }
+
+    /** Explicit provider input: zero is valid, malformed/missing/negative values cannot be skipped. */
+    public static ParseResult parseStrict(Path file, Scenario.Region region) throws IOException {
+        return parse(file,region,true);
+    }
+
+    private static ParseResult parse(Path file, Scenario.Region region,boolean strict) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             String headerLine = reader.readLine();
             if (headerLine == null) {
@@ -96,8 +105,9 @@ public final class PopulationGridParser {
                 String[] cells = line.split(String.valueOf(delimiter), -1);
                 try {
                     double population = parseNumber(cells[popCol]);
+                    if(strict&&(!Double.isFinite(population)||population<0))throw new IllegalArgumentException("Ungültige oder unterdrückte Bevölkerungszahl");
                     if (population <= 0) {
-                        skipped++; // Zensus nutzt negative Werte/"–" für geheim gehaltene Zellen
+                        if(!strict)skipped++; // Legacy zählt auch explizite Nullwerte hier.
                         continue;
                     }
                     double lat;
@@ -131,6 +141,7 @@ public final class PopulationGridParser {
                         lat = parseNumber(cells[latCol]);
                         lon = parseNumber(cells[lonCol]);
                     }
+                    if(strict&&(!Double.isFinite(lat)||!Double.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180))throw new IllegalArgumentException("Ungültige Koordinaten");
                     if (sourceCell != null && sourceCell[2] >= 1000) {
                         // Uniform density on the common 100 m grid, not observed extra detail.
                         // Filter subcell centres so cells overlapping a region are not lost merely
@@ -151,6 +162,7 @@ public final class PopulationGridParser {
                         addPoint(points, region, lat, lon, population);
                     }
                 } catch (RuntimeException e) {
+                    if(strict)throw new IllegalArgumentException("Ungültige Rasterzeile: "+e.getMessage(),e);
                     skipped++;
                 }
             }

@@ -84,6 +84,8 @@
       </section>
       <section class="block">
         <h2>Bevölkerung</h2>
+        <button (click)="openDataWorkspace()" [disabled]="busy || !scenario.id || running">Daten &amp; Quellen öffnen</button>
+        @if (sourcePlanChanged) { <p class="hint">Quellenplan geändert. Vorhandene Ergebnisse stammen aus dem vorherigen Lauf.</p> }
         @if (estimateInfo) {
           <p class="hint">{{ estimateInfo }}
             @if (estimateSourceUrl) {
@@ -142,6 +144,13 @@
             <strong>OSM-Ortsdaten werden automatisch geladen ⓘ</strong>
             <span>Overpass → dokumentierter Lauf-Snapshot → synthetischer Fallback</span>
           </div>
+          <label class="checkbox" title="Experimentell: erzeugte interne Wohn- und Aktivitätsorte an öffentlichen Straßen innerhalb ihrer Zone platzieren. Die Zufallsfolge bleibt erhalten; fehlende Straßen führen zu einem Prüfbericht. Externe Anker und eingegebene Depotorte werden nicht verschoben.">
+            <input type="checkbox" [(ngModel)]="scenario.population.roadLocatedActivities">
+            Synthetische Wohn- und Aktivitätsorte an Straßen platzieren (experimentell)
+          </label>
+          @if (scenario.population.roadLocatedActivities) {
+            <p class="hint">Interne Wohnorte und erzeugte Ziele bleiben in ihrer Zone und werden an öffentliche Straßen gelegt, die Pkw, Fahrrad und Fußverkehr zulassen. Dies sind synthetische Orte, keine beobachteten Adressen. Fehlt eine geeignete Straße, wird die Generierung mit Prüfbericht abgebrochen. Externe Zielanker und eingegebene Depotorte bleiben unverändert.</p>
+          }
           @if (osmDataUpload) {
             <div class="upload-info"
               title="Dieses Szenario besitzt bereits einen eingefrorenen OSM-Stand. Nach dem Entfernen werden die Ortsdaten beim nächsten Lauf wieder automatisch über Overpass geladen.">
@@ -339,7 +348,7 @@
           <p class="hint">Der Schnellstart erzeugt einen vollständigen Importsatz mit bewusst einfachen
             Annahmen. Regionale Daten, Umland und native Prüfung können danach einzeln aktiviert werden.</p>
           <label>Bezugsjahr
-            <input type="number" min="2000" max="2050" step="1" [(ngModel)]="scenario.referenceYear">
+            <input type="number" min="2000" max="2050" step="1" [(ngModel)]="scenario.referenceYear" (ngModelChange)="clearEnergyInfrastructure()">
           </label>
           <label class="checkbox">
             <input type="checkbox" [(ngModel)]="scenario.mobileCity.regionalExport"
@@ -565,7 +574,68 @@
           }
         </section>
         <section class="block">
-          <h2>Logistik (logiTopp)</h2>
+          <app-energy-infrastructure-panel [scenario]="scenario" [quality]="energyQuality"
+            [disabled]="busy || job?.state === 'RUNNING' || job?.state === 'QUEUED'"
+            (sourcesChanged)="clearEnergyInfrastructure()" />
+          <app-energy-operations-panel [scenario]="scenario" [jobState]="job?.state ?? null" [inventoryAvailable]="!!energyData"
+            [disabled]="busy || job?.state === 'RUNNING' || job?.state === 'QUEUED'" (configurationChanged)="clearEnergyInfrastructure()" />
+        </section>
+        <section class="block">
+          <h2>Schwerer Güterverkehr</h2>
+          @if (scenario.freight; as freight) {
+            <label class="checkbox">
+              <input type="checkbox" [checked]="freight.enabled"
+                (change)="setFreightEnabled($any($event.target).checked)">
+              LKW und Sattelzüge berücksichtigen (experimentell)
+            </label>
+            @if (freight.enabled) {
+              <p class="hint">Zusätzlicher Beitrag zur gemeinsamen Nachfrage, unabhängig vom Exportziel. Benötigt vollständige Personennachfrage. Importierte Fahrtenmengen enthalten auch Leerfahrten.</p>
+              <label>Bezugswochentag
+                <select [(ngModel)]="freight.day">
+                  <option [ngValue]="0">Montag</option><option [ngValue]="1">Dienstag</option>
+                  <option [ngValue]="2">Mittwoch</option><option [ngValue]="3">Donnerstag</option>
+                  <option [ngValue]="4">Freitag</option><option [ngValue]="5">Samstag</option>
+                  <option [ngValue]="6">Sonntag</option>
+                </select>
+              </label>
+              <p class="hint">Mengen gelten für diesen Wochentag. Bei einem SUMO-Export muss dessen Betriebstag dazu passen.</p>
+              <label class="upload-button" [class.disabled]="!scenario.id || freightUploadBusy">
+                {{ freightUploadBusy ? 'Fahrten werden geprüft…' : 'Güterverkehrsbeziehungen hochladen (CSV)' }}
+                <input type="file" accept=".csv" (change)="onFreightSelected($event)"
+                  [disabled]="!scenario.id || freightUploadBusy">
+              </label>
+              <button class="link" (click)="downloadFreightTemplate()">CSV-Vorlage mit gerichteten Kanten herunterladen</button>
+              @if (hasFreightNetwork) {
+                <a [href]="artifactUrl('sumo/freight-network.geojson')" target="_blank">Zulässige gerichtete Netzkanten herunterladen (GeoJSON)</a>
+              } @else {
+                <p class="hint">Zunächst einen SUMO-Lauf ohne schweren Güterverkehr erzeugen, um die verfügbaren Netzkanten zu erhalten.</p>
+              }
+              <p class="hint">Start/Ziel als Koordinaten im Gebiet; für gerichtete Zugänge zusätzlich fromEdge/toEdge aus sumo/freight-network.geojson angeben. Beide Kanten müssen zur Fahrzeugklasse und zum aktuellen Netz passen. Quelle und Bezugsdatum je Beziehung angeben. Maut-Rohdaten müssen zuvor aufbereitet werden.</p>
+              @if (!scenario.id) { <p class="hint">Szenario zuerst speichern, dann Fahrten hochladen.</p> }
+              <p>{{ freight.relations.length }} Beziehungen · {{ freightTripCount | number:'1.0-0' }} schwere Fahrten</p>
+              <p class="hint">Eigene Eingabedaten, noch nicht regional kalibriert.</p>
+              <label class="checkbox"><input type="checkbox" [(ngModel)]="freight.profileChecksEnabled" [disabled]="!hasTarget('sumo')">LKW-Profile und Routen prüfen (experimentell, 26/40 t Volllast)</label>
+              @if (freight.profileChecksEnabled) {
+                <p class="hint">Standard-LKW mit 4 m Höhe und 2,55 m Breite. Start/Ziel an der nächsten zulässigen Straße. Ungeklärte Zugangsregeln werden ausgewiesen; nicht routbare Fahrten führen zum Fehler. Keine Kombination mit eigenen schweren SUMO-Fahrzeugtypen.</p>
+                @if (hasFreightCheckReport) {
+                  <a [href]="artifactUrl('freight/route-checks.json')" target="_blank">Routenprüfbericht herunterladen</a>
+                }
+              }
+              <label class="checkbox"><input type="checkbox" [(ngModel)]="freight.sevasEnabled" [disabled]="!hasTarget('sumo')">SEVAS-LKW-Sperren für NRW berücksichtigen (experimentell)</label>
+              @if (freight.sevasEnabled) {
+                <label class="upload-button" [class.disabled]="!scenario.id || sevasUploadBusy">
+                  {{ sevasUploadBusy ? 'SEVAS-Daten werden geprüft…' : 'SEVAS-Restriktionssegmente hochladen (GeoJSON)' }}
+                  <input type="file" accept=".geojson,.json" (change)="onSevasSelected($event)" [disabled]="!scenario.id || sevasUploadBusy">
+                </label>
+                <p>{{ freight.sevasSnapshot?.features?.length ?? 0 }} Restriktionssegmente im Snapshot</p>
+                <p class="hint">Nur unbedingte LKW-Verbote ohne Ausnahmen werden bei eindeutiger Zuordnung angewendet. Höhen-/Gewichtslimits, Zeitregeln und Lieferverkehr-Ausnahmen werden im Ergebnisbericht als nicht unterstützt ausgewiesen. Vorrangrouten sind noch nicht integriert.</p>
+                <a href="https://sevas.nrw.de/hilfe/export/dienste/wfs" target="_blank" rel="noopener">SEVAS-Datenzugang und Exportbeschreibung</a>
+              }
+            }
+          }
+        </section>
+        <section class="block">
+          <h2>Paketlogistik (logiTopp)</h2>
           <label class="range-field" title="Durchschnittliche Zahl der Paketbestellungen je Person und Woche. 0 bedeutet keine privaten Pakete; 0,75 bedeutet im Mittel drei Pakete je vier Personen und Woche.">
             <span class="range-label">
               <span>Pakete je Person und Woche ⓘ</span>
@@ -703,8 +773,11 @@
           </div>
         }
       </section>
+      <section class="block">
+        <app-company-tour-import [scenarioId]="scenario.id ?? ''" (selectionChange)="scenario.companyTours = $event" (pendingChange)="companyTourPending = $event" />
+      </section>
       <section class="block actions">
-        <button class="primary" (click)="generate()" [disabled]="busy || !scenario.id || running"
+        <button class="primary" (click)="generate()" [disabled]="busy || !scenario.id || running || companyTourPending || dataImportPending"
           title="Speichert den aktuellen Szenariostand und startet anschließend die gewählten Ausgaben">
           {{ running ? 'Generierung läuft…' : (hasTarget('mobilecity') && scenario.targetModels.length === 1 ? 'MobileCity-Export erzeugen' : 'Szenario erzeugen') }}
         </button>
@@ -714,6 +787,15 @@
       </section>
     }
   </aside>
+
+  <dialog id="data-workspace-dialog" (cancel)="closeDataWorkspace($event)" aria-label="Daten und Quellen des Szenarios">
+    <div class="data-dialog-actions"><button (click)="closeDataWorkspace()">Zurück zum Studio</button></div>
+    @if (dataWorkspaceOpen && scenario) {
+      <app-data-workspace [scenario]="scenario" [disabled]="busy || running"
+        [runVersion]="(job?.startedAt || '') + ':' + (job?.state || '') + ':' + (job?.finishedAt || '')"
+        (changed)="dataPlanChanged()" (savePlan)="save()" (pending)="dataImportPending = $event" />
+    }
+  </dialog>
 
   <!-- Mitte: Karte -->
   <main class="map-wrap">
@@ -730,12 +812,22 @@
         title="Zeigt das Zonenraster für die aktuelle Region und Zellgröße, ohne etwas zu speichern">
         Zonen-Vorschau
       </button>
+      @if (energyData) {
+        <button [class.toggled]="showEnergyLayer" [attr.aria-pressed]="showEnergyLayer" (click)="toggleEnergyLayer()">Lade-/Tankstationen</button>
+        @if (showEnergyLayer) {
+          <button [class.toggled]="showUnconfirmedEnergy" [attr.aria-pressed]="showUnconfirmedEnergy" (click)="toggleUnconfirmedEnergy()">Ungeklärten / beschränkten Zugang anzeigen</button>
+        }
+      }
       @if (hasSimLayers) {
         <span class="toolbar-sep"></span>
         <button [class.toggled]="showParcelLayer" (click)="toggleParcelLayer()"
           title="Zugestellte Pakete je Zone aus der logiTopp-Simulation (dunkler = mehr Pakete)">
           📦 Paketdichte
         </button>
+        <button [class.toggled]="showPrivateRoutes" (click)="toggleTrafficRoutes('private')"
+          title="Von SUMO geroutete Fahrzeuge des Personenverkehrs, einschließlich Arbeitswegen">Privat / Personenverkehr</button>
+        <button [class.toggled]="showLogisticsRoutes" (click)="toggleTrafficRoutes('logistics')"
+          title="Von SUMO geroutete Paketfahrzeuge und schwere Güterfahrten">Logistikrouten</button>
         <button [class.toggled]="showTourLayer" (click)="toggleTourLayer()"
           title="Geplante Zustelltouren (blau = Transporter, grün = Lastenrad)">
           🚚 Touren
@@ -750,7 +842,7 @@
   </main>
 
   <!-- Rechte Spalte: Pipeline + Artefakte -->
-  @if (job || artifacts.length > 0) {
+  @if (job || artifacts.length > 0 || trafficDemandSummary) {
     <aside class="panel">
       @if (job) {
         <section class="block">
@@ -762,6 +854,9 @@
                 <span class="stage-name">{{ stage.name }}</span>
                 @if (stage.durationMs) {
                   <span class="stage-time">{{ stage.durationMs }} ms</span>
+                }
+                @if (stage.status === 'FAILED' && stage.message) {
+                  <small class="stage-message error">{{ stage.message }}</small>
                 }
               </li>
             }
@@ -817,6 +912,26 @@
               <pre>{{ job.log.join('\n') }}</pre>
             </details>
           }
+        </section>
+      }
+      @if (trafficDemandSummary; as traffic) {
+        <section class="block">
+          <h2>Gemeinsame Nachfrage</h2>
+          <p>{{ traffic.movements | number:'1.0-0' }} Bewegungen · {{ traffic.tours | number:'1.0-0' }} Logistiktouren aus dem letzten Lauf, unabhängig vom Exportziel.</p>
+          <table class="kpis">
+            @for (source of traffic.byDemandSource | keyvalue; track source.key) {
+              <tr><td>{{ source.key }}</td><td>{{ source.value | number:'1.0-0' }}</td></tr>
+            }
+          </table>
+          @if (traffic.personDemandStatus === 'not-generated') {
+            <p>Personenwege wurden in diesem Lauf nicht erzeugt. Der Bestand enthält die verfügbaren zusätzlichen Beiträge.</p>
+          }
+          @if (traffic.parcelDemandStatus === 'not-generated') { <p>Keine Pakettourenplanung für diesen Lauf verfügbar.</p> }
+          <p>Die geplanten Verbindungen zeigen Quelle und Ziel; sie sind keine berechneten Straßenrouten. Personenwege beziehen sich auf die Modellwoche, Güterbeiträge auf ihre jeweiligen Bezugstage. Mengen werden additiv übernommen.</p>
+          <p><a [href]="artifactUrl('demand/traffic-demand.json')">Gemeinsamer Datenbestand (JSON)</a> ·
+            <a [href]="artifactUrl('demand/movements.csv')">Bewegungen (CSV)</a> ·
+            <a [href]="artifactUrl('demand/tours.json')">Touren und Reihenfolge (JSON)</a> ·
+            <a [href]="artifactUrl('demand/planned-connections.geojson')">Geplante Verbindungen (GeoJSON)</a></p>
         </section>
       }
       @if (simKpis) {
@@ -978,9 +1093,36 @@
                             <h2>SUMO (mikroskopischer Verkehr)</h2>
                             <p class="hint">Mikroskopische Simulation der Auto- und Rad-Trips aus der logiTopp-Nachfrage
                             (OSM-Netz → netconvert → duarouter → sumo).</p>
+                            @if (sumoSummary.meanStatisticsScope) {
+                              <p class="hint">Die Durchschnittswerte beziehen sich auf motorisierte Fahrzeuge. Die Fahrzeugbilanz enthält auch Fahrräder.</p>
+                              @if (sumoSummary.meanStatisticsScope === 'motor-vehicle-journeys-including-duty-stops') {
+                                <p class="hint">Bei Fahrzeugketten umfassen die Durchschnittswerte die gesamte native Fahrtkette einschließlich der Haltezeiten.</p>
+                              }
+                            }
                             <table class="kpis">
-                              <tr title="Eingespeiste und erfolgreich abgeschlossene Fahrzeug-Fahrten">
-                                <td>Fahrzeuge</td><td>{{ sumoSummary.vehicles | number:'1.0-0' }}</td></tr>
+                              <tr title="Neue Läufe: tatsächlich eingesetzte Fahrzeuge einschließlich Fahrräder; Abschlüsse stehen getrennt in der Bilanz.">
+                                <td>{{ sumoSummary.vehicleCountScope ? 'Eingesetzte Fahrzeuge inkl. Rad' : 'Fahrzeuge (älterer Statistikstand)' }}</td><td>{{ sumoSummary.vehicles | number:'1.0-0' }}</td></tr>
+                                @if (sumoSummary.accounting; as accounting) {
+                                  <tr><td>Ausführungsprüfung</td><td>{{ accounting.status === 'complete' ? 'Vollständig' : accounting.status === 'review-required' ? 'Prüfung erforderlich' : 'Unvollständig' }}</td></tr>
+                                  <tr><td>{{ accounting.vehicleCountBasis === 'selected-road-trip-segments' ? 'Fahrtsegmente' : 'Fahrzeuge' }}: angefordert / geroutet / gestartet / beendet</td>
+                                    <td>{{ accounting.vehicles.requested }} / {{ accounting.vehicles.routed }} / {{ accounting.vehicles.departed }} / {{ accounting.vehicles.completed }}</td></tr>
+                                  @if (accounting.vehicleCountBasis === 'selected-road-trip-segments' && accounting.nativeVehicles; as native) {
+                                    <tr><td>Native Fahrzeuge: angefordert / geroutet / gestartet / beendet</td>
+                                      <td>{{ native.requested }} / {{ native.routed }} / {{ native.departed }} / {{ native.completed }}</td></tr>
+                                  }
+                                  <tr><td>Personen zu Fuß/ÖV: angefordert / geroutet / gestartet / beendet</td>
+                                    <td>{{ accounting.persons.requested }} / {{ accounting.persons.routed }} / {{ accounting.persons.departed }} / {{ accounting.persons.completed }}</td></tr>
+                                  <tr><td>Fehlende Routen: Fahrzeuge / Personen</td>
+                                    <td>{{ accounting.vehicles.unrouted }} / {{ accounting.persons.unrouted }}</td></tr>
+                                  <tr><td>Am Tagesende unterwegs: Fahrzeuge / Personen</td>
+                                    <td>{{ accounting.vehicles.unfinished }} / {{ accounting.persons.unfinished }}</td></tr>
+                                  <tr><td>Nicht gestartet: Fahrzeuge / Personen</td>
+                                    <td>{{ accounting.vehicles.notDeparted }} / {{ accounting.persons.notDeparted }}</td></tr>
+                                  <tr><td>Teleports (Fahrzeuge)</td><td>{{ accounting.nativeVehicleTeleports ?? 'unbekannt' }}</td></tr>
+                                  @if (!accounting.demandRetained) {
+                                    <tr><td colspan="2">Die angeforderte Nachfrage ist nicht vollständig erhalten. Details stehen im Ausführungsbericht.</td></tr>
+                                  }
+                                }
                                 @if (sumoSummary.carTrips != null) {
                                   <tr
                                     title="Zusammensetzung der eingespeisten Trips: PKW, Rad und Fuß aus der Personen-Nachfrage (Fußgänger als SUMO-Personen), Lieferverkehr aus logiTopp (Lkw als vClass delivery, Lastenräder als bicycle)">
@@ -992,6 +1134,15 @@
                                           / {{ sumoSummary.deliveryTrips | number:'1.0-0' }} Lieferverkehr
                                         }</span></td></tr>
                                       }
+                                      @if (sumoSummary.heavyFreightTrips != null) {
+                                        <tr><td>Schwere Güterfahrten</td><td>{{ sumoSummary.heavyFreightTrips | number:'1.0-0' }}</td></tr>
+                                      }
+                                      @if (sumoSummary.companyTourLegs != null) {
+                                        <tr title="Zusätzliche Fahrten aus ausdrücklich aktivierten Unternehmenstouren, einschließlich Rückfahrt"><td>Unternehmens-Fahrtetappen</td><td>{{ sumoSummary.companyTourLegs | number:'1.0-0' }}</td></tr>
+                                      }
+                                      @if (sumoSummary.companyTours; as company) {
+                                        <tr title="Eine Tour zählt erst mit vollständig bedienten Halten und Rückfahrt als abgeschlossen"><td>Unternehmenstouren abgeschlossen</td><td>{{ company.completedTours ?? 0 }} / {{ company.requestedTours ?? 0 }} ({{ company.status }})</td></tr>
+                                      }
                                       @if (sumoSummary.ptVehicles) {
                                         <tr
                                           title="ÖV (GTFS → gtfs2pt.py): fahrplangebundene Bus-Fahrten und intermodal mitfahrende Nachfrage-Personen (Fußweg → Bus → Fußweg)">
@@ -1001,7 +1152,7 @@
                                           }
                                           @if (sumoSummary.co2Kg != null) {
                                             <tr
-                                              title="CO₂-Schätzung über HBEFA-Emissionsklassen (Pkw: Benzin EU4, Lkw: Diesel-Lieferwagen EU4, Lastenrad: emissionsfrei)">
+                                              title="CO₂-Schätzung über HBEFA-Emissionsklassen (Pkw: Benzin EU4, Lieferwagen: Diesel EU4, schwere LKW: generische Diesel-Euro-6-Annahme, Lastenrad: emissionsfrei)">
                                               <td>CO₂ (HBEFA)</td>
                                               <td>{{ sumoSummary.co2Kg | number:'1.0-1' }} kg
                                                 @if (sumoSummary.co2KgByType) {
@@ -1014,7 +1165,7 @@
                                                     } kg</span>
                                                   }</td></tr>
                                                 }
-                                                <tr><td>Ø Reisedauer</td><td>{{ sumoSummary.meanDurationMin }} min</td></tr>
+                                                <tr><td>{{ sumoSummary.meanStatisticsScope ? 'Ø Reisedauer (motorisiert)' : 'Ø Reisedauer' }}</td><td>{{ sumoSummary.meanDurationMin }} min</td></tr>
                                                 <tr><td>Ø Routenlänge</td><td>{{ sumoSummary.meanRouteLengthKm }} km</td></tr>
                                                 <tr title="Mittlere Reisegeschwindigkeit inkl. Halte/Wartezeiten">
                                                   <td>Ø Geschwindigkeit</td><td>{{ sumoSummary.meanSpeedKmh }} km/h</td></tr>

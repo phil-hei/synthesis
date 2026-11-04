@@ -1,0 +1,21 @@
+{
+  "vehicleConfiguration": {
+    "schemaVersion": "synthesis-vehicle-configuration-v1",
+    "application": "sumoTraffic",
+    "allowBehaviorApproximation": false,
+    "requiredCapabilities": ["traffic"],
+    "vehicleTypes": [],
+    "catalogRefs": [{"id": "standard.lieferwagen.diesel", "version": "1"}],
+    "trafficAssignments": [{"role": "deliveryVan", "typeRef": {"id": "standard.lieferwagen.diesel", "version": "1"}, "share": 1}],
+    "fleetAssignments": [],
+    "initialVehicles": [{"vehicleId": "van-1", "typeRef": {"id": "standard.lieferwagen.diesel", "version": "1"},
+      "locationRef": "first-assigned-trip-origin", "state": {"cargoWeightKg": 0, "cargoVolumeM3": 0, "passengers": 0, "operators": 1, "fuelLitres": 20}}]
+  },
+  "vehicleOperations": {
+    "schemaVersion": "synthesis-vehicle-operations-input-v1",
+    "enabled": true,
+    "chainTrips": true,
+    "reserveFraction": 0.1,
+    "bindings": []
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "scenarioId": "dc01ba73",
+  "passed": true,
+  "frontend": "production build",
+  "viewportWidths": [
+    1440,
+    390
+  ],
+  "flow": [
+    "JSON upload",
+    "mapping and full validation",
+    "publish without activation",
+    "select revision",
+    "block missing fallback quantity",
+    "save source plan",
+    "offline generation"
+  ],
+  "freightTrips": 3,
+  "resolution": {
+    "decisions": [
+      {
+        "aspect": "freight.vehicleOd",
+        "evidence": "assumed",
+        "gaps": "legacy",
+        "selectionRole": "explicit-fallback",
+        "skipped": [],
+        "source": "model",
+        "status": "resolved-with-fallback"
+      },
+      {
+        "aspect": "opportunities.work",
+        "attribution": "",
+        "coverage": {
+          "minLat": 48.85,
+          "minLon": 8.2,
+          "maxLat": 48.89,
+          "maxLon": 8.24
+        },
+        "evidence": "user-provided-unverified",
+        "gaps": "legacy",
+        "label": "arbeitsplaetze.json",
+        "licence": "unknown",
+        "referenceDate": "2026-01-01",
+        "revision": "cad01c0311d8ab76d693ccbc906dc562c9cc86ce16ee40e25e495b12e7fe8cfe",
+        "selectionRole": "explicit-selection",
+        "skipped": [
+          {
+            "reason": "replaced-by-explicit-dataset-in-covered-area",
+            "source": "legacy"
+          }
+        ],
+        "source": "dataset",
+        "sourceHash": "a9af2191468cbd781f825bfc510f2288ac32f1adc34b61d644603cf64fedf579",
+        "status": "resolved",
+        "temporalTransfer": false
+      },
+      {
+        "aspect": "population.distribution",
+        "evidence": "not-assessed",
+        "gaps": "legacy",
+        "selectionRole": "legacy-delegation",
+        "skipped": [],
+        "source": "legacy",
+        "status": "legacy"
+      }
+    ],
+    "workplaces": {
+      "allocation": "point-to-zone; declared workplace counts used as Work weights",
+      "appliedJobs": 12,
+      "coverageDenominator": "internal model zones fully covered by declared source bbox",
+      "coveredZones": 15,
+      "fallbackZones": 0,
+      "jobsInPartiallyCoveredZonesNotApplied": 0,
+      "mappedJobs": 12,
+      "mappedRows": 2,
+      "outsideRows": 0,
+      "revision": "cad01c0311d8ab76d693ccbc906dc562c9cc86ce16ee40e25e495b12e7fe8cfe"
+    },
+    "populationSource": "user-defined",
+    "populationDistribution": "uniform-noise"
+  }
+}

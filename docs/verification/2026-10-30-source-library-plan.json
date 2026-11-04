@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-30",
+  "scope": "Shared installation-local package library; no automatic source activation",
+  "sourcePackages": {
+    "regional-cells-v1.zip": "fb70dbc45a58da58038e206d4cda208e7b038e3c636d7f08c83aa1cf750c7978",
+    "regional-cells-v2.zip": "51f91c2635de87e637580d7046af92c9a42ea202edfd77081f20478d2665aaa2"
+  },
+  "scenario": {
+    "region": {
+      "minLon": 8.33,
+      "maxLon": 8.42,
+      "minLat": 49.199,
+      "maxLat": 49.213
+    },
+    "zoning": "epsg3035",
+    "cellSizeMeters": 1000,
+    "populationTotal": 60,
+    "seed": 42,
+    "targetModels": [
+      "logitopp"
+    ],
+    "liveSources": false,
+    "externalSimulation": false
+  },
+  "expected": [
+    "publish exact v1 in scenario A without activating it",
+    "copy v1 to scenario B with identical revision hashes and unchanged policy",
+    "explicitly select masked population/Work inputs and scoped uniform/synthetic gap models in B",
+    "v2 publication does not replace v1 in B",
+    "corrupt catalog v1 shown invalid and blocked while local B input remains usable",
+    "generate B twice across central copy corruption; five nonempty population/activity/zone CSV artifacts are byte-identical"
+  ],
+  "comparisonArtifacts": [
+    "population/person.csv",
+    "population/household.csv",
+    "population/activity.csv",
+    "zone-repository/zones.csv",
+    "zone-repository/attractivities.csv"
+  ],
+  "excludedFromByteComparison": [
+    "sources reports verified semantically",
+    "timestamps and elapsed job metadata"
+  ],
+  "comparisonRefinement": "Before fresh final browser run: replace empty offline traffic container comparison with five nonempty generated CSV artifacts; require data rows in every artifact."
+}

@@ -668,6 +668,8 @@ public class SimulationResultIngestor {
                 tour.properties.put("depot", cells[header.get("fromDepot")]);
                 tour.properties.put("vehicleType", cells[header.get("vehicleType")]);
                 tour.properties.put("tourId", tourId);
+                tour.properties.put("trafficCategory", "logistics");
+                tour.properties.put("demandSource", "logitopp-parcels");
                 tour.failedDeliveries = failedDeliveriesByTour.getOrDefault(
                         new TourKey(vehicle, tourId), 0L);
                 ObjectNode geometry = feature.putObject("geometry");

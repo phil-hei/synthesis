@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-04",
+  "scope": "Persisted source run identity, bounded execution summary and read-only UI for the three existing aspects",
+  "criteria": [
+    "A run binds scenario id, start/end, plan and source lock hashes",
+    "A running or failed attempt never inherits the previous run amounts",
+    "Skipped or pending targets never bind old execution files",
+    "Actual target counts are distinct from generated counts; execution summary retains a source hash",
+    "True zeros, masking states, per-source balances and evidence parts remain distinct in the UI",
+    "Request errors, scenario switch and old report formats clear displayed previous results",
+    "Sources disabled removes the latest report; invalid preflight creates no run",
+    "Browser success/failure views use an isolated backend and synthetic inputs"
+  ],
+  "limits": [
+    "Latest run only; no archive or transactional run repository",
+    "No automatic match against all current scenario inputs or later upload changes",
+    "Private/parcel source migration, real city/rural evidence and scientific freight fallback remain open"
+  ]
+}

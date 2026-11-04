@@ -17,7 +17,8 @@ describe('AppComponent', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('.brand')?.textContent).toContain('SyntheSis');
-    expect(element.querySelectorAll('nav a').length).toBe(2);
+    expect(element.querySelectorAll('nav a').length).toBe(3);
+    expect(element.querySelector('a[aria-label="Einstellungen"]')?.getAttribute('href')).toBe('/einstellungen');
     expect(element.querySelector('router-outlet')).not.toBeNull();
   });
 });

@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-29",
+  "scope": "Native population and Work providers using shared typed selection; not full concept acceptance",
+  "backend": {
+    "tests": 434,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 4
+  },
+  "focusedSourcesTests": 54,
+  "frontend": {
+    "tests": 106,
+    "productionBuild": "passed"
+  },
+  "browserProof": "2026-10-29-provider-chains-ui.json",
+  "remaining": [
+    "combined native/revision/pack chains",
+    "configurable native gap fillers for regional register parts",
+    "full migration of remaining source families",
+    "NoData masks and empirical model/source acceptance",
+    "authoritative municipality key verification and territorial crosswalks",
+    "scientifically validated freight generation fallback"
+  ]
+}

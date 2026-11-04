@@ -1,0 +1,14 @@
+{
+  "contract": "synthesis-bnetza-charging-details-v1",
+  "referenceDate": "2026-09-01",
+  "sourceSha256": "cdd8e38f1fa7e8512bd97caa8cf77e9f875436be1f8fe3fe1f2bd9789a504c5b",
+  "referenceNormalizedSha256": "24d386acdb239607b9b707b294b537d54d7e8e444c441a5448e9ff170d667fe5",
+  "contentSha256": "b3832c49eae29596ca97e644689e56bca078d2fad444bfc5199edc01144bab68",
+  "compressedSha256": "b9a79eb210f5a0ae273ef478cd90f3ac052e84f61a1bada45f2990aca40746e4",
+  "facilities": 116422,
+  "chargingPoints": 209096,
+  "unknownPowerAssociationPoints": 110,
+  "license": "CC BY 4.0",
+  "attribution": "Bundesnetzagentur.de",
+  "sourceUrl": "https://data.bundesnetzagentur.de/Bundesnetzagentur/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenregister_BNetzA_2026-09-01.csv"
+}

@@ -1,0 +1,75 @@
+{
+  "contract": "synthesis-data-pack-v1",
+  "id": "regional-inputs",
+  "edition": "example-v1",
+  "title": "Gemischte Profile und Registerlücken (synthetisch)",
+  "sources": [
+    {
+      "id": "population",
+      "schema": "population-grid-v1",
+      "file": "population.csv",
+      "sha256": "c0f165bf1f2231a4c6f13631007ac7ba5a9bbd8e9dd15f8055d0c6fd89c773f8",
+      "mapping": {
+        "tableId": "csv",
+        "headerRow": 1,
+        "columns": {
+          "id": 0,
+          "lon": 1,
+          "lat": 2,
+          "value": 3
+        },
+        "decimalSeparator": "."
+      },
+      "metadata": {
+        "label": "Synthetische Bevölkerungsverteilung",
+        "source": "Künstliche Vertragsdaten; kein reales Register",
+        "referenceDate": "2026-01-01",
+        "unit": "persons",
+        "coverage": {
+          "minLon": 8.19,
+          "minLat": 48.84,
+          "maxLon": 8.3,
+          "maxLat": 48.9
+        },
+        "licence": "unknown",
+        "attribution": "SyntheSis-Testfixture"
+      }
+    },
+    {
+      "id": "work",
+      "schema": "workplaces-v1",
+      "file": "workpoints.csv",
+      "sha256": "358d8e88ce05b5dba10916b550dec3c57c5fc3a6cbaa708de12fb4594f0c49bc",
+      "mapping": {
+        "tableId": "csv",
+        "headerRow": 1,
+        "columns": {
+          "id": 0,
+          "lon": 1,
+          "lat": 2,
+          "value": 3
+        },
+        "decimalSeparator": "."
+      },
+      "metadata": {
+        "label": "Synthetische Arbeitsplatzpunkte",
+        "source": "Künstliche Vertragsdaten; kein reales Register",
+        "referenceDate": "2026-01-01",
+        "unit": "jobs",
+        "coverage": {
+          "minLon": 8.19,
+          "minLat": 48.84,
+          "maxLon": 8.23,
+          "maxLat": 48.9
+        },
+        "licence": "unknown",
+        "attribution": "SyntheSis-Testfixture",
+        "coverageDeclaration": {
+          "kind": "point-register",
+          "completeness": "complete",
+          "statement": "Vollständiger künstlicher Testbestand innerhalb der erklärten Teilabdeckung; keine empirische Behauptung"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,1273 @@
+{
+  "scenarioId": "98e9ad13",
+  "passed": true,
+  "frontend": "production build",
+  "viewportWidths": [
+    1440,
+    390
+  ],
+  "flow": [
+    "upload native raster with positive and zero values",
+    "reorder sources and exclude upload in UI",
+    "preflight shows runtime resolution pending",
+    "save source order and exclusion",
+    "generate manual total with independent uniform distribution",
+    "reorder and enable upload in UI",
+    "generate raster total and check frozen upload hash",
+    "select synthetic Work while excluding OSM Work",
+    "keep OSM for other activity purposes",
+    "switch Work back to OSM model and verify weight sum 48"
+  ],
+  "uploadHash": "e901cb7c8229d7bc3927be750a8980f51ea8cbf7b9aa108d7cd4a2fb52857027",
+  "first": {
+    "allocatedPersons": 50.00000000000001,
+    "candidates": [
+      {
+        "provider": "uniform",
+        "onUnavailable": "next",
+        "rank": 1,
+        "status": "selected",
+        "reason": "first-usable-candidate"
+      },
+      {
+        "provider": "upload-grid",
+        "onUnavailable": "next",
+        "rank": 2,
+        "status": "excluded",
+        "reason": "explicitly-excluded"
+      },
+      {
+        "provider": "census-2022",
+        "onUnavailable": "next",
+        "rank": 3,
+        "status": "not-evaluated",
+        "reason": "higher-priority-candidate-selected"
+      },
+      {
+        "provider": "osm-places",
+        "onUnavailable": "next",
+        "rank": 4,
+        "status": "not-evaluated",
+        "reason": "higher-priority-candidate-selected"
+      },
+      {
+        "provider": "poi-density",
+        "onUnavailable": "next",
+        "rank": 5,
+        "status": "not-evaluated",
+        "reason": "higher-priority-candidate-selected"
+      }
+    ],
+    "contract": "synthesis-population-resolution-v1",
+    "diagnostics": {
+      "personsPerKm2": 1500
+    },
+    "distributionProvenance": {
+      "contract": "synthesis-source-provenance-v1",
+      "aspect": "population.distribution",
+      "root": "weights",
+      "nodes": [
+        {
+          "id": "input",
+          "operation": "source",
+          "evidence": "assumed",
+          "selectionRole": "primary",
+          "source": {
+            "kind": "builtin",
+            "sourceHash": "",
+            "label": "Dichteannahme",
+            "origin": "density-estimate",
+            "referenceDate": "",
+            "licence": "unknown",
+            "attribution": ""
+          },
+          "inputs": [],
+          "scope": {
+            "purpose": "residents",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "provider": "uniform-noise",
+            "providerVersion": "density-v1"
+          }
+        },
+        {
+          "id": "weights",
+          "operation": "modelled-spatial-weights",
+          "evidence": "assumed",
+          "selectionRole": "primary",
+          "inputs": [
+            "input"
+          ],
+          "scope": {
+            "purpose": "residents",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "diagnostics": {
+              "personsPerKm2": 1500
+            },
+            "seed": 42,
+            "smooth": true
+          }
+        }
+      ]
+    },
+    "distributionSource": "uniform-noise",
+    "status": "resolved",
+    "totalPersons": 50,
+    "totalProvenance": {
+      "contract": "synthesis-source-provenance-v1",
+      "aspect": "population.total",
+      "root": "total",
+      "nodes": [
+        {
+          "id": "total",
+          "operation": "manual-total",
+          "evidence": "assumed",
+          "selectionRole": "primary",
+          "inputs": [],
+          "scope": {
+            "purpose": "residents",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "persons": 50
+          }
+        }
+      ]
+    },
+    "totalSource": "user-defined"
+  },
+  "second": {
+    "allocatedPersons": 80,
+    "candidates": [
+      {
+        "provider": "upload-grid",
+        "onUnavailable": "next",
+        "rank": 1,
+        "status": "selected",
+        "reason": "first-usable-candidate"
+      },
+      {
+        "provider": "uniform",
+        "onUnavailable": "next",
+        "rank": 2,
+        "status": "not-evaluated",
+        "reason": "higher-priority-candidate-selected"
+      },
+      {
+        "provider": "census-2022",
+        "onUnavailable": "next",
+        "rank": 3,
+        "status": "not-evaluated",
+        "reason": "higher-priority-candidate-selected"
+      },
+      {
+        "provider": "osm-places",
+        "onUnavailable": "next",
+        "rank": 4,
+        "status": "not-evaluated",
+        "reason": "higher-priority-candidate-selected"
+      },
+      {
+        "provider": "poi-density",
+        "onUnavailable": "next",
+        "rank": 5,
+        "status": "not-evaluated",
+        "reason": "higher-priority-candidate-selected"
+      }
+    ],
+    "contract": "synthesis-population-resolution-v1",
+    "diagnostics": {
+      "parsedPopulation": 80,
+      "format": "wgs84-punkte",
+      "parserScope": "scenario-region; rows outside parsing scope are not part of this balance",
+      "mappedPopulation": 80,
+      "outsideModelPopulation": 0,
+      "skippedLines": 0,
+      "parsedPoints": 1
+    },
+    "distributionProvenance": {
+      "contract": "synthesis-source-provenance-v1",
+      "aspect": "population.distribution",
+      "root": "weights",
+      "nodes": [
+        {
+          "id": "input",
+          "operation": "source",
+          "evidence": "unknown",
+          "selectionRole": "primary",
+          "source": {
+            "kind": "builtin",
+            "sourceHash": "e901cb7c8229d7bc3927be750a8980f51ea8cbf7b9aa108d7cd4a2fb52857027",
+            "label": "Hochgeladenes Bevölkerungsraster",
+            "origin": "scenario-upload:population-grid.csv",
+            "referenceDate": "",
+            "licence": "unknown",
+            "attribution": ""
+          },
+          "inputs": [],
+          "scope": {
+            "purpose": "residents",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "provider": "upload-grid",
+            "providerVersion": "wgs84-punkte"
+          }
+        },
+        {
+          "id": "weights",
+          "operation": "grid-point-to-zone-sum",
+          "evidence": "derived",
+          "selectionRole": "primary",
+          "inputs": [
+            "input"
+          ],
+          "scope": {
+            "purpose": "residents",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "diagnostics": {
+              "parsedPopulation": 80,
+              "format": "wgs84-punkte",
+              "parserScope": "scenario-region; rows outside parsing scope are not part of this balance",
+              "mappedPopulation": 80,
+              "outsideModelPopulation": 0,
+              "skippedLines": 0,
+              "parsedPoints": 1
+            },
+            "seed": 42,
+            "smooth": false
+          }
+        }
+      ]
+    },
+    "distributionSource": "upload-grid",
+    "status": "resolved",
+    "totalPersons": 80,
+    "totalProvenance": {
+      "contract": "synthesis-source-provenance-v1",
+      "aspect": "population.total",
+      "root": "total",
+      "nodes": [
+        {
+          "id": "input",
+          "operation": "source",
+          "evidence": "unknown",
+          "selectionRole": "primary",
+          "source": {
+            "kind": "builtin",
+            "sourceHash": "e901cb7c8229d7bc3927be750a8980f51ea8cbf7b9aa108d7cd4a2fb52857027",
+            "label": "Hochgeladenes Bevölkerungsraster",
+            "origin": "scenario-upload:population-grid.csv",
+            "referenceDate": "",
+            "licence": "unknown",
+            "attribution": ""
+          },
+          "inputs": [],
+          "scope": {
+            "purpose": "residents",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "provider": "upload-grid",
+            "providerVersion": "wgs84-punkte"
+          }
+        },
+        {
+          "id": "total",
+          "operation": "source-total",
+          "evidence": "derived",
+          "selectionRole": "primary",
+          "inputs": [
+            "input"
+          ],
+          "scope": {
+            "purpose": "residents",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "persons": 80,
+            "unroundedSourceTotal": 80
+          }
+        }
+      ]
+    },
+    "totalSource": "upload-grid"
+  },
+  "firstWork": {
+    "candidates": [
+      {
+        "provider": "synthetic",
+        "onUnavailable": "next",
+        "rank": 1,
+        "status": "selected",
+        "reason": "first-usable-candidate"
+      },
+      {
+        "provider": "osm-pois",
+        "onUnavailable": "next",
+        "rank": 2,
+        "status": "excluded",
+        "reason": "explicitly-excluded"
+      }
+    ],
+    "contract": "synthesis-workplace-resolution-v1",
+    "provenance": {
+      "contract": "synthesis-source-provenance-v1",
+      "aspect": "opportunities.work",
+      "root": "weights",
+      "nodes": [
+        {
+          "id": "input",
+          "operation": "model-profile",
+          "evidence": "assumed",
+          "selectionRole": "primary",
+          "source": {
+            "kind": "model",
+            "label": "Synthetische Arbeitsgewichte",
+            "origin": "synthetic-work-weights-v1",
+            "referenceDate": "",
+            "licence": "unknown",
+            "attribution": ""
+          },
+          "inputs": [],
+          "scope": {
+            "purpose": "Work",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "baseWeightPerKm2": 400,
+            "centralitySlope": 0.8,
+            "gaussianSigma": 0.5,
+            "modelVersion": "synthetic-work-weights-v1",
+            "seed": 6291337688135381000,
+            "seedRule": "scenario.population.seed XOR 0x574f524b5f56314c"
+          }
+        },
+        {
+          "id": "weights",
+          "operation": "synthetic-work-weights",
+          "evidence": "assumed",
+          "selectionRole": "primary",
+          "inputs": [
+            "input"
+          ],
+          "scope": {
+            "purpose": "Work",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "observedJobTotalAvailable": false,
+            "unit": "model-weight"
+          }
+        }
+      ]
+    },
+    "provider": "synthetic",
+    "status": "resolved",
+    "sumWeights": 2915.667132958062,
+    "unit": "model-weight",
+    "zoneWeights": [
+      {
+        "weight": 69.02267603175198,
+        "modelIndex": 0,
+        "externalId": 100001
+      },
+      {
+        "weight": 105.12897087160827,
+        "modelIndex": 1,
+        "externalId": 100002
+      },
+      {
+        "weight": 171.43559977103956,
+        "modelIndex": 2,
+        "externalId": 100003
+      },
+      {
+        "weight": 381.1736160488882,
+        "modelIndex": 3,
+        "externalId": 100004
+      },
+      {
+        "weight": 192.79699252810389,
+        "modelIndex": 4,
+        "externalId": 100005
+      },
+      {
+        "weight": 148.2837155131898,
+        "modelIndex": 5,
+        "externalId": 100006
+      },
+      {
+        "weight": 179.67452271351016,
+        "modelIndex": 6,
+        "externalId": 100007
+      },
+      {
+        "weight": 470.48184264357144,
+        "modelIndex": 7,
+        "externalId": 100008
+      },
+      {
+        "weight": 160.4876578596728,
+        "modelIndex": 8,
+        "externalId": 100009
+      },
+      {
+        "weight": 285.36623520031026,
+        "modelIndex": 9,
+        "externalId": 100010
+      },
+      {
+        "weight": 392.0939796134887,
+        "modelIndex": 10,
+        "externalId": 100011
+      },
+      {
+        "weight": 90.94150753437445,
+        "modelIndex": 11,
+        "externalId": 100012
+      },
+      {
+        "weight": 37.13271272700335,
+        "modelIndex": 12,
+        "externalId": 100013
+      },
+      {
+        "weight": 171.05222827306324,
+        "modelIndex": 13,
+        "externalId": 100014
+      },
+      {
+        "weight": 60.594875628485916,
+        "modelIndex": 14,
+        "externalId": 100015
+      }
+    ]
+  },
+  "secondWork": {
+    "candidates": [
+      {
+        "provider": "osm-pois",
+        "onUnavailable": "next",
+        "rank": 1,
+        "status": "selected",
+        "reason": "first-usable-candidate"
+      },
+      {
+        "provider": "synthetic",
+        "onUnavailable": "next",
+        "rank": 2,
+        "status": "not-evaluated",
+        "reason": "higher-priority-candidate-selected"
+      }
+    ],
+    "contract": "synthesis-workplace-resolution-v1",
+    "provenance": {
+      "contract": "synthesis-source-provenance-v1",
+      "aspect": "opportunities.work",
+      "root": "weights",
+      "nodes": [
+        {
+          "id": "input",
+          "operation": "source",
+          "evidence": "unknown",
+          "selectionRole": "primary",
+          "source": {
+            "kind": "builtin",
+            "sourceHash": "bbce17e5ed819016d20ebb679748af28118f48ff57bc20eb77e3a4babab170b4",
+            "label": "OSM-Arbeitsgewichte",
+            "origin": "scenario-upload:osm-data.json",
+            "referenceDate": "",
+            "licence": "ODbL",
+            "attribution": "OpenStreetMap contributors"
+          },
+          "inputs": [],
+          "scope": {
+            "purpose": "Work",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "coefficients": "AttractivityCalculator.classify; model weights, not observed workplace counts",
+            "modelVersion": "osm-work-weights-v1",
+            "poiCount": 1
+          }
+        },
+        {
+          "id": "weights",
+          "operation": "poi-to-work-weights",
+          "evidence": "derived",
+          "selectionRole": "primary",
+          "inputs": [
+            "input"
+          ],
+          "scope": {
+            "purpose": "Work",
+            "zones": [
+              {
+                "externalId": 100001,
+                "modelIndex": 0
+              },
+              {
+                "externalId": 100002,
+                "modelIndex": 1
+              },
+              {
+                "externalId": 100003,
+                "modelIndex": 2
+              },
+              {
+                "externalId": 100004,
+                "modelIndex": 3
+              },
+              {
+                "externalId": 100005,
+                "modelIndex": 4
+              },
+              {
+                "externalId": 100006,
+                "modelIndex": 5
+              },
+              {
+                "externalId": 100007,
+                "modelIndex": 6
+              },
+              {
+                "externalId": 100008,
+                "modelIndex": 7
+              },
+              {
+                "externalId": 100009,
+                "modelIndex": 8
+              },
+              {
+                "externalId": 100010,
+                "modelIndex": 9
+              },
+              {
+                "externalId": 100011,
+                "modelIndex": 10
+              },
+              {
+                "externalId": 100012,
+                "modelIndex": 11
+              },
+              {
+                "externalId": 100013,
+                "modelIndex": 12
+              },
+              {
+                "externalId": 100014,
+                "modelIndex": 13
+              },
+              {
+                "externalId": 100015,
+                "modelIndex": 14
+              }
+            ]
+          },
+          "parameters": {
+            "observedJobTotalAvailable": false,
+            "unit": "model-weight"
+          }
+        }
+      ]
+    },
+    "provider": "osm-pois",
+    "status": "resolved",
+    "sumWeights": 48,
+    "unit": "model-weight",
+    "zoneWeights": [
+      {
+        "weight": 0,
+        "modelIndex": 0,
+        "externalId": 100001
+      },
+      {
+        "weight": 0,
+        "modelIndex": 1,
+        "externalId": 100002
+      },
+      {
+        "weight": 0,
+        "modelIndex": 2,
+        "externalId": 100003
+      },
+      {
+        "weight": 48,
+        "modelIndex": 3,
+        "externalId": 100004
+      },
+      {
+        "weight": 0,
+        "modelIndex": 4,
+        "externalId": 100005
+      },
+      {
+        "weight": 0,
+        "modelIndex": 5,
+        "externalId": 100006
+      },
+      {
+        "weight": 0,
+        "modelIndex": 6,
+        "externalId": 100007
+      },
+      {
+        "weight": 0,
+        "modelIndex": 7,
+        "externalId": 100008
+      },
+      {
+        "weight": 0,
+        "modelIndex": 8,
+        "externalId": 100009
+      },
+      {
+        "weight": 0,
+        "modelIndex": 9,
+        "externalId": 100010
+      },
+      {
+        "weight": 0,
+        "modelIndex": 10,
+        "externalId": 100011
+      },
+      {
+        "weight": 0,
+        "modelIndex": 11,
+        "externalId": 100012
+      },
+      {
+        "weight": 0,
+        "modelIndex": 12,
+        "externalId": 100013
+      },
+      {
+        "weight": 0,
+        "modelIndex": 13,
+        "externalId": 100014
+      },
+      {
+        "weight": 0,
+        "modelIndex": 14,
+        "externalId": 100015
+      }
+    ]
+  },
+  "javascriptErrors": []
+}
