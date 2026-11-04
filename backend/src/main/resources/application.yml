@@ -25,6 +25,8 @@ synthesis:
     allowed-origins: [http://localhost:4300]   # Dev-Server; der ausgelieferte Build läuft same-origin
     bootstrap-admin: admin                     # wird beim ersten Start ohne Konten mit Startpasswort angelegt
     min-password-length: 8
+    max-login-failures: 10                     # danach Sperre je Benutzername und Herkunft
+    lockout-minutes: 15
   frontend:
     dir: ""                                    # Verzeichnis des Angular-Builds; leer = classpath:/static
   # Unternehmenstouren: lokaler LLM-Vorschlag, zusätzlich zum immer manuellen Mapping.

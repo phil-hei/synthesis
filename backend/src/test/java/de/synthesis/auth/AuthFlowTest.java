@@ -46,6 +46,7 @@ class AuthFlowTest {
         registry.add("synthesis.data-dir", () -> dataDir.toString());
         registry.add("synthesis.census.enabled", () -> "false");
         registry.add("synthesis.overpass.live-data-enabled", () -> "false");
+        registry.add("synthesis.auth.max-login-failures", () -> "3");
     }
 
     @Autowired
@@ -113,9 +114,23 @@ class AuthFlowTest {
         mvc.perform(delete("/api/scenarios/" + id).session(tom).with(csrf())).andExpect(status().isForbidden());
         mvc.perform(delete("/api/scenarios/" + id).session(admin).with(csrf())).andExpect(status().isNoContent());
 
+        // Kontoänderung beendet laufende Sitzungen: Marias Sitzung ist nach dem Rollenwechsel ungültig.
+        mvc.perform(get("/api/auth/me").session(maria)).andExpect(status().isOk());
         mvc.perform(put("/api/users/maria/role").session(admin).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"ADMIN\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.roles[0]").value("ADMIN"));
+        mvc.perform(get("/api/auth/me").session(maria)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/auth/me").session(admin)).andExpect(status().isOk());
+
+        // Passwort-Raten: nach drei Fehlversuchen ist der Login für Benutzer+Herkunft gesperrt, auch mit richtigem Passwort.
+        for (int i = 0; i < 3; i++) {
+            mvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"username\":\"tom\",\"password\":\"falsch\"}"))
+                    .andExpect(status().isUnauthorized());
+        }
+        mvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"tom\",\"password\":\"geheim-456\"}"))
+                .andExpect(status().isTooManyRequests());
         mvc.perform(delete("/api/users/admin").session(admin).with(csrf())).andExpect(status().isBadRequest());
 
         mvc.perform(post("/api/auth/logout").session(admin).with(csrf())).andExpect(status().isNoContent());

@@ -88,7 +88,9 @@ export class LoginComponent {
         this.password = '';
         this.error.set(err?.status === 401 || err?.status === 403
           ? 'Benutzername oder Passwort ist falsch.'
-          : 'Anmeldung derzeit nicht möglich. Backend-Verbindung prüfen.');
+          : err?.status === 429
+            ? (err.error?.message || 'Zu viele Fehlversuche. Bitte später erneut versuchen.')
+            : 'Anmeldung derzeit nicht möglich. Backend-Verbindung prüfen.');
       }
     });
   }

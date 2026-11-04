@@ -13,6 +13,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -26,6 +28,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.util.StringUtils;
 
 import java.util.function.Supplier;
@@ -65,14 +68,32 @@ public class SecurityConfig {
     }
 
     @Bean
+    SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    /** Meldet zerstörte HTTP-Sitzungen an die Registry (sonst bleiben Einträge nach Logout/Timeout stehen). */
+    @Bean
+    HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
+    }
+
+    @Bean
     SecurityFilterChain filterChain(HttpSecurity http, SynthesisProperties properties,
-                                    SecurityContextRepository contextRepository) throws Exception {
+                                    SecurityContextRepository contextRepository,
+                                    SessionRegistry sessionRegistry) throws Exception {
         http.cors(Customizer.withDefaults())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .securityContext(context -> context.securityContextRepository(contextRepository))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        // Registry, damit Kontoänderungen laufende Sitzungen sofort beenden können;
+                        // -1 = keine Obergrenze je Konto. Abgelaufene Sitzungen antworten mit 401.
+                        .maximumSessions(-1)
+                        .sessionRegistry(sessionRegistry)
+                        .expiredSessionStrategy(event -> event.getResponse().sendError(HttpServletResponse.SC_UNAUTHORIZED)));
         if (!properties.getAuth().isEnabled()) {
             http.csrf(AbstractHttpConfigurer::disable)
                     .authorizeHttpRequests(requests -> requests.anyRequest().permitAll());

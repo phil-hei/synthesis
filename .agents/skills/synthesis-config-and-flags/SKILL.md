@@ -518,8 +518,11 @@ verfügbar = `SKIPPED`; gestarteter Prozess mit Fehler/Timeout = `FAILED`.
 | `allowed-origins` | `[http://localhost:4300]` | CORS mit Credentials für externe Dev-Server; leer = same-origin, kein CORS | `WebConfig` |
 | `bootstrap-admin` | `admin` | Name des Administrators, der beim ersten Start ohne Konten angelegt wird (Startpasswort in `<data-dir>/initial-admin-password.txt` und im Log) | `UserStore` |
 | `min-password-length` | `8` | Mindestlänge neuer Passwörter | `UserStore` |
+| `max-login-failures` | `10` | Fehlversuche je Benutzername und Herkunft, danach 429 (`LoginAttemptLimiter`) | `AuthController` |
+| `lockout-minutes` | `15` | Dauer der Login-Sperre; alte Fehlversuche verfallen nach dieser Zeit | `LoginAttemptLimiter` |
 
-Konten liegen in `<data-dir>/users.json` (bcrypt). Rollen `ADMIN` (Kontenverwaltung `/api/users`)
+Konten liegen in `<data-dir>/users.json` (bcrypt). Löschen, Rollenwechsel und Passwort-Reset beenden
+laufende Sitzungen des Kontos sofort (`SessionRegistry`). Rollen `ADMIN` (Kontenverwaltung `/api/users`)
 und `USER`; alle Angemeldeten teilen den Szenario-Arbeitsbereich, löschen darf nur Ersteller
 (`Scenario.createdBy`) oder Admin. Anmeldefrei: `/api/auth/login`, `/api/auth/me`, `/api/health`
 und die statischen Frontend-Dateien. Session-Cookie-Parameter unter `server.servlet.session.*`.

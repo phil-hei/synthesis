@@ -32,6 +32,10 @@ public class SynthesisProperties {
         private String bootstrapAdmin = "admin";
         /** Mindestlänge neuer Passwörter. */
         private int minPasswordLength = 8;
+        /** Fehlversuche je Benutzername und Herkunft, bevor der Login zeitweise gesperrt wird. */
+        private int maxLoginFailures = 10;
+        /** Dauer der Sperre nach zu vielen Fehlversuchen. */
+        private int lockoutMinutes = 15;
 
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -41,6 +45,10 @@ public class SynthesisProperties {
         public void setBootstrapAdmin(String bootstrapAdmin) { this.bootstrapAdmin = bootstrapAdmin; }
         public int getMinPasswordLength() { return minPasswordLength; }
         public void setMinPasswordLength(int minPasswordLength) { this.minPasswordLength = minPasswordLength; }
+        public int getMaxLoginFailures() { return maxLoginFailures; }
+        public void setMaxLoginFailures(int maxLoginFailures) { this.maxLoginFailures = maxLoginFailures; }
+        public int getLockoutMinutes() { return lockoutMinutes; }
+        public void setLockoutMinutes(int lockoutMinutes) { this.lockoutMinutes = lockoutMinutes; }
     }
 
     public Auth getAuth() { return auth; }

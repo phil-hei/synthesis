@@ -1,6 +1,8 @@
 package de.synthesis.auth;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,9 +29,18 @@ public class UserController {
     public record PasswordReset(String password) { }
 
     private final UserStore users;
+    private final SessionRegistry sessionRegistry;
 
-    public UserController(UserStore users) {
+    public UserController(UserStore users, SessionRegistry sessionRegistry) {
         this.users = users;
+        this.sessionRegistry = sessionRegistry;
+    }
+
+    /** Kontoänderungen gelten sofort: laufende Sitzungen des Kontos werden beendet (nächste Anfrage 401). */
+    private void endSessionsOf(String username) {
+        for (SessionInformation session : sessionRegistry.getAllSessions(username, false)) {
+            session.expireNow();
+        }
     }
 
     @GetMapping
@@ -48,13 +59,16 @@ public class UserController {
         if (AuthContext.username().map(username::equals).orElse(false)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Die eigene Rolle kann nicht geändert werden");
         }
-        return users.setRole(username, request.role());
+        UserAccount updated = users.setRole(username, request.role());
+        endSessionsOf(updated.username());
+        return updated;
     }
 
     @PutMapping("/{username}/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void resetPassword(@PathVariable String username, @RequestBody PasswordReset request) {
         users.setPassword(username, request.password());
+        endSessionsOf(username);
     }
 
     @DeleteMapping("/{username}")
@@ -64,6 +78,7 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Das eigene Konto kann nicht gelöscht werden");
         }
         users.delete(username);
+        endSessionsOf(username);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -3901,3 +3901,31 @@ N1–N8) und einem Arbeitsauftrag für die lokale Abnahme:
 Befunde H1 (Sitzungen überleben Kontoänderungen) und H2 (kein Schutz gegen Passwort-Raten)
 werden im Anschluss direkt behoben, die übrigen sind dort mit Empfehlung und Aufwand festgehalten.
 
+### Anmeldung gehärtet: Sitzungen enden mit Kontoänderung, Login-Sperre — ✅ UMGESETZT (2026-11-04)
+- **Anlass (Review-Befunde H1/H2):** `UserDetailsService` wird nur beim Login befragt; gelöschte
+  oder herabgestufte Konten blieben bis zum Sitzungs-Timeout (12 h) gültig. `/api/auth/login`
+  hatte keine Begrenzung gegen Passwort-Raten.
+- **Mechanik:** `SessionRegistry` + `HttpSessionEventPublisher`; die Anmeldung registriert ihre
+  Sitzung von Hand (sie läuft nicht über den Security-Filter), `UserController` beendet beim
+  Löschen, Rollenwechsel und Passwort-Reset alle Sitzungen des Kontos (`expireNow`), der
+  `ConcurrentSessionFilter` antwortet darauf mit 401. `LoginAttemptLimiter` zählt Fehlversuche je
+  Benutzername und Herkunft (`synthesis.auth.max-login-failures`, Default 10; Sperre
+  `lockout-minutes`, Default 15) und antwortet mit 429 samt Restdauer; die Anmeldeseite zeigt die
+  Meldung. Fehlversuche und Sperren werden protokolliert.
+- **Bewusst nicht:** keine Sperre allein nach Benutzername (würde Fremd-Aussperrung erlauben),
+  kein persistenter Zähler (Neustart setzt zurück).
+- **Verifiziert:** `AuthFlowTest` (Marias Sitzung nach Rollenwechsel 401, Admin bleibt angemeldet;
+  drei Fehlversuche → 429 auch mit richtigem Passwort), `LoginAttemptLimiterTest` (Sperre je
+  Konto+Herkunft, Ablauf, Verfall alter Fehlversuche, Reset bei Erfolg); Backend- und
+  Frontend-Gates grün (Zahlen im Commit).
+
+### Recherche offener Datenquellen für den Schwerlastverkehr (2026-11-04)
+Ergänzende Recherche zu docs/21 mit Zuordnung zu den Eingabeverträgen, Lücken und einem
+dreistufigen Umsetzungsvorschlag: [docs/23-offene-datenquellen-schwerlastverkehr.md](23-offene-datenquellen-schwerlastverkehr.md).
+Neu gegenüber docs/21: Start-Ziel-Export des Lkw-Verkehrsportals als CSV ohne Anmeldung, VP2040
+mit NST-2007-Abteilungen und 1 608 Verkehrszellen, Beschäftigte nach Wirtschaftsbereichen je
+Gemeinde (13111) als Verteilungsgewichte, Landes-WFS der Straßenverkehrszählung (BW, BY, SL) und
+Dauerzählstellen-Stundenwerte als Kalibrierziele, KV-Terminals und Binnenhäfen als Erzeuger,
+täglicher Maut-Fahrleistungsindex für Saisonfaktoren. Lizenz- und Formatprüfung bleibt der
+lokalen Sitzung vorbehalten (kein Download aus der Sandbox).
+

@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -45,13 +46,18 @@ public class AuthController {
     private final SecurityContextRepository contextRepository;
     private final UserStore users;
     private final SynthesisProperties properties;
+    private final LoginAttemptLimiter limiter;
+    private final SessionRegistry sessionRegistry;
 
     public AuthController(AuthenticationManager authenticationManager, SecurityContextRepository contextRepository,
-                          UserStore users, SynthesisProperties properties) {
+                          UserStore users, SynthesisProperties properties, LoginAttemptLimiter limiter,
+                          SessionRegistry sessionRegistry) {
         this.authenticationManager = authenticationManager;
         this.contextRepository = contextRepository;
         this.users = users;
         this.properties = properties;
+        this.limiter = limiter;
+        this.sessionRegistry = sessionRegistry;
     }
 
     @PostMapping("/login")
@@ -59,8 +65,21 @@ public class AuthController {
         if (!properties.getAuth().isEnabled()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Anmeldung ist deaktiviert");
         }
-        Authentication authentication = authenticationManager.authenticate(
-                UsernamePasswordAuthenticationToken.unauthenticated(request.username().trim(), request.password()));
+        String username = request.username().trim();
+        String origin = http.getRemoteAddr();
+        limiter.lockedFor(username, origin).ifPresent(remaining -> {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Zu viele Fehlversuche; bitte in " + Math.max(1, remaining.toMinutes()) + " Minuten erneut versuchen");
+        });
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken.unauthenticated(username, request.password()));
+        } catch (AuthenticationException e) {
+            limiter.failed(username, origin);
+            throw e;
+        }
+        limiter.succeeded(username, origin);
         // Session-Fixation: eine vorhandene anonyme Sitzung bekommt beim Anmelden eine neue ID.
         if (http.getSession(false) != null) {
             http.changeSessionId();
@@ -69,6 +88,9 @@ public class AuthController {
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
         contextRepository.saveContext(context, http, response);
+        // Die Anmeldung läuft nicht über den Security-Filter, daher von Hand registrieren: nur so kann
+        // die Kontenverwaltung diese Sitzung später gezielt beenden.
+        sessionRegistry.registerNewSession(http.getSession(true).getId(), authentication.getName());
         users.recordLogin(authentication.getName());
         return users.find(authentication.getName()).map(SessionUser::of)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unbekannter Benutzer"));
