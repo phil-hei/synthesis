@@ -3835,3 +3835,24 @@ nennt den Anlass, die Entscheidung und den Nachweis.
   und `/api/does-not-exist` 404; `/api/health` 200), `AuthFlowTest` erweitert um `/api/health` ohne
   Sitzung; Backend-/Frontend-Gates grün (Zahlen im Commit).
 
+### Studio-Modernisierung: Responsive, Meldungsarten, Experimente gebündelt, Legende — ✅ UMGESETZT (2026-11-04)
+- **Anlass:** Das Studio war ein festes Drei-Spalten-Layout mit `height: calc(100vh - 45px)`,
+  Statusmeldungen waren ein grauer Textabsatz ohne Art, 16 experimentelle Optionen standen
+  gleichrangig neben produktiven, Kartenebenen hatten keine Legende, Ergebnisse nur Zahlen.
+- **Mechanik:** Design-Tokens (`--sy-*`) ersetzen die wiederholten Hex-Werte in Studio, Vergleich
+  und Einstellungen (gleiche Farben, zentral). Unter 1100 px stapeln sich die Spalten, die Karte
+  behält 440 px. `message` ist ein Setter, der aus der Wortwahl die Art ableitet
+  (`classifyMessage`: „Fehler/fehlgeschlagen/konnte nicht“ → Fehler, „Bitte …“ → Hinweis,
+  „gespeichert/hochgeladen/übernommen“ → Erfolg); das Banner trägt `data-kind`, `role=alert`
+  für Fehler und einen Schließen-Knopf. Kurze-Wege-, Distanzabfall-, ÖV-Distanz-,
+  LLM-Moduswahl- und Straßenrouten-Optionen liegen in `<details class="advanced">`, das offen
+  startet, sobald eine davon gesetzt ist. Die Kartenlegende erscheint nur bei aktiven Ebenen und
+  nennt die tatsächlichen Layer-Farben; Modal-Split- und Distanzband-Tabellen zeigen
+  Simulations- und MiD-Anteil zusätzlich als Balkenpaar.
+- **Bewusst nicht:** kein UI-Framework (Material/PrimeNG) und kein Umbau der 1 300-Zeilen-Vorlage
+  in Unterkomponenten; das bleibt ein eigener Schritt, damit die Studio-Specs unverändert gelten.
+- **Verifiziert:** `studio-ui.spec.ts` (Meldungsarten, Banner schließen, Experimente eingeklappt
+  und automatisch offen, Legende nur bei aktiver Ebene); Frontend 135 Tests grün, AOT-Build grün;
+  Playwright gegen das laufende Backend mit ausgeliefertem Build: Deep-Link → Anmeldung mit
+  Rücksprung → Studio → Benutzerseite → Abmelden → 401; Screenshots bei 1440 px und 900 px.
+

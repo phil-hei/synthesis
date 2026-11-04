@@ -39,7 +39,7 @@ button.primary {
   padding: 8px;
   border: none;
   border-radius: 8px;
-  background: #15314f;
+  background: var(--sy-primary);
   color: #fff;
   font-weight: 600;
   cursor: pointer;
@@ -94,7 +94,7 @@ table.compare td:first-child {
 .group td {
   background: #f5f8fb;
   font-weight: 600;
-  color: #15314f !important;
+  color: var(--sy-primary) !important;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -120,4 +120,9 @@ table.compare td:first-child {
   border-left-color: #94a3b8;
   background: #f8fafc;
   color: #475569;
+}
+
+@media (max-width: 900px) {
+  .comparison { flex-direction: column; }
+  .picker { flex-basis: auto; width: 100%; }
 }

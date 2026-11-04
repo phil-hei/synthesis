@@ -103,8 +103,10 @@ import { AuthService } from './core/auth/auth.service';
       cursor: pointer;
     }
     .logout:hover { background: rgba(255, 255, 255, 0.28); }
-    @media (max-width: 760px) {
+    @media (max-width: 1100px) {
       .subtitle { display: none; }
+    }
+    @media (max-width: 760px) {
       .app-header { align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
       .user-name { display: none; }
     }

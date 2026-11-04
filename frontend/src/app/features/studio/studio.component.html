@@ -29,7 +29,12 @@
       @if (scenario && !scenario.region) {
         <p class="hint">Zum Speichern zuerst eine Region auf der Karte wählen.</p>
       }
-      <p class="message" aria-live="polite">{{ message }}</p>
+      @if (message) {
+        <div class="message" [attr.data-kind]="messageKind" [attr.role]="messageKind === 'error' ? 'alert' : 'status'" aria-live="polite">
+          <span>{{ message }}</span>
+          <button type="button" class="dismiss" (click)="dismissMessage()" aria-label="Meldung schließen">&#x2715;</button>
+        </div>
+      }
       @if (scenarioListError) {
         <p class="message" aria-live="polite">{{ scenarioListError }}</p>
       }
@@ -488,28 +493,6 @@
             Verkehrsmittelanteile kalibrieren (langsam)
           </label>
         }
-        @if (hasTarget('logitopp')) {
-          <label class="checkbox"
-            title="Passt den Anteil der Wege unter 1 km an die Referenzwerte an. Benötigt ein ausreichend feines Raster und mehrere Simulationsläufe. Mit der ÖV-Kalibrierung kombinierbar; erzeugt keine zusätzlichen Fernziele.">
-            <input type="checkbox" [(ngModel)]="scenario.population.calibrateDistance">
-            Kurze Wege kalibrieren (experimentell, langsam)
-          </label>
-        }
-        @if (hasTarget('logitopp')) {
-          <label class="checkbox"
-            title="Verringert die Bevorzugung naher Ziele, ohne zusätzliche Simulationsläufe. Mit der Kalibrierung kurzer Wege in Rastatt geprüft; die Übertragbarkeit auf andere Regionen ist noch nicht belegt.">
-            <input type="checkbox" [(ngModel)]="scenario.population.correctDistanceDecay">
-            Längere Wege begünstigen (experimentell)
-          </label>
-        }
-        @if (hasTarget('logitopp')) {
-          <label class="checkbox"
-            title="Passt den öffentlichen Verkehrsanteil insgesamt und bei Wegen ab 20 km an MiD 2017 an. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe. Alternative zur allgemeinen Kalibrierung der Verkehrsmittelanteile; mit kurzen Wegen kombinierbar.">
-            <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeDistance"
-              [disabled]="scenario.population.calibrateModeChoice">
-            ÖV nach Distanz kalibrieren (experimentell, langsam)
-          </label>
-        }
         @if (hasTarget('logitopp') && (scenario.population.calibrateModeChoice || scenario.population.calibrateModeDistance)) {
           <div class="calib-target"
             title="Ziel-Modus-Anteile (Default MiD 2017 bundesweit; für die Region anpassbar)">
@@ -536,6 +519,31 @@
             Regionaltabellen anpassbar.</p>
           </div>
         }
+        <details class="advanced" [open]="advancedOptionsOpen">
+          <summary>Erweiterte und experimentelle Optionen</summary>
+          <p class="hint">Kalibrierungen mit mehreren Simulationsläufen, LLM-Vergleich und Routenübergabe. Standard ist aus; Ergebnisse dieser Optionen sind als experimentell gekennzeichnet.</p>
+        @if (hasTarget('logitopp')) {
+          <label class="checkbox"
+            title="Passt den Anteil der Wege unter 1 km an die Referenzwerte an. Benötigt ein ausreichend feines Raster und mehrere Simulationsläufe. Mit der ÖV-Kalibrierung kombinierbar; erzeugt keine zusätzlichen Fernziele.">
+            <input type="checkbox" [(ngModel)]="scenario.population.calibrateDistance">
+            Kurze Wege kalibrieren (experimentell, langsam)
+          </label>
+        }
+        @if (hasTarget('logitopp')) {
+          <label class="checkbox"
+            title="Verringert die Bevorzugung naher Ziele, ohne zusätzliche Simulationsläufe. Mit der Kalibrierung kurzer Wege in Rastatt geprüft; die Übertragbarkeit auf andere Regionen ist noch nicht belegt.">
+            <input type="checkbox" [(ngModel)]="scenario.population.correctDistanceDecay">
+            Längere Wege begünstigen (experimentell)
+          </label>
+        }
+        @if (hasTarget('logitopp')) {
+          <label class="checkbox"
+            title="Passt den öffentlichen Verkehrsanteil insgesamt und bei Wegen ab 20 km an MiD 2017 an. Benötigt mindestens 30 Fernwege und mehrere Simulationsläufe. Alternative zur allgemeinen Kalibrierung der Verkehrsmittelanteile; mit kurzen Wegen kombinierbar.">
+            <input type="checkbox" [(ngModel)]="scenario.population.calibrateModeDistance"
+              [disabled]="scenario.population.calibrateModeChoice">
+            ÖV nach Distanz kalibrieren (experimentell, langsam)
+          </label>
+        }
         @if (hasTarget('logitopp')) {
           <label class="checkbox"
             title="Experimentell: zusätzliche LLM-gestützte Moduswahl je Distanzband auf den simulierten Trips – liefert einen alternativen Modal-Split zum Vergleich mit MNL/MiD. Benötigt das lokale LLM.">
@@ -549,6 +557,7 @@
             Gemeinsame Straßenrouten verwenden (experimentell)
           </label>
         }
+        </details>
         @if (hasTarget('logitopp') && hasTarget('sumo')) {
           <label class="checkbox"
             title="Gleichgewichts-Schleife: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu, SUMO simuliert erneut – iterativ bis Konvergenz (mehrere zusätzliche Simulationsläufe, daher langsamer).">
@@ -839,6 +848,27 @@
       }
     </div>
     <div id="map"></div>
+    @if (anyMapLayerActive) {
+      <div class="map-legend" aria-label="Kartenlegende">
+        @if (showParcelLayer) { <div class="legend-row"><i class="swatch fill" style="--c:#8e44ad"></i>Paketdichte je Zone (dunkler = mehr Pakete)</div> }
+        @if (showPrivateRoutes) { <div class="legend-row"><i class="swatch line" style="--c:#2471a3"></i>Personenverkehr (SUMO-Routen)</div> }
+        @if (showLogisticsRoutes) { <div class="legend-row"><i class="swatch line" style="--c:#d35400"></i>Logistikrouten (SUMO)</div> }
+        @if (showTourLayer) {
+          <div class="legend-row"><i class="swatch line" style="--c:#2980b9"></i>Zustelltour Transporter</div>
+          <div class="legend-row"><i class="swatch line" style="--c:#27ae60"></i>Zustelltour Lastenrad</div>
+        }
+        @if (showCongestionLayer) {
+          <div class="legend-row"><i class="swatch line" style="--c:#2e7d32"></i>Netzlast: mindestens 80 % des Tempolimits</div>
+          <div class="legend-row"><i class="swatch line" style="--c:#f39c12"></i>Netzlast: 50 bis 80 %</div>
+          <div class="legend-row"><i class="swatch line" style="--c:#c0392b"></i>Netzlast: unter 50 %</div>
+        }
+        @if (showEnergyLayer) {
+          <div class="legend-row"><i class="swatch dot" style="--c:#047857"></i>Ladepunkt (Strom)</div>
+          <div class="legend-row"><i class="swatch dot" style="--c:#c2410c"></i>Wasserstoff</div>
+          <div class="legend-row"><i class="swatch dot" style="--c:#1d4ed8"></i>Kraftstoff</div>
+        }
+      </div>
+    }
   </main>
 
   <!-- Rechte Spalte: Pipeline + Artefakte -->
@@ -990,12 +1020,16 @@
                             </table>
                             <h3>Modal Split vs. MiD 2017</h3>
                             <table class="kpis modal-split">
-                              <tr><th></th><th>Simulation</th><th>MiD</th></tr>
+                              <tr><th></th><th>Simulation</th><th>MiD</th><th class="bar-head" aria-hidden="true"></th></tr>
                               @for (row of modalSplitRows; track row) {
                                 <tr>
                                   <td>{{ row.label }}</td>
                                   <td>{{ row.sim * 100 | number:'1.0-0' }} %</td>
                                   <td>{{ row.mid != null ? ((row.mid * 100 | number:'1.0-0') + ' %') : '–' }}</td>
+                                  <td class="bar-cell" aria-hidden="true">
+                                    <span class="bar sim" [style.width.%]="row.sim * 100"></span>
+                                    @if (row.mid != null) { <span class="bar mid" [style.width.%]="row.mid * 100"></span> }
+                                  </td>
                                 </tr>
                               }
                             </table>
@@ -1005,12 +1039,16 @@
                             @if (distanceBandRows.length > 0) {
                               <h3>Distanzverteilung vs. MiD 2017</h3>
                               <table class="kpis modal-split">
-                                <tr><th>Wegelänge</th><th>Simulation</th><th>MiD</th></tr>
+                                <tr><th>Wegelänge</th><th>Simulation</th><th>MiD</th><th class="bar-head" aria-hidden="true"></th></tr>
                                 @for (row of distanceBandRows; track row) {
                                   <tr>
                                     <td>{{ row.label }}</td>
                                     <td>{{ row.sim != null ? ((row.sim * 100 | number:'1.1-1') + ' %') : '–' }}</td>
                                     <td>{{ row.mid != null ? ((row.mid * 100 | number:'1.1-1') + ' %') : '–' }}</td>
+                                    <td class="bar-cell" aria-hidden="true">
+                                      @if (row.sim != null) { <span class="bar sim" [style.width.%]="row.sim * 100"></span> }
+                                      @if (row.mid != null) { <span class="bar mid" [style.width.%]="row.mid * 100"></span> }
+                                    </td>
                                   </tr>
                                 }
                               </table>

@@ -59,7 +59,9 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   depotMode = false;
   drawMode = false;
   busy = false;
-  message = '';
+  /** Statusmeldung der Szenarioverwaltung; die Art (Erfolg/Fehler/Hinweis) steuert die Darstellung. */
+  private messageText = '';
+  messageKind: MessageKind = 'info';
   scenarioListError = '';
   zonePreviewInfo = '';
   estimateInfo = '';
@@ -1450,6 +1452,36 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
     }).addTo(this.map);
   }
 
+  get message(): string {
+    return this.messageText;
+  }
+
+  /** Setter statt vieler Aufrufstellen: die Art wird aus der Wortwahl der deutschen Meldungen abgeleitet. */
+  set message(text: string) {
+    this.notify(text, classifyMessage(text));
+  }
+
+  notify(text: string, kind: MessageKind): void {
+    this.messageText = text ?? '';
+    this.messageKind = this.messageText ? kind : 'info';
+  }
+
+  dismissMessage(): void {
+    this.notify('', 'info');
+  }
+
+  /** Experimentelle Optionen bleiben eingeklappt, außer eine davon ist bereits gesetzt. */
+  get advancedOptionsOpen(): boolean {
+    const p = this.scenario?.population;
+    return !!p && !!(p.calibrateDistance || p.correctDistanceDecay || p.calibrateModeDistance
+      || p.llmModeChoice || p.sharedRoadRoutes);
+  }
+
+  get anyMapLayerActive(): boolean {
+    return this.showParcelLayer || this.showPrivateRoutes || this.showLogisticsRoutes
+      || this.showTourLayer || this.showCongestionLayer || this.showEnergyLayer;
+  }
+
   get hasSimLayers(): boolean {
     return !!this.parcelDensity || !!this.tourData || !!this.congestionData || !!this.trafficRoutes;
   }
@@ -1678,4 +1710,16 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   get running(): boolean {
     return this.job?.state === 'QUEUED' || this.job?.state === 'RUNNING';
   }
+}
+
+export type MessageKind = 'info' | 'success' | 'warning' | 'error';
+
+/** Wortwahl der Meldungen im Studio: Fehler nennen „Fehler“/„fehlgeschlagen“/„konnte nicht“, Hinweise beginnen mit „Bitte“. */
+export function classifyMessage(text: string): MessageKind {
+  const t = (text ?? '').toLowerCase();
+  if (!t) return 'info';
+  if (/fehler|fehlgeschlagen|konnten? nicht|invalid|ungültig/.test(t)) return 'error';
+  if (/^bitte|zuerst speichern|benötigt/.test(t)) return 'warning';
+  if (/gespeichert|hochgeladen|übernommen|entfernt|aktiviert|gesetzt/.test(t)) return 'success';
+  return 'info';
 }
