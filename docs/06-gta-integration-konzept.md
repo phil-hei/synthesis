@@ -3871,3 +3871,26 @@ nennt den Anlass, die Entscheidung und den Nachweis.
   vorhanden; `npm run lint` ohne Befund; Frontend 135 Tests grün, AOT-Build grün;
   `npm audit --omit=dev`: 0 Schwachstellen.
 
+### Plattform-Abnahme gegen das gebaute Jar und Restbefunde — ✅ UMGESETZT (2026-11-04)
+- **Abnahme:** Jar mit gebündeltem Frontend (`classpath:/static/`, wie im Docker-Build) gestartet;
+  per `curl` mit Cookie-Jar und CSRF-Header: Deep-Link liefert `index.html`, Hash-Assets
+  `immutable`, API ohne Sitzung 401, Login, Konto anlegen, Szenario mit `createdBy`, Generierung
+  bis `DONE` (15 Stufen, 8 `DONE`, Rest bewusst `SKIPPED`), Artefakt-Download, `job.json` auf
+  Platte, Backend-Neustart → Status wiederhergestellt, Fremdlöschung 403, `/api/users` für USER
+  403, zweiter Lauf wartet als `QUEUED` hinter dem ersten (ein Worker, Invariante) und endet `DONE`.
+- **Restbefunde aus der Abnahme, behoben:** (1) `scripts/preflight.sh` meldete „FEHLT Java“, weil
+  `java_major` nur Zeile 1 von `java -version` las und `JAVA_TOOL_OPTIONS` eine „Picked up“-Zeile
+  voranstellt; jetzt `java_major_of` ohne Zeilenbindung, auch für das KIT-JDK. (2) Die OSM-Stufe
+  stand bei zentral deaktiviertem Live-Abruf als `SKIPPED` ohne Grund; jetzt Meldung, Summary und
+  Manifest `osmData.source=disabled`. (3) `roadNetworkSource` wurde vor dem Netzabruf auf
+  `overpass-live` gesetzt und blieb bei gescheitertem Abruf so stehen, obwohl die Matrizen
+  Luftlinie waren (gleiche Fehlerklasse wie der `osmDataSource`-Befund vom selben Tag); jetzt
+  `unavailable` in Summary, `dataQuality.roadNetwork` und `inputProvenance.roadNetwork`.
+- **Doku-Wahrheit:** docs/03 und README behaupteten Spring Modulith und SSE/WebSocket; umgesetzt
+  ist ein Spring-Boot-Monolith mit Paketen je Fachlichkeit und Status-Polling. Beides als
+  Zielentwurf gekennzeichnet, Umsetzungsstand vorangestellt.
+- **Verifiziert:** `GenerationServiceFallbackTest` (Netzabruf scheitert → Matrizen `DONE`+Fallback,
+  `roadNetworkSource=unavailable`, `matrices=beeline-estimate`; Live-Abruf aus → `SKIPPED` mit Grund,
+  `osmDataSource=disabled`); `scripts/preflight.sh core` ohne Fehler; Backend-Suite und
+  Jar-Abnahme (Zahlen im Commit).
+

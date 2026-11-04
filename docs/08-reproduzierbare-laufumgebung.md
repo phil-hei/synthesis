@@ -119,7 +119,7 @@ curl -fsS http://localhost:8090/api/health
 
 | Baustein | Inhalt |
 |---|---|
-| `Dockerfile` | Drei Stufen: `node:20` (`npm ci`, `ng build`) → `maven:3.9.11-eclipse-temurin-21` (Build kopiert nach `src/main/resources/static`, `mvn package -DskipTests`) → `eclipse-temurin:21-jre-noble` (unprivilegierter Nutzer, `/app/data` als Volume, Healthcheck auf `/api/health`). `--build-arg WITH_SUMO=true` installiert SUMO aus dem Ubuntu-PPA `sumo/stable`; `SUMO_HOME=/usr/share/sumo` ist vorbelegt, ohne Installation bleibt die SUMO-Stufe `SKIPPED`. |
+| `Dockerfile` | Drei Stufen: `node:20` (`npm ci`, `ng build`) → `maven:3.9.11-eclipse-temurin-21` (Build kopiert nach `src/main/resources/static`, `mvn package -DskipTests`) → `eclipse-temurin:21-jre-noble` (unprivilegierter Nutzer, `/app/data` als Volume, `scripts/` unter `/scripts` für `../scripts/*.py`, Healthcheck auf `/api/health`). Die Image-Tags (`node:20.20.2-bookworm-slim`, `maven:3.9.11-eclipse-temurin-21`, `eclipse-temurin:21-jre-noble`) sind auf Docker Hub geprüft (2026-11-04). `--build-arg WITH_SUMO=true` installiert SUMO aus dem Ubuntu-PPA `sumo/stable`; `SUMO_HOME=/usr/share/sumo` ist vorbelegt, ohne Installation bleibt die SUMO-Stufe `SKIPPED`. |
 | `docker-compose.yml` | Ein Dienst, Port 8090, Volume `synthesis-data` (Szenarien, `users.json`, Startpasswort), Umgebungsvariablen nach Spring-Konvention (`SYNTHESIS_DATA_DIR`, `SYNTHESIS_AUTH_ENABLED`, `SYNTHESIS_OVERPASS_LIVE_DATA_ENABLED`, …). |
 | `.gitlab-ci.yml` | Neuer Job `scripts-tests` (Python-`unittest` der Hilfsskripte) und Stage `build` mit `docker-image` (Docker-in-Docker, Push in die GitLab Container Registry als `:<kurzer SHA>`, auf dem Default-Branch zusätzlich `:latest`, bei Tags `:<tag>`; auf anderen Branches manuell). |
 

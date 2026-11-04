@@ -5,6 +5,13 @@ dateibasierter Artefakt-Store, externe Toolchain als Prozesse), aber die Generie
 **explizite Pipeline aus Stufen mit definierten Artefakten** modellieren – jede Stufe einzeln
 ausführbar, cachebar und durch andere Implementierungen ersetzbar.
 
+> **Umsetzungsstand (2026-11-04):** Das Backend ist ein Spring-Boot-Monolith mit Paketen je
+> Fachlichkeit (`scenario`, `generation`, `data`, `auth`, …) **ohne** Spring-Modulith-Abhängigkeit
+> und ohne per Test erzwungene Modulgrenzen. Der Fortschritt eines Laufs wird vom Frontend
+> **per Polling** (`GET /api/scenarios/{id}/generation`) gelesen, nicht per SSE/WebSocket; der
+> Status liegt zusätzlich als `artifacts/job.json` auf Platte. Die Modul- und SSE-Angaben unten
+> beschreiben den ursprünglichen Zielentwurf.
+
 ## Konfigurierbare Datenquellen je fachlichem Aspekt — Konzept (2026-10-28)
 
 Die aktuelle Quellenwahl ist über Orchestrator, Generatoren, Uploads und Zieladapter
@@ -121,7 +128,7 @@ flowchart LR
         T4[MobileCity Pipelines<br/>Car/Bike/Transit + OLC + ConfigTool]
     end
 
-    FE -- REST + SSE --> BE
+    FE -- REST, Status per Polling --> BE
     M --- T1
     DEM --- T2
     SYN --- T3
@@ -150,7 +157,7 @@ Laufbericht unter `population/census-structure.json`; keine zusätzliche Pipelin
 | `matrices` | Zentroid-Bestimmung, Matrix-Berechnung via GraphHopper/R5, Visum-MTX-Export + Matrix-YAMLs |
 | `demand` | Generierung der mobiTopp-Projektstruktur (Configs, Wahlmodell-Parameter), Ausführung Long-Term → Short-Term → logiTopp als externe JVM-Prozesse, Normalisierung in `synthesis-travel-demand-v1`, Ergebnis-Ingestion |
 | `export` | Export-Adapter-SPI; erste Adapter: GeoJSON/CSV (Visualisierung), MobileCity (siehe unten) |
-| `jobs` | Asynchrone Pipeline-Ausführung: Stufengraph, Status, Logs, Abbruch; Fortschritt per SSE/WebSocket ans Frontend |
+| `jobs` | Asynchrone Pipeline-Ausführung: Stufengraph, Status, Logs, Abbruch; Fortschritt per SSE/WebSocket ans Frontend (umgesetzt: `GenerationService`/`GenerationJob`, ein Worker, Polling, Status auch in `artifacts/job.json`; Abbruch nicht umgesetzt) |
 | `storage` | Dateibasierter Artefakt-Store `data/scenarios/<id>/<stage>/…` mit Manifest (Hash der Eingaben → Cache/Re-Run-Entscheidung) |
 
 **Warum Modulith statt Microservices:** identische Begründung wie simudrive – ein Deployable,

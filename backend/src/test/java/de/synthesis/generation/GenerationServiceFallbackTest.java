@@ -48,6 +48,11 @@ class GenerationServiceFallbackTest {
             public List<Place> fetchPlaces(Scenario.Region r, boolean external) throws Exception {
                 throw new IOException("Tunnel failed, got: 403");
             }
+
+            @Override
+            public String fetchRoadNetworkOsm(Scenario.Region region, Path scenarioFile) throws Exception {
+                throw new IOException("Tunnel failed, got: 403");
+            }
         };
         var repo = new ScenarioRepository(mapper, props);
         var scenario = new Scenario();
@@ -61,7 +66,7 @@ class GenerationServiceFallbackTest {
         scenario.population.behaviorSource = "template";
         scenario.population.useKitPopulation = false;
         scenario.population.externalTrips = true;
-        scenario.population.useRealRouting = false;
+        scenario.population.useRealRouting = true; // Netzabruf scheitert ebenfalls → Luftlinie
         scenario.targetModels = new ArrayList<>(List.of("logitopp"));
         repo.save(scenario);
         var service = new GenerationService(repo, client, props, mapper);
@@ -85,6 +90,15 @@ class GenerationServiceFallbackTest {
             assertEquals("synthetic-fallback", manifest.path("inputProvenance").path("osmData").path("source").asText());
             assertEquals("synthetic", manifest.path("dataQuality").path("attractivities").asText());
 
+            // Gescheiterter Netzabruf: Matrizen sind Luftlinie und die Netzquelle darf nicht "overpass-live" heißen.
+            var matrices = job.stage("Matrizen");
+            assertEquals("DONE", matrices.status);
+            assertTrue(matrices.fallback, "Luftlinien-Fallback muss markiert sein");
+            assertEquals("unavailable", job.summary.get("roadNetworkSource"));
+            assertEquals("unavailable", manifest.path("dataQuality").path("roadNetwork").asText());
+            assertEquals("unavailable", manifest.path("inputProvenance").path("roadNetwork").path("source").asText());
+            assertEquals("beeline-estimate", manifest.path("dataQuality").path("matrices").asText());
+
             // Der Status überlebt den Prozess: ein frischer Service liest job.json statt 404.
             Path statusFile = artifacts.resolve(GenerationJob.FILE);
             assertTrue(Files.isRegularFile(statusFile));
@@ -100,6 +114,46 @@ class GenerationServiceFallbackTest {
             } finally {
                 restarted.shutdown();
             }
+        } finally {
+            service.shutdown();
+        }
+    }
+
+    @Test
+    void disabledLiveDataIsSkippedWithAReasonAndProvenance() throws Exception {
+        var mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var props = new SynthesisProperties();
+        props.setDataDir(temp.toString());
+        props.getCensus().setEnabled(false);
+        props.getSimulation().setEnabled(false);
+        props.getOverpass().setLiveDataEnabled(false);
+        var repo = new ScenarioRepository(mapper, props);
+        var scenario = new Scenario();
+        scenario.id = "overpass-disabled";
+        scenario.region = new Scenario.Region();
+        scenario.region.minLat = 48.83;
+        scenario.region.maxLat = 48.84;
+        scenario.region.minLon = 8.2;
+        scenario.region.maxLon = 8.21;
+        scenario.population.totalPersons = 12;
+        scenario.population.behaviorSource = "template";
+        scenario.population.useKitPopulation = false;
+        scenario.population.useRealRouting = false;
+        scenario.targetModels = new ArrayList<>(List.of("logitopp"));
+        repo.save(scenario);
+        var service = new GenerationService(repo, new OverpassClient(props, mapper), props, mapper);
+        try {
+            var job = service.start(scenario.id);
+            await(job);
+            assertEquals(GenerationJob.State.DONE, job.state, job.error);
+            var osm = job.stage("OSM-Daten (POIs)");
+            assertEquals("SKIPPED", osm.status);
+            assertFalse(osm.fallback);
+            assertTrue(osm.message.contains("live-data-enabled=false"), "Übersprungene Stufe nennt den Grund");
+            assertEquals("disabled", job.summary.get("osmDataSource"));
+            JsonNode manifest = mapper.readTree(repo.artifactsDir(scenario.id).resolve("manifest.json").toFile());
+            assertEquals("disabled", manifest.path("inputProvenance").path("osmData").path("source").asText());
+            assertEquals("not-used", manifest.path("dataQuality").path("roadNetwork").asText());
         } finally {
             service.shutdown();
         }

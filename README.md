@@ -8,7 +8,9 @@ Die Ergebnisse sollen später über die bestehende MobileCity Network Pipeline i
 MobileCity-Smartphone-App eingespielt werden können.
 
 Architektur-Vorbild: **simudrive** (Angular + Leaflet Frontend, Spring-Modulith-Backend,
-dateibasierte Szenario-Artefakte, externe Simulations-Toolchain).
+dateibasierte Szenario-Artefakte, externe Simulations-Toolchain). Umgesetzt ist ein
+Spring-Boot-Monolith mit Paketen je Fachlichkeit und Login (ohne Modulith-Abhängigkeit); Stand
+und Abweichungen in [docs/03-architektur.md](docs/03-architektur.md).
 
 ## Anwendung starten (MVP)
 
@@ -330,7 +332,7 @@ Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
 | [docs/05-validierung.md](docs/05-validierung.md) | Phase-0-Validierung: Artefakte erfolgreich durch echten mobiTopp-Lauf, 8 Format-Befunde, Legacy-Stack-Build |
 | [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md) | Zwei-Achsen-Modell, GTA-Integrationskonzept, On-demand- und Modus-Distanz-Kalibrierung, SUMO-Zielmodell (inkl. Rad/Fuß/ÖV-GTFS, Rail/Tram-Befund), experimentelle Retourenlogistik, Roadmap |
 | [docs/07-ansatz-zusammenfassung.md](docs/07-ansatz-zusammenfassung.md) | Kompaktes Briefing: Ansatz, 15-stufige Pipeline, KI-Pipeline (GTA), Artefakte, Datenfluss, Tech-Stack |
-| [docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md) | Gepinnte Laufzeiten und KIT-Commits, Bootstrap, Preflight, gemeinsamer Start und vollständige Self-hosted-CI-Abnahme |
+| [docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md) | Gepinnte Laufzeiten und KIT-Commits, Bootstrap, Preflight, gemeinsamer Start, Container-Betrieb der Plattform, Qualitätswerkzeuge und vollständige Self-hosted-CI-Abnahme |
 | [docs/09-verkehrsbedarfsmodellierung-handoff.md](docs/09-verkehrsbedarfsmodellierung-handoff.md) | Technisches Handoff zur Wiederverwendung der Bevölkerungs- und Verkehrsbedarfsmodellierung, einschließlich Codefragmenten und LLM-Arbeitsauftrag |
 | [docs/10-modellierungs-generierungspipeline.md](docs/10-modellierungs-generierungspipeline.md) | Aktueller Ablauf von Kartenausschnitt und Quelldaten bis zu logiTopp-, SUMO- und MobileCity-Artefakten: Verwendung, Begründung, Beispiele und Modellgrenzen |
 | [docs/11-modellierungsfragen-und-zielbild.md](docs/11-modellierungsfragen-und-zielbild.md) | 26 fachliche Klärungen zu Granularität, Routing, Stichproben und MobileCity; Zielbild des SyntheSis Mobility & Logistics Model |

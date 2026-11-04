@@ -16,15 +16,20 @@ version_major() {
   printf '%s\n' "${value%%.*}"
 }
 
+# Hauptversion eines java-Binaries; nicht an Zeile 1 gebunden, weil JAVA_TOOL_OPTIONS eine
+# "Picked up …"-Zeile voranstellt.
+java_major_of() {
+  "$1" -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p' | head -n 1
+}
+
 java_major() {
-  java -version 2>&1 | sed -n '1s/.*version "\([0-9][0-9]*\).*/\1/p'
+  java_major_of java
 }
 
 kit_java_home() {
   if [[ -n ${SYNTHESIS_KIT_JAVA_HOME:-} && -x ${SYNTHESIS_KIT_JAVA_HOME}/bin/java ]]; then
     local explicit_major
-    explicit_major=$("$SYNTHESIS_KIT_JAVA_HOME/bin/java" -version 2>&1 \
-      | sed -n '1s/.*version "\([0-9][0-9]*\).*/\1/p')
+    explicit_major=$(java_major_of "$SYNTHESIS_KIT_JAVA_HOME/bin/java")
     if [[ $explicit_major == "$SYNTHESIS_KIT_JAVA" ]]; then
       printf '%s\n' "$SYNTHESIS_KIT_JAVA_HOME"
       return 0
@@ -48,8 +53,7 @@ kit_java_home() {
     local macos_jdk macos_major
     macos_jdk=$(/usr/libexec/java_home -v "$SYNTHESIS_KIT_JAVA" 2>/dev/null || true)
     if [[ -n $macos_jdk && -x $macos_jdk/bin/java ]]; then
-      macos_major=$("$macos_jdk/bin/java" -version 2>&1 \
-        | sed -n '1s/.*version "\([0-9][0-9]*\).*/\1/p')
+      macos_major=$(java_major_of "$macos_jdk/bin/java")
       if [[ $macos_major == "$SYNTHESIS_KIT_JAVA" ]]; then
         printf '%s\n' "$macos_jdk"
         return 0

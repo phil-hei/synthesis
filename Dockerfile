@@ -41,6 +41,9 @@ RUN useradd --system --uid 10001 --create-home --home-dir /app synthesis \
     && mkdir -p /app/data && chown -R synthesis:synthesis /app
 WORKDIR /app
 COPY --from=backend --chown=synthesis:synthesis /synthesis.jar /app/synthesis.jar
+# Die Hilfsskripte liegen relativ zum Arbeitsverzeichnis unter ../scripts (application.yml),
+# daher neben /app unter /scripts.
+COPY --chown=synthesis:synthesis scripts/ /scripts/
 USER synthesis
 VOLUME ["/app/data"]
 EXPOSE 8090

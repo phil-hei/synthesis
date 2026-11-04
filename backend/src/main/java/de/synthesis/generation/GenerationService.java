@@ -567,7 +567,11 @@ public class GenerationService {
             }
         }
         if (!properties.getOverpass().isLiveDataEnabled()) {
-            job.stage("OSM-Daten (POIs)").status = "SKIPPED";
+            GenerationJob.StageInfo stage = job.stage("OSM-Daten (POIs)");
+            stage.status = "SKIPPED";
+            stage.message = "Live-Abruf zentral deaktiviert (synthesis.overpass.live-data-enabled=false), kein Szenario-Snapshot; Orte und Attraktivitäten synthetisch";
+            ctx.osmDataSource = "disabled";
+            job.summary.put("osmDataSource", ctx.osmDataSource);
             job.log("Live-Overpass zentral deaktiviert, nutze synthetische Daten");
             return;
         }
@@ -1975,6 +1979,11 @@ public class GenerationService {
             return engine;
         } catch (Exception e) {
             if(ctx.scenario.population.roadLocatedActivities)throw new IOException("Straßennahe Orte: Straßengraph nicht verfügbar; kein Orts-Fallback",e);
+            if (ctx.roadNetwork.get() == null) {
+                // Der Abruf selbst ist gescheitert: die vorab eingetragene Quelle wäre eine falsche Provenienz.
+                ctx.roadNetworkSource = "unavailable";
+                ctx.job.summary.put("roadNetworkSource", ctx.roadNetworkSource);
+            }
             ctx.job.fallback("Matrizen", "Straßennetz nicht verfügbar, Luftlinienmatrizen: " + e.getMessage());
             ctx.job.log("Routing nicht verfügbar (" + e.getMessage() + ") – Fallback auf Luftlinie");
             return null;
