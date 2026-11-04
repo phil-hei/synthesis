@@ -68,6 +68,8 @@ export interface Scenario {
   id?: string;
   name: string;
   createdAt?: string;
+  /** Benutzername des Erstellers (Plattform-Anmeldung); fehlt bei älteren Ständen. */
+  createdBy?: string;
   /** Null, solange noch keine Region auf der Karte gesetzt wurde. */
   region: Region | null;
   zoning: {

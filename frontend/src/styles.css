@@ -1,3 +1,28 @@
+/* Design-Tokens der Plattform. Komponenten-Styles verwenden diese Variablen; bestehende Werte
+   (#15314f, #f4f6f9, …) bleiben dieselben Farben, nur zentral definiert. */
+:root {
+  --sy-primary: #15314f;
+  --sy-primary-hover: #1c4169;
+  --sy-accent: #2f6fb1;
+  --sy-focus: rgba(47, 111, 177, 0.18);
+  --sy-bg: #f4f6f9;
+  --sy-bg-muted: #eef1f5;
+  --sy-surface: #ffffff;
+  --sy-border: #e2e8f0;
+  --sy-border-strong: #c9d3df;
+  --sy-text: #1f2733;
+  --sy-text-strong: #15314f;
+  --sy-text-muted: #607286;
+  --sy-success: #238552;
+  --sy-warning: #d27a2c;
+  --sy-danger: #b23c32;
+  --sy-radius: 7px;
+  --sy-radius-lg: 12px;
+  --sy-shadow: 0 1px 2px rgba(16, 30, 54, 0.04);
+  --sy-shadow-lg: 0 12px 32px rgba(16, 30, 54, 0.12);
+  --sy-font: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -5,7 +30,12 @@
 html, body {
   margin: 0;
   height: 100%;
-  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: #1f2733;
-  background: #f4f6f9;
+  font-family: var(--sy-font);
+  color: var(--sy-text);
+  background: var(--sy-bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--sy-accent);
+  outline-offset: 2px;
 }

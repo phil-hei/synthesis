@@ -19,6 +19,8 @@ public class Scenario {
     public String id;
     public String name = "Neues Szenario";
     public Instant createdAt;
+    /** Benutzername des Erstellers; null bei Läufen ohne Anmeldung oder aus älteren Ständen. */
+    public String createdBy;
     /** Null until the user draws/sets a region on the map. */
     public Region region;
     public Zoning zoning = new Zoning();

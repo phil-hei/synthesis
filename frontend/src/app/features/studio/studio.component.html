@@ -14,7 +14,7 @@
             title="Gespeichertes Szenario auswählen und laden">
             <option value="">– Neues Szenario –</option>
             @for (s of scenarios; track s) {
-              <option [value]="s.id">{{ s.name }}</option>
+              <option [value]="s.id">{{ s.name }}{{ s.createdBy ? " · " + s.createdBy : "" }}</option>
             }
           </select>
           <button class="primary save-scenario" (click)="save()" [disabled]="busy || !scenario?.region"

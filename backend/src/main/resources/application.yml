@@ -1,5 +1,13 @@
 server:
   port: 8090
+  servlet:
+    session:
+      timeout: 12h
+      cookie:
+        same-site: lax
+        http-only: true
+  # Hinter einem Reverse-Proxy (TLS-Terminierung) werden X-Forwarded-* ausgewertet.
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -12,6 +20,13 @@ spring:
       max-request-size: 210MB
 
 synthesis:
+  auth:                                        # Plattform-Anmeldung (Cookie-Session, users.json im data-dir)
+    enabled: true                              # false nur für lokale Einzelnutzer-Entwicklung
+    allowed-origins: [http://localhost:4300]   # Dev-Server; der ausgelieferte Build läuft same-origin
+    bootstrap-admin: admin                     # wird beim ersten Start ohne Konten mit Startpasswort angelegt
+    min-password-length: 8
+  frontend:
+    dir: ""                                    # Verzeichnis des Angular-Builds; leer = classpath:/static
   # Unternehmenstouren: lokaler LLM-Vorschlag, zusätzlich zum immer manuellen Mapping.
   # company-tour-import:
   #   llm-enabled: false

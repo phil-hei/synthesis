@@ -108,11 +108,17 @@ public class GenerationJob {
         return state == State.QUEUED || state == State.RUNNING;
     }
 
-    /** Atomically writes the current status; a failure to persist never fails the run itself. */
+    /**
+     * Atomically writes the current status; a failure to persist never fails the run itself.
+     * The temporary file lives next to the artifacts directory, not inside it: readers that walk
+     * the artifacts (ZIP export, tests) must never see a half-written or vanishing entry.
+     */
     public void persist(Path file) {
         try {
             Files.createDirectories(file.getParent());
-            Path temporary = Files.createTempFile(file.getParent(), ".job-", ".json");
+            Path scratch = file.getParent().getParent() != null && Files.isDirectory(file.getParent().getParent())
+                    ? file.getParent().getParent() : file.getParent();
+            Path temporary = Files.createTempFile(scratch, ".job-", ".json");
             try {
                 JSON.writerWithDefaultPrettyPrinter().writeValue(temporary.toFile(), this);
                 Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);

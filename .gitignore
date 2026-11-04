@@ -8,3 +8,5 @@ adapters/**/.gradle/
 .runtime-actitopp-source.*/
 
 .runtime-logitopp-source.*/
+__pycache__/
+*.pyc

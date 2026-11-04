@@ -58,6 +58,7 @@ public class ScenarioController {
     public ResponseEntity<Scenario> create(@RequestBody Scenario scenario) {
         scenario.id = UUID.randomUUID().toString().substring(0, 8);
         scenario.createdAt = Instant.now();
+        scenario.createdBy = de.synthesis.auth.AuthContext.username().orElse(null);
         scenario.normalizeTargetDependencies();
         validate(scenario);
         return ResponseEntity.status(HttpStatus.CREATED).body(repository.save(scenario));
@@ -68,13 +69,21 @@ public class ScenarioController {
         Scenario existing = get(id);
         scenario.id = existing.id;
         scenario.createdAt = existing.createdAt;
+        scenario.createdBy = existing.createdBy;
         scenario.normalizeTargetDependencies();
         validate(scenario);
         return repository.save(scenario);
     }
 
+    /** Löschen dürfen Ersteller und Administratoren; alle Angemeldeten teilen sich die Szenarien. */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
+        repository.findById(id).ifPresent(existing -> {
+            if (!de.synthesis.auth.AuthContext.mayManage(existing.createdBy)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Nur der Ersteller oder ein Administrator darf dieses Szenario löschen");
+            }
+        });
         repository.delete(id);
         return ResponseEntity.noContent().build();
     }

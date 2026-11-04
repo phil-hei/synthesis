@@ -3777,3 +3777,37 @@ nennt den Anlass, die Entscheidung und den Nachweis.
   Manifest `synthetic-fallback`, Status aus `job.json` nach Neustart); Backend-Suite 489 Tests,
   0 Fehler, 44 übersprungen; Frontend 130 Tests grün, AOT-Build grün.
 
+### Anmeldung und Benutzerkonten (Plattform-Betrieb) — ✅ UMGESETZT (2026-11-04)
+- **Anlass:** Das Werkzeug soll auf einem Server als Plattform laufen, auf der sich mehrere Personen
+  anmelden. Bisher war die komplette API offen, CORS fest auf `http://localhost:4300` verdrahtet und
+  jeder konnte jedes Szenario löschen.
+- **Mechanik:** Spring Security mit Cookie-Session statt Token-Verwaltung im Browser, weil das
+  SPA vom selben Backend ausgeliefert wird. Paket `de.synthesis.auth`: `SecurityConfig` (JSON-Login,
+  `401` statt Login-Seite für `/api/**`, CSRF-Token als lesbares Cookie `XSRF-TOKEN`, das Angular
+  per `withXsrfConfiguration` als Header `X-XSRF-TOKEN` zurückschickt), `AuthController`
+  (`/api/auth/login|logout|me|password`), `UserController` (`/api/users`, nur Rolle `ADMIN`),
+  `UserStore` (`<data-dir>/users.json`, bcrypt über `DelegatingPasswordEncoder`, atomar geschrieben,
+  Dateirechte `rw-------`). Rollen: `ADMIN` verwaltet Konten, `USER` arbeitet mit Szenarien; alle
+  Angemeldeten teilen sich den Szenario-Arbeitsbereich, löschen darf nur Ersteller oder Admin
+  (`Scenario.createdBy`, in der Liste sichtbar).
+- **Erststart:** Ohne Konten legt `UserStore` den Administrator `admin` mit zufälligem Startpasswort
+  an; es steht einmalig im Log und in `<data-dir>/initial-admin-password.txt`. Nach dem ersten
+  Login über „Benutzer → Eigenes Passwort“ ändern und die Datei löschen.
+- **Konfiguration:** `synthesis.auth.enabled` (Default `true`; `false` nur für lokale
+  Einzelnutzer-Entwicklung, dann bleibt die API wie bisher offen und `/api/auth/me` meldet einen
+  lokalen Admin), `synthesis.auth.allowed-origins` (CORS mit Credentials, Default Dev-Server),
+  `synthesis.auth.bootstrap-admin`, `synthesis.auth.min-password-length`. Session-Cookie
+  `SameSite=Lax`, `HttpOnly`, 12 h; `forward-headers-strategy: framework` für Reverse-Proxys.
+- **Frontend:** `AuthService` (Signals), `authGuard`/`adminGuard`, 401-Interceptor (Sitzung
+  verloren → `/login` mit Rücksprung), Seiten „Anmelden“ und „Benutzer“, Kopfzeile mit Nutzerchip
+  und Abmelden. Design-Tokens (`--sy-*`) in `styles.css` als Grundlage für die weitere
+  Modernisierung.
+- **Bewusst nicht:** kein OAuth/OIDC, keine Datenbank, keine Szenario-Mandantentrennung. Alles
+  drei lässt sich später aufsetzen (`UserDetailsService` austauschen, `createdBy` filtern), ohne
+  den Statusvertrag der Pipeline zu berühren.
+- **Verifiziert:** `AuthFlowTest` (@SpringBootTest + MockMvc gegen die echte Security-Kette:
+  Bootstrap-Admin, 401 ohne Sitzung, 403 ohne CSRF-Token, Login, `ADMIN`/`USER`-Trennung bei
+  `/api/users`, Besitzerschutz beim Löschen, Logout), `UserStoreTest` (Hash statt Klartext,
+  Neustart ohne zweiten Bootstrap, letzter Admin geschützt); Frontend `AppComponent`-Spec mit
+  Nutzerchip/Admin-Link; beide Gates grün (Zahlen im Commit).
+

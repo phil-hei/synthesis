@@ -1,0 +1,26 @@
+:host { display: block; }
+.users-page { max-width: 1120px; margin: 0 auto; padding: 38px 28px 24px; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.6px; color: var(--sy-text-muted); }
+h1 { margin: 8px 0; font-size: 30px; color: var(--sy-text-strong); }
+.page-heading p { margin: 0 0 24px; color: var(--sy-text-muted); max-width: 70ch; }
+.error, .success { padding: 12px 16px; border-radius: var(--sy-radius); margin-bottom: 16px; font-size: 13px; }
+.error { background: #fcebec; color: #9b2632; }
+.success { background: #e7f5ec; color: #176343; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.side { display: grid; gap: 20px; }
+.card { background: var(--sy-surface); border: 1px solid var(--sy-border); border-radius: var(--sy-radius-lg); padding: 22px; }
+h2 { font-size: 16px; margin: 0 0 14px; color: var(--sy-text-strong); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--sy-text-muted); padding: 6px 8px; border-bottom: 1px solid var(--sy-border); }
+td { padding: 8px; border-bottom: 1px solid #eef2f6; vertical-align: middle; }
+.row-actions { text-align: right; }
+form { display: grid; gap: 10px; }
+label { display: grid; gap: 5px; font-size: 12px; font-weight: 600; color: var(--sy-text-muted); }
+input, select { padding: 9px 11px; border: 1px solid var(--sy-border-strong); border-radius: var(--sy-radius); background: #fbfcfe; font: inherit; font-size: 13px; color: var(--sy-text); font-weight: 400; }
+input:focus, select:focus { outline: none; border-color: var(--sy-accent); box-shadow: 0 0 0 3px var(--sy-focus); }
+button { border: 1px solid var(--sy-border-strong); border-radius: var(--sy-radius); padding: 9px 14px; background: var(--sy-surface); color: var(--sy-text-strong); cursor: pointer; font: inherit; font-size: 13px; justify-self: start; }
+button.primary { background: var(--sy-primary); color: #fff; border-color: var(--sy-primary); }
+button.link { border: 0; background: none; padding: 4px 6px; }
+button.danger { color: #b23c32; }
+button:disabled { opacity: .5; cursor: default; }
+@media (max-width: 900px) { .users-page { padding: 24px 16px; } .layout { grid-template-columns: 1fr; } }

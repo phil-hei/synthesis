@@ -36,7 +36,11 @@ cd backend && mvn spring-boot:run
 cd frontend && npm install && npm start
 ```
 
-Dann http://localhost:4300 öffnen: Kartenausschnitt wählen → Parameter setzen → optional Depots
+Dann http://localhost:4300 öffnen und anmelden. Beim ersten Start ohne Benutzerkonten legt das
+Backend den Administrator `admin` an; das Startpasswort steht im Backend-Log und in
+`backend/data/initial-admin-password.txt` (nach dem ersten Login ändern, Datei löschen). Weitere
+Konten werden unter **Benutzer** verwaltet; für lokale Einzelnutzer-Entwicklung lässt sich die
+Anmeldung mit `synthesis.auth.enabled=false` abschalten. Dann: Kartenausschnitt wählen → Parameter setzen → optional Depots
 auf der Karte platzieren → „Speichern" neben der Szenarioauswahl oben → „Nachfragemodell generieren". Die Pipeline erzeugt
 zonen-, bevölkerungs-, matrix- und logistikbezogene mobiTopp/logiTopp-Artefakte
 (zones.csv, attractivities.csv, person/household/activity/car/fixedDestination.csv,
