@@ -140,6 +140,43 @@ Hinter einem TLS-Reverse-Proxy (nginx, Traefik, Caddy) werden `X-Forwarded-*`-He
 Adresse tragen. Das Session-Cookie ist `HttpOnly` und `SameSite=Lax`; `Secure` setzt der Proxy
 beziehungsweise `server.servlet.session.cookie.secure=true` bei direktem HTTPS.
 
+### Sicherung und Aufräumen des Datenvolumes (2026-11-05)
+
+Alles, was die Plattform an Zustand hat, liegt im Volume `synthesis-data` unter `/app/data`
+(Compose-Name `synthesis_synthesis-data`): `users.json` (Konten, bcrypt-Hashes),
+`initial-admin-password.txt` (nur bis zum ersten Passwortwechsel), `scenarios/<id>/scenario.json`
+(Szenario), `scenarios/<id>/uploads/` (hochgeladene Eingaben), `scenarios/<id>/artifacts/`
+(Ergebnisse inkl. `job.json`) und `census-cache/` (wieder ladbar). Datenbank gibt es keine.
+
+```sh
+# Sicherung als Datenstrom aus dem laufenden Container, kein Zusatz-Image nötig
+docker compose exec -T synthesis tar czf - -C /app/data . > synthesis-data-$(date +%F).tgz
+
+# Wiederherstellung: Dienst anhalten, Archiv einspielen, Dienst starten
+docker compose stop synthesis
+docker compose run --rm --no-deps -T --entrypoint tar synthesis xzf - -C /app/data < synthesis-data-JJJJ-MM-TT.tgz
+docker compose start synthesis
+
+# Platzbedarf je Szenario
+docker compose exec synthesis sh -c 'du -sh /app/data/scenarios/*'
+```
+
+Konsistent ist eine Sicherung zwischen zwei Läufen; während einer Generierung schreibt der Worker
+in `artifacts/`. Für eine Sicherung ohne Ergebnisse (sie lassen sich neu erzeugen) genügt
+`--exclude='./scenarios/*/artifacts'` am `tar`-Aufruf.
+
+**Aufräumen:** Eine Aufräumfunktion in der Oberfläche gibt es noch nicht (Review-Befund M4).
+Ein Szenario samt Artefakten löscht die Schaltfläche „✕“ (Tooltip „Ausgewähltes Szenario löschen“) neben der Szenarioauswahl im Studio (Ersteller oder Admin). Nur die
+Ergebnisse eines Szenarios entfernt
+`docker compose exec synthesis rm -rf /app/data/scenarios/<id>/artifacts`; Szenario und Uploads
+bleiben, „Szenario erzeugen“ legt die Artefakte neu an. Nicht während eines laufenden Jobs.
+
+**Gemessen (2026-11-05, lokale Abnahme):** Ein Lauf auf 0,02° × 0,03° in Rastatt mit
+Standardwerten (Zensus 2022, 26 434 Personen, 537 Zonen, reales Straßennetz) belegt 104 MB
+Artefakte (`legacy/` 70 MB, `population/` 25 MB, `matrix/` 6 MB) — deutlich mehr als die 28 MB
+des Fallback-Laufs mit 300 Personen aus dem Review. Die Sicherung des Volumes dauerte 5 s und
+ergab 63 MB.
+
 ## Qualitätswerkzeuge (2026-11-04)
 
 | Werkzeug | Aufruf | Bindung |

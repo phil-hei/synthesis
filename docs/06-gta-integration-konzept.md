@@ -3986,3 +3986,15 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
   `job.json` ohne `queuePosition`), Studio-Spec (Hinweis bei `QUEUED`, weg bei `RUNNING`); im Container
   zweites Szenario gestartet → `202`, `QUEUED`, Platz 1, „Gerade läuft: Abnahme Container 2026-11-05“
   im Studio sichtbar. Backend 499 Tests, 0 Fehler; Frontend 136 Tests, Lint, AOT-Build grün.
+
+### Sicherung und Aufräumen des Datenvolumes dokumentiert — ✅ (2026-11-05)
+- **Anlass (Review-Befund M4):** Keine Sicherungsanleitung, keine Aufräumfunktion; ein Lauf belegt
+  je nach Größe 28 MB (300 Personen, Fallback) bis 104 MB (26 434 Personen, reales Netz).
+- **Umfang:** docs/08 („Sicherung und Aufräumen des Datenvolumes“) beschreibt Inhalt von `/app/data`,
+  Sicherung als `tar`-Strom aus dem laufenden Container, Wiederherstellung über
+  `docker compose run --entrypoint tar`, Platzbedarf je Szenario und das Entfernen von
+  `artifacts/` eines Szenarios. Eine Aufräumfunktion in der Oberfläche und Actuator-Metriken
+  bleiben offen.
+- **Verifiziert:** im Container mit zwei Szenarien gesichert (5 s, 63 MB), Dienst gestoppt,
+  eingespielt, gestartet; danach Health `UP`, beide Jobstatus `DONE` aus `job.json`, Sitzung wie
+  erwartet beendet (N7).
