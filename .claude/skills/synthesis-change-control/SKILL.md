@@ -66,6 +66,7 @@ baut oder fachlich modelliert.
 cd backend && mvn -o test
 # Erwartung (Stand: 2026-11-04): 494 Testfälle, 0 Fehler; ohne externe Laufzeit
 # (SUMO, KIT-Adapter, Ollama, venv) werden 44 sauber übersprungen – das ist normal.
+# Mit voller Laufzeit (scripts/verify.sh full, 2026-11-05): 499 Tests, nur 2 Opt-in-Skips (MobileCity).
 # Nebenbei entsteht target/site/jacoco/index.html (JaCoCo).
 
 # Gate 2 – Frontend-Tests + strict-AOT-Build (fängt NG5002/TS2531, die ng serve NICHT fängt)

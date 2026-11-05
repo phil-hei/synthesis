@@ -4049,3 +4049,23 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
   weiter (Neustart-Sicherung, Diagnose), Backend unverändert.
 - **Verifiziert:** Studio-Spec „hides the internal job.json from the artifact list“; Frontend
   137 Tests, Lint und AOT-Build grün (Node 26.13.0).
+
+### Lokale Laufzeitabnahme der Plattform (Review H3) — ✅ ABGENOMMEN mit Befunden (2026-11-05)
+- **Anlass:** In der Cloud-Sandbox übersprangen 44 Tests (SUMO, KIT-Adapter, Transit-venv, Ollama),
+  der Docker-Build lief nie. Nachgeholt auf einem Rechner mit allen Werkzeugen; Einzelheiten in
+  docs/08 („Lokale Abnahme (2026-11-05)“).
+- **Ergebnis:** `scripts/verify.sh full` erfolgreich, Backend-Skips **44 → 2** (beide bewusstes
+  MobileCity-Opt-in); Endstand 499 Tests, 0 Fehler; Frontend 137 Tests. `docker compose up -d --build`
+  liefert ein lauffähiges Image (574 MB, Start ~1 s); Login, Szenario anlegen, Generierung
+  (3:31 min, 26 434 Personen, 537 Zonen, reales Straßennetz), Artefakte laden, Abmelden und
+  Warteschlange funktionieren; 0 `ERROR` im Container-Log. Mit `WITH_SUMO=true` läuft die
+  SUMO-Stufe im Container (`DONE`, 8,5 s, 6 Güterfahrten).
+- **Rot und behoben (je eigener Commit):** kaputte Transit-venv nach Python-Update nicht erkannt;
+  Jackson 2.21 aus Boot 3.5.16 bricht GraphHopper 8.0 (Pin auf 2.19.4).
+- **Befunde, offen:** (1) SUMO-Personenverkehr braucht logiTopp-Ergebnisse, also den KIT-Adapter,
+  der nicht im Image ist; im Container fährt SUMO nur Güter-/Paket-/Firmenverkehr. (2) SUMO aus
+  dem PPA ist nicht gepinnt (1.28.0 statt 1.26.0/1.27.1). (3) Übersprungene Stufen SUMO, logiTopp,
+  Netz-Feedback und LLM tragen ihren Grund nur im Log, nicht als Stufenmeldung. (4) Swagger
+  „Try it out“ scheitert schreibend an CSRF (docs/08). (5) Erster Docker-Build auf langsamer
+  Leitung brach nach 73 min ab; `dependency:go-offline` lädt nicht alle Test-Artefakte.
+- **Verifiziert:** Zahlen und Laufzeiten wie oben, gemessen am 2026-11-05.

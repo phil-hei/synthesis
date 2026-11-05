@@ -134,6 +134,37 @@ kennt seit 2026-11-04 neben Homebrew auch die üblichen Linux-Pfade (`/usr/lib/j
 nicht ausgeführt (kein Docker-Daemon verfügbar); Dockerfile und Compose folgen den oben genannten
 offiziellen Images, der SPA-Auslieferungspfad ist durch `SpaFallbackTest` abgedeckt. Der erste
 `docker compose up --build` auf einem Zielsystem ist daher die Abnahme dieses Abschnitts.
+→ Nachgeholt am 2026-11-05, Ergebnisse im folgenden Abschnitt.
+
+### Lokale Abnahme (2026-11-05)
+
+Rechner: macOS arm64, Docker 29.5.2 in Colima (6 CPU, 12 GiB), SUMO 1.27.1, JDK 25 für KIT,
+Ollama mit `qwen2.5:7b-instruct`, Node 26.13.0. Keine .NET-Laufzeit installiert (vom Preflight
+nicht verlangt).
+
+| Prüfung | Ergebnis |
+|---|---|
+| `scripts/preflight.sh full` | zunächst 1 Fehler: Transit-venv startete nach Homebrew-Update von Python 3.14.6 auf 3.14.10 nicht mehr (`dyld`); repariert, Bootstrap/Preflight erkennen den Fall jetzt (docs/06 K). Danach 0 Fehler |
+| `scripts/verify.sh full` (Ausgangsstand) | erfolgreich, 9:54 min: Backend 496 Tests, 0 Fehler, **2 statt 44 übersprungen**; Frontend 135 Tests, Lint 0, Audit 0, AOT-Build grün |
+| `scripts/verify.sh full` (Endstand, Boot 3.5.16, Node 26) | erfolgreich: Backend 499 Tests, 0 Fehler, 2 übersprungen (5:08 min); Frontend 136 Tests, Lint 0, Audit 0 |
+| Verbleibende Skips | `MobileCityRastattSourcesTest`, `MobileCityCrossMunicipalitySourcesTest`: bewusstes Opt-in über `-Dsynthesis.mobilecity.rastatt.output` (`scripts/check-mobilecity-rastatt-sources.py`), keine fehlende Laufzeit |
+| Längste Testklassen | `PtIntegrationTest` 186 s (echtes `gtfs2pt.py`), `GtaBehaviorTest` 99 s (Ollama), `SumoRunnerTest` 79 s, `GenerationPipelineE2ETest` 49 s |
+| `docker compose up -d --build` | erster Build nach 73 min abgebrochen: Netzabbruch beim Maven-Download (`byte-buddy`, „Premature end of Content-Length“; allein das Maven-Basis-Image brauchte 45 min). Zweiter Build mit gefülltem Cache-Mount erfolgreich. Image 574 MB, Start 1,0–1,3 s, Health `UP` |
+| Oberfläche | Login als `admin` mit Datei-Startpasswort, Szenario Rastatt (0,02° × 0,03°), „Szenario erzeugen“, Lauf 3:31 min `DONE`: Matrizen 120 s über reales Straßennetz (GraphHopper), OSM-POIs mit Fallback (Overpass-Siedlungen nicht erreichbar), Aktivitätenpläne Fallback actiTopp → Template, logiTopp/SUMO/LLM `SKIPPED`. 26 434 Personen, 537 Zonen (529 + 8), 97 Artefakte / 108 MB. Artefakte geladen (`zones.csv` 539 Zeilen, `manifest.json` mit `overpass-live-partial`/`overpass-live`), Abmelden → API 401 |
+| Warteschlange | zweites Szenario während Lauf 1 gestartet: `QUEUED`, Platz 1, Name des laufenden Szenarios im Studio; Start 2 ms nach Ende von Lauf 1 |
+| `docker compose logs` | 0 `ERROR`; einzige Warnung der Startpasswort-Hinweis (ohne Passwort) |
+| `--build-arg WITH_SUMO=true` | Image 1,56 GB, SUMO **1.28.0** aus dem PPA (nicht gepinnt; lokal 1.27.1, Reproduktions-Pin 1.26.0). SUMO-Stufe `DONE` in 8,5 s mit 6 schweren Güterfahrten (Ø 8,4 min / 3,8 km / 28 km/h), Straßennetz aus `validation/rastatt-test.osm` per `SYNTHESIS_OVERPASS_ROAD_NETWORK_FILE` (schreibgeschützt eingehängt). Mit gedrosseltem Overpass (HTTP 429) endet die Stufe korrekt `FAILED`, nicht `SKIPPED` |
+
+**Grenzen im Container (Befund):** Personenverkehr in SUMO braucht die Ergebnisse der
+logiTopp-Simulation, die den KIT-Adapter (Java 25) voraussetzt. Ohne ihn meldet die SUMO-Stufe
+„keine vorbereitete Nachfrage“ und läuft nur mit Güter-, Paket- oder Firmenverkehr. Übersprungene
+Stufen (SUMO, logiTopp, Netz-Feedback, LLM) zeigen ihren Grund nur im Job-Log, nicht als
+Meldung an der Stufe. Die Matrizen-Stufe braucht auch mit lokaler OSM-Datei rund 120 s
+(GraphHopper-Import), Overpass ist für diese Dauer nicht verantwortlich.
+
+**Maven offline:** `mvn dependency:go-offline` lädt nicht alles, was `mvn -o test` braucht
+(nach dem Wechsel auf Boot 3.5.16 fehlten `jackson-dataformat-xml`, `byte-buddy` und der
+Surefire-JUnit-Provider). Nach einem Versionswechsel einmal online `mvn test` laufen lassen.
 
 Hinter einem TLS-Reverse-Proxy (nginx, Traefik, Caddy) werden `X-Forwarded-*`-Header ausgewertet
 (`server.forward-headers-strategy: framework`), damit Session-Cookie und Redirects die externe
