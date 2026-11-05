@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 /**
  * Dateibasierter Kontenspeicher ({@code <data-dir>/users.json}), passend zum übrigen
  * Artefakt-Layout: inspizierbar, ohne Datenbankserver, atomar geschrieben. Beim ersten Start
- * ohne Konten entsteht ein Administrator mit zufälligem Startpasswort, das einmalig im Log und
- * in {@code initial-admin-password.txt} steht.
+ * ohne Konten entsteht ein Administrator mit zufälligem Startpasswort in
+ * {@code initial-admin-password.txt}; das Log nennt nur die Datei (außer sie ist nicht schreibbar).
  */
 @Service
 public class UserStore {
@@ -182,10 +182,14 @@ public class UserStore {
                 // Windows-Dateisystem: keine POSIX-Rechte
             }
         } catch (IOException e) {
-            LOG.warn("Startpasswort konnte nicht nach {} geschrieben werden: {}", passwordFile, e.getMessage());
+            // Nur wenn die Datei fehlt, bleibt das Log der einzige Weg zum Startpasswort.
+            LOG.warn("Kein Benutzerkonto vorhanden – Administrator '{}' angelegt. Startpasswort: {} "
+                    + "(Datei {} nicht schreibbar: {})", username, password, passwordFile, e.getMessage());
+            return;
         }
-        LOG.warn("Kein Benutzerkonto vorhanden – Administrator '{}' angelegt. Startpasswort: {} (auch in {})",
-                username, password, passwordFile);
+        // Container-Logs werden gesammelt und aufbewahrt; das Passwort steht deshalb nur in der Datei.
+        LOG.warn("Kein Benutzerkonto vorhanden – Administrator '{}' angelegt. Startpasswort in {} "
+                + "(nach dem ersten Login ändern und die Datei löschen)", username, passwordFile);
     }
 
     private static String randomPassword() {

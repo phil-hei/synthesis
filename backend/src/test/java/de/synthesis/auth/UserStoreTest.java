@@ -2,7 +2,10 @@ package de.synthesis.auth;
 
 import de.synthesis.SynthesisProperties;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 
 import java.nio.file.Files;
@@ -22,6 +25,15 @@ class UserStoreTest {
         SynthesisProperties properties = new SynthesisProperties();
         properties.setDataDir(dir.toString());
         return new UserStore(properties, PasswordEncoderFactories.createDelegatingPasswordEncoder());
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void startPasswordGoesToTheFileButNotIntoTheLog(CapturedOutput output) throws Exception {
+        store();
+        String password = Files.readString(dir.resolve(UserStore.INITIAL_PASSWORD_FILE)).trim();
+        assertTrue(output.getAll().contains(UserStore.INITIAL_PASSWORD_FILE), "Log muss auf die Datei verweisen");
+        assertFalse(output.getAll().contains(password), "Container-Logs bleiben stehen; kein Klartext-Passwort");
     }
 
     @Test

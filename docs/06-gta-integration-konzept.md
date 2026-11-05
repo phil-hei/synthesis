@@ -3952,3 +3952,13 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
   („Transit-venv startet nicht … scripts/bootstrap-runtime.sh transit“) statt eines Versionsfehlers.
 - **Verifiziert:** Erkennung gegen eine simulierte kaputte venv (Exit 134) und die intakte venv;
   `scripts/preflight.sh full` 0 Fehler, `scripts/bootstrap-runtime.sh transit` läuft ohne Neuanlage durch.
+
+### Startpasswort nur noch in der Datei, nicht im Log — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befund N1):** Das zufällige Startpasswort des Bootstrap-Administrators stand als
+  WARN im Log; Container-Logs werden gesammelt und bleiben stehen.
+- **Mechanik:** `UserStore` schreibt das Passwort nur nach `<data-dir>/initial-admin-password.txt`
+  (`rw-------`) und nennt im Log die Datei. Nur wenn die Datei nicht schreibbar ist, bleibt das Log
+  der einzige Weg und enthält das Passwort.
+- **Verifiziert:** `UserStoreTest.startPasswordGoesToTheFileButNotIntoTheLog` (Log nennt die Datei,
+  nicht das Passwort); im Container zeigt `docker compose logs` nur den Dateiverweis; Backend-Suite
+  499 Tests, 0 Fehler.
