@@ -1,0 +1,12 @@
+# Produktionsprofil für den Server-Betrieb hinter einem TLS-Reverse-Proxy (docs/08).
+# Aktivieren mit SPRING_PROFILES_ACTIVE=prod. Nicht für Zugriff über unverschlüsseltes HTTP von
+# einem anderen Rechner: Secure-Cookies schickt der Browser dann nicht zurück, die Anmeldung scheitert.
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true                           # Session-Cookie nur über HTTPS
+
+synthesis:
+  auth:
+    allowed-origins: ""                        # same-origin: kein CORS, auch nicht für den Dev-Server

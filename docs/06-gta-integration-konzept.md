@@ -3962,3 +3962,13 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
 - **Verifiziert:** `UserStoreTest.startPasswordGoesToTheFileButNotIntoTheLog` (Log nennt die Datei,
   nicht das Passwort); im Container zeigt `docker compose logs` nur den Dateiverweis; Backend-Suite
   499 Tests, 0 Fehler.
+
+### Produktionsprofil `prod` — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befund N2):** `application.yml` erlaubt `http://localhost:4300` mit Credentials;
+  nur `docker-compose.yml` überschrieb das per Umgebungsvariable.
+- **Mechanik:** `application-prod.yml` setzt `synthesis.auth.allowed-origins` leer (kein CORS) und
+  `server.servlet.session.cookie.secure=true`. Aktivierung mit `SPRING_PROFILES_ACTIVE=prod` hinter
+  einem TLS-Proxy (docs/08); bewusst nicht Default in Compose, weil Secure-Cookies über reines HTTP von
+  einem anderen Rechner die Anmeldung verhindern.
+- **Verifiziert:** `ProdProfileTest` bindet beide YAML-Dateien in Spring-Reihenfolge (Origins leer,
+  Cookie `secure`, `same-site` bleibt `lax`); Backend-Suite 499 Tests, 0 Fehler.
