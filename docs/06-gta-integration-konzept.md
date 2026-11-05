@@ -4069,3 +4069,23 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
   „Try it out“ scheitert schreibend an CSRF (docs/08). (5) Erster Docker-Build auf langsamer
   Leitung brach nach 73 min ab; `dependency:go-offline` lädt nicht alle Test-Artefakte.
 - **Verifiziert:** Zahlen und Laufzeiten wie oben, gemessen am 2026-11-05.
+
+### Datenquellen Schwerverkehr geprüft: Lkw-Portal, VP2040, Beschäftigte je Gemeinde — ✅ (2026-11-05)
+- **Anlass:** docs/23 markierte Lizenz, Format und Spalten als „zu prüfen“; die Cloud-Sitzung konnte
+  nichts herunterladen. Geprüft für die Testregion Rastatt; Einzelheiten stehen in docs/23 unter
+  „Geprüft (2026-11-05)“.
+- **Lkw-Verkehrsportal:** `dl-de/by-2-0`; bundesweite Monats-CSV (2026-09: 561 814 Relationen)
+  und anmeldefreie ArcGIS-REST-API mit Gemeindepolygonen; Werte auf Zehner gerundet; erfasst sind
+  Fahrzeuge über 3,5 t, nicht erst ab 7,5 t. Rastatt 2026-09: 65 450 ausgehende Fahrten, CSV = API.
+- **VP2040-Gütermatrix 2019:** nur per Abonnement, einmaliger Download, Lizenz auf drei Jahre mit
+  Löschpflicht, Speicherung nur in EU/EFTA, keine Weitergabe; die Verkehrszellen-Matrix steht nur
+  Behörden, ihren Auftragnehmern und der Forschung offen. Nicht geladen; für ein teilbares Datenpaket
+  ungeeignet.
+- **Beschäftigte je Gemeinde nach Wirtschaftsbereich:** nicht in 13111 des Bundes (dort nur Kreise),
+  nicht in den BA-Gemeindedaten (nur Summe); verfügbar beim Landesamt BW (Bericht A VI 5-j/25 (2),
+  3 Bereiche, 16 % der Gemeinden mit Sperrungen, 2,6 % der Beschäftigten).
+- **Bewusst nicht:** keine Importer und keine Daten im Repository; erst Entscheidung über den
+  Umgang mit der VP2040-Lizenz und über Landesadapter.
+- **Verifiziert:** Downloads und Abfragen vom 2026-11-05 (SHA-256 des Maut-Exports 2026-09
+  `2bd3441e…a66636`, BA `gemband` 202506 `a89513bd…a5953ff`, Landesamt BW `315325001.xlsx`
+  `0b1d1609…b20240`).
