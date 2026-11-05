@@ -35,10 +35,12 @@ has mvn && ok "Maven $(mvn -version 2>/dev/null | sed -n '1s/Apache Maven //p')"
 if has node; then
   node_version=$(node --version)
   node_major=$(version_major "$node_version")
-  if [[ $node_major -eq 20 || $node_major -eq 22 || $node_major -eq 24 ]]; then
+  if [[ $node_major -eq $SYNTHESIS_NODE_MAJOR ]]; then
     ok "Node $node_version"
+  elif [[ $node_major -eq 20 || $node_major -eq 22 || $node_major -eq 24 ]]; then
+    warn "Node $node_version erlaubt (package.json engines), Vertrag ist $SYNTHESIS_NODE_VERSION (frontend/.nvmrc)"
   else
-    fail "unterstütztes Node (20/22/24; gefunden $node_version, frontend/.nvmrc verwenden)"
+    fail "unterstütztes Node ($SYNTHESIS_NODE_MAJOR, sonst 20/22/24; gefunden $node_version, frontend/.nvmrc verwenden)"
   fi
 else
   fail "Node"

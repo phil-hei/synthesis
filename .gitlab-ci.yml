@@ -23,7 +23,7 @@ backend-tests:
 
 frontend-tests-and-build:
   stage: test
-  image: node:20
+  image: node:26.13.0
   cache:
     key:
       files:

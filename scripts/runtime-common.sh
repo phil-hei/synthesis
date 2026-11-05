@@ -4,12 +4,13 @@ set -euo pipefail
 SYNTHESIS_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 export SYNTHESIS_ROOT
 
-# Homebrew installiert versionierte Formeln absichtlich ohne globalen PATH-Link.
-if [[ -x /opt/homebrew/opt/node@20/bin/node ]]; then
-  export PATH="/opt/homebrew/opt/node@20/bin:$PATH"
-fi
-
 source "$SYNTHESIS_ROOT/runtime/versions.env"
+
+# Homebrew installiert versionierte Formeln absichtlich ohne globalen PATH-Link; die Vertragsversion
+# aus versions.env hat Vorrang vor einem anderen Standard-node.
+if [[ -x /opt/homebrew/opt/node@$SYNTHESIS_NODE_MAJOR/bin/node ]]; then
+  export PATH="/opt/homebrew/opt/node@$SYNTHESIS_NODE_MAJOR/bin:$PATH"
+fi
 
 version_major() {
   local value=${1#v}

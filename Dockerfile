@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.7
 # SyntheSis-Plattform: Angular-Build + Spring-Boot-Backend als ein Container.
 #
-# Stufen: frontend (npm ci + ng build) → backend (Maven, Frontend ins Jar gebündelt) → runtime (JRE 21).
+# Stufen: frontend (Node 26: npm ci + ng build) → backend (Maven, Frontend ins Jar gebündelt) → runtime (JRE 21).
 # Nicht enthalten: KIT-Adapter (actiTopp/logiTopp, Java 25), Ollama, .NET-ConfigTool. Ohne sie laufen
 # die betroffenen Stufen als SKIPPED bzw. mit dokumentiertem Fallback (docs/08). SUMO lässt sich mit
 # --build-arg WITH_SUMO=true aus dem Ubuntu-PPA installieren.
 
-ARG NODE_VERSION=20.20.2
+ARG NODE_VERSION=26.13.0
 ARG MAVEN_IMAGE=maven:3.9.11-eclipse-temurin-21
 ARG JRE_IMAGE=eclipse-temurin:21-jre-noble
 

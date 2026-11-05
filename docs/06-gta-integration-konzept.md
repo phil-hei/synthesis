@@ -4017,3 +4017,27 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
   `springdoc.swagger-ui.csrf.enabled` bewusst noch nicht gesetzt.
 - **Verifiziert:** im Container ohne Sitzung `/swagger-ui.html`, `/v3/api-docs` → 401; mit Sitzung
   87 Operationen; `POST /api/region/estimate` ohne `X-XSRF-TOKEN` 403, mit Header 200.
+
+### Laufzeitversionen: Spring Boot 3.5.16, Node 26 — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befunde H4/H5):** Spring Boot 3.5.5 lag elf Patch-Stände zurück; Node 20 ist
+  seit April 2026 ohne Pflege. Statt der im Review vorgeschlagenen Node 22 (Wartung nur bis
+  April 2027) auf Wunsch Node 26 (aktive LTS seit Oktober 2026, gepflegt bis April 2029).
+- **Umfang:** `backend/pom.xml` Parent 3.5.16; `Dockerfile` `NODE_VERSION=26.13.0`;
+  `.gitlab-ci.yml` `node:26.13.0`; `runtime/versions.env` `SYNTHESIS_NODE_MAJOR=26`/`26.13.0`;
+  `frontend/.nvmrc`; `engines` in `package.json` und Lockfile um `^26.0.0` erweitert.
+  `scripts/runtime-common.sh` stellt jetzt `node@$SYNTHESIS_NODE_MAJOR` vor den PATH (vorher fest
+  `node@20`, sodass alle Skripte trotz installiertem Node 26 mit 20 liefen); Preflight meldet die
+  Vertragsversion als OK, 20/22/24 als Hinweis.
+- **Befund beim Patch-Update (rot → behoben):** Boot 3.5.16 verwaltet Jackson 2.21.4. GraphHopper
+  8.0 greift auf `PropertyNamingStrategy.SNAKE_CASE` zu, das ab Jackson 2.20 fehlt
+  (`NoSuchFieldError`, danach `NoClassDefFoundError: EncodedValueSerializer`): 9 Testfehler in
+  `RoadLocationsTest`, `OverpassClientTest`, `RoadLocationsIntegrationTest`, `SharedRoadRoutesTest`,
+  `GenerationPipelineE2ETest`, `RoadLocationsPipelineTest`. `jackson-bom.version` bleibt deshalb auf
+  2.19.4 (Linie von Boot 3.5.5), bis GraphHopper angehoben wird. Ein Image ohne diesen Pin hätte
+  im Betrieb jedes reale Routing verloren, denn `mvn package -DskipTests` im Dockerfile baut es
+  trotzdem.
+- **Historie beachtet:** Node 26 stürzte 2026-07-27 mit Angular 18/esbuild ab; mit Angular 21.2
+  laufen `npm ci`, Tests, Lint und AOT-Build unter Node 26.13.0 ohne Befund.
+- **Verifiziert:** `scripts/verify.sh full` mit Node 26.13.0: Backend 499 Tests, 0 Fehler,
+  2 übersprungen (5:08 min); Frontend 136 Tests, Lint 0, `npm audit --omit=dev` 0, AOT-Build grün.
+  Docker-Image mit `node:26.13.0-bookworm-slim` gebaut.
