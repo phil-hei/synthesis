@@ -4007,3 +4007,13 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
   Grenze benannt: kein Unterpfad, weil `base href="/"`.
 - **Verifiziert:** Doku-only; Werte gegen `application.yml`, `application-prod.yml` und
   `frontend/src/index.html` abgeglichen. Gegen einen laufenden Proxy nicht geprüft.
+
+### Swagger-Hinweis für den Betrieb mit Anmeldung — ✅ (2026-11-05)
+- **Anlass (Review-Befund N5):** Swagger UI liegt hinter der Anmeldung und antwortet ohne Sitzung
+  mit 401 statt einer Umleitung.
+- **Umfang:** docs/08 („API-Dokumentation (Swagger) hinter der Anmeldung“): erst in der App anmelden,
+  dann `/swagger-ui.html`. **Befund der Abnahme:** „Try it out“ geht nur lesend, weil Swagger UI den
+  CSRF-Header nicht sendet; schreibende Aufrufe enden mit 403. Abhilfe dokumentiert,
+  `springdoc.swagger-ui.csrf.enabled` bewusst noch nicht gesetzt.
+- **Verifiziert:** im Container ohne Sitzung `/swagger-ui.html`, `/v3/api-docs` → 401; mit Sitzung
+  87 Operationen; `POST /api/region/estimate` ohne `X-XSRF-TOKEN` 403, mit Header 200.

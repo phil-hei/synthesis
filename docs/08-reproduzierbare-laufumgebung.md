@@ -141,6 +141,17 @@ Adresse tragen. Das Session-Cookie ist `HttpOnly` und `SameSite=Lax`; `Secure` s
 `prod` (`application-prod.yml`, seit 2026-11-05: `server.servlet.session.cookie.secure=true`,
 `synthesis.auth.allowed-origins` leer).
 
+### API-Dokumentation (Swagger) hinter der Anmeldung (2026-11-05)
+
+`/swagger-ui.html` und `/v3/api-docs` verlangen eine Sitzung; ohne Anmeldung antworten sie mit
+`401`, nicht mit einer Umleitung zur Anmeldeseite. Vorgehen: erst in der App anmelden, dann im
+selben Browser `http://<host>:8090/swagger-ui.html` öffnen (geprüft: 87 Operationen sichtbar).
+„Try it out“ funktioniert nur für lesende Aufrufe: Swagger UI schickt den CSRF-Header
+`X-XSRF-TOKEN` nicht mit, schreibende Aufrufe enden mit `403` (geprüft an
+`POST /api/region/estimate`: ohne Header 403, mit Header 200). Für Skripte den Wert des Cookies
+`XSRF-TOKEN` als Header `X-XSRF-TOKEN` mitsenden. springdoc kann das mit
+`springdoc.swagger-ui.csrf.enabled: true` selbst übernehmen; das ist noch nicht eingestellt.
+
 ### Reverse-Proxy-Vorlage (2026-11-05)
 
 Der Container lauscht dann nur lokal; der Proxy terminiert TLS. In `docker-compose.yml`:
