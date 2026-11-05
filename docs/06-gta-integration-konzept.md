@@ -3940,3 +3940,15 @@ Zensus-2022-Gebäuderaster, Hauskoordinaten, Photon, bundesweiter DELFI-GTFS, Ol
 SrV 2023, SimWrapper. Geprüft und verworfen: ActivitySim, kommerzielle Verkehrsdaten,
 Microsoft/Google-Gebäudeumrisse, Spring Modulith.
 
+
+### Transit-venv nach Python-Update erkannt und neu angelegt — ✅ BEHOBEN (2026-11-05)
+- **Anlass (lokale Abnahme H3):** `scripts/preflight.sh full` meldete „FEHLT Transit-venv-Versionen“,
+  weil `validation/transit-venv/bin/python` nach einem Homebrew-Update von Python 3.14.6 auf 3.14.10
+  mit `dyld: Library not loaded` abbrach. Die venv war mit `--copies` angelegt und bindet damit die
+  Bibliothek ihres Patchstands. `scripts/bootstrap-runtime.sh` prüfte nur `-x bin/python` und hätte
+  die kaputte venv nie ersetzt; `venv --upgrade` ersetzt nur `python3.14`, nicht `python`/`python3`.
+- **Mechanik:** Bootstrap startet `bin/python -c pass`; scheitert das, legt `venv --clear` die venv
+  neu an und `pip` installiert die gepinnten Pakete. Preflight nennt den Fall mit Abhilfe
+  („Transit-venv startet nicht … scripts/bootstrap-runtime.sh transit“) statt eines Versionsfehlers.
+- **Verifiziert:** Erkennung gegen eine simulierte kaputte venv (Exit 134) und die intakte venv;
+  `scripts/preflight.sh full` 0 Fehler, `scripts/bootstrap-runtime.sh transit` läuft ohne Neuanlage durch.

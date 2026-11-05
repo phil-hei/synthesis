@@ -112,7 +112,9 @@ if [[ $PROFILE == full ]]; then
   done
 
   transit_python="$SYNTHESIS_ROOT/validation/transit-venv/bin/python"
-  if [[ -x $transit_python ]]; then
+  if [[ -x $transit_python ]] && ! "$transit_python" -c pass >/dev/null 2>&1; then
+    fail "Transit-venv startet nicht (Python aktualisiert?; scripts/bootstrap-runtime.sh transit legt sie neu an)"
+  elif [[ -x $transit_python ]]; then
     if "$transit_python" -c "import pandas, rtree, pyproj; assert pandas.__version__ == '$SYNTHESIS_TRANSIT_PANDAS'; assert rtree.__version__ == '$SYNTHESIS_TRANSIT_RTREE'; assert pyproj.__version__ == '$SYNTHESIS_TRANSIT_PYPROJ'"; then
       ok "Transit-venv (pandas/rtree/pyproj gepinnt)"
     else
