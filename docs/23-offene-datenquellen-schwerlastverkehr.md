@@ -103,10 +103,34 @@ beschreibt dieselben Zellen und ist als zweiter Zugang noch zu prüfen.
   01.07.2025): nur für Behörden, öffentlich bestimmte Unternehmen, deren Auftragnehmer und
   Forschungseinrichtungen, nur für Verkehrswegeplanung, Verkehrspolitik und Verkehrsforschung.
   Eigennutzung durch Dritte und Studierende ist ausdrücklich ausgeschlossen.
-- **Zellgeometrien:** Das Angebot „VP2040 – Verkehrszellen“ (`852507218947878912`) ist frei
-  zugänglich unter CC BY (`VP2040_Verkehrszellen.zip`, 57,5 MB, Medientyp „sonstiges“). Der Inhalt
-  (Shapefile/GeoPackage?) ist noch nicht geladen. Der bisher verlinkte Eintrag `880062743587840000`
-  ist **nicht** das Zellenangebot, sondern die Matrix auf Verkehrszellenebene; Link unten korrigiert.
+- **Zellgeometrien (geprüft 2026-11-05):** Das Angebot „VP2040 – Verkehrszellen“
+  (`852507218947878912`) ist frei und ohne Anmeldung ladbar unter CC BY:
+  `https://mobilithek.info/mdp-api/files/aux/852507218947878912/VP2040_Verkehrszellen.zip`
+  (57,5 MB, Stand 22.04.2025, SHA-256 `4019ef5d…d6f03a`). Der bisher verlinkte Eintrag
+  `880062743587840000` ist **nicht** das Zellenangebot, sondern die Matrix auf Verkehrszellenebene;
+  Link unten korrigiert. Inhalt, jeweils für NUTS3 und Verkehrszellen: Shapefile (Polygone, WGS84
+  `GCS_WGS_1984`, UTF-8), Tabellen-Excel, Kartenpdfs und Beschreibung.
+  - **NUTS3-Einteilung:** 674 Zellen, Felder `NR`, `NAME`, `ZELLTYP`. `NR` ist kein NUTS-Code,
+    sondern Kreisschlüssel × 100 (Landkreis Rastatt `821600`); 401 deutsche Zellen.
+  - **Verkehrszellen:** 1 881 Zellen, Felder `OBJECTID`, `NR` (eindeutig), `NAME`, `KUERZEL`,
+    `ZELLTYP` (1 = Deutschland 1 608, 2 = europäisches Ausland 170, 3 = Flughäfen 42,
+    4 = Seehäfen 50, 5 = Inseln 11). Landkreis Rastatt: 5 Zellen (`821601` Rastatt, `821602`
+    Durmersheim, `821603` Gaggenau, `821604` Gernsbach, `821605` Bühl).
+  - **Brücke zum Lkw-Portal:** Blatt `Zuo_LAU_VP2040_Deutschland` ordnet 11 087 Gemeinden
+    (`LAU_CODE_ERW` = `DE_` + 8-stelliger AGS, `LAU_CODE` ohne führende Null) mit `NUTS3_CODE_2016`,
+    `EW_2019` und `REPRAESENTANT` einer Verkehrszelle zu. Gebietsstand Ende 2018: 58 der
+    5 377 Maut-Gemeinden von 2026-09 fehlen (0,55 % der Fahrten, vor allem Gebietsreformen in
+    Thüringen und Niedersachsen); ein Importer braucht dafür eine Umschlüsselung nach den
+    Gebietsänderungen von Destatis. Großstädte sind in Stadtteilzellen geteilt (`STADTTEILE` = 1);
+    die Gemeinde zeigt dann auf eine Repräsentantenzelle (`REPRAESENTANT` = 1), die übrigen Teilzellen
+    sind nur über die Geometrie erreichbar (1 437 von 1 608 Zellen haben eine Gemeindezuordnung).
+    Die 23 Gemeinden des Landkreises Rastatt verteilen sich auf die 5 Zellen (7/5/4/4/3).
+  - Weitere Blätter: `VP2040_Deutschland` (Zelle → NUTS3/2/1, Einwohner 2019),
+    `Zuo_NUTS3_VP2040_Europa`, `VP2040_Zellen_Europa`, `…_Flughaefen`, `…_Seehaefen`, `…_Inseln`,
+    `VP2040_Zellen_Gesamt`.
+  - **Folgerung:** Die Geometrien dürfen anders als die Matrizen ins Repository oder in ein
+    Datenpaket (mit Namensnennung). Sie lösen die Raumzuordnung Gemeinde ↔ Verkehrszelle; die
+    Mengen fehlen ohne die abonnierte Matrix weiterhin.
 - Die Mobilithek hat eine anmeldefreie Metadaten-API
   (`https://mobilithek.info/mdp-api/mdp-msa-metadata/v2/offers/<id>`) mit Lizenz, Dateiname und Größe.
 

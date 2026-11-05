@@ -4089,3 +4089,12 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
 - **Verifiziert:** Downloads und Abfragen vom 2026-11-05 (SHA-256 des Maut-Exports 2026-09
   `2bd3441e…a66636`, BA `gemband` 202506 `a89513bd…a5953ff`, Landesamt BW `315325001.xlsx`
   `0b1d1609…b20240`).
+
+### VP2040-Verkehrszellen geprüft — ✅ (2026-11-05)
+- **Anlass:** Folgefrage aus der Datenquellenprüfung: Liegen die Zellgeometrien offen und maschinenlesbar vor?
+- **Ergebnis:** ja; frei unter CC BY, Shapefile WGS84 für NUTS3 (674 Zellen) und Verkehrszellen
+  (1 881, davon 1 608 in Deutschland), dazu eine Tabelle Gemeinde (AGS) → Verkehrszelle mit
+  Einwohnern 2019. Gebietsstand Ende 2018: 0,55 % der Maut-Fahrten 2026-09 liegen in Gemeinden ohne
+  Zuordnung. Einzelheiten in docs/23, Abschnitt 2.2.
+- **Verifiziert:** Download und Auswertung am 2026-11-05 (SHA-256 `4019ef5d…d6f03a`); nichts davon im
+  Repository.
