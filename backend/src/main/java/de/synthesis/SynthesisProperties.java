@@ -19,6 +19,54 @@ public class SynthesisProperties {
     private Transit transit = new Transit();
     private MobileCityValidation mobileCityValidation = new MobileCityValidation();
     private Llm llm = new Llm();
+    private Auth auth = new Auth();
+
+    /**
+     * Anmeldung der Plattform: Cookie-Session, Benutzerkonten unter {@code <data-dir>/users.json}.
+     * Beim ersten Start ohne Konten wird ein Administrator mit Startpasswort angelegt.
+     */
+    public static class Auth {
+        private boolean enabled = true;
+        /** Erlaubte Browser-Herkünfte für Cross-Origin-Aufrufe (Dev-Server); gleiche Herkunft braucht nichts. */
+        private java.util.List<String> allowedOrigins = new java.util.ArrayList<>(java.util.List.of("http://localhost:4300"));
+        private String bootstrapAdmin = "admin";
+        /** Mindestlänge neuer Passwörter. */
+        private int minPasswordLength = 8;
+        /** Fehlversuche je Benutzername und Herkunft, bevor der Login zeitweise gesperrt wird. */
+        private int maxLoginFailures = 10;
+        /** Dauer der Sperre nach zu vielen Fehlversuchen. */
+        private int lockoutMinutes = 15;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public java.util.List<String> getAllowedOrigins() { return allowedOrigins; }
+        public void setAllowedOrigins(java.util.List<String> allowedOrigins) { this.allowedOrigins = allowedOrigins; }
+        public String getBootstrapAdmin() { return bootstrapAdmin; }
+        public void setBootstrapAdmin(String bootstrapAdmin) { this.bootstrapAdmin = bootstrapAdmin; }
+        public int getMinPasswordLength() { return minPasswordLength; }
+        public void setMinPasswordLength(int minPasswordLength) { this.minPasswordLength = minPasswordLength; }
+        public int getMaxLoginFailures() { return maxLoginFailures; }
+        public void setMaxLoginFailures(int maxLoginFailures) { this.maxLoginFailures = maxLoginFailures; }
+        public int getLockoutMinutes() { return lockoutMinutes; }
+        public void setLockoutMinutes(int lockoutMinutes) { this.lockoutMinutes = lockoutMinutes; }
+    }
+
+    public Auth getAuth() { return auth; }
+    public void setAuth(Auth auth) { this.auth = auth; }
+
+    private Frontend frontend = new Frontend();
+
+    /** Auslieferung des Angular-Builds durch das Backend (Plattform-Betrieb ohne eigenen Webserver). */
+    public static class Frontend {
+        /** Verzeichnis mit index.html des Builds; leer = {@code classpath:/static/} (im Jar gebündelt). */
+        private String dir = "";
+
+        public String getDir() { return dir; }
+        public void setDir(String dir) { this.dir = dir; }
+    }
+
+    public Frontend getFrontend() { return frontend; }
+    public void setFrontend(Frontend frontend) { this.frontend = frontend; }
 
     /** Optional native validation of a complete MobileCity import package. */
     public static class MobileCityValidation {

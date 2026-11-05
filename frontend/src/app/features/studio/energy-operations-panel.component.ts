@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, of, Subscription } from 'rxjs';
@@ -95,7 +95,7 @@ export class EnergyOperationsPanelComponent implements OnChanges, OnDestroy {
   message = ''; working = false;
   private pending?: Subscription;
   private epoch = 0;
-  constructor(private api: ApiService) {}
+  private readonly api = inject(ApiService);
   get sumoSelected(): boolean { return this.scenario.targetModels.includes('sumo'); }
   ngOnChanges(changes: SimpleChanges): void {
     this.pending?.unsubscribe(); this.epoch++; this.working = false; this.ledger = null; this.networkReport = null; this.chains = null;

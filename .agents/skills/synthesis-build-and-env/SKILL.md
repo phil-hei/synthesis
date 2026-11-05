@@ -53,7 +53,7 @@ Schritte unten erklären und diagnostizieren denselben Vertrag.
 
 | Schicht | Komponenten | Ohne sie |
 |---|---|---|
-| Kern | JDK 21, Maven, Node 20.19+/22.12+/24, git | nichts läuft |
+| Kern | JDK 21, Maven, Node 26 (Vertrag; 20.19+/22.12+/24 erlaubt), git | nichts läuft |
 | App | `backend/` (Spring Boot 3.5.5, Port 8090), `frontend/` (Angular 21, Port 4300) | keine App |
 | SUMO | SUMO 1.26 (Reproduktions-Pin; 1.27.1 kompatibel getestet), `$SUMO_HOME` | SUMO-Stufe SKIPPED, SumoRunnerTest übersprungen |
 | LLM | Ollama + `qwen2.5:7b-instruct` | GTA fällt auf actiTopp zurück (dokumentierter Fallback) |
@@ -70,10 +70,12 @@ aufwendigste Teil dieses Runbooks (Schritt 5).
 
 Versionen (Ground Truth aus `backend/pom.xml` und `frontend/package.json`, Stand 2026-08-04):
 
-- Backend: Spring Boot **3.5.5** (Parent-POM), `java.version` **21**, springdoc 2.8.5,
+- Backend: Spring Boot **3.5.16** (Parent-POM; Jackson auf 2.19.4 gepinnt, weil GraphHopper 8.0 ab Jackson 2.20 bricht), `java.version` **21**, springdoc 2.8.5,
   commons-compress 1.27.1, GraphHopper 8.0 (eingebettet — kein separater Dienst nötig).
 - Frontend: Angular **^21.2.19**, TypeScript ~5.9, Leaflet 1.9.4. Unterstützt werden
-  Node **^20.19.0**, **^22.12.0** oder **^24.0.0**; `.nvmrc` fixiert die Referenz auf 20.20.2.
+  Node **^20.19.0**, **^22.12.0**, **^24.0.0** oder **^26.0.0**; `.nvmrc` und `runtime/versions.env`
+  fixieren die Referenz seit 2026-11-05 auf 26.13.0 (Homebrew `node@26`, `scripts/runtime-common.sh`
+  stellt die Vertragsversion vor den PATH).
   Angular CLI wird über `npx ng` / devDependency benutzt — keine globale Installation nötig.
 
 ```bash

@@ -5,6 +5,13 @@ dateibasierter Artefakt-Store, externe Toolchain als Prozesse), aber die Generie
 **explizite Pipeline aus Stufen mit definierten Artefakten** modellieren – jede Stufe einzeln
 ausführbar, cachebar und durch andere Implementierungen ersetzbar.
 
+> **Umsetzungsstand (2026-11-04):** Das Backend ist ein Spring-Boot-Monolith mit Paketen je
+> Fachlichkeit (`scenario`, `generation`, `data`, `auth`, …) **ohne** Spring-Modulith-Abhängigkeit
+> und ohne per Test erzwungene Modulgrenzen. Der Fortschritt eines Laufs wird vom Frontend
+> **per Polling** (`GET /api/scenarios/{id}/generation`) gelesen, nicht per SSE/WebSocket; der
+> Status liegt zusätzlich als `artifacts/job.json` auf Platte. Die Modul- und SSE-Angaben unten
+> beschreiben den ursprünglichen Zielentwurf.
+
 ## Konfigurierbare Datenquellen je fachlichem Aspekt — Konzept (2026-10-28)
 
 Die aktuelle Quellenwahl ist über Orchestrator, Generatoren, Uploads und Zieladapter
@@ -121,7 +128,7 @@ flowchart LR
         T4[MobileCity Pipelines<br/>Car/Bike/Transit + OLC + ConfigTool]
     end
 
-    FE -- REST + SSE --> BE
+    FE -- REST, Status per Polling --> BE
     M --- T1
     DEM --- T2
     SYN --- T3
@@ -150,7 +157,7 @@ Laufbericht unter `population/census-structure.json`; keine zusätzliche Pipelin
 | `matrices` | Zentroid-Bestimmung, Matrix-Berechnung via GraphHopper/R5, Visum-MTX-Export + Matrix-YAMLs |
 | `demand` | Generierung der mobiTopp-Projektstruktur (Configs, Wahlmodell-Parameter), Ausführung Long-Term → Short-Term → logiTopp als externe JVM-Prozesse, Normalisierung in `synthesis-travel-demand-v1`, Ergebnis-Ingestion |
 | `export` | Export-Adapter-SPI; erste Adapter: GeoJSON/CSV (Visualisierung), MobileCity (siehe unten) |
-| `jobs` | Asynchrone Pipeline-Ausführung: Stufengraph, Status, Logs, Abbruch; Fortschritt per SSE/WebSocket ans Frontend |
+| `jobs` | Asynchrone Pipeline-Ausführung: Stufengraph, Status, Logs, Abbruch; Fortschritt per SSE/WebSocket ans Frontend (umgesetzt: `GenerationService`/`GenerationJob`, ein Worker, Polling, Status auch in `artifacts/job.json`; Abbruch nicht umgesetzt) |
 | `storage` | Dateibasierter Artefakt-Store `data/scenarios/<id>/<stage>/…` mit Manifest (Hash der Eingaben → Cache/Re-Run-Entscheidung) |
 
 **Warum Modulith statt Microservices:** identische Begründung wie simudrive – ein Deployable,
@@ -472,6 +479,13 @@ Backend-Suite und Frontend-Tests/AOT-Build ergänzen diese Wirkungsnachweise.
 
 ## Frontend (Angular, wie simudrive)
 
+*Stand 2026-11-04:* Angular 21 (standalone, Signals), Leaflet, Design-Tokens in `styles.css`;
+Anmeldeseite, Benutzerverwaltung (ADMIN), Kopfzeile mit Nutzerchip. Das Studio stapelt unter
+1100 px Breite seine drei Spalten, zeigt Statusmeldungen als Banner mit Art (Erfolg/Hinweis/Fehler),
+fasst experimentelle Optionen in „Erweiterte und experimentelle Optionen“ zusammen, blendet eine
+Kartenlegende für aktive Ebenen ein und ergänzt Modal-Split-/Distanz-Tabellen um Balken. Der
+ursprüngliche Zielentwurf folgt:
+
 1. **Region wählen:** Leaflet + Zeichenwerkzeuge (BBox/Polygon) + Nominatim-Gemeindesuche;
    Anzeige der abgeleiteten Zonierung als Vorschau-Layer (sofortiges Feedback vor dem teuren Lauf).
 2. **Parametrieren:** Formulargruppen Bevölkerung / Verkehr / Logistik; Depots als Karten-Marker
@@ -596,9 +610,17 @@ Ausbauziele.
 
 ## Deployment
 
-Docker-Compose: `frontend` (nginx), `backend` (Spring Boot), `graphhopper`, optional `r5`,
-`worker-python` (Geo-Skripte, OSM2Attractiveness), `worker-mobitopp` (JDK + mobiTopp/logiTopp-Jars),
-später `worker-mobilecity` (Python-Pipelines + .NET Config Tool). Artefakte auf gemeinsamem Volume.
+**Stand 2026-11-04 (umgesetzt):** ein Container aus `Dockerfile`/`docker-compose.yml` — das
+Spring-Boot-Backend liefert den Angular-Build selbst aus (`FrontendConfig`), schützt die API mit
+Cookie-Session-Login (`de.synthesis.auth`) und hält Szenarien, `users.json` und das Startpasswort
+im Volume `/app/data`. Externe Werkzeuge (SUMO optional per Build-Arg, KIT-Adapter, Ollama, .NET)
+laufen weiterhin als Prozesse auf dem Host oder einem Self-hosted-Runner; Details in
+[docs/08](08-reproduzierbare-laufumgebung.md#plattform-betrieb-im-container-2026-11-04).
+
+*Ursprünglicher Entwurf (nicht umgesetzt):* Docker-Compose mit `frontend` (nginx), `backend`,
+`graphhopper`, optional `r5`, `worker-python`, `worker-mobitopp`, später `worker-mobilecity`.
+Die Aufteilung in Worker-Container bleibt eine mögliche Ausbaustufe, wenn Läufe auf mehrere
+Maschinen verteilt werden sollen.
 
 ## Optionaler Straßenroutenadapter (07.10.2026)
 

@@ -1,0 +1,73 @@
+<main class="users-page">
+  <header class="page-heading">
+    <div class="eyebrow">PLATTFORM</div>
+    <h1>Benutzer</h1>
+    <p>Zugänge dieser Installation. Alle angemeldeten Konten teilen sich die Szenarien; Administratoren verwalten Konten und dürfen fremde Szenarien löschen.</p>
+  </header>
+  @if (error()) { <div class="error" role="alert">{{ error() }}</div> }
+  @if (notice()) { <p class="success" role="status">{{ notice() }}</p> }
+
+  <div class="layout">
+    <section class="card" aria-labelledby="users-list">
+      <h2 id="users-list">Konten ({{ users().length }})</h2>
+      <table>
+        <thead><tr><th>Benutzer</th><th>Anzeigename</th><th>Rolle</th><th>Letzte Anmeldung</th><th></th></tr></thead>
+        <tbody>
+          @for (u of users(); track u.username) {
+            <tr>
+              <td><code>{{ u.username }}</code></td>
+              <td>{{ u.displayName }}</td>
+              <td>
+                <select [ngModel]="u.roles[0]" (ngModelChange)="setRole(u, $event)" [attr.aria-label]="'Rolle von ' + u.username"
+                  [disabled]="u.username === auth.user()?.username">
+                  <option value="USER">USER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </td>
+              <td>{{ u.lastLoginAt ? (u.lastLoginAt | date:'dd.MM.yyyy HH:mm') : '–' }}</td>
+              <td class="row-actions">
+                <button type="button" class="link danger" (click)="remove(u)" [disabled]="u.username === auth.user()?.username">Löschen</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <div class="side">
+      <section class="card" aria-labelledby="users-create">
+        <h2 id="users-create">Konto anlegen</h2>
+        <form (ngSubmit)="create()" #createForm="ngForm">
+          <label>Benutzername<input name="username" [(ngModel)]="draft.username" required minlength="2" maxlength="64" pattern="[A-Za-z0-9._@-]+" autocomplete="off"></label>
+          <label>Anzeigename<input name="displayName" [(ngModel)]="draft.displayName" maxlength="120" autocomplete="off"></label>
+          <label>Startpasswort<input name="password" type="password" [(ngModel)]="draft.password" required minlength="8" autocomplete="new-password"></label>
+          <label>Rolle<select name="role" [(ngModel)]="draft.role"><option value="USER">USER</option><option value="ADMIN">ADMIN</option></select></label>
+          <button class="primary" type="submit" [disabled]="busy() || createForm.invalid">Anlegen</button>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="users-reset">
+        <h2 id="users-reset">Passwort zurücksetzen</h2>
+        <form (ngSubmit)="reset()" #resetForm="ngForm">
+          <label>Konto
+            <select name="target" [(ngModel)]="resetTarget" required>
+              <option value="">– auswählen –</option>
+              @for (u of users(); track u.username) { <option [value]="u.username">{{ u.username }}</option> }
+            </select>
+          </label>
+          <label>Neues Passwort<input name="resetPassword" type="password" [(ngModel)]="resetPassword" required minlength="8" autocomplete="new-password"></label>
+          <button type="submit" [disabled]="resetForm.invalid">Zurücksetzen</button>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="users-own">
+        <h2 id="users-own">Eigenes Passwort</h2>
+        <form (ngSubmit)="changeOwnPassword()" #ownForm="ngForm">
+          <label>Aktuelles Passwort<input name="ownCurrent" type="password" [(ngModel)]="ownCurrent" required autocomplete="current-password"></label>
+          <label>Neues Passwort<input name="ownNew" type="password" [(ngModel)]="ownNew" required minlength="8" autocomplete="new-password"></label>
+          <button type="submit" [disabled]="ownForm.invalid">Ändern</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>

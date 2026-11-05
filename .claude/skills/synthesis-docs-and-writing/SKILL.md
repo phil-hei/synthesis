@@ -50,6 +50,8 @@ Projektpartner) → `synthesis-external-positioning`.
 | `docs/08-reproduzierbare-laufumgebung.md` | Betriebsvertrag | Gepinnte Laufzeiten, Bootstrap, Preflight, gemeinsamer Start und Self-hosted-CI-Abnahme |
 | `docs/09-verkehrsbedarfsmodellierung-handoff.md` | Wiederverwendungs-Handoff | Übertragbare Teilpipeline für Bevölkerung und Verkehrsbedarf, zentrale Codefragmente, Datenverträge, Grenzen und kopierbarer Arbeitsauftrag für ein anderes LLM |
 
+**Ergänzung 2026-10-28 – Datenquellenkonzept:** `docs/22-datenquellen-adapter-und-fallbackkonzept.md` ist der Einstieg für Entscheidungen, begrenzten Mindestumfang und offene Freigabegates. Die zugehörigen Details liegen in `docs/22-datenquellen-bestandsaufnahme.md` (Inventar/Codebelege), `docs/22-datenquellen-import-und-ui.md` (technische Zielverträge) und `docs/22-datenquellen-konzeptreview.md` (Vergleich/Reviewentscheidungen). Implementierter Umfang bleibt in docs/06, ausgeführte Prüfungen und Beweisgrenzen in docs/05; das Hauptkonzept verlinkt darauf. Alte Abschnittsanker 1–19 bleiben erhalten.
+
 **Regel „eine Heimat pro Fakt":** Detailhistorie (wer wann was mit welchen Zahlen) wohnt in
 docs/06 (Features/Phasen) bzw. docs/05 (Befunde). README und docs/07 spiegeln nur den
 aktuellen Gesamtstand und VERLINKEN auf die Heimat — Belegbeispiel README:

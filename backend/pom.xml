@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.5</version>
+    <version>3.5.16</version>
     <relativePath/>
   </parent>
 
@@ -19,6 +19,10 @@
 
   <properties>
     <java.version>21</java.version>
+    <!-- GraphHopper 8.0 greift auf PropertyNamingStrategy.SNAKE_CASE zu; das Feld fehlt ab
+         Jackson 2.20 (Boot 3.5.16 verwaltet 2.21.4). Bis zu einem GraphHopper-Upgrade bleibt
+         Jackson auf der 2.19-Linie, die auch Boot 3.5.5 verwendete. -->
+    <jackson-bom.version>2.19.4</jackson-bom.version>
   </properties>
 
   <dependencies>
@@ -29,6 +33,10 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springdoc</groupId>
@@ -55,6 +63,11 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -62,6 +75,38 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <!-- Testabdeckung: Bericht unter target/site/jacoco nach jedem `mvn test`. -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.13</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals><goal>prepare-agent</goal></goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Leichte Formatregeln (keine Komplettformatierung): `mvn spotless:check` / `mvn spotless:apply`.
+           Bewusst an keine Phase gebunden, damit die Gates unverändert bleiben. -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>2.46.1</version>
+        <configuration>
+          <java>
+            <includes><include>src/main/java/**/*.java</include><include>src/test/java/**/*.java</include></includes>
+            <removeUnusedImports/>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+          </java>
+        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -1,7 +1,6 @@
 package de.synthesis.companytour;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.text.Normalizer;
 import java.time.*;
 import java.time.format.*;

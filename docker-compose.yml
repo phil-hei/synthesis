@@ -1,0 +1,30 @@
+# Plattform-Betrieb: ein Container, Daten (Szenarien, users.json, Startpasswort) im Volume.
+# Start:  docker compose up -d --build
+# Login:  http://localhost:8090 — Startpasswort: docker compose exec synthesis cat /app/data/initial-admin-password.txt
+services:
+  synthesis:
+    build:
+      context: .
+      args:
+        WITH_SUMO: "false"          # "true" installiert SUMO aus dem Ubuntu-PPA (größeres Image)
+    image: synthesis-platform:local
+    ports:
+      - "8090:8090"
+    environment:
+      SYNTHESIS_DATA_DIR: /app/data
+      SYNTHESIS_AUTH_ENABLED: "true"
+      SYNTHESIS_AUTH_ALLOWED_ORIGINS: ""   # same-origin; nur für externe Dev-Server füllen
+      # SYNTHESIS_OVERPASS_LIVE_DATA_ENABLED: "true"
+      # SYNTHESIS_CENSUS_ENABLED: "true"
+    volumes:
+      - synthesis-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8090/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+
+volumes:
+  synthesis-data:

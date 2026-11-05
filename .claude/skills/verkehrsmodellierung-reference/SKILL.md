@@ -318,7 +318,7 @@ kodiert das Verkehrsmittel (0=Tram, 2=Rail, 3=Bus; dazu erweiterte Codes).
 
 - **Beschaffung:** Auto-Fetch nach Region über eine Feed-Registry
   (`synthesis.transit.feeds` in `backend/src/main/resources/application.yml`,
-  z. B. KVV via NVBW/MobiData-BW), Upload-Fallback
+  z. B. KVV via NVBW/MobiData-BW); ein bewusst ausgewählter Upload hat Vorrang
   (`scenario.population.gtfsUploadPath`).
 - **Zuschnitt:** `GtfsCropper` filtert streaming auf BBox + Zeitfenster
   (`window-start-hour`/`window-end-hour`, Default 6–10 Uhr) unter Wahrung der
@@ -457,6 +457,58 @@ keinen).
 leicht erhöht). Ein besseres Sample ist drop-in-ersetzbar (gleiches Format, `sex`
 als Int-Code); der „Deutschland-Pfad" (echter IPU-Lauf je Gemeinde mit
 Zensus-Tabellen) ist konzipiert, aber nicht gebaut.
+
+---
+
+## 14. MobileCity `REGchargers`
+
+**Definition im Zielmodell:** Das Feld heißt historisch
+`numberOfChargingStations`, erwartet aber die gesamte Zahl öffentlicher **Ladepunkte**
+je District und Jahr. Es zählt weder Standorte/Ladeeinrichtungen noch Steckertypen.
+
+**So hier benutzt:** `MobileCityChargingSource` summiert die BNetzA-Spalte
+`Anzahl Ladepunkte` räumlich über die District-Geometrien. Vorhandene Jahreszellen
+überschreiben im nativen `CAL5020_TECCarFleet` den Bestand. Leere Folgejahre sind
+semantisch relevant: MobileCity entwickelt den Bestand dann aus E-Pkw-Bestand,
+Sättigung und Vorjahr endogen weiter. Deshalb unbekannte oder zukünftige Werte nie
+still mit null füllen.
+
+---
+
+## 15. MobileCity `TECCarsharing`
+
+`carsharing.member` ist eine gebietsweite absolute Zahl der Fahrberechtigten pro Jahr.
+`carsharing.stock.total` ist die Zahl stationsbasierter und stationsunabhängiger
+Carsharing-Fahrzeuge je District und Jahr. Im nativen `CAL4010_MODTrips` gehen daraus der
+Mitgliederanteil an der Gesamtbevölkerung und die Fahrzeugdichte je 1.000 Einwohner des
+Ursprungs-Districts in die Moduswahl ein.
+
+SyntheSis modelliert die beiden Größen mit `carsharingMemberShare` und
+`carsharingVehiclesPer1000`. Der Regionalexport rechnet sie in absolute Werte um und hält
+sie über den gesamten Exporthorizont konstant. Nicht gesetzte Felder ergeben die explizit
+ausgewiesene Nullannahme; Werte anderer Referenzregionen werden nicht übernommen.
+
+## 16. MobileCity-Umland (`Outer`, `POPtripsSurrounding`)
+
+`districtType=0` bedeutet `Outer`; Typen ab `1` gehören zum Untersuchungsgebiet.
+`tripShareToStudyArea[(TripPurpose, outerDistrictId)]` ist der Anteil der Wege der
+Umlandbewohner, der in das Untersuchungsgebiet führt. Im nativen `CAL4010_MODTrips` wird
+dieser Anteil mit den alters-/zweckspezifischen Tageswegen des Outer-Districts multipliziert
+und anschließend nach Bevölkerung mal Attraktivität auf Binnenziele verteilt. Das Feld ist
+kein Anteil ausgehender Wege der Binnenbevölkerung.
+
+SyntheSis aktiviert Outer-Districts manuell bei positiver `surroundingPopulation` oder
+automatisch mit `autoSurrounding` und `surroundingBufferKm`; vier vollständige Zweckanteile
+sind immer Pflicht. Automatik bedeutet: metrischer EPSG:3035-Ring, acht Richtungssektoren,
+Zensus-2022-Bevölkerung und Altersstruktur. Ein manueller Gesamtwert skaliert dann die
+beobachteten Sektorgewichte. Die bisherigen acht externen Zonen sind sonst ausschließlich
+Zielanker ohne Einwohner. Pkw-Dichte und BEV-Anteil des Umlands bleiben extrapolierte
+Annahmen aus dem Untersuchungsgebiet; BA-Pendlerdaten können später nur den Arbeitszweck
+belegen.
+
+**Zeitliche Grenze:** Die aus dem Inbetriebnahmedatum rekonstruierte Historie umfasst
+nur Einrichtungen, die im aktuellen BNetzA-Snapshot noch geführt werden, und ist damit
+eine Untergrenze. Private Wallboxen sind nicht enthalten.
 
 ---
 

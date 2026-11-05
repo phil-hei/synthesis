@@ -8,7 +8,9 @@ Die Ergebnisse sollen später über die bestehende MobileCity Network Pipeline i
 MobileCity-Smartphone-App eingespielt werden können.
 
 Architektur-Vorbild: **simudrive** (Angular + Leaflet Frontend, Spring-Modulith-Backend,
-dateibasierte Szenario-Artefakte, externe Simulations-Toolchain).
+dateibasierte Szenario-Artefakte, externe Simulations-Toolchain). Umgesetzt ist ein
+Spring-Boot-Monolith mit Paketen je Fachlichkeit und Login (ohne Modulith-Abhängigkeit); Stand
+und Abweichungen in [docs/03-architektur.md](docs/03-architektur.md).
 
 ## Anwendung starten (MVP)
 
@@ -36,7 +38,11 @@ cd backend && mvn spring-boot:run
 cd frontend && npm install && npm start
 ```
 
-Dann http://localhost:4300 öffnen: Kartenausschnitt wählen → Parameter setzen → optional Depots
+Dann http://localhost:4300 öffnen und anmelden. Beim ersten Start ohne Benutzerkonten legt das
+Backend den Administrator `admin` an; das Startpasswort steht im Backend-Log und in
+`backend/data/initial-admin-password.txt` (nach dem ersten Login ändern, Datei löschen). Weitere
+Konten werden unter **Benutzer** verwaltet; für lokale Einzelnutzer-Entwicklung lässt sich die
+Anmeldung mit `synthesis.auth.enabled=false` abschalten. Dann: Kartenausschnitt wählen → Parameter setzen → optional Depots
 auf der Karte platzieren → „Speichern" neben der Szenarioauswahl oben → „Nachfragemodell generieren". Die Pipeline erzeugt
 zonen-, bevölkerungs-, matrix- und logistikbezogene mobiTopp/logiTopp-Artefakte
 (zones.csv, attractivities.csv, person/household/activity/car/fixedDestination.csv,
@@ -48,6 +54,12 @@ Python/ÖV, actiTopp, logiTopp, MobileCity) und LLM-Endpunkt/Modell konfiguriert
 Gespeicherte Änderungen gelten nach einem **Backend-Neustart** für alle Szenarien dieser
 Installation. Details zu Persistenz und Vorrang der Werte:
 [globale Tool-Einstellungen](docs/06-gta-integration-konzept.md#phase-4--produktiv-härtung-querschnittlich).
+
+**Server-Betrieb als Plattform (Container):** `docker compose up -d --build` baut Frontend und
+Backend in ein Image, liefert die Oberfläche unter http://localhost:8090 aus und hält Szenarien,
+Benutzerkonten und das Startpasswort im Volume `synthesis-data`. Externe Werkzeuge (SUMO, KIT-Adapter,
+Ollama) sind nicht Teil des Images; Details, Grenzen und Reverse-Proxy-Hinweise in
+[docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md#plattform-betrieb-im-container-2026-11-04).
 
 Optionaler **schwerer Güterverkehr** ergänzt Personen- und Paketverkehr in SUMO:
 vorbereitete Tages-OD-Mengen per CSV mit optionalen gerichteten Netzkanten, Solo-LKW/Sattelzüge und getrennte Kartenlayer
@@ -320,7 +332,9 @@ Auflösungsmeldung ab. Beide Flags bleiben opt-in; Details und Grenzen stehen in
 | [docs/05-validierung.md](docs/05-validierung.md) | Phase-0-Validierung: Artefakte erfolgreich durch echten mobiTopp-Lauf, 8 Format-Befunde, Legacy-Stack-Build |
 | [docs/06-gta-integration-konzept.md](docs/06-gta-integration-konzept.md) | Zwei-Achsen-Modell, GTA-Integrationskonzept, On-demand- und Modus-Distanz-Kalibrierung, SUMO-Zielmodell (inkl. Rad/Fuß/ÖV-GTFS, Rail/Tram-Befund), experimentelle Retourenlogistik, Roadmap |
 | [docs/07-ansatz-zusammenfassung.md](docs/07-ansatz-zusammenfassung.md) | Kompaktes Briefing: Ansatz, 15-stufige Pipeline, KI-Pipeline (GTA), Artefakte, Datenfluss, Tech-Stack |
-| [docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md) | Gepinnte Laufzeiten und KIT-Commits, Bootstrap, Preflight, gemeinsamer Start und vollständige Self-hosted-CI-Abnahme |
+| [docs/23-offene-datenquellen-schwerlastverkehr.md](docs/23-offene-datenquellen-schwerlastverkehr.md) | Offene Datenquellen für Verkehrs- und Logistiknachfrage mit Schwerpunkt Schwerlastverkehr: Maut-OD, VP2040, Beschäftigte je Gemeinde, Zählstellen, Terminals; Zuordnung zu den Eingabeverträgen und Umsetzungsvorschlag (Stand 2026-11-04) |
+| [docs/24-werkzeuge-und-daten-umfeld.md](docs/24-werkzeuge-und-daten-umfeld.md) | Werkzeuge und Datensätze im Umfeld, nach Nutzen für bekannte Lücken geordnet: Geofabrik/osmium statt Overpass, SUMO routeSampler, MiD 2023, GraphHopper-Truck-Profil, VROOM/jsprit, ArchUnit, dependency-check, Actuator, Zensus-Gebäuderaster, Photon, DELFI-GTFS (Stand 2026-11-04) |
+| [docs/08-reproduzierbare-laufumgebung.md](docs/08-reproduzierbare-laufumgebung.md) | Gepinnte Laufzeiten und KIT-Commits, Bootstrap, Preflight, gemeinsamer Start, Container-Betrieb der Plattform, Qualitätswerkzeuge und vollständige Self-hosted-CI-Abnahme |
 | [docs/09-verkehrsbedarfsmodellierung-handoff.md](docs/09-verkehrsbedarfsmodellierung-handoff.md) | Technisches Handoff zur Wiederverwendung der Bevölkerungs- und Verkehrsbedarfsmodellierung, einschließlich Codefragmenten und LLM-Arbeitsauftrag |
 | [docs/10-modellierungs-generierungspipeline.md](docs/10-modellierungs-generierungspipeline.md) | Aktueller Ablauf von Kartenausschnitt und Quelldaten bis zu logiTopp-, SUMO- und MobileCity-Artefakten: Verwendung, Begründung, Beispiele und Modellgrenzen |
 | [docs/11-modellierungsfragen-und-zielbild.md](docs/11-modellierungsfragen-und-zielbild.md) | 26 fachliche Klärungen zu Granularität, Routing, Stichproben und MobileCity; Zielbild des SyntheSis Mobility & Logistics Model |

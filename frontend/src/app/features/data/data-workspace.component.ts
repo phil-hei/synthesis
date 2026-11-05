@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, Subscription, catchError, of, from, switchMap } from 'rxjs';
 import { Scenario } from '../../core/models/scenario.model';
@@ -58,7 +58,7 @@ export class DataWorkspaceComponent implements OnChanges, OnDestroy {
     if (!providers || next < 0 || next >= providers.length) return;
     [providers[index], providers[next]] = [providers[next], providers[index]]; this.planChanged();
   }
-  constructor(private api: DataSourceService) {}
+  private readonly api = inject(DataSourceService);
   ngOnChanges(): void {
     this.scenario.dataPlan ??= { enabled: false, aspects: {} };
     this.scenario.dataPlan.qualityMode ??= 'exploration';

@@ -68,6 +68,8 @@ export interface Scenario {
   id?: string;
   name: string;
   createdAt?: string;
+  /** Benutzername des Erstellers (Plattform-Anmeldung); fehlt bei älteren Ständen. */
+  createdBy?: string;
   /** Null, solange noch keine Region auf der Karte gesetzt wurde. */
   region: Region | null;
   zoning: {
@@ -110,7 +112,7 @@ export interface Scenario {
     /** Zwei-Hebel-Kalibrierung: ÖV-Niveau (asc_put) + Fernweg-Schräge (b_tt_put), experimentell. */
     calibrateModeDistance: boolean;
     /** Ziel-Modal-Split der Kalibrierung (Modus → Anteil), Default MiD. */
-    calibrationTarget: { [mode: string]: number };
+    calibrationTarget: Record<string, number>;
     /** GTA 3c: zusätzliche LLM-Moduswahl auf den simulierten Trips (Vergleich zu MNL/MiD). */
     llmModeChoice: boolean;
     carsPerHousehold: number;
@@ -140,6 +142,8 @@ export interface StageInfo {
   status: 'PENDING' | 'RUNNING' | 'DONE' | 'FAILED' | 'SKIPPED';
   durationMs: number;
   message?: string;
+  /** DONE, aber mit dokumentiertem Fallback (z. B. Overpass nicht erreichbar, Luftlinienmatrizen). */
+  fallback?: boolean;
 }
 
 export interface GenerationJob {
@@ -152,6 +156,10 @@ export interface GenerationJob {
   log: string[];
   summary?: Record<string, unknown>;
   error?: string;
+  /** Nur bei QUEUED: 1 = als Nächstes dran. */
+  queuePosition?: number;
+  runningScenarioId?: string;
+  runningScenarioName?: string;
 }
 
 export interface ArtifactInfo {

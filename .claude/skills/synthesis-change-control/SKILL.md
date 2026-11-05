@@ -23,7 +23,7 @@ historischen Vorfall dahinter. Zielgruppe: Entwickler und KI-Modelle ohne Projek
 
 **Kontext in einem Satz:** SyntheSis ist ein Web-Tool (Angular-Studio `frontend/` + Spring-Boot-
 Backend `backend/`), das aus einer Kartenregion ein agentenbasiertes Verkehrsnachfragemodell
-generiert (14-stufige Pipeline, orchestriert in
+generiert (15-stufige Pipeline, orchestriert in
 `backend/src/main/java/de/synthesis/generation/GenerationService.java`). Details zum Ansatz:
 `docs/07-ansatz-zusammenfassung.md`; Phasen-Historie: `docs/06-gta-integration-konzept.md`.
 
@@ -64,11 +64,16 @@ baut oder fachlich modelliert.
 ```bash
 # Gate 1 – Backend-Testsuite (komplett, offline)
 cd backend && mvn -o test
-# Erwartung (Stand: 2026-08-11): 126 Testfälle grün; ohne externe Laufzeit
-# können 7 Testfälle sauber übersprungen werden – das ist normal.
+# Erwartung (Stand: 2026-11-04): 494 Testfälle, 0 Fehler; ohne externe Laufzeit
+# (SUMO, KIT-Adapter, Ollama, venv) werden 44 sauber übersprungen – das ist normal.
+# Mit voller Laufzeit (scripts/verify.sh full, 2026-11-05): 499 Tests, nur 2 Opt-in-Skips (MobileCity).
+# Nebenbei entsteht target/site/jacoco/index.html (JaCoCo).
 
 # Gate 2 – Frontend-Tests + strict-AOT-Build (fängt NG5002/TS2531, die ng serve NICHT fängt)
 cd frontend && npm test && npm run build
+
+# Gate 3 (seit 2026-11-04) – Lint; läuft auch im CI-Job frontend-tests-and-build
+cd frontend && npm run lint
 ```
 
 Nützlich bei Maven-Fehlern („Unable to find a single main class"):
@@ -162,8 +167,10 @@ Klassifiziere JEDE Änderung zuerst; daraus folgt die Absicherung:
   `actitoppNG`, `populationsynthesis`), das Legacy-Simulationsprojekt `mobitopp-rastatt`,
   `transit-venv` (Python-venv für `gtfs2pt.py`) sowie Test-Fixtures (`rastatt-test.osm`,
   `rastatt-rail-test.osm`, `kvv-gtfs.zip`).
-- **Rationale:** Die `.gitignore` besteht (Stand: 2026-07-08) genau aus `validation/` und
-  `takomat-beispiel-export.zip`. Fixtures liegen bewusst in `validation/` und **nicht in `/tmp`**,
+- **Rationale:** Die `.gitignore` enthält (Stand: 2026-11-04) `validation/`,
+  `takomat-beispiel-export.zip`, `.runtime/`, Adapter-Builds, `__pycache__/`, den im Docker-Build
+  gebündelten Frontend-Ordner `backend/src/main/resources/static/` und die maschinenspezifische
+  `.claude/settings.local.json`. Fixtures liegen bewusst in `validation/` und **nicht in `/tmp`**,
   weil `/tmp` vom System gereaped wird.
 - **Vorfall (überliefert):** `/tmp/rastatt.osm` verschwand mehrfach zwischen Sessions, bevor die
   Fixtures nach `validation/` umzogen.

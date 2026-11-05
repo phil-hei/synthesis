@@ -5,7 +5,8 @@
   "cli": {
     "cache": {
       "enabled": false
-    }
+    },
+    "schematicCollections": ["angular-eslint"]
   },
   "projects": {
     "synthesis-frontend": {
@@ -24,24 +25,41 @@
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "assets": [],
-            "styles": ["node_modules/leaflet/dist/leaflet.css", "src/styles.css"],
+            "styles": [
+              "node_modules/leaflet/dist/leaflet.css",
+              "src/styles.css"
+            ],
             "scripts": [],
             "allowedCommonJsDependencies": ["leaflet"]
           },
           "configurations": {
             "production": {
-              "budgets": [{ "type": "initial", "maximumWarning": "500kb", "maximumError": "1mb" }],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                }
+              ],
               "outputHashing": "all"
             },
-            "development": { "optimization": false, "extractLicenses": false, "sourceMap": true }
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "production": { "buildTarget": "synthesis-frontend:build:production" },
-            "development": { "buildTarget": "synthesis-frontend:build:development" }
+            "production": {
+              "buildTarget": "synthesis-frontend:build:production"
+            },
+            "development": {
+              "buildTarget": "synthesis-frontend:build:development"
+            }
           },
           "defaultConfiguration": "development"
         },
@@ -51,6 +69,12 @@
             "tsConfig": "tsconfig.spec.json",
             "runner": "vitest",
             "buildTarget": "synthesis-frontend:build:development"
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
           }
         }
       }

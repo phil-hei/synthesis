@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HelpTipComponent } from '../../shared/help-tip.component';
 import { CompanyTourImportComponent } from './company-tour-import.component';
@@ -59,7 +59,9 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   depotMode = false;
   drawMode = false;
   busy = false;
-  message = '';
+  /** Statusmeldung der Szenarioverwaltung; die Art (Erfolg/Fehler/Hinweis) steuert die Darstellung. */
+  private messageText = '';
+  messageKind: MessageKind = 'info';
   scenarioListError = '';
   zonePreviewInfo = '';
   estimateInfo = '';
@@ -115,8 +117,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   private energyLayer: L.GeoJSON<EnergyGeoJson['features'][number]['properties'], Point> | null = null;
   private energyRequest = 0;
 
-  constructor(private api: ApiService) {
-  }
+  private readonly api = inject(ApiService);
 
   ngOnInit(): void {
     this.reloadScenarios();
@@ -416,7 +417,7 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
    * Richtwerte nach dem MiD-2017-Stadt-Land-Muster; an offizielle Regionaltabellen anpassbar.
    * Jede Vorlage summiert sich zu 1,0.
    */
-  readonly regionPresets: { id: string; label: string; split: { [key: string]: number } }[] = [
+  readonly regionPresets: { id: string; label: string; split: Record<string, number> }[] = [
     { id: 'mid', label: 'MiD 2017 (bundesweit)',
       split: { pedestrian: 0.22, bike: 0.11, car: 0.43, passenger: 0.14, publicTransport: 0.10 } },
     { id: 'metropole', label: 'Metropole (RegioStaR 71)',
@@ -1316,7 +1317,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   private loadArtifacts(): void {
     if (this.scenario?.id) {
       this.api.listArtifacts(this.scenario.id).subscribe({
-        next: list => this.artifacts = list,
+        // job.json ist interner Laufstatus (Neustart-Sicherung), kein Ergebnis zum Herunterladen.
+        next: list => this.artifacts = list.filter(artifact => artifact.path !== 'job.json'),
         error: () => {
           this.artifacts = [];
           this.message = 'Artefakte konnten nicht geladen werden';
@@ -1448,6 +1450,36 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
         maxWidth: Math.max(160, Math.min(320, this.map.getSize().x - 50))
       })
     }).addTo(this.map);
+  }
+
+  get message(): string {
+    return this.messageText;
+  }
+
+  /** Setter statt vieler Aufrufstellen: die Art wird aus der Wortwahl der deutschen Meldungen abgeleitet. */
+  set message(text: string) {
+    this.notify(text, classifyMessage(text));
+  }
+
+  notify(text: string, kind: MessageKind): void {
+    this.messageText = text ?? '';
+    this.messageKind = this.messageText ? kind : 'info';
+  }
+
+  dismissMessage(): void {
+    this.notify('', 'info');
+  }
+
+  /** Experimentelle Optionen bleiben eingeklappt, außer eine davon ist bereits gesetzt. */
+  get advancedOptionsOpen(): boolean {
+    const p = this.scenario?.population;
+    return !!p && !!(p.calibrateDistance || p.correctDistanceDecay || p.calibrateModeDistance
+      || p.llmModeChoice || p.sharedRoadRoutes);
+  }
+
+  get anyMapLayerActive(): boolean {
+    return this.showParcelLayer || this.showPrivateRoutes || this.showLogisticsRoutes
+      || this.showTourLayer || this.showCongestionLayer || this.showEnergyLayer;
   }
 
   get hasSimLayers(): boolean {
@@ -1678,4 +1710,16 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   get running(): boolean {
     return this.job?.state === 'QUEUED' || this.job?.state === 'RUNNING';
   }
+}
+
+export type MessageKind = 'info' | 'success' | 'warning' | 'error';
+
+/** Wortwahl der Meldungen im Studio: Fehler nennen „Fehler“/„fehlgeschlagen“/„konnte nicht“, Hinweise beginnen mit „Bitte“. */
+export function classifyMessage(text: string): MessageKind {
+  const t = (text ?? '').toLowerCase();
+  if (!t) return 'info';
+  if (/fehler|fehlgeschlagen|konnten? nicht|invalid|ungültig/.test(t)) return 'error';
+  if (/^bitte|zuerst speichern|benötigt/.test(t)) return 'warning';
+  if (/gespeichert|hochgeladen|übernommen|entfernt|aktiviert|gesetzt/.test(t)) return 'success';
+  return 'info';
 }

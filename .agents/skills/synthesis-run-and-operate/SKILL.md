@@ -5,7 +5,7 @@ description: SyntheSis fahren — Backend/Frontend starten, Szenario anlegen und
 
 # SyntheSis: Betrieb & Bedienung (Runbook)
 
-Wie man das System startet, ein Szenario anlegt, die 14-stufige Pipeline laufen lässt und
+Wie man das System startet, ein Szenario anlegt, die 15-stufige Pipeline laufen lässt und
 die Ergebnisse (Artefakte) findet. Publikum: Mid-Level-Entwickler und Agenten, die das
 System bedienen — nicht verändern.
 
@@ -31,10 +31,18 @@ cd frontend && npm install && npm start
 ```
 
 - Studio: http://localhost:4300 · Swagger-UI: http://localhost:8090/swagger-ui.html
+- **Anmeldung (seit 2026-11-04):** Studio und API verlangen eine Sitzung. Beim ersten Start ohne
+  Konten legt das Backend `admin` an; Startpasswort im Log und in
+  `backend/data/initial-admin-password.txt`. Weitere Konten unter „Benutzer“ (nur ADMIN).
+  Abschalten für lokale Einzelnutzer-Entwicklung: `synthesis.auth.enabled=false`.
+- **Container (Plattform):** `docker compose up -d --build` → http://localhost:8090 (Backend liefert
+  das Frontend selbst aus); Startpasswort: `docker compose exec synthesis cat /app/data/initial-admin-password.txt`.
 - Der `data-dir` ist relativ (`synthesis.data-dir: data` in `backend/src/main/resources/application.yml`)
   → das Backend **aus `backend/` starten**, sonst entsteht ein zweiter `data/`-Baum.
-- Job-Status lebt **in-memory** (`GenerationService.jobs`): nach Backend-Neustart ist
-  `GET /generation` 404, die Artefakte auf Platte bleiben aber erhalten.
+- Job-Status lebt in-memory (`GenerationService.jobs`) und wird seit 2026-11-04 nach jeder Stufe
+  als `artifacts/job.json` gespeichert: nach Backend-Neustart liefert `GET /generation` den letzten
+  Stand; ein beim Neustart aktiver Lauf wird als `FAILED` („Backend wurde während des Laufs
+  beendet“) gemeldet.
 
 ## 2. UI-Walkthrough (Studio, 6 Schritte)
 
@@ -63,6 +71,18 @@ cd frontend && npm install && npm start
 Alle Pfade aus dem Controller-Code abgelesen (Stand 2026-07-08). curl-Beispiele sind
 **UNGETESTET**, die Struktur ist aber durch den Controller-Code belegt. Direkt gegen
 `:8090` oder via Frontend-Proxy `:4300/api`.
+
+**Mit Anmeldung (Default seit 2026-11-04):** jede `/api/**`-Anfrage braucht das Session-Cookie,
+schreibende zusätzlich den CSRF-Token aus dem Cookie `XSRF-TOKEN` als Header `X-XSRF-TOKEN`.
+Muster für curl (Cookie-Jar `cj`):
+
+```bash
+curl -s -c cj -b cj http://localhost:8090/api/auth/me >/dev/null          # setzt XSRF-TOKEN
+TOKEN=$(awk '$6=="XSRF-TOKEN"{print $7}' cj)
+curl -s -c cj -b cj -H "X-XSRF-TOKEN: $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"<Startpasswort>"}' http://localhost:8090/api/auth/login
+# danach alle Beispiele unten mit:  -b cj -c cj -H "X-XSRF-TOKEN: $TOKEN"
+```
 
 ### Szenarien (`ScenarioController`, `/api/scenarios`)
 
@@ -242,9 +262,9 @@ Schnellantworten: **kpis.json** → `artifacts/simulation/kpis.json` ·
 (`co2KgByType`) · **Netzlast** → `artifacts/sumo/congestion.geojson` ·
 **Touren** → `artifacts/simulation/tours.geojson`.
 
-## 5. Die 14 Pipeline-Stufen (aus `GenerationService.STAGES`)
+## 5. Die 15 Pipeline-Stufen (aus `GenerationService.STAGES`, Stand 2026-11-04)
 
-Stufennamen exakt wie im Job-Log. **FAILED-Semantik:** Bei Stufen 1–11 bricht eine
+Stufennamen exakt wie im Job-Log. **FAILED-Semantik:** Bei Stufen 1–12 bricht eine
 Exception den **gesamten Job** ab (`state=FAILED`, `error` gesetzt, Folgestufen bleiben
 PENDING). Die Stufen 12–14 fangen ihre Fehler selbst: die Stufe wird FAILED (mit
 `message`), der Job läuft weiter und kann trotzdem DONE werden. FAILED ≠ SKIPPED:
@@ -255,17 +275,18 @@ SKIPPED = bewusst übersprungen (Gate nicht erfüllt), FAILED = versucht und ges
 | 1 | Zonierung | immer (`zoning.mode`: `grid` freies Bbox-Raster \| `epsg3035` flexibel ausgerichtetes 100-m-Stufenraster \| `inspire` amtliche 100-m-/1-km-/10-km-Stufen; LAEA-Modi außerhalb Europas mit Bbox-Fallback; Limit aus `zoning.maxZones`; tatsächlicher Provider in `summary.zoningMode`) | – | Sekunden |
 | 2 | OSM-Daten (POIs) | automatisch: Szenario-Snapshot → Live-Overpass → synthetischer Fallback | nie wegen Nutzerabwahl; das Legacy-Feld `population.useOsmData` wird ignoriert | Sekunden–Minute (Overpass) |
 | 3 | Attraktivitäten | immer | – | Sekunden |
-| 4 | Bevölkerungssynthese | immer | – | Sekunden |
-| 5 | Aktivitätenpläne | immer (Achse A intern: gta → actitopp → Template-Fallback, nie SKIPPED) | – | Sekunden (Template/actiTopp) bis Minuten (GTA-LLM, z. B. ~140 s für 18 Persona-Calls) |
-| 6 | Matrizen | immer | – | Sekunden–Minuten (GraphHopper-Import; Fallback Luftlinie) |
+| 4 | Matrizen | immer | – | Sekunden–Minuten (GraphHopper-Import; Fallback Luftlinie, dann `fallback=true`) |
+| 5 | Bevölkerungssynthese | immer | – | Sekunden |
+| 6 | Aktivitätenpläne | immer (Achse A intern: gta → actitopp → Template-Fallback, nie SKIPPED; Fallback markiert) | – | Sekunden (Template/actiTopp) bis Minuten (GTA-LLM, z. B. ~140 s für 18 Persona-Calls) |
 | 7 | Logistik | immer | – | Sekunden |
 | 8 | Legacy-Export | immer | – | Sekunden |
 | 9 | MobileCity-Export | Ziel `mobilecity` gewählt | Ziel nicht gewählt | Sekunden |
-| 10 | Manifest | immer | – | < 1 s |
-| 11 | Simulation (logiTopp) | Ziel `logitopp` gewählt | Ziel nicht gewählt; `synthesis.simulation.enabled=false`; Legacy-Projekt (`validation/mobitopp-rastatt`) nicht gefunden | 250 Personen: Sekunden mit warmem Gradle-Daemon; Kalibrierung (`calibrateModeChoice`) = **mehrere** Sim-Läufe |
-| 12 | SUMO (Verkehr) | Ziel `sumo` gewählt | Ziel nicht gewählt; SUMO nicht verfügbar (`$SUMO_HOME`/Binaries fehlen); `demandsimulationResult.csv` fehlt (→ logiTopp-Ziel mitwählen!). ÖV-Teil intern übersprungen, wenn venv/gtfs2pt fehlt | Minuten; mit Fußgängern deutlich länger; **ÖV-Erstlauf ~20–25 min** (gtfs2pt), danach Cache |
-| 13 | Netz-Feedback | `population.sumoFeedback` | Flag aus; SUMO-Stufe nicht DONE oder `edgedata.xml` fehlt; logiTopp-Ziel fehlt; Zonen > `feedback-max-zones` (Default 150); keine routbaren Zonenrelationen | je Iteration 1× logiTopp + 1× SUMO (Default max. 3 Iterationen) |
-| 14 | LLM-Moduswahl | `population.llmModeChoice` | Flag aus; LLM nicht erreichbar (Ollama); `demandsimulationResult.csv` fehlt | Minuten (~5 LLM-Calls) |
+| 10 | MobileCity-Validierung | Ziel `mobilecity` + vollständiger Regional-/Vorlagenmodus + `mobileCity.validateNative` + `synthesis.mobile-city-validation.enabled` | nicht angefordert oder .NET/ConfigTool-Quellen fehlen (gestarteter Prozess mit Fehler/Timeout = FAILED) | Minuten (.NET-Build + Prüfsimulation) |
+| 11 | Manifest | immer | – | < 1 s |
+| 12 | Simulation (logiTopp) | Ziel `logitopp` gewählt | Ziel nicht gewählt; `synthesis.simulation.enabled=false`; Legacy-Projekt (`validation/mobitopp-rastatt`) nicht gefunden | 250 Personen: Sekunden mit warmem Gradle-Daemon; Kalibrierung (`calibrateModeChoice`) = **mehrere** Sim-Läufe |
+| 13 | SUMO (Verkehr) | Ziel `sumo` gewählt | Ziel nicht gewählt; SUMO nicht verfügbar (`$SUMO_HOME`/Binaries fehlen); `demandsimulationResult.csv` fehlt (→ logiTopp-Ziel mitwählen!). ÖV-Teil intern übersprungen, wenn venv/gtfs2pt fehlt | Minuten; mit Fußgängern deutlich länger; **ÖV-Erstlauf ~20–25 min** (gtfs2pt), danach Cache |
+| 14 | Netz-Feedback | `population.sumoFeedback` | Flag aus; SUMO-Stufe nicht DONE oder `edgedata.xml` fehlt; logiTopp-Ziel fehlt; Zonen > `feedback-max-zones` (Default 150); keine routbaren Zonenrelationen | je Iteration 1× logiTopp + 1× SUMO (Default max. 3 Iterationen) |
+| 15 | LLM-Moduswahl | `population.llmModeChoice` | Flag aus; LLM nicht erreichbar (Ollama); `demandsimulationResult.csv` fehlt | Minuten (~5 LLM-Calls) |
 
 Überlieferte Gesamtdauer: kleiner Voll-Lauf (kleine Region, wenige Personen) ~1–2 min
 ohne ÖV/Feedback/Kalibrierung.

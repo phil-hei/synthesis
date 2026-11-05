@@ -31,8 +31,21 @@ final class ExternalJavaToolchain {
                 return home;
             }
         }
-        Path homebrew = Path.of("/opt/homebrew/opt/openjdk@" + KIT_JAVA,
-                "libexec/openjdk.jdk/Contents/Home");
-        return Files.isExecutable(homebrew.resolve("bin/java")) ? homebrew : null;
+        for (Path candidate : CANDIDATES) {
+            if (Files.isExecutable(candidate.resolve("bin/java"))) {
+                return candidate;
+            }
+        }
+        return null;
     }
+
+    /** Übliche Installationsorte ohne Versionsprüfung: der Pfad trägt die Hauptversion bereits im Namen. */
+    private static final java.util.List<Path> CANDIDATES = java.util.List.of(
+            Path.of("/opt/homebrew/opt/openjdk@" + KIT_JAVA, "libexec/openjdk.jdk/Contents/Home"),
+            Path.of("/usr/lib/jvm/java-" + KIT_JAVA + "-openjdk-amd64"),
+            Path.of("/usr/lib/jvm/java-" + KIT_JAVA + "-openjdk-arm64"),
+            Path.of("/usr/lib/jvm/java-" + KIT_JAVA + "-openjdk"),
+            Path.of("/usr/lib/jvm/temurin-" + KIT_JAVA + "-jdk-amd64"),
+            Path.of("/usr/lib/jvm/temurin-" + KIT_JAVA + "-jdk-arm64"),
+            Path.of("/opt/java/openjdk-" + KIT_JAVA));
 }

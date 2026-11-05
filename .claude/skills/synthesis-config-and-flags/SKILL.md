@@ -5,7 +5,7 @@ description: >
   (Scenario.java, z. B. behaviorSource, targetModels, sumoFeedback,
   calibrateModeChoice, llmModeChoice, useRealRouting, samplingFraction sowie das Legacy-Feld useOsmData) und
   Betriebs-Properties (SynthesisProperties, Prefix synthesis.: census, overpass, simulation, actitopp,
-  sumo, transit inkl. GTFS-Feed-Registry, llm) samt Defaults, Konsumenten und Gates. Laden, WENN
+  sumo, transit inkl. GTFS-Feed-Registry, MobileCity-Validierung, llm, auth, frontend) samt Defaults, Konsumenten und Gates. Laden, WENN
   du wissen musst (a) welches Flag/Property Verhalten X steuert, (b) was der Default von Y ist
   (inkl. berechneter Defaults aus $SUMO_HOME), (c) ob ein Feature produktiv oder experimentell
   ist, (d) wie man ein neues Szenario-Flag oder eine neue Betriebs-Property anlegt (Checkliste
@@ -19,7 +19,7 @@ description: >
 # SyntheSis – Konfigurationsachsen & Flags
 
 Dieses Dokument ist der **Ground-Truth-Katalog** aller Konfiguration im SyntheSis-Repo
-(Angular-Studio `frontend/` + Spring-Boot-Backend `backend/`, 14-stufige Pipeline in
+(Angular-Studio `frontend/` + Spring-Boot-Backend `backend/`, 15-stufige Pipeline in
 `backend/src/main/java/de/synthesis/generation/GenerationService.java`). Es gibt **drei Ebenen**:
 
 1. **Szenario-Flags** – pro Szenario, vom Nutzer im Studio gesetzt, als JSON persistiert
@@ -58,6 +58,7 @@ driften, daher nur Block + Bedienelement).
 
 | Feld | Typ | Default | Wirkung / Konsument | Status |
 |---|---|---|---|---|
+| `dataPlan` | SourcePlan | `enabled=false`, keine Policies | Experimenteller Quellenplan: `population.distribution`, `opportunities.work`, `freight.vehicleOd`; `SourceResolver` vor Queueing und Studio-Vorprüfung; unveränderliche Revisionen explizit auswählen, Workplace-Lückenregel `legacy`/`none`, schwere Fahrzeugmengen als explizite Annahme. UI „Daten & Quellen öffnen“. Arbeitsplatzpunktdaten erfordern vollständigen Erhebungsumfang. `source=profile` bindet einen unveränderlichen Quellenprofilhash: geordnete Revisions-/Paketkandidaten, explizite Abwahl und Ausfallregel; lokale ZIP-Paketinstallation aktiviert keine Quelle. Übrige Bestandsketten und allgemeiner Abhängigkeitsgraph offen (2026-10-28). | experimentell, aus |
 | `id` | String | – (vom Backend vergeben) | Persistenz-Schlüssel (`ScenarioRepository`) | produktiv |
 | `name` | String | `"Neues Szenario"` | Anzeigename; Studio-Block „Szenario" | produktiv |
 | `createdAt` | Instant | – | Metadatum | produktiv |
@@ -75,6 +76,57 @@ SUMO automatisch logiTopp; `normalizeTargetDependencies()` persistiert diese Abh
 `!targets().contains("logitopp")` → „Simulation (logiTopp)" SKIPPED;
 `!targets().contains("sumo")` → „SUMO (Verkehr)" SKIPPED.
 
+### 1.2a `MobileCity`
+
+| Feld | Typ | Default | Wirkung / Konsument | Status |
+|---|---|---|---|---|
+| `useTemplate` | boolean | `false` | Ergänzt ein lokal hashgeprüftes vollständiges Vorlagenpaket | experimentell |
+| `templateId` | String | `"tramigo-v2"` | ID des Vorlagen- bzw. Modellprofils unter `synthesis.data-dir/mobilecity/` | experimentell |
+| `useRegionalFleet` | boolean | `false` | Ordnet gepinnte private KBA-Bestände über BKG-Gemeindegrenzen zu | experimentell |
+| `useRegionalCharging` | boolean | `false` | Ordnet die öffentlichen Ladepunkte des gepinnten BNetzA-Registers anhand ihrer Koordinaten den erzeugten Districts zu; nur Regionalexport | experimentell |
+| `chargingPointsPer1000` | Double | `null` | Explizite Ladepunktannahme je 1.000 Einwohner; ohne Automatik manuell, mit aktivierter Automatik nur Quellenfallback. `null` = unbekannt, `0` = gültige Nullannahme | experimentell |
+| `carsharingVehiclesPer1000` | Double | `null` | Explizite Carsharing-Flotte je 1.000 Einwohner; wird nach District-Bevölkerung verteilt und über alle Exportjahre konstant gehalten. `null` wirkt als ausgewiesene Nullannahme | experimentell |
+| `carsharingMemberShare` | Double | `null` | Gebietsweiter Anteil der Carsharing-Fahrberechtigten in `[0,0.4]`; wird in eine absolute Mitgliederzahl umgerechnet und konstant gehalten. `null` wirkt als ausgewiesene Nullannahme | experimentell |
+| `autoSurrounding` | boolean | `false` | Bildet acht Outer-Sektoren aus einem metrischen Puffer und aggregiert Zensus-2022-Bevölkerung/-Altersstruktur; benötigt `population.externalTrips=true` und alle vier Umlandanteile | experimentell |
+| `surroundingBufferKm` | double | `10.0` | Pufferbreite des automatischen Umlands in km; bei aktivierter Automatik `[1,100]` | experimentell |
+| `surroundingPopulation` | Integer | `null` | Ohne Automatik: manuelle Gesamtbevölkerung. Mit Automatik: optionaler positiver Override, der die beobachteten Sektorgewichte exakt skaliert | experimentell |
+| `surroundingEducationTripShare` | Double | `null` | Anteil der Bildungswege der Umlandbewohner mit Ziel im Untersuchungsgebiet `[0,1]` | experimentell |
+| `surroundingWorkTripShare` | Double | `null` | Anteil der Arbeitswege der Umlandbewohner mit Ziel im Untersuchungsgebiet `[0,1]` | experimentell |
+| `surroundingShoppingTripShare` | Double | `null` | Anteil der Einkaufswege der Umlandbewohner mit Ziel im Untersuchungsgebiet `[0,1]` | experimentell |
+| `surroundingLeisureTripShare` | Double | `null` | Anteil der Freizeitwege der Umlandbewohner mit Ziel im Untersuchungsgebiet `[0,1]` | experimentell |
+| `regionalExport` | boolean | `false` | Erzeugt ein vollständiges gebietseigenes Basispaket mit unkalibriertem Profil | experimentell |
+| `validateNative` | boolean | `false` | Startet nach einem vollständigen Export Stufe „MobileCity-Validierung"; benötigt Ziel `mobilecity` und `regionalExport` oder `useTemplate` | experimentell |
+| `electricShare` | Double | `null` | Expliziter BEV-Anteil bzw. Lücken-Fallback; `null` = unbekannt, `0` = gültige Nullannahme | experimentell |
+| `maxDistricts` | int | `100` | Maximale Aggregation auf 1–100 MobileCity-Districts im Untersuchungsgebiet; optionale Outer-Districts kommen zusätzlich hinzu | experimentell |
+| `allowSyntheticTransitFallback` | boolean | `true` | Erlaubt bei fehlendem GTFS ausdrücklich das synthetische Transitnetz; `false` lässt den Regionalexport ohne Feed fehlschlagen | experimentell |
+| `transitVehiclesPer1000` | double | `1.0` | Flottenannahme je 1.000 Einwohner ausschließlich für den freigegebenen synthetischen ÖV-Fallback | experimentell |
+| `settlementAreaShare` | double | `0.5` | Modellierter Siedlungsflächenanteil `(0,1]` | experimentell |
+
+`useTemplate` und `regionalExport` schließen sich gegenseitig aus. `validateNative` ist ein
+harter Prüflauf, wenn er startet; fehlende lokale Werkzeuge ergeben dagegen `SKIPPED` mit
+`mobilecity-validation/status.json`.
+
+Bei `useRegionalCharging=true` schreibt der Regionalexport kumulative BNetzA-Bestände bis
+zum letzten beobachtbaren Jahr in `REGchargers`. Spätere Zellen bleiben leer und aktivieren
+den endogenen MobileCity-Ausbau. Die Einheit ist die Summe öffentlicher Ladepunkte, nicht
+Standorte oder Stecker. Automatische Quellen sind derzeit auf Deutschland beschränkt.
+
+Carsharing bleibt eine explizite Modellannahme. Sobald mindestens eines der beiden
+Carsharing-Felder gesetzt ist, weist das Dateninventar die Auflösung als `manual` aus. Ein
+nicht gesetztes Gegenfeld wird als null angenommen. Die Obergrenze 0,4 des
+Mitgliederanteils entspricht der harten Begrenzung im nativen MobileCity-Rechenkern.
+
+Umland ist nur als vollständiger Vertrag aktiv. Entweder aktiviert eine positive
+`surroundingPopulation` den manuellen Pfad, oder `autoSurrounding=true` erzeugt aus
+`surroundingBufferKm` acht Zensus-basierte Richtungssektoren. Ein gleichzeitig gesetzter
+positiver Bevölkerungswert überschreibt nur die automatische Gesamtsumme. In beiden Fällen
+sind alle vier Anteile Pflicht; sie füllen
+`POPtripsSurrounding.tripShareToStudyArea` und beschreiben Umland → Untersuchungsgebiet.
+Im Automatikpfad stammt die Altersstruktur aus Zensus 2022, soweit das Raster verwertbare
+Gruppen liefert; Pkw- und BEV-Struktur bleiben sichtbare Extrapolationen aus dem
+Untersuchungsgebiet. Ohne positive manuelle Bevölkerung und ohne Automatik bleiben externe
+Zonen reine Zielanker und werden nicht als MobileCity-Districts exportiert.
+
 ### 1.2 `Population`
 
 UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellierungs-Flags
@@ -88,6 +140,7 @@ UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellier
 | `seed` | long | `42` | Zufalls-Seed – gleicher Seed + gleiche Parameter = identisches Ergebnis. Konsumenten: Pipeline-`random`, `GtaBehaviorRunner`/`LlmModeChoiceRunner` (baseSeed) | produktiv |
 | `useOsmData` | boolean | `true` | **@Deprecated, zur JSON-Kompatibilität behalten und zur Laufzeit ignoriert.** Die Quelle wird automatisch als Szenario-Snapshot → Live-Overpass → synthetischer Fallback gewählt; im Studio gibt es dafür keine Checkbox mehr. | Legacy |
 | `useRealRouting` | boolean | `true` | Echte Reisezeit-/Distanzmatrizen via GraphHopper (OSM-Straßennetz) in Stufe „Matrizen"; bei `false`/Fehlschlag Luftlinie. Konsument: `GenerationService` → `RoutingEngine`/`MatrixGenerator` | produktiv |
+| `roadLocatedActivities` | boolean | **`false`** | Synthetische interne Wohn-/Fix-/Aktivitätsorte auf gemeinsame öffentliche Pkw-/Rad-/Fuß-Straßen innerhalb derselben Zone legen; kein zusätzlicher Zufallszug. Benötigt erfolgreiches reales Routing, sonst Fehler statt Ortsfallback. Externe Anker und Depotkoordinaten bleiben unverändert. Report `population/road-locations.json`; UI „Synthetische Wohn- und Aktivitätsorte an Straßen platzieren“. | **experimentell, 2026-10-19** |
 | `externalTrips` | boolean | `true` | Externe Zielzonen um das Gebiet, damit ein Teil der Wege es verlässt (realistische Weglängen). Konsument: `GenerationService` → `ExternalZones` | produktiv |
 | `behaviorSource` | String | `"actitopp"` | **Achse A**: `actitopp` (KIT, kalibriert) \| `gta` (LLM-Agenten, **experimentell**, Fallback actiTopp) \| `template` (einfacher Generator; **nicht** im UI-Select, nur Legacy-Fallback). Konsument: Stufe „Aktivitätenpläne" via `behaviorSourceEffective()` → `GtaBehaviorRunner`/`ActitoppRunner`/`ActivityGenerator`. UI: Select „Verhaltensmodell" | `actitopp` produktiv; `gta` **experimentell** |
 | `gtaWhatIf` | String | `""` | GTA 3d: Freitext-Was-wäre-wenn-Kontext (Policy/Technologie) für die LLM-Tagesplanung; leer = normales Verhalten. UI: Textarea, nur sichtbar bei `behaviorSource === 'gta'` | experimentell |
@@ -101,7 +154,7 @@ UI-Ort, wenn nicht anders vermerkt: Studio-Block „Bevölkerung"; die Modellier
 | `llmModeChoice` | boolean | **`false`** | GTA 3c: zusätzliche LLM-gestützte Moduswahl auf den simulierten Trips (geerdet in Reisezeiten je Modus) – alternativer Modal-Split zum Vergleich mit MNL/MiD. Benötigt logiTopp + LLM. Konsument: Stufe „LLM-Moduswahl" → `LlmModeChoiceRunner`. UI: Checkbox, gated `hasTarget('logitopp')` | **experimentell** |
 | `sumoFeedback` | boolean | **`false`** | Netz-Feedback: staubelastete SUMO-Reisezeiten fließen MSA-gedämpft in die Pkw-Matrix zurück, logiTopp entscheidet neu (Gleichgewichts-Schleife). Benötigt logiTopp + SUMO. Konsument: Stufe „Netz-Feedback" → `FeedbackMath`. UI: Checkbox, gated `hasTarget('logitopp') && hasTarget('sumo')` | **experimentell** |
 | `publicTransport` | boolean | **`false`** | **@Deprecated, zur JSON-Kompatibilität behalten und ignoriert.** Bei SUMO wird ÖV automatisch versucht, wenn Registry-Feed und Transit-Werkzeuge verfügbar sind; keine UI-Checkbox mehr. | Legacy |
-| `gtfsUploadPath` | String | – (unset) | Pfad eines hochgeladenen GTFS-Feeds; Fallback, falls der Auto-Fetch keinen Regionsfeed findet. Gesetzt vom Upload-Endpoint in `ScenarioController`. UI: „GTFS-ZIP hochladen"-Link im automatischen ÖV-Hinweis | experimenteller Fallback |
+| `gtfsUploadPath` | String | – (unset) | Pfad eines bewusst ausgewählten GTFS-Feeds; hat Vorrang vor dem Auto-Fetch. Gesetzt vom Upload-Endpoint in `ScenarioController`. UI: „GTFS-ZIP hochladen"-Link im automatischen ÖV-Hinweis | experimentell |
 | `carsPerHousehold` | double | `1.0` | Mittlere Pkw-Ausstattung der Haushalte; `PopulationGenerator.drawCarCount(...)` (stochastische Rundung) | produktiv |
 
 **`behaviorSourceEffective()`-Fallback-Logik (wichtig!):** Explizites `behaviorSource` gewinnt,
@@ -131,7 +184,9 @@ GTA-Lauf eine Exception wirft (Log: „… Fallback actiTopp").
 **Experimentell (alle default `false` bzw. nicht die Default-Option; Beförderung nur über das
 Gate in `synthesis-change-control`):** `calibrateModeChoice`, `calibrateDistance`,
 `correctDistanceDecay`, `calibrateModeDistance`, `llmModeChoice`, `sumoFeedback`,
-`behaviorSource = "gta"` (+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
+`behaviorSource = "gta"`, `mobileCity.useTemplate`, `mobileCity.regionalExport`,
+`mobileCity.validateNative`, `mobileCity.useRegionalFleet`
+(+ Anhängsel `gtaWhatIf`, `gtfsUploadPath`).
 Ziel `sumo` in `targetModels` ist funktionsfähig, aber **nicht** im Default enthalten.
 
 **Produktiv-Default (an, ohne Zutun):** automatische OSM-Datenquellenwahl,
@@ -139,6 +194,151 @@ Ziel `sumo` in `targetModels` ist funktionsfähig, aber **nicht** im Default ent
 Targets `logitopp` + `mobilecity`.
 
 ---
+
+### 1.5 Schwerer Güterverkehr (`Scenario.freight`, Stand 2026-10-15)
+
+`enabled=false` aktiviert explizite Tages-OD nur mit SUMO und vollständiger Personen-
+nachfrage. `day=0` bezeichnet Montag und muss zum SUMO-Betriebstag passen.
+`sevasEnabled=false` verwendet einen vom Nutzer hochgeladenen Snapshot.
+`profileChecksEnabled=false` ergänzt statische Standard-LKW-Profile (26/40 t Volllast,
+4 m Höhe, 2,55 m Breite) plus Quellregel-/Abbiege-Audit in der bestehenden SUMO-Stufe.
+Eigene schwere SUMO-Typzuordnungen sind damit vorerst nicht kombinierbar.
+Ungeklärte Bedingungen/Zweckregeln und Achslasten bleiben ungeklärt; nicht routbare
+Fahrten oder nachgewiesene Verstöße liefern FAILED mit erhaltenem
+`freight/route-checks.json`. Deaktivierung entfernt alte Prüfartefakte.
+Frontend: Checkbox im Güterverkehrsblock; beim Abwählen von Güterverkehr/SUMO wird
+auch die Profilprüfung deaktiviert. Details: docs/21, Abschnitt 20.
+
+---
+
+### 1.6 Quellenplan: Gemeindeaggregate und Laufzweck (2026-10-29)
+
+`SourcePlan` bleibt standardmäßig deaktiviert. `qualityMode` ist `exploration` oder
+`analysis` (Default Exploration). Die bekannte technische Lkw-Mengendemonstration
+ist ausschließlich bei Exploration, `Policy.demonstrationAccepted=true` (Default
+false) und 10–1.000 Zeichen `Policy.assumptionStatement` erlaubt. Alte gespeicherte
+Demonstrationen erhalten keine automatische Freigabe. Die Moduswahl selbst
+zertifiziert keine empirische Qualität anderer Quellen/Modelle. UI: Daten & Quellen,
+Beiträge → Verwendungszweck und bei Lkw-Demonstration Freigabe/Beschreibung.
+
+Zusätzliche Importverträge: `municipal-workplaces-v1` für `opportunities.work` und
+`municipality-allocation-v1` als unterstützende Revision. Metadaten `geography`:
+`codeSystem=de:AGS`, `edition` als Datum, `allocationMethod=explicit-point-weights-v1`,
+beim Aggregat `allocationRevision` als Hash. Die unterstützende Revision aktiviert
+keinen Nachfrageaspekt. Referenzgraph mit erwarteten Schemas, Zyklus-/Tiefenprüfung
+und gefrorenen Revisionen im Eingabelock; keine allgemeine Workflowplanung. Für Aggregate ist zusätzlich
+`allocationMethod=uniform-area-v1` mit Referenzvertrag `municipality-areas-v1`
+verfügbar: WGS84-GeoJSON, Flächenverschneidung in EPSG:3035, 1-cm-Abdeckungstoleranz,
+ungepufferte Mengen, Löcher/MultiPolygone und getrennte Teilzonen-/Außenbilanz.
+Der Methodenwechsel im Importeditor löscht die alte Referenzauswahl. Die
+Punktgewichtsvariante bleibt eigenständig.
+
+**Ergänzung 2026-10-29 – gemischte Profile und Registerlücken:**
+Quellenprofile für Bevölkerung und Work unterstützen `builtin:<ID>` zusätzlich zu
+`revision:<Hash>`/`pack:<ZIP-Hash>:<Quellen-ID>`. Native Profile verlangen `fallback=none`;
+gemischte Work-Profile verlangen `gaps=none|providers`. Potenziell benötigte Revisionen
+und Referenzen werden vor Queueing unter `sources/lock.json.chains` gebunden (`staged`),
+Auswahl folgt im Lauf. Defekte potenzielle Dateien sind fatal; ausgeschlossene und
+hinter einer geeigneten Importrevision liegende Kandidaten werden nicht eingelesen.
+`Policy.gaps=providers` und `gapProviders` (geordnete native Work-Kandidaten) ergänzen
+nur nicht vollständig übernommene Zonen. Bestätigte Nullwerte bleiben erhalten.
+Punktregister, Gemeindegewichte und Flächenverteilung nutzen dieselbe atomare Komposition.
+Work-Bericht: `gapResolution`, `gapPolicy`, getrennte `gap/…`-Herkunft; keine Summe aus
+Registermengen und heuristischen Gewichten. Keine Lücken → kein nativer Ersatzaufruf.
+Default bleibt ausgeschalteter Gesamtplan und der bestehende Legacy-Vertrag.
+Ausführbares Paket und genaue Grenzen: `docs/examples/mixed-sources/README.md`.
+
+**Ergänzung 2026-10-29 – regionale Mehrregisterkomposition:**
+`SourceProfiles.Chain.strategy="fill-gaps"` ergänzt importierte Work-Register räumlich
+nach Vorrang. Fehlend/null bedeutet weiterhin Auswahl der ersten verwendbaren Quelle;
+null wird nicht serialisiert, alte Profilhashes bleiben erhalten. Regionale Profile
+verlangen `fallback=none`, mindestens einen aktiven Registerkandidaten und dürfen
+keine nativen Kandidaten enthalten; native Restlücken bleiben `Policy.gapProviders`.
+Vorprüfung bindet alle potenziellen Registerrevisionen/Referenzen. Im Lauf übernimmt
+jede Zone das erste vollständig abdeckende Register, einschließlich Nullwerten.
+`RegionalWorkplaces` bilanziert angewendete, verdeckte, Außen- und Teilmengen pro
+Revision; tatsächliche Scopes liegen unter `register-<Rang>/…`, die Diagnose vor
+Vorrang unter `allocationBeforePriority`. Keine gemeinsame beobachtete Gesamtzahl.
+Restlücken werden explizit ergänzt oder führen atomar zum Fehler. Andere Zwecke
+und der Pipeline-RNG bleiben unverändert. UI: Profileditor → Zusammenführung →
+Register regional ergänzen. Beispiel: `docs/examples/regional-registers/README.md`.
+
+**Ergänzung 2026-10-30 – Rasterzellen und Masken:**
+`population-cells-v1`/`workplace-cells-v1` verwenden vollständige EPSG:3035-Zellen:
+West-/Südkante und Kante (100-m-ausgerichtet, 100–10.000 m), Status `value`, `missing`,
+`not-collected`, `suppressed`; echte Null bleibt bekannt. `CellImportAdapter.normalize`
+erhält unbekannte Rohmarker, bevor Validierung und Revisionshash erfolgen. Alte
+Schemahashes/Reader bleiben erhalten. Zellen dürfen nicht überlappen; Quellbox ist
+keine Werteabdeckung. `MaskedCells` verteilt ungepufferte Flächenanteile nur auf
+vollständig bekannte Modellzonen; ganze Teilzonen bleiben Lücken, ihre bekannten
+nicht angewendeten Mengen stehen separat. Work nutzt atomare Komposition und
+`gaps=none|providers`. Population darf für diesen Vertrag ebenfalls
+`gaps=providers` verwenden, mit `osm-places`, `poi-density`, `uniform` in
+`gapProviders`. Bei tatsächlichen Lücken ist `population.totalPersons` als
+konsistenter Mengenanker erforderlich; nur die Restmenge wird ergänzt. Vollabdeckung
+mit widersprechendem manuellem Total ist fatal. Herkunft trennt Daten, Flächenannahme,
+Mengenanker und Ersatzmodell. Neues UI: Rasterstatusvertrag im Import, Lückenmodelle
+und Mengenanker. Keine native Zensusmigration oder unterzonale Ergänzung; ganze
+Haushalte besitzen weiterhin eine eigene Rundungsabweichung. Vertrag/Beispiel:
+`docs/examples/masked-cells/README.md`. Opt-in `dataPlan.enabled` bleibt `false`.
+
+**Ergänzung 2026-10-30 – installationsweite Datenpaketbibliothek:**
+`DataPackLibrary` speichert unveränderliche portable ZIP-Versionen unter
+`<synthesis.data-dir>/source-library/packs/<SHA-256>.zip`. Keine neue Property, kein
+Szenarioflag: Veröffentlichung/Übernahme sind explizite Verwaltungsaktionen und
+aktivieren weder den Quellenplan noch eine Quelle. Bibliothekspakete müssen alle
+referenzierten Revisionen enthalten; `DataPacks.validatePortable` prüft Vertrag,
+Referenzgraph und kommunale Bindung vor Speicherung. Die Übernahme verwendet
+weiterhin die lokalen Szenariopfade und identische Revisionshashes. Laufresolver und
+Eingabelock lesen keine zentralen Dateien. Neue Versionen binden bestehende Szenarien
+nicht um. `GET/POST /api/data-library/packs`,
+`POST /api/scenarios/{scenario}/data/packs/{hash}/library` (bereitstellen),
+`POST /api/scenarios/{scenario}/data/library/packs/{hash}/install` (kopieren).
+UI: Daten & Quellen → Datenbestand → Szenarioübergreifende Datenbibliothek.
+Ungültige zentrale Einträge sind sichtbar und nicht übernehmbar; ein Bibliotheks-
+Lesefehler blockiert den übrigen Szenariobestand nicht. Quellenprofile bleiben
+szenariolokal; keine Cloud-Synchronisierung oder Regionalempfehlung. Beispiel:
+`docs/examples/source-library/README.md`.
+
+**Ergänzung 2026-10-30 – gemeinsame Quellenprofile:**
+`SourceProfileLibrary` speichert `synthesis-source-profile-v1` unter
+`<synthesis.data-dir>/source-library/profiles/<Profilhash>.json`. Die gemeinsamen
+`SourceProfiles.prepare/decode` erhalten die bisherigen kanonischen Profilhashes.
+Portable Profile erlauben feste `pack:`-Beiträge und native `builtin:`-Regeln;
+`revision:`-Kandidaten bleiben szenariolokal und werden für die Bibliothek abgelehnt.
+Alle aktiven Paketversionen müssen vorhanden, portabel und aspektpassend sein;
+höchstens 16 verschiedene. Ausgeschlossene Pakete werden nicht gelesen/kopiert.
+Vor der ersten Zielschreiboperation werden alle aktiven Archive eingelesen/geprüft.
+Die Übernahme kopiert Profile/Pakete, aktiviert nichts und übernimmt keine
+Szenario-Lückenregeln/Mengenanker. Native Quellen werden im Ziel neu aufgelöst;
+insbesondere wird kein Upload über `builtin:upload-grid` mitkopiert. Neue globale
+Versionen binden vorhandene Szenarien nicht um. Keine zentrale Laufzeitabhängigkeit.
+`GET/POST /api/data-library/source-profiles`,
+`POST /api/scenarios/{scenario}/data/source-profiles/{hash}/library`,
+`POST /api/scenarios/{scenario}/data/library/source-profiles/{hash}/install`.
+UI: Daten & Quellen → Datenbestand → Szenarioübergreifende Quellenprofile; direkte
+JSON-Definition oder Bereitstellung gespeicherter Szenarioprofile. Fehler werden
+sichtbar, andere Datenpfade bleiben nutzbar. Details/Beispiele:
+`docs/examples/shared-source-profiles/README.md`.
+
+**Ergänzung 2026-11-02 – Schwerlastquellen und Zielwirkung:**
+**Laufbindung und UI (2026-11-04):** `sources/resolution.json` trägt zusätzlich `synthesis-source-run-resolution-v1`: Beginn/Ende, Status/Fehler, Plan-/Lockhashes, tatsächliche Haushaltsrundung und eigene Teilfehler. Die Studioansicht „Daten & Quellen → Lauf prüfen“ zeigt Mengen, Herkunft und Zielausführung getrennt. SUMO-Bilanzen werden nur bei erfolgreicher aktueller Stufe mit Dateihash gebunden; alte Dateien bei übersprungenen Stufen zählen nicht. Nur letzter Lauf, kein Archiv und kein automatischer Gleichstandsbeleg für nachträglich bearbeitete Szenarioeingaben. Kein neues Flag; `dataPlan.enabled=false` bleibt der Default.
+
+`sources/resolution.json.freight` enthält `synthesis-freight-source-resolution-v1`
+(`FreightSources`): Eingangs-/Ergebnismengen pro gebundener Relation, Quellzeile und
+Revisions-/Rohhash, Zeitpunkt-/Klassen-/Koordinatenprüfung, Join nach
+`freight/trips.csv` über `relationId`. Quelle unbestätigt = `unknown`, explizite
+Mengendemonstration = `assumed`; modellierte Abfahrtsverteilung wird getrennt als
+Annahme mit Seedableitung ausgewiesen. `FreightDemandGenerator.sourceQuality`
+kennzeichnet die Demonstration auch in Freight-Berichten und Manifest konsistent
+als Annahme. Bestandspfade behalten ihre bisherigen Qualitätswerte.
+Keine neue Konfigurationsachse: `dataPlan.enabled` bleibt Opt-in. Auswahl/Abwahl
+von `freight.vehicleOd` betrifft allein schweren Hintergrund; aktivierte
+Unternehmenstouren, Paketlogistik und Population bleiben unabhängig. Die UI benennt
+das ausdrücklich. Erzeugte Fahrten sind kein Routing-/Abschlussbeweis: separate
+`sumo/traffic-routing.json`, `sumo/traffic-execution.json`, `freight/execution.json`.
+Begrenzte native Abnahme ohne private/Paketfahrten, keine G9-Fachfreigabe. Details:
+`docs/examples/source-plan-traffic/README.md`.
 
 ## 2. Betriebs-Properties (`SynthesisProperties`, Prefix `synthesis.`)
 
@@ -148,6 +348,36 @@ Quelle: `backend/src/main/java/de/synthesis/SynthesisProperties.java`
 (`# sumo:`, `# llm:`, `# transit:`, Teile von `overpass`/`simulation`)**: Das ist bewusste
 **Doku der verfügbaren Keys**, die Java-Defaults gelten dann. Nicht löschen; beim Ergänzen von
 Keys mitpflegen.
+
+**Ergänzung 2026-10-29 – gemeinsame Auswahl und Work:**
+`dataPlan.aspects["opportunities.work"].source="builtins"` erlaubt die geordnete
+`providers`-Liste mit `osm-pois` und `synthetic`; Einträge wie bei Bevölkerung.
+`ProviderChain<T>` ist der gemeinsame verzögerte Auswahlkern. OSM liefert die
+bereits in Stufe 3 abgeleiteten Work-Gewichte; das synthetische Modell verwendet
+private Zonenkopien und Seed `population.seed XOR 0x574f524b5f56314c`.
+Andere Attraktivitätszwecke und der gemeinsame Pipeline-RNG bleiben unverändert.
+Bericht: `sources/resolution.json.workplaces`, Einheit `model-weight`, keine
+beobachtete Arbeitsplatzsumme. Fehler: `sources/workplace-failure.json`.
+Native Kette und Revisions-/Paketprofile sind inzwischen über gemischte Profile
+verbindbar; explizite Registerlücken nutzen `gaps=providers` (siehe Ergänzung oben). OSM-Abwahl für Work deaktiviert keine anderen
+OSM-Verbraucher. Reine Kandidatenabwahl gilt nicht als ausgefallene Primärquelle.
+Beispiele: `docs/examples/workplace-sources/README.md`.
+
+**Ergänzung 2026-10-29 – native Bevölkerungskette:**
+`dataPlan.aspects["population.distribution"].source="builtins"` verwendet die explizite
+Liste `providers` mit `provider`, `excluded`, `onUnavailable: fail|next`.
+Zulässige IDs: `upload-grid`, `census-2022`, `osm-places`, `poi-density`, `uniform`.
+Der Standard bleibt `source=legacy`, der Gesamtplan bleibt `enabled=false`.
+Eine manuelle `totalPersons`-Zahl überschreibt nur die Gesamtzahl, nicht die
+Verteilungsquelle. Abwahl in dieser Kette betrifft keine Straßen/Arbeitsplätze oder
+anderen Zensusverbraucher. Vorprüfung: `pending-resolution`; tatsächliche räumliche
+Auswahl im Lauf. Zugelassene Uploads binden Hash/Abwesenheit vor Queueing; Kopie unter
+`sources/population-grid.csv`. Getrennte Gesamtzahl-/Verteilungsherkunft unter
+`sources/resolution.json.population`; Quellenfehler unter `sources/population-failure.json`.
+Die neue Kette schlägt bei Integritätsfehlern/unterdrückten Rasterwerten fehl; die
+Legacy-Leiter bleibt kompatibel. Keine allgemeine Qualitätsfreigabe durch `analysis`.
+Beispiele und Grenzen: `docs/examples/population-sources/README.md`.
+
 
 ### 2.0 Root
 
@@ -223,16 +453,16 @@ Keys mitpflegen.
 Der Framework-Fallback verwendet den Installer-Symlink `Versions/Current` indirekt und enthält
 keine Versionsnummer. Verifiziert mit SUMO 1.27.1 am 2026-08-11.
 
-### 2.6 `synthesis.transit` (automatische ÖV-Ergänzung der SUMO-Simulation)
+### 2.6 `synthesis.transit` (GTFS für SUMO und MobileCity)
 
 | Key | Default | Zweck | Konsument |
 |---|---|---|---|
-| `enabled` | `true` | ÖV-Provider abschaltbar (ÖV entfällt im SUMO-Lauf) | `GenerationService.buildPtProvider` |
+| `enabled` | `true` | GTFS-Auflösung abschaltbar; SUMO-ÖV entfällt, MobileCity benötigt dann den ausdrücklich erlaubten synthetischen Fallback | `GenerationService.buildPtProvider`, `stageMobileCityExport` |
 | `venv-python` | `../validation/transit-venv/bin/python` in `application.yml` | Reproduzierbarer lokaler Python-Interpreter mit pandas/rtree/pyproj; fehlt er, wird ÖV verständlich übersprungen | `TransitRunner.isAvailable()` |
 | `gtfs2pt` | **berechnet**: `$SUMO_HOME/tools/import/gtfs/gtfs2pt.py` (ungesetzt → macOS-Framework-`share/sumo` wie oben) | Pfad zu gtfs2pt.py | `TransitRunner` |
 | `feeds` | `[kvv]` (Registry s. u.) | Auto-Fetch-Feeds: Verbund-GTFS mit Abdeckungs-Bbox | `GtfsSource` |
 | `max-feed-mb` | `200` | Obergrenze Auto-Fetch-Download (MB); größere Feeds → Upload-Empfehlung | `GtfsSource` |
-| `window-start-hour` / `window-end-hour` | `6` / `10` | Zeitfenster (Stunden) für den Fahrplan-Zuschnitt – begrenzt die gtfs2pt-Laufzeit | `GtfsCropper`/`TransitRunner` |
+| `window-start-hour` / `window-end-hour` | `6` / `10` | Zeitfenster nur für SUMO/gtfs2pt; MobileCity verwendet einen Volltageszuschnitt, weil `freq` Fahrten pro Werktag bezeichnet | `GtfsCropper`/`TransitRunner`; `MobileCityGtfsAdapter` |
 | `timeout-minutes` | `25` | gtfs2pt-Map-Matching (tracemapper) ist langsam → großzügiger Timeout; Ergebnis wird gecacht | `TransitRunner` |
 | `modes` | `bus` | gtfs2pt-Modi (OSM-Namen). Aktuell nur Bus – Netz ist road-only; Rail/Tram-Befund in `docs/06-gta-integration-konzept.md` („Phase 2 – SUMO") | `TransitRunner` |
 
@@ -263,6 +493,46 @@ Beachte: `synthesis.llm.enabled` ist default `true`, **wirkt aber nur**, wenn ei
 `behaviorSource = "gta"` oder `llmModeChoice = true` setzt – beides experimentell. Ist kein
 Ollama erreichbar, greift der Fallback; es gibt keinen harten Fehler.
 
+### 2.8 `synthesis.mobile-city-validation` (native ConfigTool-Prüfung)
+
+| Key | Default | Zweck | Konsument |
+|---|---|---|---|
+| `enabled` | `true` | Laufzeit betriebsweit verfügbar machen; Szenario-Opt-in bleibt erforderlich | `GenerationService`-Gate |
+| `python` | `python3` | Interpreter für `validate-mobilecity.py` | `MobileCityValidationRunner` |
+| `script` | `../scripts/validate-mobilecity.py` | Isolierter Build-/Import-/Simulations-Adapter | dito |
+| `dotnet` | `../validation/tools/dotnet-8.0.425/dotnet` | Gepinnte lokale .NET-8-Laufzeit | dito |
+| `tool-source` | `../validation/mobilecity/ConfigTool` | Lokaler MobileCity-ConfigTool-Quellstand; wird nur in ein temporäres Verzeichnis kopiert | dito |
+| `nuget-cache` | `../.runtime/nuget` | Optionaler lokaler Paketcache für Offline-Builds | dito |
+| `timeout-minutes` | `20` | Gesamtbudget des Prüflaufs und Timeout je nativem Teilprozess | dito |
+| `years` | `11` | Aufeinanderfolgende Prüfsimulationsjahre; mindestens 3 | dito |
+
+Gate-Reihenfolge: Ziel `mobilecity` → vollständiger Regional-/Vorlagenmodus →
+`mobileCity.validateNative` → Betriebs-Property/Werkzeuge. Nicht angefordert oder nicht
+verfügbar = `SKIPPED`; gestarteter Prozess mit Fehler/Timeout = `FAILED`.
+
+### 2.9 `synthesis.auth` (Plattform-Anmeldung, seit 2026-11-04)
+
+| Key | Default | Zweck | Konsument |
+|---|---|---|---|
+| `enabled` | `true` | Cookie-Session-Login für `/api/**`; `false` nur für lokale Einzelnutzer-Entwicklung (API offen, `/api/auth/me` meldet einen lokalen Admin) | `SecurityConfig`, `AuthController` |
+| `allowed-origins` | `[http://localhost:4300]` | CORS mit Credentials für externe Dev-Server; leer = same-origin, kein CORS | `WebConfig` |
+| `bootstrap-admin` | `admin` | Name des Administrators, der beim ersten Start ohne Konten angelegt wird (Startpasswort in `<data-dir>/initial-admin-password.txt` und im Log) | `UserStore` |
+| `min-password-length` | `8` | Mindestlänge neuer Passwörter | `UserStore` |
+| `max-login-failures` | `10` | Fehlversuche je Benutzername und Herkunft, danach 429 (`LoginAttemptLimiter`) | `AuthController` |
+| `lockout-minutes` | `15` | Dauer der Login-Sperre; alte Fehlversuche verfallen nach dieser Zeit | `LoginAttemptLimiter` |
+
+Konten liegen in `<data-dir>/users.json` (bcrypt). Löschen, Rollenwechsel und Passwort-Reset beenden
+laufende Sitzungen des Kontos sofort (`SessionRegistry`). Rollen `ADMIN` (Kontenverwaltung `/api/users`)
+und `USER`; alle Angemeldeten teilen den Szenario-Arbeitsbereich, löschen darf nur Ersteller
+(`Scenario.createdBy`) oder Admin. Anmeldefrei: `/api/auth/login`, `/api/auth/me`, `/api/health`
+und die statischen Frontend-Dateien. Session-Cookie-Parameter unter `server.servlet.session.*`.
+
+### 2.10 `synthesis.frontend` (SPA-Auslieferung durch das Backend, seit 2026-11-04)
+
+| Key | Default | Zweck | Konsument |
+|---|---|---|---|
+| `dir` | `""` | Verzeichnis des Angular-Builds (`index.html`); leer = `classpath:/static/` (vom Docker-Build ins Jar gebündelt). Nichts gefunden = nur API | `FrontendConfig` |
+
 ---
 
 ## 3. Env-Variablen
@@ -270,6 +540,7 @@ Ollama erreichbar, greift der Fallback; es gibt keinen harten Fehler.
 | Variable | Wirkung | Konsument |
 |---|---|---|
 | `SUMO_HOME` | Quelle der **berechneten Defaults** `synthesis.sumo.bin-dir`, `synthesis.sumo.sumo-home`, `synthesis.transit.gtfs2pt` (Ableitung s. Abschnitte 2.4/2.5). Ungesetzt → PATH-Erkennung, danach versionsunabhängiger macOS-Framework-Fallback | `SynthesisProperties.Sumo`/`Transit` – statisch bei Bean-Erzeugung gelesen; **Backend-Neustart nötig** nach Änderung |
+| `SYNTHESIS_DATA_DIR`, `SYNTHESIS_AUTH_ENABLED`, `SYNTHESIS_AUTH_ALLOWED_ORIGINS`, … | Spring-Relaxed-Binding: jede Property aus Abschnitt 2 lässt sich als Env-Variable setzen (`synthesis.data-dir` → `SYNTHESIS_DATA_DIR`). So konfiguriert `docker-compose.yml` den Container | Spring Boot Binder |
 | `SYNTHESIS_TRANSIT_VENV` | **Nur Test-Gate, keine Laufzeit-Wirkung:** `backend/src/test/java/de/synthesis/generation/pipeline/PtIntegrationTest.java` liest sie via `System.getenv` und überspringt den (langsamen) ÖV-Integrationstest, wenn ungesetzt („SYNTHESIS_TRANSIT_VENV nicht gesetzt – ÖV-Integrationstest übersprungen"). Zeigt auf den Python-Interpreter eines venv mit pandas/rtree/pyproj. Für den **Betrieb** gilt stattdessen `synthesis.transit.venv-python` | `PtIntegrationTest` |
 
 ---
@@ -295,7 +566,7 @@ Reihenfolge einhalten; jeder Schritt hat einen historischen Grund (Vorfälle:
    `job.stage("<Stufenname>").status = "SKIPPED"` + `job.log("... übersprungen (<Grund>)")`.
    Konvention: **SKIPPED = bewusste Abwahl/fehlende Voraussetzung, FAILED = echter Fehler** (der
    Nutzer muss beides unterscheiden können). Bei neuer Stufe: `STAGES`-Liste ergänzen (aktuell
-   14 Stufen: Zonierung … LLM-Moduswahl).
+   15 Stufen: Zonierung … LLM-Moduswahl).
 5. **`application.yml`**: Falls das Flag eine begleitende Betriebs-Property bekommt →
    auskommentierten Doku-Block ergänzen (Muster `# sumo:` / `# transit:`).
 6. **`docs/06-gta-integration-konzept.md`**: Eintrag im passenden Phasen-Abschnitt (was, warum,
@@ -371,7 +642,8 @@ aktualisieren und den Stand-Vermerk unten anpassen.
 
 ## Provenienz & Wartung
 
-- **Stand: 2026-08-25.** Ground Truth vollständig gelesen und übertragen aus:
+- **Stand: 2026-09-22.** MobileCity-Flags, native Prüfeigenschaften und 15. Stufe gegen die
+  Ground Truth aktualisiert. Vollständiger Grundkatalog gelesen und übertragen aus:
   `backend/src/main/java/de/synthesis/scenario/Scenario.java`,
   `backend/src/main/java/de/synthesis/SynthesisProperties.java`,
   `backend/src/main/resources/application.yml`,
@@ -384,7 +656,7 @@ aktualisieren und den Stand-Vermerk unten anpassen.
 - **Volatil** (bei jeder Berührung der Quelldateien neu prüfen, Greps in Abschnitt 6):
   Default-Werte, Experimentell-Status (Flags werden befördert!), Feed-Registry (weitere Verbünde
   geplant), `transit.modes` (Rail/Tram-Befund offen, docs/06), hart codierte
-  SUMO-Framework-Version 1.26.0, UI-Positionen im Studio-Template, Stufenliste (aktuell 14).
+  SUMO-Framework-Version 1.26.0, UI-Positionen im Studio-Template, Stufenliste (aktuell 15).
 - **Wartungsregel:** Jede Änderung an `Scenario.java` oder `SynthesisProperties.java` zieht ein
   Update dieses Skills nach sich (Teil der Doku-Pflicht aus `synthesis-change-control`).
 - Geschwister-Skills (nicht duplizieren): `synthesis-change-control` (Beförderungs-Gate für

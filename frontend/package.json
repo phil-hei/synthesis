@@ -2,7 +2,7 @@
   "name": "synthesis-frontend",
   "version": "0.1.0",
   "engines": {
-    "node": "^20.19.0 || ^22.12.0 || ^24.0.0"
+    "node": "^20.19.0 || ^22.12.0 || ^24.0.0 || ^26.0.0"
   },
   "scripts": {
     "ng": "ng",
@@ -11,28 +11,33 @@
     "build:dev": "ng build --configuration development",
     "audit:prod": "npm audit --omit=dev",
     "test": "ng test --watch=false",
-    "test:watch": "ng test"
+    "test:watch": "ng test",
+    "lint": "ng lint"
   },
   "private": true,
   "dependencies": {
-    "@angular/common": "^21.2.20",
-    "@angular/compiler": "^21.2.20",
-    "@angular/core": "^21.2.20",
-    "@angular/forms": "^21.2.20",
-    "@angular/platform-browser": "^21.2.20",
-    "@angular/router": "^21.2.20",
+    "@angular/common": "^21.2.26",
+    "@angular/compiler": "^21.2.26",
+    "@angular/core": "^21.2.26",
+    "@angular/forms": "^21.2.26",
+    "@angular/platform-browser": "^21.2.26",
+    "@angular/router": "^21.2.26",
     "leaflet": "^1.9.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.1"
   },
   "devDependencies": {
-    "@angular/build": "^21.2.20",
-    "@angular/cli": "^21.2.20",
-    "@angular/compiler-cli": "^21.2.20",
+    "@angular/build": "^21.2.29",
+    "@angular/cli": "^21.2.29",
+    "@angular/compiler-cli": "^21.2.26",
+    "@eslint/js": "^10.0.1",
     "@types/leaflet": "^1.9.12",
+    "angular-eslint": "21.4.0",
+    "eslint": "^10.3.0",
     "jsdom": "^24.1.1",
     "typescript": "~5.9.3",
+    "typescript-eslint": "8.59.2",
     "vitest": "^4.1.10"
   }
 }

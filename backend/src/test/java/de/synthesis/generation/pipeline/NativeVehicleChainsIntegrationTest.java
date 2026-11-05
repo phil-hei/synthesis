@@ -93,7 +93,8 @@ class NativeVehicleChainsIntegrationTest {
     @Test void rejectsSpatialGapsBeforeSimulationAndLeavesAnActionableReport() throws Exception {
         var scenario = scenario("standard.pkw.diesel", List.of(VehicleOperationsConfiguration.personKey("p", "a"), VehicleOperationsConfiguration.personKey("p", "b")));
         var demand = new TravelDemand(List.of(EnergyOperationsIntegrationTest.trip("a", 1, 8.201, 8.203), EnergyOperationsIntegrationTest.trip("b", 10, 8.205, 8.201)), 2);
-        var error = assertThrows(IOException.class, () -> runner(scenario).run(dir, EnergyOperationsIntegrationTest.OSM, demand, null, null, ignored -> {}));
+        var runner = runner(scenario); // Annahme außerhalb der Lambda: ohne SUMO wird übersprungen, nicht rot
+        var error = assertThrows(IOException.class, () -> runner.run(dir, EnergyOperationsIntegrationTest.OSM, demand, null, null, ignored -> {}));
         assertTrue(error.getMessage().contains("Ortsbruch")); assertEquals("failed", chains().path("status").asText());
         assertFalse(Files.exists(dir.resolve("sumo/tripinfo.xml")));
     }

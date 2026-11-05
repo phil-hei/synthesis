@@ -3739,3 +3739,362 @@ Laufzeitcode und führt keine zusätzlichen bestandenen Gates ein.
   neue Pipeline-Stufe oder neue Zufallsfolge; `dataPlan.enabled=false` bleibt Default.
   [Bedienung und Vertrag](examples/source-run-report/README.md),
   [ausgeführte Tests und Browsernachweis](05-validierung.md#quellenlaufbericht-und-lesbare-teileherkunft-2026-11-04).
+
+## K. Plattform-Härtung und Betrieb (ab 2026-11-04)
+
+Dieser Abschnitt sammelt die Umbauten vom Einzelnutzer-Werkzeug zur Server-Plattform:
+Statusvertrag, Nachvollziehbarkeit, Anmeldung, Deployment und Qualitätswerkzeuge. Jeder Eintrag
+nennt den Anlass, die Entscheidung und den Nachweis.
+
+### Fallback-Sichtbarkeit, Provenienz und persistierter Jobstatus — ✅ UMGESETZT (2026-11-04)
+- **Anlass (Befund vom 2026-11-04):** Ein Lauf ohne Overpass-Zugang stand in der Pipeline-Anzeige
+  als grüne Stufe „OSM-Daten (POIs)“, obwohl die Attraktivitäten synthetisch waren; die Meldung war
+  gesetzt, aber nur bei `FAILED` sichtbar. Gleichzeitig nannte `manifest.json` unter
+  `inputProvenance.osmData.source` den Wert `overpass-live`, weil `osmDataSource` vor dem Abruf
+  gesetzt und bei Ausfall nicht korrigiert wurde. Beides widersprach dem Herkunftsprinzip.
+- **Fallback-Markierung:** `GenerationJob.StageInfo.fallback` ergänzt den Statusvertrag
+  `PENDING | RUNNING | DONE | FAILED | SKIPPED` um eine orthogonale Kennzeichnung: Die Stufe bleibt
+  `DONE`, trägt aber Markierung und Meldung. Gesetzt wird sie bei Overpass-Ausfall (POIs oder
+  Siedlungen), Luftlinienmatrizen nach gescheitertem Netzaufbau und bei Verhaltensquellen-Fallback
+  (GTA → actiTopp → Template). Das Studio zeigt dafür ein zweifarbiges Statuszeichen, ein
+  „Fallback“-Badge und die Meldung; übersprungene Stufen zeigen ihren Grund ebenfalls.
+- **Provenienz:** `osmDataSource` wird erst nach den Abrufen bestimmt:
+  `overpass-live` (beide Abrufe), `overpass-live-partial` (einer) oder `synthetic-fallback`.
+- **Jobstatus überlebt Neustarts:** `GenerationJob` wird als `artifacts/job.json` nach jeder Stufe
+  und am Laufende atomar gespeichert; `GenerationService.status()` liest die Datei, wenn der Lauf
+  nicht mehr im Speicher ist. Ein beim Neustart noch aktiver Lauf wird als `FAILED` mit Grund
+  gemeldet, damit das Studio nicht endlos pollt.
+- **Thread-Sicherheit:** `summary` war eine `LinkedHashMap`, die der Worker schreibt, während der
+  Status-Endpunkt sie serialisiert. Sie ist jetzt synchronisiert und wird nur als Kopie
+  serialisiert; Zustandsfelder sind `volatile`.
+- **Ergebnisanzeige:** `zonesInternal`/`zonesExternal` trennen interne Zellen von Außenankern
+  (vorher „529 Zonen“ links und „537“ rechts ohne Erklärung).
+- **Testfix:** `NativeVehicleChainsIntegrationTest` setzte `assumeTrue` innerhalb der
+  `assertThrows`-Lambda; ohne SUMO wurde der Test rot statt übersprungen. Die Annahme steht jetzt
+  davor.
+- **Verifiziert:** `GenerationJobTest` (Serialisierung genau einmal, Roundtrip, nebenläufige
+  Snapshots), `GenerationServiceFallbackTest` (Overpass-Ausfall → `DONE` + Fallback,
+  Manifest `synthetic-fallback`, Status aus `job.json` nach Neustart); Backend-Suite 489 Tests,
+  0 Fehler, 44 übersprungen; Frontend 130 Tests grün, AOT-Build grün.
+
+### Anmeldung und Benutzerkonten (Plattform-Betrieb) — ✅ UMGESETZT (2026-11-04)
+- **Anlass:** Das Werkzeug soll auf einem Server als Plattform laufen, auf der sich mehrere Personen
+  anmelden. Bisher war die komplette API offen, CORS fest auf `http://localhost:4300` verdrahtet und
+  jeder konnte jedes Szenario löschen.
+- **Mechanik:** Spring Security mit Cookie-Session statt Token-Verwaltung im Browser, weil das
+  SPA vom selben Backend ausgeliefert wird. Paket `de.synthesis.auth`: `SecurityConfig` (JSON-Login,
+  `401` statt Login-Seite für `/api/**`, CSRF-Token als lesbares Cookie `XSRF-TOKEN`, das Angular
+  per `withXsrfConfiguration` als Header `X-XSRF-TOKEN` zurückschickt), `AuthController`
+  (`/api/auth/login|logout|me|password`), `UserController` (`/api/users`, nur Rolle `ADMIN`),
+  `UserStore` (`<data-dir>/users.json`, bcrypt über `DelegatingPasswordEncoder`, atomar geschrieben,
+  Dateirechte `rw-------`). Rollen: `ADMIN` verwaltet Konten, `USER` arbeitet mit Szenarien; alle
+  Angemeldeten teilen sich den Szenario-Arbeitsbereich, löschen darf nur Ersteller oder Admin
+  (`Scenario.createdBy`, in der Liste sichtbar).
+- **Erststart:** Ohne Konten legt `UserStore` den Administrator `admin` mit zufälligem Startpasswort
+  an; es steht einmalig im Log und in `<data-dir>/initial-admin-password.txt`. Nach dem ersten
+  Login über „Benutzer → Eigenes Passwort“ ändern und die Datei löschen.
+- **Konfiguration:** `synthesis.auth.enabled` (Default `true`; `false` nur für lokale
+  Einzelnutzer-Entwicklung, dann bleibt die API wie bisher offen und `/api/auth/me` meldet einen
+  lokalen Admin), `synthesis.auth.allowed-origins` (CORS mit Credentials, Default Dev-Server),
+  `synthesis.auth.bootstrap-admin`, `synthesis.auth.min-password-length`. Session-Cookie
+  `SameSite=Lax`, `HttpOnly`, 12 h; `forward-headers-strategy: framework` für Reverse-Proxys.
+- **Frontend:** `AuthService` (Signals), `authGuard`/`adminGuard`, 401-Interceptor (Sitzung
+  verloren → `/login` mit Rücksprung), Seiten „Anmelden“ und „Benutzer“, Kopfzeile mit Nutzerchip
+  und Abmelden. Design-Tokens (`--sy-*`) in `styles.css` als Grundlage für die weitere
+  Modernisierung.
+- **Bewusst nicht:** kein OAuth/OIDC, keine Datenbank, keine Szenario-Mandantentrennung. Alles
+  drei lässt sich später aufsetzen (`UserDetailsService` austauschen, `createdBy` filtern), ohne
+  den Statusvertrag der Pipeline zu berühren.
+- **Verifiziert:** `AuthFlowTest` (@SpringBootTest + MockMvc gegen die echte Security-Kette:
+  Bootstrap-Admin, 401 ohne Sitzung, 403 ohne CSRF-Token, Login, `ADMIN`/`USER`-Trennung bei
+  `/api/users`, Besitzerschutz beim Löschen, Logout), `UserStoreTest` (Hash statt Klartext,
+  Neustart ohne zweiten Bootstrap, letzter Admin geschützt); Frontend `AppComponent`-Spec mit
+  Nutzerchip/Admin-Link; beide Gates grün (Zahlen im Commit).
+
+### SPA-Auslieferung, Container-Image und CI-Ausbau — ✅ UMGESETZT (2026-11-04)
+- **Anlass:** Für den Server-Betrieb brauchte die Plattform einen zweiten Webserver für das
+  Angular-Frontend, CORS mit Credentials und einen Dev-Server-Proxy; das ist für einen
+  Login-geschützten Betrieb unnötig fragil.
+- **Mechanik:** `FrontendConfig` liefert den Build aus `synthesis.frontend.dir` oder
+  `classpath:/static/` aus. Dateien mit Hash im Namen (`main-*.js`, `styles-*.css`, `media/`)
+  bekommen `Cache-Control: max-age=1 Jahr, immutable`, `index.html` `no-cache`; Router-Pfade ohne
+  Dateiendung fallen auf `index.html` zurück, `/api/**` und Dateinamen nie (404). `/api/health`
+  ist ein anmeldefreier Lebenszeichen-Endpunkt für Healthchecks. Leere `allowed-origins` schalten
+  CORS ab (same-origin).
+- **Container:** `Dockerfile` (node → maven → JRE, unprivilegiert, Volume `/app/data`, optional
+  `WITH_SUMO=true`), `docker-compose.yml`, `.dockerignore`. `.gitlab-ci.yml` bekommt
+  `scripts-tests` (Python-`unittest`, 96 Tests, 4 Skips wegen optionalem `openpyxl`) und den
+  Job `docker-image` (Registry-Push auf Default-Branch/Tags, sonst manuell).
+- **Linux-Pfade:** `ExternalJavaToolchain` und `kit_java_home` suchten das KIT-JDK nur unter
+  Homebrew/macOS; jetzt zusätzlich `/usr/lib/jvm/java-25-openjdk-*`, `temurin-25-jdk-*`,
+  `/opt/java/openjdk-25`.
+- **Ehrlicher Befund:** Der Docker-Build selbst konnte in dieser Umgebung nicht laufen (kein
+  Daemon); die erste Abnahme ist `docker compose up --build` auf dem Zielsystem (docs/08).
+- **Verifiziert:** `SpaFallbackTest` (@SpringBootTest: `/` → Forward auf `index.html`, `/vergleich`
+  und `/login` → `index.html` mit `no-cache`; `main-*.js` immutable; `/media/*` 200; `/missing.png`
+  und `/api/does-not-exist` 404; `/api/health` 200), `AuthFlowTest` erweitert um `/api/health` ohne
+  Sitzung; Backend-/Frontend-Gates grün (Zahlen im Commit).
+
+### Studio-Modernisierung: Responsive, Meldungsarten, Experimente gebündelt, Legende — ✅ UMGESETZT (2026-11-04)
+- **Anlass:** Das Studio war ein festes Drei-Spalten-Layout mit `height: calc(100vh - 45px)`,
+  Statusmeldungen waren ein grauer Textabsatz ohne Art, 16 experimentelle Optionen standen
+  gleichrangig neben produktiven, Kartenebenen hatten keine Legende, Ergebnisse nur Zahlen.
+- **Mechanik:** Design-Tokens (`--sy-*`) ersetzen die wiederholten Hex-Werte in Studio, Vergleich
+  und Einstellungen (gleiche Farben, zentral). Unter 1100 px stapeln sich die Spalten, die Karte
+  behält 440 px. `message` ist ein Setter, der aus der Wortwahl die Art ableitet
+  (`classifyMessage`: „Fehler/fehlgeschlagen/konnte nicht“ → Fehler, „Bitte …“ → Hinweis,
+  „gespeichert/hochgeladen/übernommen“ → Erfolg); das Banner trägt `data-kind`, `role=alert`
+  für Fehler und einen Schließen-Knopf. Kurze-Wege-, Distanzabfall-, ÖV-Distanz-,
+  LLM-Moduswahl- und Straßenrouten-Optionen liegen in `<details class="advanced">`, das offen
+  startet, sobald eine davon gesetzt ist. Die Kartenlegende erscheint nur bei aktiven Ebenen und
+  nennt die tatsächlichen Layer-Farben; Modal-Split- und Distanzband-Tabellen zeigen
+  Simulations- und MiD-Anteil zusätzlich als Balkenpaar.
+- **Bewusst nicht:** kein UI-Framework (Material/PrimeNG) und kein Umbau der 1 300-Zeilen-Vorlage
+  in Unterkomponenten; das bleibt ein eigener Schritt, damit die Studio-Specs unverändert gelten.
+- **Verifiziert:** `studio-ui.spec.ts` (Meldungsarten, Banner schließen, Experimente eingeklappt
+  und automatisch offen, Legende nur bei aktiver Ebene); Frontend 135 Tests grün, AOT-Build grün;
+  Playwright gegen das laufende Backend mit ausgeliefertem Build: Deep-Link → Anmeldung mit
+  Rücksprung → Studio → Benutzerseite → Abmelden → 401; Screenshots bei 1440 px und 900 px.
+
+### Qualitätswerkzeuge: JaCoCo, Spotless, angular-eslint, Angular-Patch — ✅ UMGESETZT (2026-11-04)
+- **Anlass:** Keine Abdeckungsmessung, kein Linter im Frontend, `npm audit --omit=dev` meldete
+  eine hohe Schwachstelle in `@angular/router` (CI-Job `audit:prod` rot), und die
+  maschinenspezifische `.claude/settings.local.json` war versioniert.
+- **Mechanik:** JaCoCo-Bericht nach jedem `mvn test`; Spotless mit drei Regeln ohne Phasenbindung
+  (8 ungenutzte Importe entfernt); angular-eslint 21 mit begründeten Abweichungen, `npm run lint`
+  in CI und `scripts/verify.sh`; Konstruktor-Injektion in 9 Klassen auf `inject()` umgestellt;
+  Angular 21.2.26 / CLI 21.2.29 (0 Meldungen); `__pycache__`, `*.pyc` und
+  `.claude/settings.local.json` ignoriert.
+- **Bewusst nicht:** keine Mindestabdeckung, keine Komplettformatierung (Prettier/google-java-format)
+  — beides würde Diffs erzeugen, die die Historie unlesbar machen.
+- **Verifiziert:** Backend-Suite 494 Tests, 0 Fehler, 44 übersprungen, `target/site/jacoco`
+  vorhanden; `npm run lint` ohne Befund; Frontend 135 Tests grün, AOT-Build grün;
+  `npm audit --omit=dev`: 0 Schwachstellen.
+
+### Plattform-Abnahme gegen das gebaute Jar und Restbefunde — ✅ UMGESETZT (2026-11-04)
+- **Abnahme:** Jar mit gebündeltem Frontend (`classpath:/static/`, wie im Docker-Build) gestartet;
+  per `curl` mit Cookie-Jar und CSRF-Header: Deep-Link liefert `index.html`, Hash-Assets
+  `immutable`, API ohne Sitzung 401, Login, Konto anlegen, Szenario mit `createdBy`, Generierung
+  bis `DONE` (15 Stufen, 8 `DONE`, Rest bewusst `SKIPPED`), Artefakt-Download, `job.json` auf
+  Platte, Backend-Neustart → Status wiederhergestellt, Fremdlöschung 403, `/api/users` für USER
+  403, zweiter Lauf wartet als `QUEUED` hinter dem ersten (ein Worker, Invariante) und endet `DONE`.
+- **Restbefunde aus der Abnahme, behoben:** (1) `scripts/preflight.sh` meldete „FEHLT Java“, weil
+  `java_major` nur Zeile 1 von `java -version` las und `JAVA_TOOL_OPTIONS` eine „Picked up“-Zeile
+  voranstellt; jetzt `java_major_of` ohne Zeilenbindung, auch für das KIT-JDK. (2) Die OSM-Stufe
+  stand bei zentral deaktiviertem Live-Abruf als `SKIPPED` ohne Grund; jetzt Meldung, Summary und
+  Manifest `osmData.source=disabled`. (3) `roadNetworkSource` wurde vor dem Netzabruf auf
+  `overpass-live` gesetzt und blieb bei gescheitertem Abruf so stehen, obwohl die Matrizen
+  Luftlinie waren (gleiche Fehlerklasse wie der `osmDataSource`-Befund vom selben Tag); jetzt
+  `unavailable` in Summary, `dataQuality.roadNetwork` und `inputProvenance.roadNetwork`.
+- **Doku-Wahrheit:** docs/03 und README behaupteten Spring Modulith und SSE/WebSocket; umgesetzt
+  ist ein Spring-Boot-Monolith mit Paketen je Fachlichkeit und Status-Polling. Beides als
+  Zielentwurf gekennzeichnet, Umsetzungsstand vorangestellt.
+- **Verifiziert:** `GenerationServiceFallbackTest` (Netzabruf scheitert → Matrizen `DONE`+Fallback,
+  `roadNetworkSource=unavailable`, `matrices=beeline-estimate`; Live-Abruf aus → `SKIPPED` mit Grund,
+  `osmDataSource=disabled`); `scripts/preflight.sh core` ohne Fehler; Backend-Suite und
+  Jar-Abnahme (Zahlen im Commit).
+
+### Zweites Review nach dem Umbau — Befundliste (2026-11-04)
+Vollständige Prüfung des neuen Standes mit Messwerten, priorisierten Befunden (H1–H5, M1–M9,
+N1–N8) und einem Arbeitsauftrag für die lokale Abnahme:
+[docs/reviews/2026-11-04-plattform-review.md](reviews/2026-11-04-plattform-review.md). Die
+Befunde H1 (Sitzungen überleben Kontoänderungen) und H2 (kein Schutz gegen Passwort-Raten)
+werden im Anschluss direkt behoben, die übrigen sind dort mit Empfehlung und Aufwand festgehalten.
+
+### Anmeldung gehärtet: Sitzungen enden mit Kontoänderung, Login-Sperre — ✅ UMGESETZT (2026-11-04)
+- **Anlass (Review-Befunde H1/H2):** `UserDetailsService` wird nur beim Login befragt; gelöschte
+  oder herabgestufte Konten blieben bis zum Sitzungs-Timeout (12 h) gültig. `/api/auth/login`
+  hatte keine Begrenzung gegen Passwort-Raten.
+- **Mechanik:** `SessionRegistry` + `HttpSessionEventPublisher`; die Anmeldung registriert ihre
+  Sitzung von Hand (sie läuft nicht über den Security-Filter), `UserController` beendet beim
+  Löschen, Rollenwechsel und Passwort-Reset alle Sitzungen des Kontos (`expireNow`), der
+  `ConcurrentSessionFilter` antwortet darauf mit 401. `LoginAttemptLimiter` zählt Fehlversuche je
+  Benutzername und Herkunft (`synthesis.auth.max-login-failures`, Default 10; Sperre
+  `lockout-minutes`, Default 15) und antwortet mit 429 samt Restdauer; die Anmeldeseite zeigt die
+  Meldung. Fehlversuche und Sperren werden protokolliert.
+- **Bewusst nicht:** keine Sperre allein nach Benutzername (würde Fremd-Aussperrung erlauben),
+  kein persistenter Zähler (Neustart setzt zurück).
+- **Verifiziert:** `AuthFlowTest` (Marias Sitzung nach Rollenwechsel 401, Admin bleibt angemeldet;
+  drei Fehlversuche → 429 auch mit richtigem Passwort), `LoginAttemptLimiterTest` (Sperre je
+  Konto+Herkunft, Ablauf, Verfall alter Fehlversuche, Reset bei Erfolg); Backend- und
+  Frontend-Gates grün (Zahlen im Commit).
+
+### Recherche offener Datenquellen für den Schwerlastverkehr (2026-11-04)
+Ergänzende Recherche zu docs/21 mit Zuordnung zu den Eingabeverträgen, Lücken und einem
+dreistufigen Umsetzungsvorschlag: [docs/23-offene-datenquellen-schwerlastverkehr.md](23-offene-datenquellen-schwerlastverkehr.md).
+Neu gegenüber docs/21: Start-Ziel-Export des Lkw-Verkehrsportals als CSV ohne Anmeldung, VP2040
+mit NST-2007-Abteilungen und 1 608 Verkehrszellen, Beschäftigte nach Wirtschaftsbereichen je
+Gemeinde (13111) als Verteilungsgewichte, Landes-WFS der Straßenverkehrszählung (BW, BY, SL) und
+Dauerzählstellen-Stundenwerte als Kalibrierziele, KV-Terminals und Binnenhäfen als Erzeuger,
+täglicher Maut-Fahrleistungsindex für Saisonfaktoren. Lizenz- und Formatprüfung bleibt der
+lokalen Sitzung vorbehalten (kein Download aus der Sandbox).
+
+### Recherche: Werkzeuge und Daten im Umfeld (2026-11-04)
+Breitere Recherche zu Werkzeugen und Datensätzen, geordnet nach Nutzen für bekannte Lücken:
+[docs/24-werkzeuge-und-daten-umfeld.md](24-werkzeuge-und-daten-umfeld.md). Hohe Priorität:
+Geofabrik-Extrakte mit `osmium` als zweite OSM-Quelle (Overpass-Ausfälle), SUMO `routeSampler`
+für die Zählstellen-Kalibrierung des Schwerverkehrs, MiD 2023 als neue Referenz neben MiD 2017
+(2,9 statt 3,1 Wege je Person und Tag), GraphHopper-Truck-Profil mit Gewichts-/Höhenlimits,
+jsprit/VROOM für Touren. Mittlere Priorität: ArchUnit, dependency-check/Renovate, Actuator,
+Zensus-2022-Gebäuderaster, Hauskoordinaten, Photon, bundesweiter DELFI-GTFS, Ollama-Schemaausgabe,
+SrV 2023, SimWrapper. Geprüft und verworfen: ActivitySim, kommerzielle Verkehrsdaten,
+Microsoft/Google-Gebäudeumrisse, Spring Modulith.
+
+
+### Transit-venv nach Python-Update erkannt und neu angelegt — ✅ BEHOBEN (2026-11-05)
+- **Anlass (lokale Abnahme H3):** `scripts/preflight.sh full` meldete „FEHLT Transit-venv-Versionen“,
+  weil `validation/transit-venv/bin/python` nach einem Homebrew-Update von Python 3.14.6 auf 3.14.10
+  mit `dyld: Library not loaded` abbrach. Die venv war mit `--copies` angelegt und bindet damit die
+  Bibliothek ihres Patchstands. `scripts/bootstrap-runtime.sh` prüfte nur `-x bin/python` und hätte
+  die kaputte venv nie ersetzt; `venv --upgrade` ersetzt nur `python3.14`, nicht `python`/`python3`.
+- **Mechanik:** Bootstrap startet `bin/python -c pass`; scheitert das, legt `venv --clear` die venv
+  neu an und `pip` installiert die gepinnten Pakete. Preflight nennt den Fall mit Abhilfe
+  („Transit-venv startet nicht … scripts/bootstrap-runtime.sh transit“) statt eines Versionsfehlers.
+- **Verifiziert:** Erkennung gegen eine simulierte kaputte venv (Exit 134) und die intakte venv;
+  `scripts/preflight.sh full` 0 Fehler, `scripts/bootstrap-runtime.sh transit` läuft ohne Neuanlage durch.
+
+### Startpasswort nur noch in der Datei, nicht im Log — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befund N1):** Das zufällige Startpasswort des Bootstrap-Administrators stand als
+  WARN im Log; Container-Logs werden gesammelt und bleiben stehen.
+- **Mechanik:** `UserStore` schreibt das Passwort nur nach `<data-dir>/initial-admin-password.txt`
+  (`rw-------`) und nennt im Log die Datei. Nur wenn die Datei nicht schreibbar ist, bleibt das Log
+  der einzige Weg und enthält das Passwort.
+- **Verifiziert:** `UserStoreTest.startPasswordGoesToTheFileButNotIntoTheLog` (Log nennt die Datei,
+  nicht das Passwort); im Container zeigt `docker compose logs` nur den Dateiverweis; Backend-Suite
+  499 Tests, 0 Fehler.
+
+### Produktionsprofil `prod` — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befund N2):** `application.yml` erlaubt `http://localhost:4300` mit Credentials;
+  nur `docker-compose.yml` überschrieb das per Umgebungsvariable.
+- **Mechanik:** `application-prod.yml` setzt `synthesis.auth.allowed-origins` leer (kein CORS) und
+  `server.servlet.session.cookie.secure=true`. Aktivierung mit `SPRING_PROFILES_ACTIVE=prod` hinter
+  einem TLS-Proxy (docs/08); bewusst nicht Default in Compose, weil Secure-Cookies über reines HTTP von
+  einem anderen Rechner die Anmeldung verhindern.
+- **Verifiziert:** `ProdProfileTest` bindet beide YAML-Dateien in Spring-Reihenfolge (Origins leer,
+  Cookie `secure`, `same-site` bleibt `lax`); Backend-Suite 499 Tests, 0 Fehler.
+
+### Warteposition im Jobstatus und im Studio — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befund M3):** Ein Worker für alle Nutzer (Invariante); der Lauf einer zweiten
+  Person stand als `QUEUED` ohne Hinweis, worauf er wartet.
+- **Mechanik:** `GenerationJob` trägt `queuePosition` (1 = als Nächstes), `runningScenarioId` und
+  `runningScenarioName`. `GenerationService` berechnet sie bei Start und Statusabruf aus der
+  Einreichungsreihenfolge der Jobs im Speicher; der Lauf löscht sie beim Start, damit sie nie in
+  `job.json` landen. Das Studio zeigt über der Stufenliste „Wartet auf den Worker – Platz N in der
+  Warteschlange. Gerade läuft: <Szenario>.“ Executor-Pool 1 und Stufenreihenfolge unverändert.
+- **Bewusst nicht:** kein Abbruch (bleibt eigener Schritt, kooperativ zwischen Stufen).
+- **Verifiziert:** `GenerationJobTest` (Positionen 1/2, laufender Name, laufender Job ohne Position,
+  `job.json` ohne `queuePosition`), Studio-Spec (Hinweis bei `QUEUED`, weg bei `RUNNING`); im Container
+  zweites Szenario gestartet → `202`, `QUEUED`, Platz 1, „Gerade läuft: Abnahme Container 2026-11-05“
+  im Studio sichtbar. Backend 499 Tests, 0 Fehler; Frontend 136 Tests, Lint, AOT-Build grün.
+
+### Sicherung und Aufräumen des Datenvolumes dokumentiert — ✅ (2026-11-05)
+- **Anlass (Review-Befund M4):** Keine Sicherungsanleitung, keine Aufräumfunktion; ein Lauf belegt
+  je nach Größe 28 MB (300 Personen, Fallback) bis 104 MB (26 434 Personen, reales Netz).
+- **Umfang:** docs/08 („Sicherung und Aufräumen des Datenvolumes“) beschreibt Inhalt von `/app/data`,
+  Sicherung als `tar`-Strom aus dem laufenden Container, Wiederherstellung über
+  `docker compose run --entrypoint tar`, Platzbedarf je Szenario und das Entfernen von
+  `artifacts/` eines Szenarios. Eine Aufräumfunktion in der Oberfläche und Actuator-Metriken
+  bleiben offen.
+- **Verifiziert:** im Container mit zwei Szenarien gesichert (5 s, 63 MB), Dienst gestoppt,
+  eingespielt, gestartet; danach Health `UP`, beide Jobstatus `DONE` aus `job.json`, Sitzung wie
+  erwartet beendet (N7).
+
+### Reverse-Proxy-Vorlage für den Server-Betrieb — ✅ (2026-11-05)
+- **Anlass (Review-Befund N3):** docs/08 nannte die Header-Strategie, aber keine Vorlage.
+- **Umfang:** docs/08 („Reverse-Proxy-Vorlage“) mit Compose-Ausschnitt (Port nur auf
+  `127.0.0.1`, `SPRING_PROFILES_ACTIVE=prod`), Caddyfile und nginx-Server-Block
+  (`client_max_body_size 210m` passend zur Multipart-Grenze, `X-Forwarded-*`, HTTP→HTTPS).
+  Grenze benannt: kein Unterpfad, weil `base href="/"`.
+- **Verifiziert:** Doku-only; Werte gegen `application.yml`, `application-prod.yml` und
+  `frontend/src/index.html` abgeglichen. Gegen einen laufenden Proxy nicht geprüft.
+
+### Swagger-Hinweis für den Betrieb mit Anmeldung — ✅ (2026-11-05)
+- **Anlass (Review-Befund N5):** Swagger UI liegt hinter der Anmeldung und antwortet ohne Sitzung
+  mit 401 statt einer Umleitung.
+- **Umfang:** docs/08 („API-Dokumentation (Swagger) hinter der Anmeldung“): erst in der App anmelden,
+  dann `/swagger-ui.html`. **Befund der Abnahme:** „Try it out“ geht nur lesend, weil Swagger UI den
+  CSRF-Header nicht sendet; schreibende Aufrufe enden mit 403. Abhilfe dokumentiert,
+  `springdoc.swagger-ui.csrf.enabled` bewusst noch nicht gesetzt.
+- **Verifiziert:** im Container ohne Sitzung `/swagger-ui.html`, `/v3/api-docs` → 401; mit Sitzung
+  87 Operationen; `POST /api/region/estimate` ohne `X-XSRF-TOKEN` 403, mit Header 200.
+
+### Laufzeitversionen: Spring Boot 3.5.16, Node 26 — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befunde H4/H5):** Spring Boot 3.5.5 lag elf Patch-Stände zurück; Node 20 ist
+  seit April 2026 ohne Pflege. Statt der im Review vorgeschlagenen Node 22 (Wartung nur bis
+  April 2027) auf Wunsch Node 26 (aktive LTS seit Oktober 2026, gepflegt bis April 2029).
+- **Umfang:** `backend/pom.xml` Parent 3.5.16; `Dockerfile` `NODE_VERSION=26.13.0`;
+  `.gitlab-ci.yml` `node:26.13.0`; `runtime/versions.env` `SYNTHESIS_NODE_MAJOR=26`/`26.13.0`;
+  `frontend/.nvmrc`; `engines` in `package.json` und Lockfile um `^26.0.0` erweitert.
+  `scripts/runtime-common.sh` stellt jetzt `node@$SYNTHESIS_NODE_MAJOR` vor den PATH (vorher fest
+  `node@20`, sodass alle Skripte trotz installiertem Node 26 mit 20 liefen); Preflight meldet die
+  Vertragsversion als OK, 20/22/24 als Hinweis.
+- **Befund beim Patch-Update (rot → behoben):** Boot 3.5.16 verwaltet Jackson 2.21.4. GraphHopper
+  8.0 greift auf `PropertyNamingStrategy.SNAKE_CASE` zu, das ab Jackson 2.20 fehlt
+  (`NoSuchFieldError`, danach `NoClassDefFoundError: EncodedValueSerializer`): 9 Testfehler in
+  `RoadLocationsTest`, `OverpassClientTest`, `RoadLocationsIntegrationTest`, `SharedRoadRoutesTest`,
+  `GenerationPipelineE2ETest`, `RoadLocationsPipelineTest`. `jackson-bom.version` bleibt deshalb auf
+  2.19.4 (Linie von Boot 3.5.5), bis GraphHopper angehoben wird. Ein Image ohne diesen Pin hätte
+  im Betrieb jedes reale Routing verloren, denn `mvn package -DskipTests` im Dockerfile baut es
+  trotzdem.
+- **Historie beachtet:** Node 26 stürzte 2026-07-27 mit Angular 18/esbuild ab; mit Angular 21.2
+  laufen `npm ci`, Tests, Lint und AOT-Build unter Node 26.13.0 ohne Befund.
+- **Verifiziert:** `scripts/verify.sh full` mit Node 26.13.0: Backend 499 Tests, 0 Fehler,
+  2 übersprungen (5:08 min); Frontend 136 Tests, Lint 0, `npm audit --omit=dev` 0, AOT-Build grün.
+  Docker-Image mit `node:26.13.0-bookworm-slim` gebaut.
+
+### `job.json` nicht mehr in der Artefaktliste des Studios — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befund N4):** Der persistierte Laufstatus `artifacts/job.json` erschien als
+  herunterladbares Ergebnis zwischen den echten Artefakten.
+- **Mechanik:** Das Studio filtert `job.json` beim Laden der Liste; die API liefert die Datei
+  weiter (Neustart-Sicherung, Diagnose), Backend unverändert.
+- **Verifiziert:** Studio-Spec „hides the internal job.json from the artifact list“; Frontend
+  137 Tests, Lint und AOT-Build grün (Node 26.13.0).
+
+### Lokale Laufzeitabnahme der Plattform (Review H3) — ✅ ABGENOMMEN mit Befunden (2026-11-05)
+- **Anlass:** In der Cloud-Sandbox übersprangen 44 Tests (SUMO, KIT-Adapter, Transit-venv, Ollama),
+  der Docker-Build lief nie. Nachgeholt auf einem Rechner mit allen Werkzeugen; Einzelheiten in
+  docs/08 („Lokale Abnahme (2026-11-05)“).
+- **Ergebnis:** `scripts/verify.sh full` erfolgreich, Backend-Skips **44 → 2** (beide bewusstes
+  MobileCity-Opt-in); Endstand 499 Tests, 0 Fehler; Frontend 137 Tests. `docker compose up -d --build`
+  liefert ein lauffähiges Image (574 MB, Start ~1 s); Login, Szenario anlegen, Generierung
+  (3:31 min, 26 434 Personen, 537 Zonen, reales Straßennetz), Artefakte laden, Abmelden und
+  Warteschlange funktionieren; 0 `ERROR` im Container-Log. Mit `WITH_SUMO=true` läuft die
+  SUMO-Stufe im Container (`DONE`, 8,5 s, 6 Güterfahrten).
+- **Rot und behoben (je eigener Commit):** kaputte Transit-venv nach Python-Update nicht erkannt;
+  Jackson 2.21 aus Boot 3.5.16 bricht GraphHopper 8.0 (Pin auf 2.19.4).
+- **Befunde, offen:** (1) SUMO-Personenverkehr braucht logiTopp-Ergebnisse, also den KIT-Adapter,
+  der nicht im Image ist; im Container fährt SUMO nur Güter-/Paket-/Firmenverkehr. (2) SUMO aus
+  dem PPA ist nicht gepinnt (1.28.0 statt 1.26.0/1.27.1). (3) Übersprungene Stufen SUMO, logiTopp,
+  Netz-Feedback und LLM tragen ihren Grund nur im Log, nicht als Stufenmeldung. (4) Swagger
+  „Try it out“ scheitert schreibend an CSRF (docs/08). (5) Erster Docker-Build auf langsamer
+  Leitung brach nach 73 min ab; `dependency:go-offline` lädt nicht alle Test-Artefakte.
+- **Verifiziert:** Zahlen und Laufzeiten wie oben, gemessen am 2026-11-05.
+
+### Datenquellen Schwerverkehr geprüft: Lkw-Portal, VP2040, Beschäftigte je Gemeinde — ✅ (2026-11-05)
+- **Anlass:** docs/23 markierte Lizenz, Format und Spalten als „zu prüfen“; die Cloud-Sitzung konnte
+  nichts herunterladen. Geprüft für die Testregion Rastatt; Einzelheiten stehen in docs/23 unter
+  „Geprüft (2026-11-05)“.
+- **Lkw-Verkehrsportal:** `dl-de/by-2-0`; bundesweite Monats-CSV (2026-09: 561 814 Relationen)
+  und anmeldefreie ArcGIS-REST-API mit Gemeindepolygonen; Werte auf Zehner gerundet; erfasst sind
+  Fahrzeuge über 3,5 t, nicht erst ab 7,5 t. Rastatt 2026-09: 65 450 ausgehende Fahrten, CSV = API.
+- **VP2040-Gütermatrix 2019:** nur per Abonnement, einmaliger Download, Lizenz auf drei Jahre mit
+  Löschpflicht, Speicherung nur in EU/EFTA, keine Weitergabe; die Verkehrszellen-Matrix steht nur
+  Behörden, ihren Auftragnehmern und der Forschung offen. Nicht geladen; für ein teilbares Datenpaket
+  ungeeignet.
+- **Beschäftigte je Gemeinde nach Wirtschaftsbereich:** nicht in 13111 des Bundes (dort nur Kreise),
+  nicht in den BA-Gemeindedaten (nur Summe); verfügbar beim Landesamt BW (Bericht A VI 5-j/25 (2),
+  3 Bereiche, 16 % der Gemeinden mit Sperrungen, 2,6 % der Beschäftigten).
+- **Bewusst nicht:** keine Importer und keine Daten im Repository; erst Entscheidung über den
+  Umgang mit der VP2040-Lizenz und über Landesadapter.
+- **Verifiziert:** Downloads und Abfragen vom 2026-11-05 (SHA-256 des Maut-Exports 2026-09
+  `2bd3441e…a66636`, BA `gemband` 202506 `a89513bd…a5953ff`, Landesamt BW `315325001.xlsx`
+  `0b1d1609…b20240`).
+
+### VP2040-Verkehrszellen geprüft — ✅ (2026-11-05)
+- **Anlass:** Folgefrage aus der Datenquellenprüfung: Liegen die Zellgeometrien offen und maschinenlesbar vor?
+- **Ergebnis:** ja; frei unter CC BY, Shapefile WGS84 für NUTS3 (674 Zellen) und Verkehrszellen
+  (1 881, davon 1 608 in Deutschland), dazu eine Tabelle Gemeinde (AGS) → Verkehrszelle mit
+  Einwohnern 2019. Gebietsstand Ende 2018: 0,55 % der Maut-Fahrten 2026-09 liegen in Gemeinden ohne
+  Zuordnung. Einzelheiten in docs/23, Abschnitt 2.2.
+- **Verifiziert:** Download und Auswertung am 2026-11-05 (SHA-256 `4019ef5d…d6f03a`); nichts davon im
+  Repository.

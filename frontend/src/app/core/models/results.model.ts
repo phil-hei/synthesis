@@ -73,7 +73,7 @@ export interface MobileCityDataInventory {
   ready: boolean;
   blockingIssues: string[];
   items: MobileCityDataItem[];
-  sourceSnapshots: Array<{ id: string; path: string; sha256: unknown }>;
+  sourceSnapshots: { id: string; path: string; sha256: unknown }[];
 }
 
 /** mobilecity-validation/status.json – Status der optionalen echten ConfigTool-Prüfung. */
@@ -102,9 +102,7 @@ export interface MobileCitySummary {
 }
 
 /** Modus → Anteil (0..1), Schlüssel: pedestrian/bike/car/passenger/publicTransport. */
-export interface ModalSplit {
-  [mode: string]: number;
-}
+export type ModalSplit = Record<string, number>;
 
 /** Distanzband → Anteil (0..1), aggregiert aus MiD 2017 Tabelle A W12. */
 export interface DistanceBands {
@@ -117,7 +115,7 @@ export interface DistanceBands {
 }
 
 /** Kanonische Reihenfolge und UI-Bezeichnung der sechs Distanzbänder. */
-export const DISTANCE_BAND_ROWS: ReadonlyArray<{ key: keyof DistanceBands; label: string }> = [
+export const DISTANCE_BAND_ROWS: readonly { key: keyof DistanceBands; label: string }[] = [
   { key: 'under1Km', label: '< 1 km' },
   { key: 'km1ToUnder2', label: '1–< 2 km' },
   { key: 'km2ToUnder5', label: '2–< 5 km' },
@@ -245,7 +243,7 @@ export interface SumoSummary {
   ptVehicles?: number;
   /** CO₂ in kg (HBEFA-Emissionsklassen), gesamt und je Fahrzeugtyp (pkw/lkw/lastenrad). */
   co2Kg?: number;
-  co2KgByType?: { [vType: string]: number };
+  co2KgByType?: Record<string, number>;
 }
 
 /** Parameterteil eines Eintrags von GET /api/comparison. */

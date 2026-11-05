@@ -1,5 +1,6 @@
 stages:
   - test
+  - build
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
@@ -22,7 +23,7 @@ backend-tests:
 
 frontend-tests-and-build:
   stage: test
-  image: node:20
+  image: node:26.13.0
   cache:
     key:
       files:
@@ -33,8 +34,50 @@ frontend-tests-and-build:
     - cd frontend
     - npm ci
     - npm run audit:prod
+    - npm run lint
     - npm test
     - npm run build
+
+# Die Python-Hilfsskripte unter scripts/ (Freight-/Tour-Aufbereitung) tragen eigene unittest-Suiten;
+# Tests mit optionalen Paketen (openpyxl) überspringen sich selbst.
+scripts-tests:
+  stage: test
+  image: python:3.13-slim
+  script:
+    - python -m unittest discover -s scripts -t scripts -p 'test_*.py'
+
+# Plattform-Image (Frontend + Backend in einem Container, siehe Dockerfile). Läuft auf dem
+# Default-Branch und für Tags automatisch, sonst manuell; braucht die GitLab Container Registry.
+docker-image:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  needs:
+    - backend-tests
+    - frontend-tests-and-build
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
+    - when: manual
+      allow_failure: true
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" "$CI_REGISTRY_IMAGE:latest"
+        docker push "$CI_REGISTRY_IMAGE:latest"
+      fi
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+        docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+      fi
 
 # Native Vollprüfung auf einem projektgebundenen Shell-Runner. Der Job ist bewusst
 # manuell/optional: SUMO, Ollama, die gepinnten KIT-Clones und GTFS-Fixtures sind

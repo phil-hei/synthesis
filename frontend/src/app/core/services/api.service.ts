@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { OperationsPreview } from '../models/vehicle-operations.model';
 import { CompanyTourImport, TourMapping, CompanyTourContext, CompanyTourLocationLookup, TourImportProfile, CompanyTourGeocodingLookup } from '../models/company-tour.model';
@@ -14,8 +14,7 @@ export class ApiService {
 
   private readonly base = '/api';
 
-  constructor(private http: HttpClient) {
-  }
+  private readonly http = inject(HttpClient);
 
   validateVehicleOperations(bundle: unknown): Observable<OperationsPreview> {
     return this.http.post<OperationsPreview>(`${this.base}/vehicle-operations/validate`, bundle);

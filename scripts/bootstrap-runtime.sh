@@ -70,6 +70,12 @@ if [[ $PROFILE == transit || $PROFILE == all ]]; then
     exit 2
   }
   venv="$SYNTHESIS_ROOT/validation/transit-venv"
+  # Eine mit --copies angelegte venv bindet die Python-Bibliothek ihres Patchstands; nach einem
+  # Homebrew-Update startet bin/python nicht mehr (dyld), obwohl die Datei ausführbar bleibt.
+  if [[ -x $venv/bin/python ]] && ! "$venv/bin/python" -c pass >/dev/null 2>&1; then
+    echo "Transit-venv startet nicht mehr (Python aktualisiert?), wird neu angelegt: $venv" >&2
+    "$python_cmd" -m venv --clear "$venv"
+  fi
   [[ -x $venv/bin/python ]] || "$python_cmd" -m venv "$venv"
   "$venv/bin/python" -m pip install --requirement "$SYNTHESIS_ROOT/runtime/transit-requirements.txt"
 fi

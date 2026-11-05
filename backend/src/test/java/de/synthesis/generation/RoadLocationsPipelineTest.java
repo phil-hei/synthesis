@@ -2,7 +2,6 @@ package de.synthesis.generation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.synthesis.SynthesisProperties;
-import de.synthesis.generation.GenerationService;
 import de.synthesis.generation.pipeline.*;
 import de.synthesis.scenario.*;
 import org.junit.jupiter.api.Test;

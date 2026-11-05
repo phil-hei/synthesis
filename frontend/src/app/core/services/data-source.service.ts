@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DataImport, DataPack, DataLibraryEntry, SourceProfileLibraryEntry, SourceProfile, SourceProfileDefinition, DataProfile, DatasetRevision, ImportMapping, ImportMetadata, ImportPreview, ImportSchema, SourcePlanCheck } from '../models/data-source.model';
@@ -6,7 +6,7 @@ import { Scenario } from '../models/scenario.model';
 import { SourceRunReport } from '../models/source-run-report.model';
 @Injectable({ providedIn: 'root' })
 export class DataSourceService {
-  constructor(private http: HttpClient) {}
+  private readonly http = inject(HttpClient);
   private base(id: string): string { return `/api/scenarios/${encodeURIComponent(id)}/data`; }
   runReport(id: string): Observable<SourceRunReport> {
     return this.http.get<SourceRunReport>(`/api/scenarios/${encodeURIComponent(id)}/artifacts/sources/resolution.json`, { headers: { 'Cache-Control': 'no-cache' } });
