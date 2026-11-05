@@ -3998,3 +3998,12 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
 - **Verifiziert:** im Container mit zwei Szenarien gesichert (5 s, 63 MB), Dienst gestoppt,
   eingespielt, gestartet; danach Health `UP`, beide Jobstatus `DONE` aus `job.json`, Sitzung wie
   erwartet beendet (N7).
+
+### Reverse-Proxy-Vorlage für den Server-Betrieb — ✅ (2026-11-05)
+- **Anlass (Review-Befund N3):** docs/08 nannte die Header-Strategie, aber keine Vorlage.
+- **Umfang:** docs/08 („Reverse-Proxy-Vorlage“) mit Compose-Ausschnitt (Port nur auf
+  `127.0.0.1`, `SPRING_PROFILES_ACTIVE=prod`), Caddyfile und nginx-Server-Block
+  (`client_max_body_size 210m` passend zur Multipart-Grenze, `X-Forwarded-*`, HTTP→HTTPS).
+  Grenze benannt: kein Unterpfad, weil `base href="/"`.
+- **Verifiziert:** Doku-only; Werte gegen `application.yml`, `application-prod.yml` und
+  `frontend/src/index.html` abgeglichen. Gegen einen laufenden Proxy nicht geprüft.

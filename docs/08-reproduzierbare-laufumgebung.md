@@ -137,8 +137,66 @@ offiziellen Images, der SPA-Auslieferungspfad ist durch `SpaFallbackTest` abgede
 
 Hinter einem TLS-Reverse-Proxy (nginx, Traefik, Caddy) werden `X-Forwarded-*`-Header ausgewertet
 (`server.forward-headers-strategy: framework`), damit Session-Cookie und Redirects die externe
-Adresse tragen. Das Session-Cookie ist `HttpOnly` und `SameSite=Lax`; `Secure` setzt der Proxy
-beziehungsweise `server.servlet.session.cookie.secure=true` bei direktem HTTPS.
+Adresse tragen. Das Session-Cookie ist `HttpOnly` und `SameSite=Lax`; `Secure` setzt das Profil
+`prod` (`application-prod.yml`, seit 2026-11-05: `server.servlet.session.cookie.secure=true`,
+`synthesis.auth.allowed-origins` leer).
+
+### Reverse-Proxy-Vorlage (2026-11-05)
+
+Der Container lauscht dann nur lokal; der Proxy terminiert TLS. In `docker-compose.yml`:
+
+```yaml
+    ports:
+      - "127.0.0.1:8090:8090"            # nur der Proxy auf demselben Host erreicht den Container
+    environment:
+      SPRING_PROFILES_ACTIVE: prod        # Secure-Cookie, kein CORS
+```
+
+Caddy (holt das Zertifikat selbst, setzt `X-Forwarded-*`):
+
+```caddyfile
+synthesis.example.org {
+	request_body {
+		max_size 210MB                    # wie spring.servlet.multipart.max-request-size
+	}
+	reverse_proxy 127.0.0.1:8090
+}
+```
+
+nginx:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name synthesis.example.org;
+    ssl_certificate     /etc/ssl/synthesis/fullchain.pem;
+    ssl_certificate_key /etc/ssl/synthesis/privkey.pem;
+
+    client_max_body_size 210m;            # Default 1m bricht Uploads (GTFS, Raster, OSM) ab
+    proxy_read_timeout   300s;            # große Uploads und Vorschauen; Läufe selbst sind asynchron
+
+    location / {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header X-Forwarded-Port  $server_port;
+    }
+}
+server {
+    listen 80;
+    server_name synthesis.example.org;
+    return 301 https://$host$request_uri;
+}
+```
+
+`/api/health` ist anmeldefrei und eignet sich als Proxy-Healthcheck. Ein Unterpfad
+(`/synthesis/`) wird nicht unterstützt: der Angular-Build hat `base href="/"`. Nicht
+mit `SPRING_PROFILES_ACTIVE=prod` über reines HTTP von einem anderen Rechner zugreifen — der Browser
+schickt das Secure-Cookie dann nicht zurück und die Anmeldung scheitert stumm.
+Die Vorlagen sind nicht gegen einen laufenden Proxy geprüft (2026-11-05); geprüft sind die
+Werte, auf die sie sich beziehen (Port, Multipart-Grenze, Header-Strategie, Profil).
 
 ### Sicherung und Aufräumen des Datenvolumes (2026-11-05)
 
