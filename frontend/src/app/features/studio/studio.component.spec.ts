@@ -70,6 +70,22 @@ describe('StudioComponent', () => {
     vi.unstubAllGlobals();
   });
 
+  it('shows the waiting position and the scenario occupying the worker while queued', () => {
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('saved');
+    component.job = { ...job('QUEUED'), queuePosition: 2, runningScenarioId: 'other', runningScenarioName: 'Rastatt Mitte' };
+    fixture.detectChanges();
+    const note: HTMLElement = fixture.nativeElement.querySelector('.queue-note');
+    expect(note.textContent).toContain('Platz 2 in der Warteschlange');
+    expect(note.textContent).toContain('Gerade läuft: Rastatt Mitte');
+
+    component.job = job('RUNNING');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.queue-note')).toBeNull();
+  });
+
   it('separates inserted vehicles, routing losses and day-end persons in SUMO results', () => {
     fixture = TestBed.createComponent(StudioComponent);
     fixture.detectChanges();

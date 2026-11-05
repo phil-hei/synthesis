@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Status of one generation run. The worker thread mutates it while HTTP threads serialize it
@@ -65,6 +66,19 @@ public class GenerationJob {
     @JsonIgnore
     public final Map<String, Object> summary = Collections.synchronizedMap(new LinkedHashMap<>());
     public volatile String error;
+    /**
+     * Only while {@code QUEUED}: 1 = next in line. Computed on each status request from the
+     * in-memory queue and cleared when the run starts, so it never reaches {@code job.json}.
+     */
+    public volatile Integer queuePosition;
+    /** Only while {@code QUEUED}: the scenario that currently occupies the single worker. */
+    public volatile String runningScenarioId;
+    public volatile String runningScenarioName;
+
+    private static final AtomicLong SEQUENCE = new AtomicLong();
+    /** Submission order for the queue position; not part of the status contract. */
+    @JsonIgnore
+    final long sequence = SEQUENCE.incrementAndGet();
 
     GenerationJob() {
     }
@@ -102,6 +116,33 @@ public class GenerationJob {
             summary.clear();
             if (values != null) summary.putAll(values);
         }
+    }
+
+    /** Fills or clears the queue fields of {@code job} from the jobs known to the worker. */
+    static void annotateQueue(GenerationJob job, Iterable<GenerationJob> all,
+                              java.util.function.Function<String, String> scenarioName) {
+        if (job.state != State.QUEUED) {
+            job.clearQueue();
+            return;
+        }
+        int ahead = 0;
+        GenerationJob running = null;
+        for (GenerationJob other : all) {
+            if (other == job) continue;
+            if (other.state == State.RUNNING) running = other;
+            else if (other.state == State.QUEUED && other.sequence < job.sequence) ahead++;
+        }
+        job.queuePosition = ahead + 1;
+        job.runningScenarioId = running == null ? null : running.scenarioId;
+        job.runningScenarioName = running == null ? null : scenarioName.apply(running.scenarioId);
+        // The worker may have started the run meanwhile; never leave queue data on a running job.
+        if (job.state != State.QUEUED) job.clearQueue();
+    }
+
+    void clearQueue() {
+        queuePosition = null;
+        runningScenarioId = null;
+        runningScenarioName = null;
     }
 
     public boolean active() {

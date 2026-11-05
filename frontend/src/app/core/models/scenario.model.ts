@@ -156,6 +156,10 @@ export interface GenerationJob {
   log: string[];
   summary?: Record<string, unknown>;
   error?: string;
+  /** Nur bei QUEUED: 1 = als Nächstes dran. */
+  queuePosition?: number;
+  runningScenarioId?: string;
+  runningScenarioName?: string;
 }
 
 export interface ArtifactInfo {

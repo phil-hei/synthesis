@@ -98,4 +98,30 @@ class GenerationJobTest {
         writer.join();
         assertNull(failure.get(), "Serialisierung darf nicht an nebenläufigen Änderungen scheitern");
     }
+
+    @Test
+    void queuedJobsSeeTheirPositionAndTheScenarioOccupyingTheWorker() throws Exception {
+        GenerationJob running = new GenerationJob("a", List.of("Zonierung"));
+        running.state = GenerationJob.State.RUNNING;
+        GenerationJob first = new GenerationJob("b", List.of("Zonierung"));
+        GenerationJob second = new GenerationJob("c", List.of("Zonierung"));
+        List<GenerationJob> all = List.of(second, running, first);
+        Map<String, String> names = Map.of("a", "Rastatt Mitte");
+
+        GenerationJob.annotateQueue(second, all, names::get);
+        GenerationJob.annotateQueue(first, all, names::get);
+        GenerationJob.annotateQueue(running, all, names::get);
+
+        assertEquals(1, first.queuePosition);
+        assertEquals(2, second.queuePosition);
+        assertEquals("a", second.runningScenarioId);
+        assertEquals("Rastatt Mitte", second.runningScenarioName);
+        assertNull(running.queuePosition, "ein laufender Job hat keine Warteposition");
+
+        first.state = GenerationJob.State.RUNNING;
+        first.clearQueue();
+        first.persist(dir.resolve(GenerationJob.FILE));
+        String persisted = Files.readString(dir.resolve(GenerationJob.FILE));
+        assertFalse(persisted.contains("queuePosition"), "Warteposition gehört nicht in job.json");
+    }
 }

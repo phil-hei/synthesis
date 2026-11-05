@@ -777,6 +777,7 @@ button.link {
 .stage-badge.fallback { background: #fff2dc; color: #8a5a12; }
 .stage-badge.skipped { background: #eef2f6; color: #66778a; }
 .stage-message.note { color: #8a5a12; font-size: 11px; }
+.queue-note { margin: 0 0 8px; padding: 6px 10px; border-radius: 6px; background: var(--sy-bg-muted); color: var(--sy-text-muted); font-size: 12px; }
 
 @keyframes pulse {
   from { opacity: 1; }

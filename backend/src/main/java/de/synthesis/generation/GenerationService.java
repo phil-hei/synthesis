@@ -154,6 +154,7 @@ public class GenerationService {
         GenerationJob job = new GenerationJob(scenarioId, STAGES);
         jobs.put(scenarioId, job);
         executor.submit(() -> run(scenario, job, companyInput, sourceInputs));
+        annotateQueue(job);
         return job;
     }
 
@@ -185,6 +186,7 @@ public class GenerationService {
     public Optional<GenerationJob> status(String scenarioId) {
         GenerationJob job = jobs.get(scenarioId);
         if (job != null) {
+            annotateQueue(job);
             return Optional.of(job);
         }
         try {
@@ -193,6 +195,12 @@ public class GenerationService {
         } catch (IllegalArgumentException | IOException e) {
             return Optional.empty();
         }
+    }
+
+    /** Waiting position and the occupying scenario, so a queued user sees why nothing happens. */
+    private void annotateQueue(GenerationJob job) {
+        GenerationJob.annotateQueue(job, jobs.values(),
+                id -> scenarios.findById(id).map(s -> s.name).orElse(null));
     }
 
     public record ZonePreview(List<Zone> zones, double cellSizeMeters, boolean autoAdjusted) {
@@ -355,6 +363,7 @@ public class GenerationService {
     }
     private void run(Scenario scenario, GenerationJob job, de.synthesis.companytour.CompanyTourExecution.Batch companyTours,
                      de.synthesis.data.SourceResolver.Inputs sourceInputs) {
+        job.clearQueue();
         job.state = GenerationJob.State.RUNNING;
         job.startedAt = Instant.now();
         PipelineContext ctx = new PipelineContext(scenario, job, scenarios.artifactsDir(scenario.id));

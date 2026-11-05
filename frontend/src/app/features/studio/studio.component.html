@@ -877,6 +877,14 @@
       @if (job) {
         <section class="block">
           <h2>Pipeline</h2>
+          @if (job.state === 'QUEUED') {
+            <p class="queue-note" role="status">
+              Wartet auf den Worker@if (job.queuePosition) { – Platz {{ job.queuePosition }} in der Warteschlange}.
+              @if (job.runningScenarioName || job.runningScenarioId) {
+                Gerade läuft: {{ job.runningScenarioName || job.runningScenarioId }}.
+              }
+            </p>
+          }
           <ul class="stages">
             @for (stage of job.stages; track stage.name) {
               <li [attr.data-status]="stage.status" [attr.data-fallback]="stage.fallback ? 'true' : null"

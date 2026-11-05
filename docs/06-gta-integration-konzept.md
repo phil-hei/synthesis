@@ -3972,3 +3972,17 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
   einem anderen Rechner die Anmeldung verhindern.
 - **Verifiziert:** `ProdProfileTest` bindet beide YAML-Dateien in Spring-Reihenfolge (Origins leer,
   Cookie `secure`, `same-site` bleibt `lax`); Backend-Suite 499 Tests, 0 Fehler.
+
+### Warteposition im Jobstatus und im Studio — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befund M3):** Ein Worker für alle Nutzer (Invariante); der Lauf einer zweiten
+  Person stand als `QUEUED` ohne Hinweis, worauf er wartet.
+- **Mechanik:** `GenerationJob` trägt `queuePosition` (1 = als Nächstes), `runningScenarioId` und
+  `runningScenarioName`. `GenerationService` berechnet sie bei Start und Statusabruf aus der
+  Einreichungsreihenfolge der Jobs im Speicher; der Lauf löscht sie beim Start, damit sie nie in
+  `job.json` landen. Das Studio zeigt über der Stufenliste „Wartet auf den Worker – Platz N in der
+  Warteschlange. Gerade läuft: <Szenario>.“ Executor-Pool 1 und Stufenreihenfolge unverändert.
+- **Bewusst nicht:** kein Abbruch (bleibt eigener Schritt, kooperativ zwischen Stufen).
+- **Verifiziert:** `GenerationJobTest` (Positionen 1/2, laufender Name, laufender Job ohne Position,
+  `job.json` ohne `queuePosition`), Studio-Spec (Hinweis bei `QUEUED`, weg bei `RUNNING`); im Container
+  zweites Szenario gestartet → `202`, `QUEUED`, Platz 1, „Gerade läuft: Abnahme Container 2026-11-05“
+  im Studio sichtbar. Backend 499 Tests, 0 Fehler; Frontend 136 Tests, Lint, AOT-Build grün.
