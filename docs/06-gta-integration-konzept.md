@@ -4041,3 +4041,11 @@ Microsoft/Google-Gebäudeumrisse, Spring Modulith.
 - **Verifiziert:** `scripts/verify.sh full` mit Node 26.13.0: Backend 499 Tests, 0 Fehler,
   2 übersprungen (5:08 min); Frontend 136 Tests, Lint 0, `npm audit --omit=dev` 0, AOT-Build grün.
   Docker-Image mit `node:26.13.0-bookworm-slim` gebaut.
+
+### `job.json` nicht mehr in der Artefaktliste des Studios — ✅ UMGESETZT (2026-11-05)
+- **Anlass (Review-Befund N4):** Der persistierte Laufstatus `artifacts/job.json` erschien als
+  herunterladbares Ergebnis zwischen den echten Artefakten.
+- **Mechanik:** Das Studio filtert `job.json` beim Laden der Liste; die API liefert die Datei
+  weiter (Neustart-Sicherung, Diagnose), Backend unverändert.
+- **Verifiziert:** Studio-Spec „hides the internal job.json from the artifact list“; Frontend
+  137 Tests, Lint und AOT-Build grün (Node 26.13.0).

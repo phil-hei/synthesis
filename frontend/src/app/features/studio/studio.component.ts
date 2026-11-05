@@ -1317,7 +1317,8 @@ export class StudioComponent implements OnInit, AfterViewInit, OnDestroy {
   private loadArtifacts(): void {
     if (this.scenario?.id) {
       this.api.listArtifacts(this.scenario.id).subscribe({
-        next: list => this.artifacts = list,
+        // job.json ist interner Laufstatus (Neustart-Sicherung), kein Ergebnis zum Herunterladen.
+        next: list => this.artifacts = list.filter(artifact => artifact.path !== 'job.json'),
         error: () => {
           this.artifacts = [];
           this.message = 'Artefakte konnten nicht geladen werden';

@@ -27,6 +27,8 @@ describe('StudioComponent', () => {
     artifactUrl: ReturnType<typeof vi.fn>;
     previewZones: ReturnType<typeof vi.fn>;
     estimateRegion: ReturnType<typeof vi.fn>;
+    listArtifacts?: ReturnType<typeof vi.fn>;
+    artifactJson?: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -68,6 +70,19 @@ describe('StudioComponent', () => {
     fixture?.destroy();
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it('hides the internal job.json from the artifact list', () => {
+    api.listArtifacts = vi.fn(() => of([
+      { path: 'job.json', sizeBytes: 900 }, { path: 'kpis.json', sizeBytes: 120 }
+    ]));
+    api.artifactJson = vi.fn(() => throwError(() => new Error('nicht vorhanden')));
+    fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.scenario = scenario('saved');
+    (component as unknown as { loadArtifacts(): void }).loadArtifacts();
+    expect(component.artifacts.map(artifact => artifact.path)).toEqual(['kpis.json']);
   });
 
   it('shows the waiting position and the scenario occupying the worker while queued', () => {
